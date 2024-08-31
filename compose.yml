@@ -1,0 +1,13 @@
+services:
+    hd-homey:
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        image: shaunburdick/hd-homey
+        ports:
+            - "3003:3000"
+        volumes:
+            - database:./db
+
+volumes:
+    database:
