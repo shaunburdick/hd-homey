@@ -2,4 +2,4 @@
 
 A Proxy App for HD Homerun devices
 
-![HD Homey](public/HD-Homey.webp)
+<img src="public/HD-Homey.webp" alt="HD Homey" width="50%" height="auto">
