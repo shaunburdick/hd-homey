@@ -1,8 +1,13 @@
+import type { LoggerOptions } from 'pino';
 import pino from 'pino';
 
-const logger = pino({
+const pinoConfig: LoggerOptions = {
     name: 'hd-homey',
-    level: 'info'
-});
+    browser: {
+        asObject: true
+    }
+};
+
+const logger = pino(pinoConfig);
 
 export default logger;
