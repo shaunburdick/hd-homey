@@ -1,4 +1,5 @@
 import Config from '@/config';
+import Logger from '@/logger';
 
 interface ChannelInfo {
     GuideNumber: string;
@@ -10,7 +11,10 @@ interface ChannelInfo {
 
 export async function GET(req: Request) {
     const reqUrl = new URL(req.url);
-    const lineUpRequest = await fetch(`${Config.TUNER_PATH}/lineup.json`);
+    const lineupUrl = `${Config.TUNER_PATH}/lineup.json`;
+
+    Logger.info(`Fetching tuner lineup from: ${lineupUrl}`);
+    const lineUpRequest = await fetch(lineupUrl);
 
     const lineup: ChannelInfo[] = await lineUpRequest.json();
     const altered = lineup.map((channel) => {
