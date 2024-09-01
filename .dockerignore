@@ -8,3 +8,4 @@ npm-debug.log
 .github/
 .next/
 .coverage/
+data/

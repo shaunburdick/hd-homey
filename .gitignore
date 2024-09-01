@@ -129,3 +129,6 @@ dist
 /.next/
 /out/
 next-env.d.ts
+
+# Application
+data/
