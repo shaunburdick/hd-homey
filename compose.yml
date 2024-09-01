@@ -3,11 +3,13 @@ services:
         build:
             context: .
             dockerfile: ./Dockerfile
-        image: shaunburdick/hd-homey
+        image: ghcr.io/shaunburdick/hd-homey
         ports:
             - "3003:3000"
         volumes:
-            - database:./db
+            - database:/data/db
+        environment:
+            - HD_HOMEY_DB_PATH=/data/db
 
 volumes:
     database:
