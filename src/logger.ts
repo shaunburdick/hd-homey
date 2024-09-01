@@ -1,12 +1,8 @@
-import winston from 'winston';
-const { combine, timestamp, json } = winston.format;
+import pino from 'pino';
 
-const logger = winston.createLogger({
-    level: 'info',
-    format: combine(timestamp(), json()),
-    transports: [
-        new winston.transports.Console(),
-    ],
+const logger = pino({
+    name: 'hd-homey',
+    level: 'info'
 });
 
 export default logger;
