@@ -1,5 +1,3 @@
-'use client';
-
 export default function Page({ params }: { params: { channel: string } }) {
 
     return (
@@ -12,7 +10,7 @@ export default function Page({ params }: { params: { channel: string } }) {
                 For example, in <a href="https://www.videolan.org/vlc/">VLC</a>:
                 <ol>
                     <li>Navigate to <em>{'File > Open Network...'}</em></li>
-                    <li>Paste in this link: <strong>{`${location.origin}/stream/${params.channel}`}</strong></li>
+                    <li>Paste in the link</li>
                 </ol>
             </p>
         </main>

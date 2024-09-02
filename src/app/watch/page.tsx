@@ -1,10 +1,17 @@
-import { HDTuner } from '@/lib/hdhr/tuner';
-import Config from '@/lib/config';
-import Link from 'next/link';
+'use client';
 
-export default async function Watch() {
-    const tuner = new HDTuner(Config.TUNER_PATH);
-    const lineup = await tuner.lineup();
+import Link from 'next/link';
+import { ChannelInfo } from '@/lib/hdhr/types';
+import { useState } from 'react';
+
+export default function Watch() {
+    const [lineup, setLineup] = useState<ChannelInfo[]>([]);
+
+    useState(() => {
+        fetch('/lineup.json').then(res => {
+            res.json().then(setLineup);
+        });
+    });
 
     return (
         <main>
