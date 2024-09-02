@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { ChannelInfo } from '@/lib/hdhr/types';
 import { useState } from 'react';
 
@@ -20,9 +19,9 @@ export default function Watch() {
                 {lineup.map((channelInfo, key) => {
                     return (
                         <li key={key}>
-                            <Link href={`watch/v${channelInfo.GuideNumber}`}>
+                            <a href={`watch/v${channelInfo.GuideNumber}`}>
                                 {channelInfo.GuideNumber}: {channelInfo.GuideName}
-                            </Link>
+                            </a>
                         </li>
                     );
                 })}
