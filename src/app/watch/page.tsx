@@ -1,32 +1,31 @@
 'use client';
 
+import useSWR, { Fetcher } from 'swr';
 import { ChannelInfo } from '@/lib/hdhr/types';
 import Link from 'next/link';
-import { useState } from 'react';
+
+const fetcher: Fetcher<ChannelInfo[], string> = (...args) => fetch(...args).then(res => res.json());
 
 export default function Watch() {
-    const [lineup, setLineup] = useState<ChannelInfo[]>([]);
-
-    useState(() => {
-        fetch('/lineup.json').then(res => {
-            res.json().then(setLineup);
-        });
-    });
+    const { data, error, isLoading } = useSWR('/lineup.json', fetcher);
 
     return (
         <main>
             <h1>Channel List</h1>
-            <ul>
-                {lineup.map((channelInfo, key) => {
-                    return (
-                        <li key={key}>
-                            <Link href={`watch/v${channelInfo.GuideNumber}`}>
-                                {channelInfo.GuideNumber}: {channelInfo.GuideName}
-                            </Link>
-                        </li>
-                    );
-                })}
-            </ul>
+            {isLoading && <div>Loading...</div>}
+            {error && <div>Failed to load!</div>}
+            {data &&
+                <ul>
+                    {data.map((channelInfo, key) => {
+                        return (
+                            <li key={key}>
+                                <Link href={`watch/v${channelInfo.GuideNumber}`}>
+                                    {channelInfo.GuideNumber}: {channelInfo.GuideName}
+                                </Link>
+                            </li>
+                        );
+                    })}
+                </ul>}
         </main>
     );
 }
