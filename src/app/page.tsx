@@ -1,9 +1,10 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function Home() {
     return (
         <main>
-            <img src="hd-homey.webp" alt="HD Homey" style={{ width: '30vw' }} />
+            <Image src="/hd-homey.webp" alt="HD Homey" width={375} height={375} />
             <h1>Hello</h1>
 
             <ul>
