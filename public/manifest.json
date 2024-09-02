@@ -1,0 +1,27 @@
+{
+    "name": "HD Homey",
+    "short_name": "hdhomey",
+    "theme_color": "#0070F3",
+    "background_color": "#ffffff",
+    "display": "minimal-ui",
+    "orientation": "natural",
+    "scope": "/",
+    "start_url": "/",
+    "icons": [
+        {
+            "src": "/icons/hd-homey-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+          },
+          {
+            "src": "/icons/hd-homey-256.png",
+            "type": "image/png",
+            "sizes": "256x256"
+          },
+          {
+            "src": "/icons/hd-homey-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+          }
+    ]
+  }
