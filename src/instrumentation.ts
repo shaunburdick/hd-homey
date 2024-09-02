@@ -1,5 +1,5 @@
-import Config from '@/config';
-import Logger from '@/logger';
+import Config from '@/lib/config';
+import Logger from '@/lib/logger';
 
 export async function register() {
     Logger.info('Starting App with the following config: %o', Config);

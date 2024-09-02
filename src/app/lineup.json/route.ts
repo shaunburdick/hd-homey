@@ -1,22 +1,15 @@
-import Config from '@/config';
-import Logger from '@/logger';
-
-interface ChannelInfo {
-    GuideNumber: string;
-    GuideName: string;
-    VideoCodec: string;
-    AudioCodec: string;
-    URL: string;
-}
+import Config from '@/lib/config';
+import Logger from '@/lib/logger';
+import { HDTuner } from '@/lib/hdhr/tuner';
 
 export async function GET(req: Request) {
-    const reqUrl = new URL(req.url);
-    const lineupUrl = `${Config.TUNER_PATH}/lineup.json`;
+    // The URL to use as a source when rewriting the URLs in the lineup
+    const reqUrl = new URL(Config.PROXY_HOST || req.url);
+    const tuner = new HDTuner(Config.TUNER_PATH);
 
-    Logger.info(`Fetching tuner lineup from: ${lineupUrl}`);
-    const lineUpRequest = await fetch(lineupUrl);
+    Logger.info(`Fetching tuner lineup from: ${tuner.address}`);
 
-    const lineup: ChannelInfo[] = await lineUpRequest.json();
+    const lineup = await tuner.lineup();
     const altered = lineup.map((channel) => {
         const url = new URL(channel.URL);
         url.protocol = reqUrl.protocol;

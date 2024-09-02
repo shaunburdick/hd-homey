@@ -1,8 +1,8 @@
 import type { IncomingMessage } from 'http';
-import http from 'http';
-import Config from '@/config';
-import Logger from '@/logger';
+import Config from '@/lib/config';
+import Logger from '@/lib/logger';
 import { notFound } from 'next/navigation';
+import { HDTuner } from '@/lib/hdhr/tuner';
 /**
  * A custom Response subclass that accepts a Readable Steam.
  * This allows creating a streaming Response from http requests
@@ -21,25 +21,13 @@ class MessageResponse extends Response {
     }
 }
 
-async function fetchChannelStream(channel: string): Promise<IncomingMessage> {
-    return new Promise<IncomingMessage>((resolve, reject) => {
-        const url = `${Config.TUNER_PATH}:5004/auto/${channel}?transcode=mobile`;
-        http.get(url, (res) => {
-            if (res.statusCode === 200) {
-                resolve(res);
-            }
-
-            reject(new Error(`Attempting to get: ${url}. Request failed with status code: ${res.statusCode}`));
-        }).on('error', reject);
-    });
-}
-
 export async function GET(
     _req: Request,
     context: { params: { channel: string } }
 ) {
     try {
-        const stream = await fetchChannelStream(context.params.channel);
+        const tuner = new HDTuner(Config.TUNER_PATH);
+        const stream = await tuner.stream(context.params.channel);
         return new MessageResponse(stream);
     } catch (err) {
         Logger.error('Error fetching channel stream', { err });
