@@ -1,10 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import hdHomey from '@public/hd-homey.webp';
 
 export default function Home() {
     return (
         <main>
-            <Image src="/hd-homey.webp" alt="HD Homey" width={375} height={375} />
+            <Image src={hdHomey} alt="HD Homey" width={375}/>
             <h1>Hello</h1>
 
             <ul>
