@@ -7,6 +7,17 @@
 
 A Proxy App for [HD Homerun](https://www.silicondust.com/hdhomerun/) devices. Making it easier to connect and share live tv over the internet!
 
+- [HD Homey](#hd-homey)
+  - [Features](#features)
+  - [Install](#install)
+    - [Docker](#docker)
+    - [Docker Compose](#docker-compose)
+    - [Source](#source)
+  - [Configuration](#configuration)
+  - [Usage](#usage)
+    - [Watch](#watch)
+    - [Lineup](#lineup)
+
 ## Features
 
 -   Serve the lineup.json file, altering it to work over the internet via HD Homey's proxy
@@ -26,7 +37,7 @@ To install using the latest docker image, replacing `{TUNER_IP}` with the ip add
 docker run -d \
     --name=hd_homey \
     -v ./data/db:/data/db \
-    -p 3003:3000 \
+    -p 3000:3000 \
     -e HD_HOMEY_TUNER_PATH={TUNER_IP} \
 ghcr.io/shaunburdick/hd-homey:latest
 ```
@@ -66,3 +77,16 @@ The following values are available for configuration as [environment variables](
     <br>This can be empty and the app will attempt to infer the URL by inspecting the request,
     but if you are having trouble (or proxy this app in docker) then you can provide a hint.
 -   **HD_HOMEY_DB_PATH**: The path to the local database for configuration values (not used yet), example: `./data/db`
+
+## Usage
+
+Then open your favorite browser to http://localhost:3000 (assuming you used to configs above)
+
+### Watch
+
+Watch provides a list of channels available. Clicking on the channel will give you instructions on how to watch the stream.
+
+### Lineup
+
+Lineup provides a transformed JSON line. This could be used by other viewing apps like Channels or Jellyfin to generate channels for viewing. (Maybe, I haven't tested this yet)
+

@@ -5,10 +5,12 @@ services:
             dockerfile: ./Dockerfile
         image: ghcr.io/shaunburdick/hd-homey
         ports:
-            - "3003:3000"
+            - "3000:3000"
         volumes:
             - database:/data/db
         environment:
+            - HD_HOMEY_TUNER_PATH=
+            - HD_HOMEY_PROXY_HOST=
             - HD_HOMEY_DB_PATH=/data/db
 
 volumes:
