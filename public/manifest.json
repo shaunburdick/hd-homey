@@ -1,9 +1,11 @@
 {
+    "id": "/",
     "name": "HD Homey",
-    "short_name": "hdhomey",
+    "short_name": "HD Homey",
+    "description": "UI and Proxy for sharing HD Homerun tuners",
     "theme_color": "#0070F3",
     "background_color": "#111111",
-    "display": "standalone",
+    "display": "fullscreen",
     "orientation": "natural",
     "scope": "/",
     "start_url": "/",
@@ -11,7 +13,8 @@
         {
             "src": "/icons/hd-homey-192.png",
             "type": "image/png",
-            "sizes": "192x192"
+            "sizes": "192x192",
+            "purpose": "any maskable"
           },
           {
             "src": "/icons/hd-homey-256.png",
@@ -21,7 +24,8 @@
           {
             "src": "/icons/hd-homey-512.png",
             "type": "image/png",
-            "sizes": "512x512"
+            "sizes": "512x512",
+            "purpose": "any maskable"
           }
     ]
   }
