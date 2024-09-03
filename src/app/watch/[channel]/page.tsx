@@ -25,6 +25,7 @@ export default function Page({ params }: { params: { channel: string } }) {
             <p>
                 Copy this <a href={`/stream/${params.channel}`}>Link</a> into your favorite media player.<br />
                 <input
+                    id="channelLink"
                     type='text'
                     value={channelLink}
                     onFocus={(e) => e.target.select()}
