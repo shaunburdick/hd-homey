@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Fira_Code } from 'next/font/google';
 import './globals.css';
+import Link from 'next/link';
+import Nav from '@/components/nav';
 
 const fira = Fira_Code({ subsets: ['latin'] });
 
@@ -21,7 +23,14 @@ export default function RootLayout({
                 <link rel="apple-touch-icon" href="/icon.png" />
                 <link rel="manifest" href="/manifest.json" />
             </head>
-            <body className={fira.className}>{children}</body>
+            <body className={fira.className}>
+                <Nav />
+                <main>{children}</main>
+                <footer>
+                    <hr />
+                    2024 © Shaun Burdick - <Link href='https://github.com/shaunburdick/hd-homey'>GitHub</Link>
+                </footer>
+            </body>
         </html>
     );
 }

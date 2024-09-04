@@ -10,7 +10,7 @@ export default function Watch() {
     const { data, error, isLoading } = useSWR('/lineup.json', fetcher);
 
     return (
-        <main>
+        <>
             <h1>Channel List</h1>
             {isLoading && <div>Loading...</div>}
             {error && <div>Failed to load!</div>}
@@ -26,6 +26,6 @@ export default function Watch() {
                         );
                     })}
                 </ul>}
-        </main>
+        </>
     );
 }
