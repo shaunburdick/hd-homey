@@ -23,17 +23,12 @@ export default function RootLayout({
                 <link rel="apple-touch-icon" href="/icon.png" />
                 <link rel="manifest" href="/manifest.json" />
             </head>
-            <body className={fira.className} style={{
-                minHeight: '100%',
-                display: 'grid',
-                gridTemplateRows: '1fr auto'
-            }}>
-                <Nav />
+            <body className={fira.className}>
+                <header>
+                    <Nav />
+                </header>
                 <main>{children}</main>
-                <footer style={{
-                    gridRowStart: 2,
-                    gridRowEnd: 3
-                }}>
+                <footer>
                     <hr />
                     2024 © Shaun Burdick - <Link href='https://github.com/shaunburdick/hd-homey'>GitHub</Link>
                 </footer>

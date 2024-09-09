@@ -1,0 +1,77 @@
+/* Custom styles for responsive behavior */
+header {
+    padding-top: 0.5rem;
+    padding-bottom: 0;
+}
+
+header > nav:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header > nav > ul {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style-type: none;
+}
+
+.desktop-menu-item {
+    display: none;
+}
+
+.mobile-menu-button button {
+    background: none;
+    border: none;
+    color: var(--nc-tx-1);
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-left: 70vw;
+}
+
+mobile-menu {
+    background-color: var(--nc-bg-2);
+    padding: 1rem;
+}
+
+.mobile-menu ul {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+}
+
+.mobile-menu li {
+    padding: 0;
+}
+
+.mobile-menu a {
+    display: block;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: var(--nc-tx-1);
+    transition: background-color 0.2s ease;
+}
+
+.mobile-menu a:hover,
+.mobile-menu a:focus {
+    background-color: var(--nc-bg-3);
+}
+
+@media (min-width: 768px) {
+    .desktop-menu-item {
+        display: block;
+        margin-left: 1rem;
+    }
+
+    .mobile-menu-button {
+        display: none;
+    }
+
+    .mobile-menu {
+        display: none;
+    }
+}

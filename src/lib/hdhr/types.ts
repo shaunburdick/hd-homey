@@ -3,5 +3,6 @@ export interface ChannelInfo {
     GuideName: string;
     VideoCodec: string;
     AudioCodec: string;
+    HD?: number;
     URL: string;
 };
