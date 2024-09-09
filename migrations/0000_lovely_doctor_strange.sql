@@ -1,5 +1,5 @@
 CREATE TABLE `channels` (
-	`id` integer DEFAULT true,
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`fk_tuner` integer NOT NULL,
 	`guideNumber` text NOT NULL,
 	`guideName` text NOT NULL,
@@ -7,6 +7,7 @@ CREATE TABLE `channels` (
 	`audioCodec` text NOT NULL,
 	`hd` integer NOT NULL,
 	`url` text NOT NULL,
+	`is_active` integer DEFAULT true,
 	`created_at` integer DEFAULT (CURRENT_TIMESTAMP),
 	`modified_at` integer DEFAULT (CURRENT_TIMESTAMP),
 	`deleted_at` integer,
@@ -14,20 +15,22 @@ CREATE TABLE `channels` (
 );
 --> statement-breakpoint
 CREATE TABLE `tuners` (
-	`id` integer DEFAULT true,
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text(255) NOT NULL,
 	`path` text NOT NULL,
+	`is_active` integer DEFAULT true,
 	`created_at` integer DEFAULT (CURRENT_TIMESTAMP),
 	`modified_at` integer DEFAULT (CURRENT_TIMESTAMP),
 	`deleted_at` integer
 );
 --> statement-breakpoint
 CREATE TABLE `users` (
-	`id` integer DEFAULT true,
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`username` text(255) NOT NULL,
 	`name` text(255) NOT NULL,
 	`passHash` text NOT NULL,
 	`role` text NOT NULL,
+	`is_active` integer DEFAULT true,
 	`created_at` integer DEFAULT (CURRENT_TIMESTAMP),
 	`modified_at` integer DEFAULT (CURRENT_TIMESTAMP),
 	`deleted_at` integer
