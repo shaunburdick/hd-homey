@@ -12,6 +12,10 @@ export const users = sqliteTable('users', {
     created_at: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
     modified_at: integer('modified_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
     deleted_at: integer('deleted_at', { mode: 'timestamp' })
+}, (table) => {
+    return {
+        username_unique: unique('username_unique').on(table.username)
+    };
 });
 
 export type User = typeof users.$inferSelect;
@@ -44,7 +48,7 @@ export const channels = sqliteTable('channels', {
     deleted_at: integer('deleted_at', { mode: 'timestamp' })
 }, (table) => {
     return {
-        tuner: unique('tuner_guideNumber').on(table.fk_tuner, table.guideNumber),
+        tuner_guideNumber: unique('tuner_guideNumber').on(table.fk_tuner, table.guideNumber),
     };
 });
 

@@ -15,4 +15,9 @@ export default {
      * URL for the tuner
      */
     TUNER_PATH: process.env.HD_HOMEY_TUNER_PATH || '',
+
+    /**
+     * The secret key to encrypt auth tokens with
+     */
+    AUTH_SECRET: process.env.AUTH_SECRET || '',
 };
