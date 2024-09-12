@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5fbde8af-fb9b-42fe-b3d5-a02e667af9bf",
+  "id": "55c9d1f7-a3ab-42ad-bcd9-e37c6f72a74b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "channels": {
@@ -67,7 +67,7 @@
           "name": "is_active",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
           "default": true
         },
@@ -75,17 +75,17 @@
           "name": "created_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "default": "(unixepoch())"
         },
         "modified_at": {
           "name": "modified_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "default": "(unixepoch())"
         },
         "deleted_at": {
           "name": "deleted_at",
@@ -96,12 +96,13 @@
         }
       },
       "indexes": {
-        "tuner": {
-          "name": "tuner",
+        "tuner_guideNumber": {
+          "name": "tuner_guideNumber",
           "columns": [
-            "fk_tuner"
+            "fk_tuner",
+            "guideNumber"
           ],
-          "isUnique": false
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -146,11 +147,18 @@
           "notNull": true,
           "autoincrement": false
         },
+        "last_scanned": {
+          "name": "last_scanned",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "is_active": {
           "name": "is_active",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
           "default": true
         },
@@ -158,17 +166,17 @@
           "name": "created_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "default": "(unixepoch())"
         },
         "modified_at": {
           "name": "modified_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "default": "(unixepoch())"
         },
         "deleted_at": {
           "name": "deleted_at",
@@ -225,7 +233,7 @@
           "name": "is_active",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
           "default": true
         },
@@ -233,17 +241,17 @@
           "name": "created_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "default": "(unixepoch())"
         },
         "modified_at": {
           "name": "modified_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "default": "(unixepoch())"
         },
         "deleted_at": {
           "name": "deleted_at",

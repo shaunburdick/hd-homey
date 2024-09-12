@@ -1,11 +1,11 @@
 'use server';
 
 import { getDb } from '@/lib/database/db';
-import { isTunerValid, tuners } from '@/lib/database/schema';
+import { tuners } from '@/lib/database/schema';
 import { redirect } from 'next/navigation';
-import Logger from '@/lib/logger';
+import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
 
-export async function createTuner(formData: FormData) {
+export async function createTuner(prevState: unknown, formData: FormData) {
     const db = await getDb();
 
     const newTuner = {
@@ -13,11 +13,11 @@ export async function createTuner(formData: FormData) {
         path: formData.get('path')
     };
 
-    Logger.info(newTuner, 'New Tuner');
-
     if (isTunerValid(newTuner)) {
-        Logger.info(db.insert(tuners).values(newTuner).toSQL());
         const result = await db.insert(tuners).values(newTuner).returning();
         redirect(`/tuners/${result[0].id}`);
+    } else {
+        const errors = getTunerErrors(newTuner);
+        return [...errors].map(e => ({ path: e.path, message: e.message }));
     }
 }
