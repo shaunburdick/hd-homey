@@ -4,6 +4,7 @@ import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
 import { redirect } from 'next/navigation';
 import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
+import { revalidatePath } from 'next/cache';
 
 export async function createTuner(prevState: unknown, formData: FormData) {
     const db = await getDb();
@@ -15,6 +16,7 @@ export async function createTuner(prevState: unknown, formData: FormData) {
 
     if (isTunerValid(newTuner)) {
         const result = await db.insert(tuners).values(newTuner).returning();
+        revalidatePath('/tuners');
         redirect(`/tuners/${result[0].id}`);
     } else {
         const errors = getTunerErrors(newTuner);
