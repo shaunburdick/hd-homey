@@ -10,6 +10,7 @@ import { existsSync, mkdirSync } from 'fs';
 
 export type DB = BetterSQLite3Database<typeof schema>;
 let cachedDB: DB;
+let ranMigration = false;
 
 export function connection() {
     const dbFolder = path.dirname(Config.DB_PATH);
@@ -24,7 +25,10 @@ export function connection() {
 }
 
 export async function runMigrations(db: DB) {
-    migrate(db, { migrationsFolder: path.join(process.cwd(), 'migrations') });
+    if (!ranMigration) {
+        migrate(db, { migrationsFolder: path.join(process.cwd(), 'migrations') });
+        ranMigration = true;
+    }
 }
 
 export async function getDb(): Promise<DB> {
