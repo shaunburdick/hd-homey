@@ -6,14 +6,13 @@ import type { Channel } from '@/lib/database/schema';
 
 interface ChannelStreamProps {
     channel: Channel;
+    streamUrl: string;
 }
 
-export default function ChannelStream({ channel }: ChannelStreamProps) {
+export default function ChannelStream({ channel, streamUrl }: ChannelStreamProps) {
     const [isCopied, setIsCopied] = useState(false);
-    const channelLink = new URL(
-        `/tuners/${channel.fk_tuner}/channel/${channel.id}/stream`,
-        window.location.origin
-    ).toString();
+    // Convert relative URL to absolute for VLC
+    const channelLink = new URL(streamUrl, window.location.origin).toString();
 
     const handleCopy = async () => {
         try {
