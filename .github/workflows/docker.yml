@@ -92,11 +92,11 @@ jobs:
                   outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
                   # Use platform-specific cache for better performance
                   cache-from: |
-                      type=gha
-                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.platform }}
+                      type=gha,scope=build-${{ matrix.platform }}
+                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ strategy.job-index }}
                   cache-to: |
-                      type=gha,mode=max
-                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.platform }},mode=max
+                      type=gha,mode=max,scope=build-${{ matrix.platform }}
+                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ strategy.job-index }},mode=max
                   # Build arguments
                   build-args: |
                       BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
