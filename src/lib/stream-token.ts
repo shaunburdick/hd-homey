@@ -65,7 +65,7 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
             channelId: parseInt(channelId, 10),
             expiresAt: expiresAtNum
         };
-    } catch (err) {
+    } catch {
         return null; // Invalid token format
     }
 }

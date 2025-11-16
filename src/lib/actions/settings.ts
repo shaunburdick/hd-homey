@@ -16,8 +16,10 @@ export interface FormState {
  * Admin only
  */
 export async function regenerateAppStreamSecret(
-    state: FormState,
-    formData: FormData
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _state: FormState,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _formData: FormData
 ): Promise<FormState> {
     const session = await auth();
 
