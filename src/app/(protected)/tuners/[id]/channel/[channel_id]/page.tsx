@@ -29,7 +29,7 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
 
     // Generate signed stream URL
     const token = await generateStreamToken(parseInt(id, 10), parseInt(channel_id, 10));
-    const streamUrl = `/stream/${id}/${channel_id}?token=${token}`;
+    const streamUrl = `/tuners/${id}/channel/${channel_id}/stream?token=${token}`;
 
     return (
         <main>
