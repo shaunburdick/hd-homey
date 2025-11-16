@@ -168,8 +168,8 @@ describe('POST /api/tuners/[id]', () => {
 
     it('should handle validation errors', async () => {
         const formData = new FormData();
-        formData.append('name', ''); // Invalid: empty name
-        formData.append('path', ''); // Invalid: empty path
+        formData.append('name', 'ab'); // Invalid: too short (min 3 chars)
+        formData.append('path', 'invalid-url'); // Invalid: not a valid URI
 
         const request = new Request(`http://localhost:3000/api/tuners/${tunerId}`, {
             method: 'POST',
@@ -179,7 +179,7 @@ describe('POST /api/tuners/[id]', () => {
 
         const response = await POST(request, context);
 
-        // Should return error status
+        // Should return error status (400 for validation, or 500 if query fails)
         expect(response.status).toBeGreaterThanOrEqual(400);
 
         const json = await response.json();
