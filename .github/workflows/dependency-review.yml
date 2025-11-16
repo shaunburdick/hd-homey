@@ -22,8 +22,7 @@ jobs:
               with:
                   # Fail on critical or high severity vulnerabilities
                   fail-on-severity: moderate
-                  # Deny licenses that are not allowed
-                  deny-licenses: GPL-3.0, LGPL-3.0
-                  # Allow AGPL-3.0 since that's your project license
-                  allow-licenses: AGPL-3.0
+                  # Deny licenses that are restrictive or incompatible
+                  # Note: AGPL-3.0 (project license) is compatible with most OSS licenses
+                  deny-licenses: GPL-2.0, LGPL-2.0, LGPL-2.1
                   comment-summary-in-pr: always
