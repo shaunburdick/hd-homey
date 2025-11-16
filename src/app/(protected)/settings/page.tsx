@@ -22,7 +22,7 @@ export default async function SettingsPage() {
             <hr />
 
             <h2>Stream Authentication</h2>
-            <StreamSecretManager 
+            <StreamSecretManager
                 secretPreview={secretInfo?.preview || 'Not available'}
                 regenerateAction={regenerateAppStreamSecret}
             />

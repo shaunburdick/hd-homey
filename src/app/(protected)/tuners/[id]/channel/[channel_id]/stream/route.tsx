@@ -39,29 +39,29 @@ export async function GET(
     try {
         const { id, channel_id } = await context.params;
         const token = req.nextUrl.searchParams.get('token');
-        
+
         if (!token) {
             Logger.warn({ tunerId: id, channelId: channel_id }, 'Stream request missing token');
             return new Response('Missing token', { status: 401 });
         }
-        
+
         // Verify token (fetches secret from settings)
         const tokenData = await verifyStreamToken(token);
         if (!tokenData) {
             Logger.warn({ tunerId: id, channelId: channel_id }, 'Invalid or expired stream token');
             return new Response('Invalid or expired token', { status: 403 });
         }
-        
+
         // Verify token matches requested resource
-        if (tokenData.tunerId !== parseInt(id, 10) || 
+        if (tokenData.tunerId !== parseInt(id, 10) ||
             tokenData.channelId !== parseInt(channel_id, 10)) {
-            Logger.warn({ 
+            Logger.warn({
                 requested: { tunerId: id, channelId: channel_id },
-                token: tokenData 
+                token: tokenData
             }, 'Token resource mismatch');
             return new Response('Token does not match resource', { status: 403 });
         }
-        
+
         // Get channel from database
         const db = await getDb();
         const channel = await db.query.channels.findFirst({
