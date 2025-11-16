@@ -1,8 +1,12 @@
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import { AuthRoles } from '@/lib/auth-roles';
+import { getStreamSecretInfo, regenerateAppStreamSecret } from '@/lib/actions/settings';
+import StreamSecretManager from '@/components/stream-secret-manager';
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+    const secretInfo = await getStreamSecretInfo();
+
     return (
         <RoleGuard allowedRoles={[AuthRoles.Admin]}>
             <h1>Settings</h1>
@@ -17,8 +21,11 @@ export default function SettingsPage() {
 
             <hr />
 
-            <h2>System Settings</h2>
-            <p><em>Coming soon...</em></p>
+            <h2>Stream Authentication</h2>
+            <StreamSecretManager 
+                secretPreview={secretInfo?.preview || 'Not available'}
+                regenerateAction={regenerateAppStreamSecret}
+            />
         </RoleGuard>
     );
 }
