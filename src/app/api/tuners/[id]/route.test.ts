@@ -32,12 +32,15 @@ describe('GET /api/tuners/[id]', () => {
     beforeEach(async () => {
         testDb = createTestDatabase();
         await seedTestDatabase(testDb);
-        
+
         // Get a test tuner ID
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
-        tunerId = tuner!.id;
-        
+        if (!tuner) {
+            throw new Error('Test setup failed: no tuner found');
+        }
+        tunerId = tuner.id;
+
         vi.clearAllMocks();
     });
 
@@ -101,11 +104,14 @@ describe('POST /api/tuners/[id]', () => {
     beforeEach(async () => {
         testDb = createTestDatabase();
         await seedTestDatabase(testDb);
-        
+
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
-        tunerId = tuner!.id;
-        
+        if (!tuner) {
+            throw new Error('Test setup failed: no tuner found');
+        }
+        tunerId = tuner.id;
+
         vi.clearAllMocks();
     });
 
@@ -132,7 +138,7 @@ describe('POST /api/tuners/[id]', () => {
         // Endpoint should return a response (either success redirect or error)
         expect(response).toBeInstanceOf(Response);
         expect(response.status).toBeGreaterThanOrEqual(200);
-        
+
         // Verify it's a valid HTTP response
         expect([200, 302, 400, 404, 500]).toContain(response.status);
     });
@@ -168,19 +174,15 @@ describe('POST /api/tuners/[id]', () => {
         const context = { params: Promise.resolve({ id: tunerId.toString() }) };
 
         const response = await POST(request, context);
-        
+
         // Should return error status
         expect(response.status).toBeGreaterThanOrEqual(400);
-        
+
         const json = await response.json();
         expect(json.error || json.errors).toBeDefined();
     });
 
     it('should handle partial updates', async () => {
-        const { tuners } = await import('@/lib/database/schema');
-        const { eq } = await import('drizzle-orm');
-        const originalTuner = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
-
         // Update only the name (path will be preserved from existing)
         const formData = new FormData();
         formData.append('name', 'Only Name Updated');
@@ -193,7 +195,7 @@ describe('POST /api/tuners/[id]', () => {
         const context = { params: Promise.resolve({ id: tunerId.toString() }) };
 
         const response = await POST(request, context);
-        
+
         // Endpoint should handle the request
         expect(response).toBeInstanceOf(Response);
         expect(response.status).toBeGreaterThanOrEqual(200);
@@ -217,7 +219,7 @@ describe('POST /api/tuners/[id]', () => {
         const context1 = { params: Promise.resolve({ id: tunerId.toString() }) };
 
         await POST(request1, context1);
-        
+
         const updated = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
         // Verify the checkbox logic works
         expect(updated?.is_active).toBeDefined();
@@ -227,12 +229,15 @@ describe('POST /api/tuners/[id]', () => {
     it('should process timestamp updates', async () => {
         const { tuners } = await import('@/lib/database/schema');
         const { eq } = await import('drizzle-orm');
-        
+
         const originalTuner = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
+        if (!originalTuner) {
+            throw new Error('Test setup failed: tuner not found');
+        }
 
         const formData = new FormData();
         formData.append('name', 'Updated Name');
-        formData.append('path', originalTuner!.path);
+        formData.append('path', originalTuner.path);
 
         const request = new Request(`http://localhost:3000/api/tuners/${tunerId}`, {
             method: 'POST',
@@ -241,7 +246,7 @@ describe('POST /api/tuners/[id]', () => {
         const context = { params: Promise.resolve({ id: tunerId.toString() }) };
 
         const response = await POST(request, context);
-        
+
         // Endpoint explicitly sets modified_at in updateData
         // Verify it returns a response (implementation sets timestamp)
         expect(response).toBeInstanceOf(Response);

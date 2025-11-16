@@ -36,16 +36,20 @@ describe('GET /api/tuners', () => {
 
         // Get a tuner and soft-delete it
         const tuner = testDb.select().from(tuners).limit(1).get();
+        if (!tuner) {
+            throw new Error('Test setup failed: no tuner found');
+        }
+
         testDb.update(tuners)
             .set({ is_active: false, deleted_at: new Date() })
-            .where(eq(tuners.id, tuner!.id))
+            .where(eq(tuners.id, tuner.id))
             .run();
 
         const response = await GET();
         const json = await response.json();
 
         // Verify deleted tuner is not in results
-        const deletedTunerInResults = json.data.find((t: { id: number }) => t.id === tuner!.id);
+        const deletedTunerInResults = json.data.find((t: { id: number }) => t.id === tuner.id);
         expect(deletedTunerInResults).toBeUndefined();
     });
 
