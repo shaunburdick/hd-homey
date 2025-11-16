@@ -30,8 +30,9 @@ describe('HDTuner', () => {
             const lineup = await tuner.lineup();
 
             expect(mockFetch).toHaveBeenCalled();
-            const callArg = mockFetch.mock.calls[0][0];
-            expect(callArg.toString()).toBe('http://192.168.20.25/lineup.json');
+            const calls = vi.mocked(mockFetch).mock.calls;
+            const callArg = calls[0]?.[0];
+            expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
             expect(lineup).toEqual(mockLineupData);
             expect(lineup).toHaveLength(6);
             expect(lineup[0]).toHaveProperty('GuideNumber', '3.1');
@@ -44,8 +45,9 @@ describe('HDTuner', () => {
 
             await tuner.lineup();
 
-            const callArg = mockFetch.mock.calls[0][0] as URL;
-            expect(callArg.toString()).toBe('http://192.168.20.25/lineup.json');
+            const calls = vi.mocked(mockFetch).mock.calls;
+            const callArg = calls[0]?.[0] as URL | undefined;
+            expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
         });
 
         it('should handle network errors gracefully', async () => {
@@ -82,8 +84,9 @@ describe('HDTuner', () => {
 
             await tunerWithPort.lineup();
 
-            const callArg = mockFetch.mock.calls[0][0];
-            expect(callArg.toString()).toBe('http://192.168.20.25:8080/lineup.json');
+            const calls = vi.mocked(mockFetch).mock.calls;
+            const callArg = calls[0]?.[0];
+            expect(callArg?.toString()).toBe('http://192.168.20.25:8080/lineup.json');
         });
     });
 
@@ -223,7 +226,7 @@ describe('HDTuner', () => {
                 return { on: vi.fn() };
             });
 
-            vi.spyOn(http, 'get').mockImplementation(mockGet as typeof http.get);
+            vi.spyOn(http, 'get').mockImplementation(mockGet as unknown as typeof http.get);
 
             const stream = await tuner.stream('3.1');
 
@@ -244,7 +247,7 @@ describe('HDTuner', () => {
                 return { on: vi.fn() };
             });
 
-            vi.spyOn(http, 'get').mockImplementation(mockGet as typeof http.get);
+            vi.spyOn(http, 'get').mockImplementation(mockGet as unknown as typeof http.get);
 
             await tuner.stream('3.1');
 
@@ -265,7 +268,7 @@ describe('HDTuner', () => {
                 return { on: vi.fn() };
             });
 
-            vi.spyOn(http, 'get').mockImplementation(mockGet as typeof http.get);
+            vi.spyOn(http, 'get').mockImplementation(mockGet as unknown as typeof http.get);
 
             await tuner.stream('3.1'); // Without v prefix
 
@@ -285,7 +288,7 @@ describe('HDTuner', () => {
                 return { on: vi.fn() };
             });
 
-            vi.spyOn(http, 'get').mockImplementation(mockGet as typeof http.get);
+            vi.spyOn(http, 'get').mockImplementation(mockGet as unknown as typeof http.get);
 
             await tuner.stream('v3.1'); // With v prefix
 
@@ -303,7 +306,7 @@ describe('HDTuner', () => {
                 return { on: vi.fn() };
             });
 
-            vi.spyOn(http, 'get').mockImplementation(mockGet as typeof http.get);
+            vi.spyOn(http, 'get').mockImplementation(mockGet as unknown as typeof http.get);
 
             await expect(tuner.stream('999.1')).rejects.toThrow('Request failed with status code: 404');
         });
@@ -319,7 +322,7 @@ describe('HDTuner', () => {
                 return { on: vi.fn() };
             });
 
-            vi.spyOn(http, 'get').mockImplementation(mockGet as typeof http.get);
+            vi.spyOn(http, 'get').mockImplementation(mockGet as unknown as typeof http.get);
 
             await expect(tuner.stream('3.1')).rejects.toThrow('Request failed with status code: 500');
         });
@@ -335,7 +338,7 @@ describe('HDTuner', () => {
                 return { on: vi.fn() };
             });
 
-            vi.spyOn(http, 'get').mockImplementation(mockGet as typeof http.get);
+            vi.spyOn(http, 'get').mockImplementation(mockGet as unknown as typeof http.get);
 
             await expect(tuner.stream('3.1')).rejects.toThrow('http://192.168.20.25:5004/auto/v3.1');
         });

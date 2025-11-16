@@ -14,16 +14,26 @@ export function wait(ms: number): Promise<void> {
 /**
  * Mock fetch responses
  */
-export function createMockFetch(response: unknown, status = 200) {
-    return vi.fn(() =>
-        Promise.resolve({
-            ok: status >= 200 && status < 300,
-            status,
-            json: () => Promise.resolve(response),
-            text: () => Promise.resolve(JSON.stringify(response)),
-            headers: new Headers(),
-            statusText: status === 200 ? 'OK' : 'Error'
-        } as Response));
+export function createMockFetch(response: unknown, status = 200): ReturnType<typeof vi.fn<typeof fetch>> {
+    return vi.fn<typeof fetch>(async () => ({
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => response,
+        text: async () => JSON.stringify(response),
+        headers: new Headers(),
+        statusText: status === 200 ? 'OK' : 'Error',
+        // Other Response properties that might be accessed
+        redirected: false,
+        type: 'basic' as ResponseType,
+        url: '',
+        clone: vi.fn(),
+        body: null,
+        bodyUsed: false,
+        arrayBuffer: vi.fn(),
+        blob: vi.fn(),
+        formData: vi.fn(),
+        bytes: vi.fn()
+    } as Response));
 }
 
 /**
@@ -62,14 +72,19 @@ export function createMockStream(statusCode = 200) {
 
 /**
  * Assert that an error was thrown
+ * Note: Import expect from vitest in your test file before using this
  */
-export async function expectToThrow(fn: () => Promise<unknown>, errorMessage?: string) {
+export async function expectToThrow(
+    fn: () => Promise<unknown>,
+    errorMessage?: string,
+    expectFn?: typeof import('vitest').expect
+) {
     try {
         await fn();
         throw new Error('Expected function to throw, but it did not');
     } catch (error) {
-        if (errorMessage && error instanceof Error) {
-            expect(error.message).toContain(errorMessage);
+        if (errorMessage && error instanceof Error && expectFn) {
+            expectFn(error.message).toContain(errorMessage);
         }
     }
 }
