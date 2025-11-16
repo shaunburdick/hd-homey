@@ -85,12 +85,8 @@ jobs:
                   # Push by digest for multi-platform manifest creation
                   outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
                   # Use platform-specific cache for better performance
-                  cache-from: |
-                      type=gha,scope=build-linux/amd64
-                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-amd64
-                  cache-to: |
-                      type=gha,mode=max,scope=build-linux/amd64
-                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-amd64,mode=max
+                  cache-from: type=gha,scope=build-linux/amd64
+                  cache-to: type=gha,mode=max,scope=build-linux/amd64
                   # Build arguments
                   build-args: |
                       BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
@@ -201,12 +197,8 @@ jobs:
                   # Push by digest for multi-platform manifest creation
                   outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
                   # Use platform-specific cache for better performance
-                  cache-from: |
-                      type=gha,scope=build-linux/arm64
-                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-arm64
-                  cache-to: |
-                      type=gha,mode=max,scope=build-linux/arm64
-                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-arm64,mode=max
+                  cache-from: type=gha,scope=build-linux/arm64
+                  cache-to: type=gha,mode=max,scope=build-linux/arm64
                   # Build arguments
                   build-args: |
                       BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
