@@ -15,12 +15,13 @@ export async function generateStreamToken(tunerId: number, channelId: number): P
     const secret = await getStreamSecret();
     const expiresAt = Math.floor(Date.now() / 1000) + Config.streamTokenExpiry;
 
-    // Create signature
+    // Create signature (truncated to 16 bytes / 128 bits for shorter tokens)
     const data = `${tunerId}:${channelId}:${expiresAt}`;
     const signature = crypto
         .createHmac('sha256', secret)
         .update(data)
-        .digest('hex');
+        .digest('hex')
+        .slice(0, 32); // 16 bytes = 32 hex chars
 
     // Combine and encode
     const token = `${tunerId}:${channelId}:${expiresAt}:${signature}`;
@@ -45,12 +46,13 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
             return null; // Expired
         }
 
-        // Verify signature
+        // Verify signature (truncated to match generation)
         const data = `${tunerId}:${channelId}:${expiresAt}`;
         const expectedSignature = crypto
             .createHmac('sha256', secret)
             .update(data)
-            .digest('hex');
+            .digest('hex')
+            .slice(0, 32); // 16 bytes = 32 hex chars
 
         // Use timing-safe comparison
         if (!crypto.timingSafeEqual(
