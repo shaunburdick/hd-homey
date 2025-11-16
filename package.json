@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-    "prebuild": "npm run lint",
+    "prebuild": "if [ \"$SKIP_PREBUILD\" != \"true\" ]; then npm run lint; fi",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
+RUN --mount=type=cache,target=/root/.npm \
     if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
     elif [ -f package-lock.json ]; then npm ci; \
     elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i; \
@@ -21,10 +21,10 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Create data directory structure and initialize database for build-time prerendering
-RUN mkdir -p ./data/db
-RUN npm run db:migrate
-RUN npm run build
+# Create data directory for build (Next.js needs it) and build
+# Set SKIP_PREBUILD to skip linting during Docker builds for speed
+RUN mkdir -p ./data/db && \
+    SKIP_PREBUILD=true npm run build
 
 # 3. Production image, copy all the files and run next
 FROM base AS runner
@@ -32,8 +32,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+# Combine user creation commands
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
 
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/public ./public

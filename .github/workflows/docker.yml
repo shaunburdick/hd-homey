@@ -19,14 +19,21 @@ env:
 
 jobs:
     build-and-push:
-        name: Build and Push Docker Image
-        runs-on: ubuntu-latest
+        name: Build and Push Docker Image (${{ matrix.platform }})
+        runs-on: ${{ matrix.runner }}
         permissions:
             contents: read
             packages: write
             attestations: write
             id-token: write
         timeout-minutes: 30
+        strategy:
+            matrix:
+                include:
+                    - platform: linux/amd64
+                      runner: ubuntu-24.04
+                    - platform: linux/arm64
+                      runner: ubuntu-24.04-arm64
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -38,7 +45,9 @@ jobs:
               uses: docker/setup-buildx-action@v3
               with:
                   # Use BuildKit cache for faster builds
-                  buildkitd-flags: --debug
+                  driver-opts: |
+                      image=moby/buildkit:latest
+                      network=host
 
             - name: Log in to GitHub Container Registry
               if: github.event_name != 'pull_request'
@@ -71,38 +80,53 @@ jobs:
                       org.opencontainers.image.description=HDHomeRun tuner management and streaming
                       org.opencontainers.image.vendor=Shaun Burdick
 
-            - name: Build and push Docker image
-              id: push
+            - name: Build and push Docker image by digest
+              id: build
               uses: docker/build-push-action@v6
               with:
                   context: .
-                  platforms: linux/amd64,linux/arm64
-                  # Only push on main branch and tags, not PRs
-                  push: ${{ github.event_name != 'pull_request' }}
-                  tags: ${{ steps.meta.outputs.tags }}
+                  # Build single platform per job for speed
+                  platforms: ${{ matrix.platform }}
                   labels: ${{ steps.meta.outputs.labels }}
-                  # Enable layer caching for faster builds
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
+                  # Push by digest for multi-platform manifest creation
+                  outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
+                  # Use platform-specific cache for better performance
+                  cache-from: |
+                      type=gha
+                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.platform }}
+                  cache-to: |
+                      type=gha,mode=max
+                      type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.platform }},mode=max
                   # Build arguments
                   build-args: |
                       BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
                       VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
                       REVISION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+                  # Optimize build with provenance
+                  provenance: mode=max
+                  sbom: false
 
-            - name: Generate artifact attestation
+            - name: Export digest
               if: github.event_name != 'pull_request'
-              uses: actions/attest-build-provenance@v1
+              run: |
+                  mkdir -p /tmp/digests
+                  digest="${{ steps.build.outputs.digest }}"
+                  touch "/tmp/digests/${digest#sha256:}"
+
+            - name: Upload digest
+              if: github.event_name != 'pull_request'
+              uses: actions/upload-artifact@v4
               with:
-                  subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-                  subject-digest: ${{ steps.push.outputs.digest }}
-                  push-to-registry: true
+                  name: digests-${{ strategy.job-index }}
+                  path: /tmp/digests/*
+                  if-no-files-found: error
+                  retention-days: 1
 
             - name: Generate SBOM
               if: github.event_name != 'pull_request'
               uses: anchore/sbom-action@v0
               with:
-                  image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+                  image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
                   format: spdx-json
                   output-file: sbom.spdx.json
 
@@ -110,6 +134,54 @@ jobs:
               if: github.event_name != 'pull_request'
               uses: actions/upload-artifact@v4
               with:
-                  name: sbom
+                  name: sbom-${{ matrix.platform }}
                   path: sbom.spdx.json
                   retention-days: 90
+
+    merge-manifests:
+        name: Merge Multi-Platform Manifests
+        needs: build-and-push
+        runs-on: ubuntu-latest
+        if: github.event_name != 'pull_request'
+        permissions:
+            contents: read
+            packages: write
+        steps:
+            - name: Download digests
+              uses: actions/download-artifact@v4
+              with:
+                  path: /tmp/digests
+                  pattern: digests-*
+                  merge-multiple: true
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Log in to GitHub Container Registry
+              uses: docker/login-action@v3
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Extract Docker metadata
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  tags: |
+                      type=ref,event=branch
+                      type=ref,event=pr
+                      type=semver,pattern={{version}}
+                      type=semver,pattern={{major}}.{{minor}}
+                      type=semver,pattern={{major}}
+                      type=sha,prefix={{branch}}-
+                      type=raw,value=latest,enable={{is_default_branch}}
+
+            - name: Create and push multi-platform manifest
+              working-directory: /tmp/digests
+              run: |
+                  docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+                    $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+              env:
+                  DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
