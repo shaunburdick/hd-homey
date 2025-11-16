@@ -444,7 +444,7 @@ This feature is already implemented with the following files:
 - `generateStreamToken(tunerId, channelId)` - Creates HMAC-signed token with expiration
 - `verifyStreamToken(token)` - Validates signature and expiration, returns parsed data or null
 
-**Stream Endpoint**: `src/app/stream/[id]/[channel_id]/route.ts` (outside protected routes)
+**Stream Endpoint**: `src/app/(protected)/tuners/[id]/channel/[channel_id]/stream/route.tsx` (existing route, now with token auth)
 - Validates token from query parameter
 - Checks token signature, expiration, and resource match
 - Proxies video stream if valid, returns 403 if invalid
@@ -453,11 +453,11 @@ This feature is already implemented with the following files:
 1. User navigates to channel page (authenticated via layout)
 2. Server generates signed token: `generateStreamToken(tunerId, channelId)`
 3. Token includes: tunerId, channelId, expiresAt timestamp, HMAC-SHA256 signature
-4. Stream URL created: `/stream/{tunerId}/{channelId}?token={base64url_token}`
+4. Stream URL created: `/tuners/{tunerId}/channel/{channelId}/stream?token={base64url_token}`
 5. URL passed to ChannelStream component for display
 
 **Token Validation**:
-1. VLC/browser requests stream URL with token parameter
+1. VLC/browser requests `/tuners/{tunerId}/channel/{channelId}/stream?token={token}`
 2. Route extracts and decodes token
 3. Verifies HMAC signature using secret key
 4. Checks expiration timestamp

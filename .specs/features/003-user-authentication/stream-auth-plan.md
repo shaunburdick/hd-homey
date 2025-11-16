@@ -38,7 +38,7 @@ Server fetches stream secret from database settings
 Server generates signed stream URL
     Token = base64(tunerId:channelId:expiresAt:hmac)
     HMAC signed with app-wide stream secret
-    URL = /stream/[tunerId]/[channelId]?token=...
+    URL = /tuners/[tunerId]/channel/[channelId]/stream?token=...
     ↓
 User copies URL to VLC
     ↓
@@ -293,9 +293,9 @@ class ConfigClass {
 
 ### 6. New Stream Route Handler
 
-**Move endpoint**: `/tuners/[id]/channel/[channel_id]/stream` → `/stream/[id]/[channel_id]`
+**Keep existing endpoint**: `/tuners/[id]/channel/[channel_id]/stream` (add token validation)
 
-**File**: `src/app/stream/[id]/[channel_id]/route.ts` (outside protected routes)
+**File**: `src/app/(protected)/tuners/[id]/channel/[channel_id]/stream/route.tsx` (update existing route)
 
 ```typescript
 import { NextRequest } from 'next/server';
@@ -386,7 +386,7 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
   
   // Generate signed stream URL (fetches secret from settings internally)
   const token = await generateStreamToken(parseInt(id, 10), parseInt(channel_id, 10));
-  const streamUrl = `/stream/${id}/${channel_id}?token=${token}`;
+  const streamUrl = `/tuners/${id}/channel/${channel_id}/stream?token=${token}`;
   
   return (
     <main>
@@ -673,13 +673,13 @@ describe('Stream Token', () => {
 
 ### Phase 1: Add New Endpoint (Non-Breaking)
 1. Add token utilities (`stream-token.ts`)
-2. Create new `/stream/[id]/[channel_id]` route with token auth
+2. Update existing `/tuners/[id]/channel/[channel_id]/stream` route with token auth
 3. Update channel page to generate tokens
 4. Update ChannelStream component to use new URL
 5. Test with VLC and browsers
 
 ### Phase 2: Remove Old Endpoint (Breaking)
-1. Delete old route: `src/app/(protected)/tuners/[id]/channel/[channel_id]/stream/route.tsx`
+1. Keep existing route: `src/app/(protected)/tuners/[id]/channel/[channel_id]/stream/route.tsx`
 2. Update any API routes that reference old path
 
 ### Phase 3: Documentation
@@ -772,7 +772,7 @@ services:
 - [ ] Implement `src/lib/settings.ts` module (get/set/regenerate secret)
 - [ ] Implement `src/lib/stream-token.ts` utility
 - [ ] Update `Config` class with token expiry
-- [ ] Create new `/stream/[id]/[channel_id]` route (outside protected)
+- [x] Update existing `/tuners/[id]/channel/[channel_id]/stream` route with token validation
 - [ ] Update channel page to generate tokens
 - [ ] Create `src/lib/actions/settings.ts` server actions
 - [ ] Create `src/app/(protected)/settings/page.tsx` settings page
