@@ -1,57 +1,132 @@
-name: Tests
+name: CI
+
 on:
     push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
     workflow_dispatch:
+
+# Cancel in-progress runs for the same workflow and ref
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
 permissions:
     contents: read
-    pages: write
-    id-token: write
-concurrency:
-    group: "test"
-    cancel-in-progress: false
+
+env:
+    NODE_VERSION: "20"
+    SKIP_INSTRUMENTATION: true
+
 jobs:
-    build:
+    # Lint job runs independently for fast feedback
+    lint:
+        name: Lint
         runs-on: ubuntu-latest
+        timeout-minutes: 5
         steps:
-            - name: Checkout Repository
+            - name: Checkout
               uses: actions/checkout@v4
-            - name: Detect package manager
-              id: detect-package-manager
-              run: |
-                  if [ -f "${{ github.workspace }}/yarn.lock" ]; then
-                    echo "manager=yarn" >> $GITHUB_OUTPUT
-                    echo "command=install" >> $GITHUB_OUTPUT
-                    echo "runner=yarn" >> $GITHUB_OUTPUT
-                    exit 0
-                  elif [ -f "${{ github.workspace }}/package.json" ]; then
-                    echo "manager=npm" >> $GITHUB_OUTPUT
-                    echo "command=ci" >> $GITHUB_OUTPUT
-                    echo "runner=npx --no-install" >> $GITHUB_OUTPUT
-                    exit 0
-                  else
-                    echo "Unable to determine package manager"
-                    exit 1
-                  fi
-            - name: Build Cache
-              uses: actions/cache@v4
-              with:
-                # See here for caching with `yarn` https://github.com/actions/cache/blob/main/examples.md#node---yarn or you can leverage caching with actions/setup-node https://github.com/actions/setup-node
-                path: |
-                  ~/.npm
-                  ${{ github.workspace }}/.next/cache
-                # Generate a new cache whenever packages or source files change.
-                key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
-                # If source files changed but packages didn't, rebuild from a prior cache.
-                restore-keys: |
-                  ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
-            - name: Setup Node
+
+            - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: "20"
-                  cache: ${{ steps.detect-package-manager.outputs.manager }}
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
             - name: Install dependencies
-              run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
-            - name: Run tests
-              run: ${{ steps.detect-package-manager.outputs.manager }} run test:ci
-            - name: Build project
-              run: ${{ steps.detect-package-manager.outputs.manager }} run build
+              run: npm ci --prefer-offline
+
+            - name: Run ESLint
+              run: npm run lint
+
+    # Type checking job runs in parallel with tests
+    typecheck:
+        name: Type Check
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci --prefer-offline
+
+            - name: Run TypeScript compiler
+              run: npx tsc --noEmit
+
+    # Test job with coverage
+    test:
+        name: Test
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci --prefer-offline
+
+            - name: Run tests with coverage
+              run: npm run test:coverage
+
+            - name: Upload coverage reports
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-report
+                  path: coverage/
+                  retention-days: 7
+
+    # Build job - only runs after lint, typecheck, and test pass
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        needs: [lint, typecheck, test]
+        timeout-minutes: 15
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci --prefer-offline
+
+            - name: Restore Next.js cache
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      .next/cache
+                  key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-
+
+            - name: Build Next.js application
+              run: npm run build
+
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: nextjs-build
+                  path: |
+                      .next/
+                      !.next/cache
+                  retention-days: 7

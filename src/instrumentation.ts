@@ -1,10 +1,20 @@
-import Config from '@/lib/config';
-import Logger from '@/lib/logger';
-
 export async function register() {
-    Logger.info('Starting App with the following config: %o', Config);
+    // Skip instrumentation during build or if database doesn't exist
+    // This prevents build failures in CI/CD environments
+    if (process.env.SKIP_INSTRUMENTATION === 'true') {
+        return;
+    }
 
-    if (!URL.canParse(Config.TUNER_PATH)) {
-        throw new Error('Unable to parse tuner path, be sure to set HD_HOMEY_TUNER_PATH');
+    if (process.env.NEXT_RUNTIME === 'nodejs') {
+        try {
+            await (await import('./instrumentation-node')).run();
+        } catch (error) {
+            // Silently fail during build if database doesn't exist
+            if (error instanceof Error && error.message.includes('directory does not exist')) {
+                // Database doesn't exist - skip instrumentation (build time)
+                return;
+            }
+            throw error;
+        }
     }
 }

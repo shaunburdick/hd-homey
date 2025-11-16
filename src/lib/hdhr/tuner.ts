@@ -1,6 +1,9 @@
 import type { IncomingMessage } from 'http';
 import http from 'http';
+import { and, eq, inArray, not, sql } from 'drizzle-orm';
 import type { ChannelInfo } from './types';
+import type { DB } from '@/lib/database/db';
+import { channels, tuners, type Channel } from '@/lib/database/schema';
 
 /**
  * Represents a HD Homerun Tuner
@@ -24,6 +27,60 @@ export class HDTuner {
     }
 
     /**
+     * Update the stored lineup for the tuner
+     *
+     * @param db A database connection
+     * @return A list of current channels for the tuner
+     */
+    public async updateLineup(db: DB, id: number): Promise<Channel[]> {
+        const lineup = await this.lineup();
+
+        const newChannels = await db.transaction((tx) => {
+            const modifiedDate = new Date();
+            // delete any channels no longer in the list
+            tx.update(channels).set({
+                is_active: false,
+                modified_at: modifiedDate,
+                deleted_at: modifiedDate
+            }).where(and(
+                eq(channels.fk_tuner, id),
+                not(inArray(channels.guideNumber, lineup.map(c => c.GuideNumber))),
+                eq(channels.is_active, true)
+            )).run();
+
+            // set last scan timestamp
+            tx.update(tuners).set({
+                last_scanned: modifiedDate,
+                modified_at: modifiedDate
+            }).where(eq(tuners.id, id)).run();
+
+            // insert any new channels and update any existing
+            const result = tx.insert(channels).values(lineup.map(c => ({
+                fk_tuner: id,
+                guideNumber: c.GuideNumber,
+                guideName: c.GuideName,
+                audioCodec: c.AudioCodec,
+                videoCodec: c.VideoCodec,
+                hd: c.HD || 0,
+                url: c.URL
+            }))).onConflictDoUpdate({
+                target: [channels.fk_tuner, channels.guideNumber],
+                set: {
+                    guideName: sql`excluded.GuideName`,
+                    audioCodec: sql`excluded.AudioCodec`,
+                    videoCodec: sql`excluded.VideoCodec`,
+                    hd: sql`excluded.HD || 0`,
+                    url: sql`excluded.URL`
+                }
+            }).returning().all();
+
+            return result;
+        });
+
+        return newChannels;
+    }
+
+    /**
      * Get the channel stream from the tuner.
      *
      * @param channel The GuideNumber of the channel
@@ -43,7 +100,7 @@ export class HDTuner {
                 }
 
                 reject(new Error(`Attempting to get: ${url}. Request failed with status code: ${res.statusCode}`));
-            }).on('error', reject);
+            });
         });
     }
 }

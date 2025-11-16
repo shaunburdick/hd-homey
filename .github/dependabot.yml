@@ -1,0 +1,73 @@
+version: 2
+updates:
+    # Enable version updates for npm
+    - package-ecosystem: npm
+      directory: /
+      schedule:
+          interval: weekly
+          day: monday
+          time: "06:00"
+      open-pull-requests-limit: 10
+      reviewers:
+          - shaunburdick
+      assignees:
+          - shaunburdick
+      commit-message:
+          prefix: "chore(deps)"
+          prefix-development: "chore(deps-dev)"
+          include: scope
+      labels:
+          - dependencies
+          - automated
+      # Group minor and patch updates
+      groups:
+          production-dependencies:
+              dependency-type: production
+              update-types:
+                  - minor
+                  - patch
+          development-dependencies:
+              dependency-type: development
+              update-types:
+                  - minor
+                  - patch
+
+    # Enable version updates for GitHub Actions
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: weekly
+          day: monday
+          time: "06:00"
+      open-pull-requests-limit: 5
+      reviewers:
+          - shaunburdick
+      assignees:
+          - shaunburdick
+      commit-message:
+          prefix: "chore(ci)"
+          include: scope
+      labels:
+          - dependencies
+          - github-actions
+          - automated
+
+    # Enable version updates for Docker
+    - package-ecosystem: docker
+      directory: /
+      schedule:
+          interval: weekly
+          day: monday
+          time: "06:00"
+      open-pull-requests-limit: 5
+      reviewers:
+          - shaunburdick
+      assignees:
+          - shaunburdick
+      commit-message:
+          prefix: "chore(docker)"
+          include: scope
+      labels:
+          - dependencies
+          - docker
+          - automated

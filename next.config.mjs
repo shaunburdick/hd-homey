@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     output: 'standalone',
-    experimental: {
-        instrumentationHook: true,
-    },
+    serverExternalPackages: ['pino', 'bcrypt', 'better-sqlite3'],
 };
 
 export default nextConfig;

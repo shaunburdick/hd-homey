@@ -4,89 +4,330 @@
 
 ![Docker](https://github.com/shaunburdick/hd-homey/actions/workflows/docker.yml/badge.svg)
 ![Tests](https://github.com/shaunburdick/hd-homey/actions/workflows/test.yml/badge.svg)
+![Version](https://img.shields.io/badge/version-1.0.0--alpha.1-orange)
 
-A Proxy App for [HD Homerun](https://www.silicondust.com/hdhomerun/) devices. Making it easier to connect and share live tv over the internet!
+**A secure web proxy for [HDHomeRun](https://www.silicondust.com/hdhomerun/) devices that enables remote access to your live TV streams over the internet.**
 
-- [HD Homey](#hd-homey)
-  - [Features](#features)
-  - [Install](#install)
-    - [Docker](#docker)
-    - [Docker Compose](#docker-compose)
-    - [Source](#source)
-  - [Configuration](#configuration)
-  - [Usage](#usage)
-    - [Watch](#watch)
-    - [Lineup](#lineup)
+> ⚠️ **Alpha Release**: This software is functional but under active development. Please report issues on [GitHub](https://github.com/shaunburdick/hd-homey/issues).
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Troubleshooting](#troubleshooting)
+- [Support](#support)
+- [Development](#development)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+
+## Quick Start
+
+Get up and running in minutes with Docker Compose:
+
+```bash
+# Create a compose.yml file
+curl -O https://raw.githubusercontent.com/shaunburdick/hd-homey/main/compose.yml
+
+# Generate a secure authentication secret
+export AUTH_SECRET=$(openssl rand -base64 32)
+
+# Start the application
+docker compose up -d
+
+# View logs
+docker compose logs -f
+```
+
+Access HD Homey at **http://localhost:3000** and create your first admin account.
+
+## Overview
+
+HD Homey acts as a secure proxy between your HDHomeRun devices and remote viewers, providing:
+
+- **Secure Authentication**: Role-based access control keeps your streams private
+- **Remote Access**: Watch your live TV from anywhere with an internet connection
+- **Multi-Device Support**: Manage multiple HDHomeRun tuners from a single interface
+- **User Management**: Control who can access your streams with admin and viewer roles
+
+**Built with**: Next.js 15, TypeScript, SQLite, NextAuth.js v5, and Docker
 
 ## Features
 
--   Serve the lineup.json file, altering it to work over the internet via HD Homey's proxy
--   Show a list of channels with a link to the stream
--   Proxy the video stream from the HD Homey to the user
--   More features (or bugs) when I get to them...
+### Core Functionality
+- **Secure Authentication** - Session-based auth with bcrypt password hashing
+- **User Management** - Create and manage users with admin/viewer role permissions
+- **Tuner Management** - Add and configure multiple HDHomeRun devices
+- **Channel Discovery** - Automatic channel lineup scanning and updates
+- **Stream Proxying** - Transparent video stream relay with URL rewriting
+- **Lineup API** - Modified lineup.json endpoint for remote client compatibility
 
-## Install
+### Security
+- Password-protected access with secure session tokens
+- Admin-only routes for configuration management
+- Middleware-based route protection
+- No sensitive data exposure to client components
 
-HD Homey is deployable via docker or source, with the only need being the URL/IP address of your HDHR box.
+## Installation
 
-### Docker
+### Docker Compose (Recommended)
 
-To install using the latest docker image, replacing `{TUNER_IP}` with the ip address of your tuner:
+**Prerequisites**: Docker and Docker Compose installed
+
+1. **Create a `compose.yml` file**:
+
+```yaml
+services:
+  hd-homey:
+    image: ghcr.io/shaunburdick/hd-homey:latest
+    container_name: hd-homey
+    ports:
+      - "3000:3000"
+    volumes:
+      - hd-homey-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - AUTH_TRUST_HOST=true
+      - AUTH_SECRET=${AUTH_SECRET}  # Generate with: openssl rand -base64 32
+      - HD_HOMEY_PROXY_HOST=${HD_HOMEY_PROXY_HOST:-}  # Optional: https://your-domain.com
+    restart: unless-stopped
+
+volumes:
+  hd-homey-data:
+```
+
+2. **Set required environment variables**:
+
+```bash
+# Required: Generate a secure random secret
+export AUTH_SECRET=$(openssl rand -base64 32)
+
+# Optional: Set your external URL for proper stream proxying
+export HD_HOMEY_PROXY_HOST=https://tuner.example.com
+```
+
+3. **Start the service**:
+
+```bash
+docker compose up -d
+```
+
+4. **Verify it's running**:
+
+```bash
+docker compose logs -f
+# Look for: "✓ Ready in XXms"
+```
+
+### Docker Run
+
+For a simple Docker deployment without compose:
 
 ```bash
 docker run -d \
-    --name=hd_homey \
-    -v ./data/db:/data/db \
-    -p 3000:3000 \
-    -e HD_HOMEY_TUNER_PATH={TUNER_IP} \
-ghcr.io/shaunburdick/hd-homey:latest
+  --name hd-homey \
+  -p 3000:3000 \
+  -v hd-homey-data:/app/data \
+  -e AUTH_SECRET=$(openssl rand -base64 32) \
+  -e HD_HOMEY_PROXY_HOST=https://tuner.example.com \
+  ghcr.io/shaunburdick/hd-homey:latest
 ```
 
-This will store the HD Homey database locally in `./data/db`
+### From Source
 
-See [Configuration](#configuration) for any additional environment variables you would like to set
+**Prerequisites**: Node.js 22+ and npm
 
-### Docker Compose
+1. **Clone the repository**:
+```bash
+git clone https://github.com/shaunburdick/hd-homey.git
+cd hd-homey
+```
 
-To install using docker compose:
+2. **Install dependencies**:
+```bash
+npm ci
+```
 
-1. Copy the contents of [compose.yml](compose.yml) to a compose.yml file in your local path
-2. Update the compose.yml file, adding [Environment variables](#configuration) as needed for configuration
-3. Deploy the application: `docker compose up -d`
+3. **Configure environment**:
+```bash
+cp .env-example .env
+# Edit .env and set AUTH_SECRET
+```
 
-This will store the HD Homey database in a docker volume
+4. **Run the development server**:
+```bash
+npm run dev
+```
 
-### Source
-
-To install using the source:
-
-1. Install [Node v20+](https://nodejs.org/en/download/package-manager)
-2. Download the source code:
-    1. Git: `git clone https://github.com/shaunburdick/hd-homey.git`
-    2. Zip: [Download ZIP](https://github.com/shaunburdick/hd-homey/archive/refs/heads/main.zip)
-3. Install dependencies: `npm ci`
-4. Copy and fill out your environment file: `cp .env-example .env`
-5. Run the dev server: `npm run dev`
+Access the application at http://localhost:3000
 
 ## Configuration
 
-The following values are available for configuration as [environment variables](https://en.wikipedia.org/wiki/Environment_variable):
+Configure HD Homey using environment variables:
 
--   **HD_HOMEY_TUNER_PATH**: The URL path to your turn, example: `http://192.168.1.50`
--   **HD_HOMEY_PROXY_HOST**: The URL to use when rewriting values proxied from your tuner. Example `https://tuner.myawesomesite.com`
-    <br>This can be empty and the app will attempt to infer the URL by inspecting the request,
-    but if you are having trouble (or proxy this app in docker) then you can provide a hint.
--   **HD_HOMEY_DB_PATH**: The path to the local database for configuration values (not used yet), example: `./data/db`
+### Required
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `AUTH_SECRET` | Encryption key for session tokens (32+ chars) | Generate: `openssl rand -base64 32` |
+
+### Optional
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `HD_HOMEY_PROXY_HOST` | External URL for stream proxying | Auto-detected | `https://tuner.example.com` |
+| `HD_HOMEY_DB_PATH` | Database file path | `./data/db/hd_homey.db` | `/data/hd_homey.db` |
+| `NEXTAUTH_URL` | Base URL for auth callbacks | Auto-detected | `https://tuner.example.com` |
+| `NODE_ENV` | Runtime environment | `development` | `production` |
+
+### Notes
+
+- **AUTH_SECRET**: Must be set and kept secret. Never commit to version control.
+- **HD_HOMEY_PROXY_HOST**: Required if running behind a reverse proxy or if auto-detection fails.
+- **Database**: Automatically created on first run via Drizzle migrations.
 
 ## Usage
 
-Then open your favorite browser to http://localhost:3000 (assuming you used to configs above)
+### Initial Setup
 
-### Watch
+1. **Access the application**: Navigate to `http://localhost:3000` (or your configured domain)
 
-Watch provides a list of channels available. Clicking on the channel will give you instructions on how to watch the stream.
+2. **Create admin account**: On first run, you'll be automatically redirected to create the initial administrator account.
 
-### Lineup
+   - Choose a strong username and password
+   - This account will have full administrative privileges
+   - Additional users can be created later
 
-Lineup provides a transformed JSON line. This could be used by other viewing apps like Channels or Jellyfin to generate channels for viewing. (Maybe, I haven't tested this yet)
+3. **Sign in**: Use your credentials to access the dashboard
 
+### Adding HDHomeRun Devices
+
+1. Navigate to **Tuners** from the main menu
+2. Click **Add Tuner**
+3. Enter:
+   - **Name**: A friendly name (e.g., "Living Room Tuner")
+   - **URL**: The base URL of your HDHomeRun device (e.g., `http://192.168.1.100`)
+4. Click **Save**
+5. The system will automatically discover available channels
+
+### Managing Users
+
+**Admin-only feature**
+
+1. Navigate to **Users** from the main menu
+2. Click **Add User** to create a new account
+3. Set permissions:
+   - **Admin**: Full access to configuration and user management
+   - **Viewer**: Can browse and watch channels only
+4. Edit or disable users as needed
+
+### Watching Channels
+
+1. Navigate to the **Home** page or **Channels**
+2. Browse available channels from all configured tuners
+3. Click a channel to view streaming instructions
+4. Use the provided URLs in compatible media players (VLC, Plex, etc.)
+
+### User Roles
+
+| Role | Permissions |
+|------|-------------|
+| **Admin** | Full access: manage tuners, channels, users, and settings |
+| **Viewer** | Read-only: browse and watch channels |
+
+### API Access
+
+HD Homey provides a modified HDHomeRun lineup API for client compatibility:
+
+- **Lineup endpoint**: `http://your-server:3000/lineup.json`
+- **Stream URLs**: Automatically rewritten for remote access
+- Compatible with Plex, Emby, and other DVR software
+
+## Troubleshooting
+
+### Common Issues
+
+**Cannot access from remote network**
+- Ensure `HD_HOMEY_PROXY_HOST` is set to your external URL
+- Configure port forwarding on your router
+- Verify firewall rules allow inbound traffic on port 3000
+
+**Database errors on startup**
+- Check volume permissions: `docker exec hd-homey ls -la /app/data`
+- Ensure sufficient disk space
+- Review logs: `docker compose logs hd-homey`
+
+**Authentication not working**
+- Verify `AUTH_SECRET` is set and persistent
+- Check that cookies are enabled in your browser
+- Try clearing browser cache/cookies
+
+**Streams not playing**
+- Verify HDHomeRun device is accessible from the container
+- Check tuner URLs are correct (including http://)
+- Test direct access to HDHomeRun from host: `curl http://your-tuner-ip/discover.json`
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/shaunburdick/hd-homey/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/shaunburdick/hd-homey/discussions)
+- **Documentation**: See `.specs/` directory for detailed feature specifications
+
+## Development
+
+### Contributing
+
+Contributions are welcome! Please:
+
+1. Review [AGENTS.md](AGENTS.md) for development guidelines
+2. Check [CHANGELOG.md](CHANGELOG.md) for recent changes
+3. Follow the spec-driven development process (see `.specs/`)
+4. Ensure tests pass: `npm test`
+5. Submit pull requests to the `main` branch
+
+### Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript 5
+- **Database**: SQLite + Drizzle ORM
+- **Authentication**: NextAuth.js v5
+- **Testing**: Vitest + React Testing Library
+- **Styling**: new.css
+
+### Local Development
+
+```bash
+# Install dependencies
+npm ci
+
+# Run tests
+npm test
+
+# Run linter
+npm run lint
+
+# Start dev server
+npm run dev
+```
+
+### Release Process
+
+See [Releases section in AGENTS.md](AGENTS.md#releases) for detailed release instructions.
+
+**Current version**: `1.0.0-alpha.1` (Alpha - under active development)
+
+## License
+
+AGPL-3.0-only - See [LICENSE](LICENSE) file for details
+
+## Acknowledgments
+
+- Built for [HDHomeRun](https://www.silicondust.com/hdhomerun/) devices by SiliconDust
+- Powered by [Next.js](https://nextjs.org/) and [NextAuth.js](https://authjs.dev/)
+
+---
+
+**Note**: This project is in alpha. Features and APIs may change. Not recommended for production use without thorough testing.

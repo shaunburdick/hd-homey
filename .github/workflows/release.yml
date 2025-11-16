@@ -1,0 +1,95 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*.*.*"
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version to release (e.g., v1.0.0)"
+                required: true
+                type: string
+
+permissions:
+    contents: write
+    packages: write
+    attestations: write
+    id-token: write
+
+jobs:
+    # First validate the build
+    validate:
+        name: Validate Release
+        uses: ./.github/workflows/test.yml
+
+    # Create GitHub Release
+    create-release:
+        name: Create GitHub Release
+        runs-on: ubuntu-latest
+        needs: validate
+        timeout-minutes: 10
+        outputs:
+            upload_url: ${{ steps.create_release.outputs.upload_url }}
+            version: ${{ steps.version.outputs.version }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Extract version
+              id: version
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    VERSION="${{ github.event.inputs.version }}"
+                  else
+                    VERSION="${GITHUB_REF#refs/tags/}"
+                  fi
+                  echo "version=$VERSION" >> $GITHUB_OUTPUT
+                  echo "Version: $VERSION"
+
+            - name: Generate changelog
+              id: changelog
+              run: |
+                  # Get the previous tag
+                  PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+                  
+                  if [ -z "$PREV_TAG" ]; then
+                    echo "changelog=Initial release" >> $GITHUB_OUTPUT
+                  else
+                    CHANGELOG=$(git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+                    # Escape newlines for GitHub output
+                    CHANGELOG="${CHANGELOG//'%'/'%25'}"
+                    CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+                    CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+                    echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Create Release
+              id: create_release
+              uses: actions/create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ steps.version.outputs.version }}
+                  release_name: Release ${{ steps.version.outputs.version }}
+                  body: |
+                      ## Changes
+                      ${{ steps.changelog.outputs.changelog }}
+                      
+                      ## Docker Images
+                      
+                      Pull the Docker image:
+                      ```bash
+                      docker pull ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
+                      docker pull ghcr.io/${{ github.repository }}:latest
+                      ```
+                      
+                      ## Installation
+                      
+                      See the [README](README.md) for installation instructions.
+                  draft: false
+                  prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+
+    # Build Docker images are handled by docker.yml workflow on tag push

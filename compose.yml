@@ -7,11 +7,12 @@ services:
         ports:
             - "3000:3000"
         volumes:
-            - database:/data/db
+            - data:/app/data
         environment:
-            - HD_HOMEY_TUNER_PATH=
-            - HD_HOMEY_PROXY_HOST=
-            - HD_HOMEY_DB_PATH=/data/db
+            - NODE_ENV=production
+            - AUTH_TRUST_HOST=true
+            - AUTH_SECRET=${AUTH_SECRET:-please-change-this-secret-in-production}
+            - HD_HOMEY_DB_PATH=${HD_HOMEY_DB_PATH:-./data/db/hd_homey.db}
 
 volumes:
-    database:
+    data:

@@ -5,6 +5,14 @@ export default [
     ...shaunburdick.config.ts,
     ...shaunburdick.config.react,
     {
+        settings: {
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,
+                    project: './tsconfig.json',
+                }
+            }
+        },
         rules: {
             '@typescript-eslint/naming-convention': [
                 'error',

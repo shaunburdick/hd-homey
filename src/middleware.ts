@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import Logger from '@/lib/logger';
 
-export function middleware(req: Request) {
-    const response = NextResponse.next();
+// Simple logging middleware - authentication handled by layouts
+export function middleware(req: NextRequest) {
     Logger.info({
         method: req.method,
         url: req.url,
-        status: response.status
+        path: req.nextUrl.pathname
     });
-    return response;
+
+    return NextResponse.next();
 }
 
 export const config = {

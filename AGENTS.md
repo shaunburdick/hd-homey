@@ -1,0 +1,224 @@
+# AI Agent Guide for HD Homey
+
+This document provides AI agents with essential context to quickly understand and work with the HD Homey project.
+
+## Project Overview
+
+**HD Homey** is a Next.js-based proxy application for HDHomeRun devices that enables secure remote access to live TV streams over the internet.
+
+### Tech Stack
+- **Framework**: Next.js 15.1.6 (App Router)
+- **Language**: TypeScript 5
+- **Database**: SQLite via better-sqlite3 + Drizzle ORM
+- **Authentication**: NextAuth.js v5 (beta)
+- **UI**: new.css for styling
+- **Testing**: Vitest + React Testing Library
+- **Deployment**: Docker + Docker Compose
+
+## Architecture
+
+### Directory Structure
+```
+src/
+├── app/               # Next.js App Router pages and API routes
+│   ├── (protected)/  # Auth-protected routes (tuners, channels, users, settings)
+│   ├── api/          # API endpoints
+│   └── users/        # Public auth routes (signin, get-started)
+├── components/       # React components
+├── lib/              # Utilities and core logic
+│   ├── auth.ts       # Auth helpers
+│   ├── database/     # Database schema and operations
+│   └── logger.ts     # Pino logging
+├── middleware.ts     # NextAuth middleware for route protection
+└── auth.ts           # NextAuth configuration
+
+.specs/               # Spec-driven development documentation
+migrations/           # Database migrations
+```
+
+### Key Features (with Specs)
+1. **Tuner Management** (SPEC-001) - Add/edit/manage HDHomeRun devices
+2. **Channel Discovery** (SPEC-002) - Automatic channel lineup scanning and updates
+3. **User Authentication** (SPEC-003) - Role-based access (admin/viewer)
+4. **User Management** (SPEC-004) - CRUD operations for user accounts
+5. **Stream Proxying** - Transparent video stream relay with URL rewriting
+
+## Development Practices
+
+### Spec-Driven Development
+- **All features must have a spec** in `.specs/features/`
+- Use the template in `.specs/templates/feature-spec-template.md`
+- Update spec status as implementation progresses
+- Specs drive implementation, not vice versa
+
+### Code Patterns
+
+#### Server Actions
+- Use React Server Actions with `"use server"`
+- Return `FormState` objects: `{ errors: Record<string, string[]>, success?: boolean }`
+- Redirect using Next.js `redirect()` (throws NEXT_REDIRECT - this is expected)
+- Always validate session/authorization server-side
+
+Example:
+```typescript
+export async function updateUser(id: string, state: FormState, formData: FormData): Promise<FormState> {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
+    return { errors: { auth: ['Unauthorized'] }};
+  }
+  // ... implementation
+  redirect('/users'); // Will throw NEXT_REDIRECT - handle in client
+}
+```
+
+#### Client Components
+- Use `useActionState` (not deprecated `useFormState`)
+- Handle `isRedirectError()` for NEXT_REDIRECT
+- Call `router.refresh()` after successful mutations
+- Use SWR for data fetching where appropriate
+
+Example:
+```typescript
+'use client';
+import { useActionState } from 'react';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
+
+const [state, action, pending] = useActionState(serverAction, initialState);
+
+try {
+  await action(formData);
+} catch (error) {
+  if (isRedirectError(error)) throw error; // Re-throw redirects
+}
+```
+
+#### Authentication
+- Use `auth()` from `@/auth` in Server Components
+- Use `useSession()` from `@/lib/auth` in Client Components
+- Check `session.user.isAdmin` for admin operations
+- Always verify permissions server-side, even if client hides UI
+
+#### Database
+- All DB code is server-side only (Node.js APIs like `fs`)
+- Use Drizzle ORM for queries
+- Database schema in `src/lib/database/schema.ts`
+- Migrations in `migrations/` directory
+- **Important**: Do NOT use transactions for simple operations - they can cause "cannot commit" errors
+
+## Configuration
+
+### Environment Variables
+```bash
+HD_HOMEY_PROXY_HOST=https://tuner.myawesomesite.com  # External URL for stream proxying
+HD_HOMEY_DB_PATH=./data/db                           # Database directory
+AUTH_SECRET=<generate-with-openssl-rand-base64-32>   # NextAuth encryption key
+NEXTAUTH_URL=http://localhost:3000                   # Auth callback URL
+```
+
+### Database
+- SQLite database at `${HD_HOMEY_DB_PATH}/hd_homey.db`
+- Migrations run automatically on startup
+- Tables: `tuners`, `channels`, `users`
+
+## Common Tasks
+
+### Running Locally
+```bash
+npm ci                    # Install dependencies
+cp .env-example .env     # Configure environment
+npm run dev              # Start dev server on 0.0.0.0:3000
+```
+
+### Running Tests
+```bash
+npm test                 # Lint + unit tests
+npm run test:coverage    # With coverage report
+```
+
+### Database Operations
+```bash
+npm run db:studio        # Open Drizzle Studio
+npm run db:migrate       # Run migrations
+npm run db:generate      # Generate migration from schema changes
+```
+
+### Docker
+```bash
+docker compose up -d     # Start with Docker Compose
+```
+
+## Known Issues & Quirks
+
+1. **WSL2**: Dev server binds to `0.0.0.0` for WSL2 compatibility
+2. **NEXT_REDIRECT**: Server actions that redirect throw `NEXT_REDIRECT` - this is normal, handle with `isRedirectError()`
+3. **0.0.0.0 redirects**: Always use relative paths or check `NEXTAUTH_URL` for absolute URLs
+4. **Session updates**: Call `router.refresh()` after login/logout to update UI
+5. **Build-time DB**: Dynamic routes export `dynamic = 'force-dynamic'` to avoid DB access during build
+6. **Transactions**: Avoid using db transactions for simple operations - they can fail with "cannot commit"
+
+## Testing
+
+- Unit tests use Vitest + React Testing Library
+- Test files: `*.test.ts` or `*.test.tsx`
+- Mock Next.js modules when needed
+- Focus on business logic, not implementation details
+
+## Contributing
+
+1. Create/update spec in `.specs/features/` FIRST
+2. Implement feature following spec
+3. Update spec status as you progress
+4. Add/update tests
+5. Ensure linting passes: `npm run lint`
+6. Update CHANGELOG.md
+7. Commit with descriptive messages
+
+## Releases
+
+### Current Version
+**1.0.0-alpha.1** - Alpha release. Functional but needs more testing and UX improvements.
+
+### Release Process
+
+1. **Update version**: Use `npm version <version> --no-git-tag-version` to update package.json
+2. **Update CHANGELOG.md**: Document changes under appropriate section (Added/Changed/Fixed/Removed)
+3. **Commit and tag**:
+   ```bash
+   git commit -m "chore: release v<version>"
+   git tag -a v<version> -m "Release v<version>"
+   git push origin main --tags
+   ```
+4. **GitHub Actions**: The `release.yml` workflow automatically:
+   - Builds Docker image
+   - Publishes to ghcr.io/shaunburdick/hd-homey
+   - Creates GitHub Release
+
+### Manual Trigger
+```bash
+gh workflow run release.yml -f version=v1.0.0-alpha.2
+```
+
+### Version Strategy
+- **Alpha**: Early testing, incomplete features
+- **Beta**: Feature complete, needs testing
+- **RC**: Release candidate, final testing
+- **Stable**: Production ready
+
+## Security Considerations
+
+- All passwords hashed with BCrypt (10 rounds)
+- NextAuth handles session tokens
+- Middleware protects routes in `/(protected)/`
+- Always verify admin status server-side
+- No sensitive data in client components
+
+## Resources
+
+- [Next.js 15 Docs](https://nextjs.org/docs)
+- [NextAuth.js v5 Docs](https://authjs.dev/)
+- [Drizzle ORM Docs](https://orm.drizzle.team/)
+- [HDHomeRun API](https://www.silicondust.com/hdhomerun/developers/)
+
+---
+
+**Quick Start for Agents**: Review `.specs/constitution.md` and relevant feature specs in `.specs/features/` before making changes. Always update specs to match implementation.

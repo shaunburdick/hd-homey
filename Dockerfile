@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM node:22-alpine AS base
 
 # 1. Install dependencies only when needed
 FROM base AS deps
@@ -21,6 +21,9 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Create data directory structure and initialize database for build-time prerendering
+RUN mkdir -p ./data/db
+RUN npm run db:migrate
 RUN npm run build
 
 # 3. Production image, copy all the files and run next
@@ -32,12 +35,25 @@ ENV NODE_ENV=production
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
+COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/public ./public
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy migration script and dependencies
+COPY --from=builder --chown=nextjs:nodejs /app/src/scripts/migrate.mjs ./src/scripts/migrate.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+
+# Copy entrypoint script
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
+# Create data directory with correct ownership
+RUN mkdir -p ./data && chown -R nextjs:nodejs ./data
 
 USER nextjs
 
@@ -46,4 +62,4 @@ EXPOSE 3000
 ENV PORT=3000 \
     HOSTNAME=0.0.0.0
 
-CMD node server.js
+CMD ["./docker-entrypoint.sh"]

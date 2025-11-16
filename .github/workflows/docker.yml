@@ -1,73 +1,115 @@
-name: Docker Image
+name: Docker
 
-# Configures this workflow to run every time a change is pushed to the branch called `release`.
 on:
     push:
-        branches: ["main"]
+        branches: [main]
+        tags:
+            - "v*.*.*"
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
 
-# Defines two custom environment variables for the workflow.
-# These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
 env:
     REGISTRY: ghcr.io
     IMAGE_NAME: ${{ github.repository }}
 
-# There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
-    build-and-push-image:
+    build-and-push:
+        name: Build and Push Docker Image
         runs-on: ubuntu-latest
-        # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
         permissions:
             contents: read
             packages: write
             attestations: write
             id-token: write
-            #
+        timeout-minutes: 30
         steps:
-            - name: Checkout repository
+            - name: Checkout
               uses: actions/checkout@v4
-            # Add support for more platforms with QEMU (optional)
-            # https://github.com/docker/setup-qemu-action
+
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v3
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
-            # Uses the `docker/login-action` action to log in to the Container registry registry using
-            # the account and password that will publish the packages. Once published,
-            # the packages are scoped to the account defined here.
-            - name: Log in to the Container registry
+              with:
+                  # Use BuildKit cache for faster builds
+                  buildkitd-flags: --debug
+
+            - name: Log in to GitHub Container Registry
+              if: github.event_name != 'pull_request'
               uses: docker/login-action@v3
               with:
                   registry: ${{ env.REGISTRY }}
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
-            # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about) to extract
-            # tags and labels that will be applied to the specified image. The `id` "meta" allows the output of
-            # this step to be referenced in a subsequent step. The `images` value provides the base name for the tags and labels.
-            - name: Extract metadata (tags, labels) for Docker
+
+            - name: Extract Docker metadata
               id: meta
               uses: docker/metadata-action@v5
               with:
                   images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
                   tags: |
-                      # set latest tag for default branch
+                      # Tag with branch name
+                      type=ref,event=branch
+                      # Tag with PR number
+                      type=ref,event=pr
+                      # Tag with semver from git tags
+                      type=semver,pattern={{version}}
+                      type=semver,pattern={{major}}.{{minor}}
+                      type=semver,pattern={{major}}
+                      # Tag with sha for traceability
+                      type=sha,prefix={{branch}}-
+                      # Latest tag for default branch
                       type=raw,value=latest,enable={{is_default_branch}}
-            # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
-            # It uses the `context` parameter to define the build's context as the set of files located in the specified path. For more information, see "[Usage](https://github.com/docker/build-push-action#usage)" in the README of the `docker/build-push-action` repository.
-            # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
+                  labels: |
+                      org.opencontainers.image.title=HD Homey
+                      org.opencontainers.image.description=HDHomeRun tuner management and streaming
+                      org.opencontainers.image.vendor=Shaun Burdick
+
             - name: Build and push Docker image
               id: push
               uses: docker/build-push-action@v6
               with:
-                  platforms: linux/amd64,linux/arm64
                   context: .
-                  push: true
+                  platforms: linux/amd64,linux/arm64
+                  # Only push on main branch and tags, not PRs
+                  push: ${{ github.event_name != 'pull_request' }}
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
+                  # Enable layer caching for faster builds
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+                  # Build arguments
+                  build-args: |
+                      BUILDTIME=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+                      VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+                      REVISION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
 
-            # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built. It increases supply chain security for people who consume the image. For more information, see "[AUTOTITLE](/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds)."
             - name: Generate artifact attestation
+              if: github.event_name != 'pull_request'
               uses: actions/attest-build-provenance@v1
               with:
                   subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
                   subject-digest: ${{ steps.push.outputs.digest }}
                   push-to-registry: true
+
+            - name: Generate SBOM
+              if: github.event_name != 'pull_request'
+              uses: anchore/sbom-action@v0
+              with:
+                  image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+                  format: spdx-json
+                  output-file: sbom.spdx.json
+
+            - name: Upload SBOM
+              if: github.event_name != 'pull_request'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: sbom
+                  path: sbom.spdx.json
+                  retention-days: 90
