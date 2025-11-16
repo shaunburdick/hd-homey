@@ -47,7 +47,7 @@
     "drizzle-kit": "^0.31.7",
     "eslint": "^9.19.0",
     "eslint-config-shaunburdick": "^3.0.0",
-    "eslint-import-resolver-typescript": "^3.7.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
     "jsdom": "^26.0.0",
     "sharp": "^0.33.5",
     "tsx": "^4.19.2",
