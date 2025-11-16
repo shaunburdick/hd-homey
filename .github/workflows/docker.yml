@@ -33,7 +33,13 @@ jobs:
                     - platform: linux/amd64
                       runner: ubuntu-24.04
                     - platform: linux/arm64
-                      runner: ubuntu-24.04-arm64
+                      runner: ubuntu-24.04  # Use emulation on free runners
+                      # Only build ARM64 on release tags
+                      build: ${{ startsWith(github.ref, 'refs/tags/v') }}
+                exclude:
+                    # Skip ARM64 builds for non-release pushes
+                    - platform: linux/arm64
+                      build: false
         steps:
             - name: Checkout
               uses: actions/checkout@v4
