@@ -63,6 +63,8 @@ export function createMockSession(overrides: Partial<Session['user']> = {}): Ses
  * Mock auth() function for server components
  * Note: Import vi from vitest in your test file before using this
  */
-export function mockAuth(vi: typeof import('vitest').vi, session: Session | null = null) {
+import type { vi as Vi } from 'vitest';
+
+export function mockAuth(vi: typeof Vi, session: Session | null = null) {
     return vi.fn(() => Promise.resolve(session));
 }

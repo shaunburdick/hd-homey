@@ -70,6 +70,8 @@ export function createMockStream(statusCode = 200) {
     };
 }
 
+import type { expect as Expect } from 'vitest';
+
 /**
  * Assert that an error was thrown
  * Note: Import expect from vitest in your test file before using this
@@ -77,7 +79,7 @@ export function createMockStream(statusCode = 200) {
 export async function expectToThrow(
     fn: () => Promise<unknown>,
     errorMessage?: string,
-    expectFn?: typeof import('vitest').expect
+    expectFn?: typeof Expect
 ) {
     try {
         await fn();
