@@ -208,16 +208,22 @@ npm run test:coverage # Generate coverage report
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Week 1) ✅ COMPLETE
+### Phase 1: Foundation ✅ COMPLETE (2025-01-16)
 - [x] Set up test utilities (mock DB, auth, HDHR)
-- [x] Install additional testing packages
-- [x] Create first HDTuner unit test suite
-- [x] Document testing patterns in AGENTS.md
+- [x] Install additional testing packages (@testing-library/user-event, msw)
+- [x] Create first HDTuner unit test suite (20 tests, 100% passing)
+- [x] Implement type-safe mocking without type assertions
+- [x] Document testing patterns
 
-### Phase 2: Unit Tests (Week 2)
-- [ ] Complete HDTuner class tests
-- [ ] Server action tests
-- [ ] Database schema tests
+**Deliverables:**
+- Test utilities in `src/test-utils/` with proper TypeScript typing
+- HDTuner test suite covering lineup(), updateLineup(), stream()
+- Bug discovered: updateLineup() crashes on empty lineups
+
+### Phase 2: Unit Tests (In Progress)
+- [x] Complete HDTuner class tests (done in Phase 1)
+- [ ] Server action tests (user management, tuner actions)
+- [ ] Database schema validation tests
 
 ### Phase 3: API Tests (Week 3)
 - [ ] Authentication/authorization test suite
