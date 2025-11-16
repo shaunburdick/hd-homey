@@ -15,4 +15,11 @@ export default {
      * The secret key to encrypt auth tokens with
      */
     AUTH_SECRET: process.env.AUTH_SECRET || '',
+
+    /**
+     * Stream token expiration in seconds (default: 12 hours)
+     */
+    get streamTokenExpiry(): number {
+        return parseInt(process.env.HD_HOMEY_STREAM_TOKEN_EXPIRY || '43200', 10);
+    }
 };
