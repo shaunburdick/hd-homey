@@ -49,7 +49,8 @@ describe('GET /api/tuners/[id]', () => {
     });
 
     it('should return tuner by ID', async () => {
-        const request = new Request('http://localhost:3000/api/tuners/1');
+        const { NextRequest } = await import('next/server');
+        const request = new NextRequest('http://localhost:3000/api/tuners/1');
         const context = { params: Promise.resolve({ id: tunerId.toString() }) };
 
         const response = await GET(request, context);
@@ -61,7 +62,8 @@ describe('GET /api/tuners/[id]', () => {
     });
 
     it('should return 404 for non-existent tuner', async () => {
-        const request = new Request('http://localhost:3000/api/tuners/99999');
+        const { NextRequest } = await import('next/server');
+        const request = new NextRequest('http://localhost:3000/api/tuners/99999');
         const context = { params: Promise.resolve({ id: '99999' }) };
 
         await expect(GET(request, context)).rejects.toThrow('NEXT_NOT_FOUND');
@@ -70,6 +72,7 @@ describe('GET /api/tuners/[id]', () => {
     it('should return 404 for deleted tuner', async () => {
         const { tuners } = await import('@/lib/database/schema');
         const { eq } = await import('drizzle-orm');
+        const { NextRequest } = await import('next/server');
 
         // Soft delete the tuner
         testDb.update(tuners)
@@ -77,14 +80,15 @@ describe('GET /api/tuners/[id]', () => {
             .where(eq(tuners.id, tunerId))
             .run();
 
-        const request = new Request(`http://localhost:3000/api/tuners/${tunerId}`);
+        const request = new NextRequest(`http://localhost:3000/api/tuners/${tunerId}`);
         const context = { params: Promise.resolve({ id: tunerId.toString() }) };
 
         await expect(GET(request, context)).rejects.toThrow('NEXT_NOT_FOUND');
     });
 
     it('should return tuner with all fields', async () => {
-        const request = new Request(`http://localhost:3000/api/tuners/${tunerId}`);
+        const { NextRequest } = await import('next/server');
+        const request = new NextRequest(`http://localhost:3000/api/tuners/${tunerId}`);
         const context = { params: Promise.resolve({ id: tunerId.toString() }) };
 
         const response = await GET(request, context);

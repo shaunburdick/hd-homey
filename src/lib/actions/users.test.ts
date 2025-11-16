@@ -171,7 +171,9 @@ describe('User Actions', () => {
             // Get existing user ID
             const { users } = await import('@/lib/database/schema');
             const existingUser = testDb.select().from(users).limit(1).get();
-            expect(existingUser).toBeDefined();
+            if (!existingUser) {
+                throw new Error('Test setup failed: no user found');
+            }
 
             const formData = new FormData();
             formData.append('id', existingUser.id.toString());
@@ -245,7 +247,10 @@ describe('User Actions', () => {
 
             const { users } = await import('@/lib/database/schema');
             const existingUser = testDb.select().from(users).limit(1).get();
-            const originalPasswordHash = existingUser?.passHash;
+            if (!existingUser) {
+                throw new Error('Test setup failed: no user found');
+            }
+            const originalPasswordHash = existingUser.passHash;
 
             // Update without password
             const formData1 = new FormData();
@@ -296,6 +301,9 @@ describe('User Actions', () => {
             const { users } = await import('@/lib/database/schema');
             const { eq } = await import('drizzle-orm');
             const existingUser = testDb.select().from(users).limit(1).get();
+            if (!existingUser) {
+                throw new Error('Test setup failed: no user found');
+            }
 
             // Deactivate user
             const formData = new FormData();
