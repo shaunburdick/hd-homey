@@ -262,24 +262,25 @@ docker run --rm hd-homey:transcode ffmpeg -codecs | grep h264
 **Test Command**: `npm test src/lib/transcoding/ffmpeg.test.ts`
 **Commit**: cf86060
 
-### Phase 3: Session Manager (Est: 4-5 hours)
+### Phase 3: Session Manager (Est: 4-5 hours) ✅ COMPLETE
 
-- [ ] Create `src/lib/transcoding/session-manager.ts`
+- [x] Create `src/lib/transcoding/session-manager.ts`
   - Implement `TranscodingSessionManager` class as singleton
   - Add session registry with Map
   - Implement `getOrCreateSession()` with locking
   - Implement viewer counting (increment/decrement)
   - Add cleanup timer for inactive sessions (30s threshold)
-- [ ] Create `src/lib/transcoding/transcode.ts`
+- [x] Create `src/lib/transcoding/transcode.ts`
   - Implement `startTranscode()` with ffmpeg spawn
   - Build command based on settings
   - Handle process stdout/stderr logging
   - Implement `stopTranscode()` gracefully (SIGTERM → SIGKILL)
   - Add `waitForPlaylist()` with timeout
-- [ ] Write comprehensive unit tests with mocked child_process
-- [ ] Add process cleanup on app shutdown
+- [x] Write comprehensive unit tests with mocked child_process
+- [x] Add process cleanup on app shutdown
 
 **Test Command**: `npm test src/lib/transcoding/session-manager.test.ts`
+**Commit**: ab02b89
 
 ### Phase 4: HLS File Serving (Est: 3-4 hours)
 
