@@ -13,7 +13,7 @@
       "idx": 1,
       "version": "6",
       "when": 1763336753000,
-      "tag": "0002_add_settings_table",
+      "tag": "0001_add_settings_table",
       "breakpoints": true
     }
   ]
