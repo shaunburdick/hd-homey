@@ -30,6 +30,13 @@ export default async function SettingsPage() {
             <hr />
 
             <h2>Video Transcoding</h2>
+
+            <h3>Active Sessions</h3>
+            <TranscodingStatus />
+
+            <hr />
+
+            <h3>Transcoding Configuration</h3>
             <TranscodingSettings
                 initialSettings={transcodingSettings}
                 ffmpegInfo={ffmpegInfo}
