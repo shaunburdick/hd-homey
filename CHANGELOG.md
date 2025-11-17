@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.2] - 2025-11-17
+
+**Note**: This is an **alpha release** with comprehensive test coverage. The application is functional but requires more comprehensive testing and UX improvements.
+
+### Added
+
+- **Comprehensive Test Suite**: Full unit and integration test coverage (82 tests, 100% passing)
+  - HDTuner unit tests for HDHomeRun device integration
+  - User action tests for authentication and authorization
+  - Database schema validation tests
+  - API endpoint tests (GET and POST routes)
+  - Authorization and security tests
+  - Test utilities and helpers for maintainability
+  - Vitest + React Testing Library integration
+  - Type-safe mocking without type assertions
+  
+- **Testing Documentation**: Complete testing guide and plan
+  - Testing summary document with patterns and best practices
+  - Testing plan with phase breakdown and completion status
+  - Test maintenance guidelines
+
+### Changed
+
+- **Docker Build Process**: Enhanced multi-platform support and caching
+  - Streamlined build jobs for amd64 and arm64
+  - Improved layer caching strategy
+  - ARM64 build using emulation
+  - Limited Docker builds to release tags
+  - GitHub Actions cache optimization
+  
+- **CI/CD Improvements**: 
+  - Separate test, build, and Docker workflows
+  - Added workflow_call trigger for reusability
+  - Fixed badge links in README
+  - Disabled Dependabot in favor of manual updates
+
+### Fixed
+
+- **Dependency Review**: Removed conflicting allow-licenses configuration
+- **TypeScript Errors**: Resolved all TypeScript compilation errors in test files
+- **Linting**: Fixed ESLint errors in test files (non-null assertions, curly braces, unused variables)
+- **Docker Registry Cache**: Fixed 403 errors for PRs by removing registry cache from workflow
+- **Test Validation**: Updated validation tests to use truly invalid data
+
 ## [1.0.0-alpha.1] - 2025-11-16
 
 **Note**: This is an **alpha release**. The application is functional but requires more comprehensive testing, UX improvements, and may contain bugs.

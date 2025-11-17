@@ -176,7 +176,7 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-alpha.1** - Alpha release. Functional but needs more testing and UX improvements.
+**1.0.0-alpha.2** - Alpha release with comprehensive test suite. Functional but needs more testing and UX improvements.
 
 ### Release Process
 
