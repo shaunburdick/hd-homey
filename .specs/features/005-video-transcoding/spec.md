@@ -2,7 +2,7 @@
 
 **Feature ID**: `005-video-transcoding`
 **Created**: 2025-11-16
-**Status**: In Progress (Phase 6/10 Complete - MVP functional, needs settings UI)
+**Status**: Ready for Testing (Phase 8/10 Complete - Feature complete, needs testing & docs)
 **Owner**: HD Homey Core Team
 
 ## Overview
