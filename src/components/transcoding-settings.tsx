@@ -37,8 +37,9 @@ export default function TranscodingSettings({
             setSettings({ ...settings, preset });
         } else {
             setShowCustom(false);
-            const newSettings = applyPreset(settings, preset);
-            setSettings(newSettings);
+            void applyPreset(settings, preset).then((newSettings) => {
+                setSettings(newSettings);
+            });
         }
     };
 
