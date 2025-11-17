@@ -67,7 +67,7 @@ class TranscodingSessionManager {
 
         // Create new session
         const transcodeDir = process.env.HD_HOMEY_TRANSCODE_DIR
-            || join(process.env.HD_HOMEY_DB_PATH || './data', 'transcoding');
+            || join('./data', 'transcoding');
         const outputDir = join(transcodeDir, sessionId.replace(':', '-'));
         const playlistPath = join(outputDir, 'playlist.m3u8');
 

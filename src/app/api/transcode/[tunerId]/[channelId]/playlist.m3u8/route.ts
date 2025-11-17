@@ -69,7 +69,8 @@ export async function GET(
 
         // Get or create transcoding session
         const manager = getSessionManager();
-        const sourceUrl = `http://${channel.tuners.path}:5004/auto/v${channel.guideNumber}`;
+        // tuners.path already includes http:// protocol
+        const sourceUrl = `${channel.tuners.path}:5004/auto/v${channel.guideNumber}`;
 
         const session = await manager.getOrCreateSession(
             tokenData.tunerId,

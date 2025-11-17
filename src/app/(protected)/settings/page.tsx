@@ -1,4 +1,3 @@
-import { cpus } from 'os';
 import Link from 'next/link';
 import RoleGuard from '@/components/RoleGuard';
 import { AuthRoles } from '@/lib/auth-roles';
@@ -9,12 +8,17 @@ import TranscodingStatus from '@/components/transcoding-status';
 import { getTranscodingSettings } from '@/lib/settings';
 import { detectFFmpeg } from '@/lib/transcoding/ffmpeg';
 
+async function getRecommendedMaxSessions(): Promise<number> {
+    const { cpus } = await import('os');
+    const cpuCount = cpus().length;
+    return Math.min(cpuCount + 1, 10);
+}
+
 export default async function SettingsPage() {
     const secretInfo = await getStreamSecretInfo();
     const transcodingSettings = await getTranscodingSettings();
     const ffmpegInfo = await detectFFmpeg();
-    const cpuCount = cpus().length;
-    const recommendedMaxSessions = Math.min(cpuCount + 1, 10);
+    const recommendedMaxSessions = await getRecommendedMaxSessions();
 
     return (
         <RoleGuard allowedRoles={[AuthRoles.Admin]}>

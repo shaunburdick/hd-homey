@@ -15,19 +15,23 @@ export async function run() {
     Logger.info(`You have ${userCount[0].count} users configured`);
 
     // Detect ffmpeg and enable transcoding if available
-    const ffmpegInfo = await detectFFmpeg();
-    if (ffmpegInfo.available) {
-        const currentSettings = await getTranscodingSettings();
+    try {
+        const ffmpegInfo = await detectFFmpeg();
+        if (ffmpegInfo.available) {
+            const currentSettings = await getTranscodingSettings();
 
-        // Auto-enable transcoding if ffmpeg is detected and not explicitly configured
-        if (!currentSettings.enabled) {
-            Logger.info('FFmpeg detected - enabling transcoding by default');
-            await updateTranscodingSettings({
-                ...currentSettings,
-                enabled: true,
-            });
+            // Auto-enable transcoding if ffmpeg is detected and not explicitly configured
+            if (!currentSettings.enabled) {
+                Logger.info('FFmpeg detected - enabling transcoding by default');
+                await updateTranscodingSettings({
+                    ...currentSettings,
+                    enabled: true,
+                });
+            }
+        } else {
+            Logger.warn('FFmpeg not available - transcoding disabled');
         }
-    } else {
-        Logger.warn('FFmpeg not available - transcoding disabled');
+    } catch (error) {
+        Logger.error({ error }, 'Failed to initialize transcoding');
     }
 }

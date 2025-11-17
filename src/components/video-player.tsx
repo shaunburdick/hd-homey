@@ -37,11 +37,22 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
 
         // Use HLS.js for other browsers
         if (Hls.isSupported()) {
+            // Extract token from playlist URL to add to segment requests
+            const token = new URL(playlistUrl, window.location.origin).searchParams.get('token');
+            
             const hls = new Hls({
                 debug: false,
                 enableWorker: true,
                 lowLatencyMode: true,
                 backBufferLength: 90,
+                xhrSetup: (xhr, url) => {
+                    // Add token to all segment requests
+                    if (token && url.includes('.ts')) {
+                        const segmentUrl = new URL(url, window.location.origin);
+                        segmentUrl.searchParams.set('token', token);
+                        xhr.open('GET', segmentUrl.toString(), true);
+                    }
+                },
             });
 
             hlsRef.current = hls;
