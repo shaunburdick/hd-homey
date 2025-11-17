@@ -32,6 +32,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Install ffmpeg with required codecs for video transcoding
+RUN apk add --no-cache ffmpeg
+
 # Combine user creation commands
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
