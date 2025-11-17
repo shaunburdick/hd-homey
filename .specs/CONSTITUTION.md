@@ -1,7 +1,7 @@
 # HD Homey Constitution
 
-**Project**: HD Homey - HD HomeRun Proxy Application  
-**Version**: 0.1.0  
+**Project**: HD Homey - HD HomeRun Proxy Application
+**Version**: 0.1.0
 **Last Updated**: 2025-11-15
 
 ## Project Purpose
@@ -134,8 +134,7 @@ src/app/
 
 - ❌ **Not a DVR**: No recording functionality
 - ❌ **Not a Guide**: No EPG/program guide integration
-- ❌ **Not Multi-User Streaming**: No concurrent stream management
-- ❌ **Not a Transcoder**: No video format conversion
+- ❌ **Not Multi-User Streaming**: No concurrent stream management (beyond shared transcoding)
 
 ## Future Considerations
 
@@ -143,8 +142,8 @@ These are explicitly out of scope for now but may be considered later:
 
 - Channel recording/DVR functionality
 - EPG/program guide integration
-- Multi-stream management and scheduling
-- Video transcoding for bandwidth optimization
+- Advanced multi-stream management and scheduling
+- Adaptive bitrate streaming (ABR)
 - Mobile applications (iOS/Android)
 
 ## Decision Log
