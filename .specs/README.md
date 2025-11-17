@@ -34,6 +34,7 @@ The `features/` directory contains documentation for already-implemented feature
 - **001-tuner-management**: Managing HD HomeRun tuner devices
 - **002-channel-streaming**: Proxying live TV streams
 - **003-user-authentication**: User authentication and authorization
+- **004-ui-ux-guidelines**: UI/UX design system and guidelines
 
 These specs serve as:
 - Onboarding documentation for new developers
@@ -95,18 +96,18 @@ When working with AI coding assistants:
 
 1. **Share Context**: Point the AI to relevant spec files
    ```
-   "Read .specs/CONSTITUTION.md and .specs/features/001-tuner-management/spec.md 
+   "Read .specs/CONSTITUTION.md and .specs/features/001-tuner-management/spec.md
    to understand the project structure before helping me."
    ```
 
-2. **Reference During Development**: 
+2. **Reference During Development**:
    ```
    "Following the constitution's database patterns, help me add a new table..."
    ```
 
 3. **Validate Against Specs**:
    ```
-   "Does this implementation match the requirements in 
+   "Does this implementation match the requirements in
    .specs/features/004-my-feature/spec.md?"
    ```
 
