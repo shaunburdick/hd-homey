@@ -182,13 +182,14 @@ docker compose up -d     # Start with Docker Compose
 
 1. **Update version**: Use `npm version <version> --no-git-tag-version` to update package.json
 2. **Update CHANGELOG.md**: Document changes under appropriate section (Added/Changed/Fixed/Removed)
-3. **Commit and tag**:
+3. **Update README.md**: Update version badge and current version reference
+4. **Commit and tag**:
    ```bash
    git commit -m "chore: release v<version>"
    git tag -a v<version> -m "Release v<version>"
    git push origin main --tags
    ```
-4. **GitHub Actions**: The `release.yml` workflow automatically:
+5. **GitHub Actions**: The `release.yml` workflow automatically:
    - Builds Docker image
    - Publishes to ghcr.io/shaunburdick/hd-homey
    - Creates GitHub Release
