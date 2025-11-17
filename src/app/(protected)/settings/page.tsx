@@ -5,6 +5,7 @@ import { AuthRoles } from '@/lib/auth-roles';
 import { getStreamSecretInfo, regenerateAppStreamSecret } from '@/lib/actions/settings';
 import StreamSecretManager from '@/components/stream-secret-manager';
 import TranscodingSettings from '@/components/transcoding-settings';
+import TranscodingStatus from '@/components/transcoding-status';
 import { getTranscodingSettings } from '@/lib/settings';
 import { detectFFmpeg } from '@/lib/transcoding/ffmpeg';
 
