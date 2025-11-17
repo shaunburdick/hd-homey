@@ -2,6 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { getDb } from '@/lib/database/db';
 import { channels } from '@/lib/database/schema';
+import { generateStreamToken } from '@/lib/stream-token';
 import ChannelStream from '@/components/channel-stream';
 
 interface PageParams {
@@ -26,6 +27,10 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
         notFound();
     }
 
+    // Generate signed stream URL
+    const token = await generateStreamToken(parseInt(id, 10), parseInt(channel_id, 10));
+    const streamUrl = `/tuners/${id}/channel/${channel_id}/stream?token=${token}`;
+
     return (
         <main>
             <h1>Channel {channel.guideNumber}: {channel.guideName}</h1>
@@ -49,7 +54,7 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
             </dl>
 
             <h2>Stream</h2>
-            <ChannelStream channel={channel} />
+            <ChannelStream channel={channel} streamUrl={streamUrl} />
 
             <p>
                 <a href={`/tuners/${id}`}>← Back to Tuner</a>

@@ -63,10 +63,13 @@ HD Homey acts as a secure proxy between your HDHomeRun devices and remote viewer
 - **Tuner Management** - Add and configure multiple HDHomeRun devices
 - **Channel Discovery** - Automatic channel lineup scanning and updates
 - **Stream Proxying** - Transparent video stream relay with URL rewriting
+- **Signed Stream URLs** - Time-limited tokens (12 hours) for secure video access
 - **Lineup API** - Modified lineup.json endpoint for remote client compatibility
 
 ### Security
 - Password-protected access with secure session tokens
+- Token-based stream authentication with HMAC-SHA256 signatures
+- Admin-controlled stream secret regeneration
 - Admin-only routes for configuration management
 - Middleware-based route protection
 - No sensitive data exposure to client components
@@ -180,6 +183,7 @@ Configure HD Homey using environment variables:
 |----------|-------------|---------|---------|
 | `HD_HOMEY_PROXY_HOST` | External URL for stream proxying | Auto-detected | `https://tuner.example.com` |
 | `HD_HOMEY_DB_PATH` | Database file path | `./data/db/hd_homey.db` | `/data/hd_homey.db` |
+| `HD_HOMEY_STREAM_TOKEN_EXPIRY` | Stream token validity in seconds | `43200` (12 hours) | `86400` (24 hours) |
 | `NEXTAUTH_URL` | Base URL for auth callbacks | Auto-detected | `https://tuner.example.com` |
 | `NODE_ENV` | Runtime environment | `development` | `production` |
 
@@ -229,7 +233,10 @@ Configure HD Homey using environment variables:
 1. Navigate to the **Home** page or **Channels**
 2. Browse available channels from all configured tuners
 3. Click a channel to view streaming instructions
-4. Use the provided URLs in compatible media players (VLC, Plex, etc.)
+4. Copy the generated stream URL (includes authentication token)
+5. Paste the URL into compatible media players (VLC, Plex, etc.)
+
+**Note**: Stream URLs include time-limited authentication tokens (default: 12 hours). If a token expires, simply revisit the channel page to generate a new URL.
 
 ### User Roles
 
@@ -238,12 +245,27 @@ Configure HD Homey using environment variables:
 | **Admin** | Full access: manage tuners, channels, users, and settings |
 | **Viewer** | Read-only: browse and watch channels |
 
+### Managing Stream Security
+
+**Admin-only feature**
+
+1. Navigate to **Settings** from the main menu
+2. View the **Stream Authentication** section
+3. Current stream secret is displayed (partial view for security)
+4. Click **Regenerate Stream Secret** if you need to:
+   - Invalidate all existing stream URLs immediately
+   - Respond to a potential security incident
+   - Rotate secrets as part of security policy
+
+**Warning**: Regenerating the stream secret will require all users to get new URLs from channel pages.
+
 ### API Access
 
 HD Homey provides a modified HDHomeRun lineup API for client compatibility:
 
 - **Lineup endpoint**: `http://your-server:3000/lineup.json`
-- **Stream URLs**: Automatically rewritten for remote access
+- **Stream URLs**: `/tuners/{id}/channel/{channelId}/stream?token={token}`
+- **Token authentication**: Required for all stream access
 - Compatible with Plex, Emby, and other DVR software
 
 ## Troubleshooting
@@ -303,11 +325,15 @@ Contributions are welcome! Please:
 # Install dependencies
 npm ci
 
-# Run tests
+# Run full test suite (lint + typecheck + unit tests)
 npm test
 
-# Run linter
-npm run lint
+# Run individual checks
+npm run lint              # ESLint
+npm run typecheck         # TypeScript type checking
+npm run test:unit         # Unit tests only (exits when done)
+npm run test:unit:watch   # Unit tests in watch mode
+npm run test:coverage     # Unit tests with coverage report
 
 # Start dev server
 npm run dev

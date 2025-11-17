@@ -63,6 +63,16 @@ export const channelRelations = relations(channels, ({ one }) => ({
     })
 }));
 
+// Settings
+export const settings = sqliteTable('settings', {
+    key: text('key', { length: 255 }).primaryKey(),
+    value: text('value').notNull(),
+    created_at: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+    modified_at: integer('modified_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`)
+});
+
+export type Setting = typeof settings.$inferSelect;
+
 // Auth
 
 // export const accounts = sqliteTable(

@@ -6,14 +6,13 @@ import type { Channel } from '@/lib/database/schema';
 
 interface ChannelStreamProps {
     channel: Channel;
+    streamUrl: string;
 }
 
-export default function ChannelStream({ channel }: ChannelStreamProps) {
+export default function ChannelStream({ streamUrl }: ChannelStreamProps) {
     const [isCopied, setIsCopied] = useState(false);
-    const channelLink = new URL(
-        `/tuners/${channel.fk_tuner}/channel/${channel.id}/stream`,
-        window.location.origin
-    ).toString();
+    // Convert relative URL to absolute for VLC
+    const channelLink = new URL(streamUrl, window.location.origin).toString();
 
     const handleCopy = async () => {
         try {
@@ -29,7 +28,9 @@ export default function ChannelStream({ channel }: ChannelStreamProps) {
     return (
         <>
             <p>
-                Copy this <a href={channelLink}>Link</a> into your favorite media player.<br />
+                Copy this <a href={channelLink}>Link</a> into your favorite media player.
+            </p>
+            <p>
                 <input
                     id="channelLink"
                     type='text'
@@ -37,10 +38,17 @@ export default function ChannelStream({ channel }: ChannelStreamProps) {
                     onFocus={(e) => e.target.select()}
                     readOnly
                     style={{
-                        width: `${channelLink.length}ch`
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        fontFamily: 'monospace',
+                        fontSize: '0.85em',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
                     }}
                 />
-                <button onClick={handleCopy}>
+                <button onClick={handleCopy} style={{ marginTop: '0.5rem' }}>
                     {isCopied ? 'Copied!' : 'Copy'}
                 </button>
             </p>
