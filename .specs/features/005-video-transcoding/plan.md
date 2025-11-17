@@ -245,21 +245,22 @@ docker run --rm hd-homey:transcode ffmpeg -version
 docker run --rm hd-homey:transcode ffmpeg -codecs | grep h264
 ```
 
-### Phase 2: FFmpeg Detection & Settings (Est: 3-4 hours)
+### Phase 2: FFmpeg Detection & Settings (Est: 3-4 hours) ✅ COMPLETE
 
-- [ ] Create `src/lib/transcoding/ffmpeg.ts`
+- [x] Create `src/lib/transcoding/ffmpeg.ts`
   - Implement `detectFFmpeg()` using `child_process.exec`
   - Parse ffmpeg output for version, codecs, hardware acceleration
   - Cache detection results in memory (check on startup)
-- [ ] Add transcoding settings to `src/lib/settings.ts`
+- [x] Add transcoding settings to `src/lib/settings.ts`
   - Define default settings constant
   - Add `getTranscodingSettings()` function
   - Add `updateTranscodingSettings()` function
-- [ ] Create `src/lib/transcoding/types.ts` with all TypeScript interfaces
-- [ ] Write unit tests for ffmpeg detection and settings
-- [ ] Add ffmpeg detection to `src/instrumentation-node.ts` startup
+- [x] Create `src/lib/transcoding/types.ts` with all TypeScript interfaces
+- [x] Write unit tests for ffmpeg detection and settings
+- [x] Add ffmpeg detection to `src/instrumentation-node.ts` startup
 
 **Test Command**: `npm test src/lib/transcoding/ffmpeg.test.ts`
+**Commit**: cf86060
 
 ### Phase 3: Session Manager (Est: 4-5 hours)
 

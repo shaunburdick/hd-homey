@@ -2,7 +2,7 @@
 
 **Feature ID**: `005-video-transcoding`
 **Created**: 2025-11-16
-**Status**: Draft
+**Status**: In Progress (Phase 2/10 Complete)
 **Owner**: HD Homey Core Team
 
 ## Overview
