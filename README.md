@@ -325,11 +325,15 @@ Contributions are welcome! Please:
 # Install dependencies
 npm ci
 
-# Run tests
+# Run full test suite (lint + typecheck + unit tests)
 npm test
 
-# Run linter
-npm run lint
+# Run individual checks
+npm run lint              # ESLint
+npm run typecheck         # TypeScript type checking
+npm run test:unit         # Unit tests only (exits when done)
+npm run test:unit:watch   # Unit tests in watch mode
+npm run test:coverage     # Unit tests with coverage report
 
 # Start dev server
 npm run dev
