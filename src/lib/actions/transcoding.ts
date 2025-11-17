@@ -104,12 +104,12 @@ export async function updateTranscodingSettingsAction(
 }
 
 /**
- * Apply a preset to settings
+ * Apply a preset to settings (client-side helper)
  */
-export function applyPreset(
+export async function applyPreset(
     currentSettings: TranscodeSettings,
     presetName: TranscodeSettings['preset']
-): TranscodeSettings {
+): Promise<TranscodeSettings> {
     const preset = PRESET_SETTINGS[presetName];
 
     return {
