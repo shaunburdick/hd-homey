@@ -36,7 +36,7 @@ export default function RootLayout({
                     </main>
                     <footer>
                         <hr />
-                        2024 © Shaun Burdick - <Link href='https://github.com/shaunburdick/hd-homey'>GitHub</Link>
+                        2024 © Shaun Burdick - <Link href='https://github.com/shaunburdick/hd-homey' style={{ color: '#5c9fff' }}>GitHub</Link>
                     </footer>
                 </SessionProvider>
             </body>
