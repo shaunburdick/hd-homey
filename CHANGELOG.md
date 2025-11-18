@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Video Transcoding & In-Browser Playback** (SPEC-005): Complete implementation
+  - Real-time MPEG-2 to H.264/HLS transcoding using ffmpeg
+  - HLS.js-based video player with adaptive buffering
+  - Intelligent session management with automatic cleanup after 30s of inactivity
+  - Shared transcoding sessions - multiple viewers share a single transcode process
+  - Token-based authentication for HLS playlists and segments
+  - Automatic process cleanup when streams end
+  - Optimized settings: 4Mbps video, 192kbps audio, 2-second segments
+  - Comprehensive test suite for FFmpeg, session manager, and token generation
+  
+- **Transcoding Infrastructure**:
+  - Session manager for lifecycle management and resource cleanup
+  - Activity tracking based on segment access timestamps
+  - Configurable settings via database (bitrate, resolution, codec, etc.)
+  - Background cleanup timer (10s interval) for inactive sessions
+  - Stream token generation and validation for secure access
+
+### Fixed
+
+- **Audio Quality Issue**: Removed audio resampling flag that caused degraded/segmented audio playback
+- **Process Cleanup**: FFmpeg processes now properly terminate when streams end
+- **Session Management**: Fixed session cleanup based on activity rather than viewer count (HLS is stateless)
+
 ## [1.0.0-alpha.2] - 2025-11-17
 
 **Note**: This is an **alpha release** with comprehensive test coverage. The application is functional but requires more comprehensive testing and UX improvements.
