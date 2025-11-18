@@ -9,6 +9,11 @@ const fira = Fira_Code({ subsets: ['latin'] });
 export const metadata: Metadata = {
     title: 'HD Homey',
     description: 'A proxy for HD Homerun devices',
+    viewport: {
+        width: 'device-width',
+        initialScale: 1,
+        maximumScale: 5,
+    },
 };
 
 export default function RootLayout({
@@ -19,13 +24,16 @@ export default function RootLayout({
     return (
         <html lang="en" style={{ height: '100%' }}>
             <head>
-                <meta name="theme-color" content="#0070F3" />
+                <meta name="theme-color" content="#1a1a1a" />
                 <link rel="apple-touch-icon" href="/icon.png" />
                 <link rel="manifest" href="/manifest.json" />
             </head>
             <body className={fira.className}>
                 <SessionProvider>
-                    {children}
+                    <a href="#main-content" className="sr-only">Skip to main content</a>
+                    <main id="main-content">
+                        {children}
+                    </main>
                     <footer>
                         <hr />
                         2024 © Shaun Burdick - <Link href='https://github.com/shaunburdick/hd-homey'>GitHub</Link>
