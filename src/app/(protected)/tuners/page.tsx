@@ -40,9 +40,9 @@ export default async function TunersPage() {
                         <Link
                             key={tuner.id}
                             href={`/tuners/${tuner.id}`}
-                            style={{ textDecoration: 'none' }}
+                            className="no-underline cursor-pointer"
                         >
-                            <Card className="tuner-card transition cursor-pointer" style={{ height: '100%' }}>
+                            <Card className="tuner-card transition" style={{ height: '100%' }}>
                                 <h3 className="mt-0 mb-2" style={{ color: 'var(--color-accent)' }}>
                                     {tuner.name}
                                 </h3>

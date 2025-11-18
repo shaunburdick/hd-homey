@@ -138,8 +138,8 @@ export default async function Home() {
                         gap: 'var(--space-3)',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                     }}>
-                        <Link href="/tuners" className="no-underline">
-                            <Card className="channel-card cursor-pointer">
+                        <Link href="/tuners" className="no-underline cursor-pointer">
+                            <Card className="channel-card">
                                 <div className="flex items-center gap-3">
                                     <span className="text-2xl">📡</span>
                                     <div>
@@ -155,8 +155,8 @@ export default async function Home() {
                         </Link>
 
                         {isAdmin && (
-                            <Link href="/settings" className="no-underline">
-                                <Card className="channel-card cursor-pointer">
+                            <Link href="/settings" className="no-underline cursor-pointer">
+                                <Card className="channel-card">
                                     <div className="flex items-center gap-3">
                                         <span className="text-2xl">⚙️</span>
                                         <div>
@@ -172,8 +172,8 @@ export default async function Home() {
                             </Link>
                         )}
 
-                        <Link href="/about" className="no-underline">
-                            <Card className="channel-card cursor-pointer">
+                        <Link href="/about" className="no-underline cursor-pointer">
+                            <Card className="channel-card">
                                 <div className="flex items-center gap-3">
                                     <span className="text-2xl">ℹ️</span>
                                     <div>
