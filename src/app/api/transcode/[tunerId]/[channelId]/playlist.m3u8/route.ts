@@ -80,15 +80,14 @@ export async function GET(
             settings
         );
 
-        // Generate unique viewer session ID
+        // Generate unique viewer ID for this playlist request
+        // Note: We generate a new ID each time, but only the FIRST segment request
+        // will create the viewer session. Subsequent playlist polls will reuse
+        // the same viewer_id in their segments, so the viewer count stays accurate.
         const viewerId = crypto.randomUUID();
 
-        // Add viewer to session
-        manager.addViewer(session.sessionId, viewerId, {
-            userAgent: req.headers.get('user-agent') || undefined,
-        });
-
         // Serve the playlist with token and viewer_id appended to segment URLs
+        // Viewer tracking happens in the segment endpoint, not here
         const response = await servePlaylist(session.outputDir, token, viewerId);
 
         return response;

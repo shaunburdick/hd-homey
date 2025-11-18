@@ -47,7 +47,7 @@ export async function GET(
             return new Response('Token does not match resource', { status: 403 });
         }
 
-        // Get session and update viewer activity
+        // Get session
         const manager = getSessionManager();
         const sessionId = `${tunerId}:${channelId}`;
         const session = manager.getSession(sessionId);
@@ -57,13 +57,23 @@ export async function GET(
             return new Response('Session not found', { status: 404 });
         }
 
-        // Update viewer activity
+        // Track viewer activity
+        // First segment request with this viewer_id → add viewer
+        // Subsequent requests → update activity
         const updated = manager.updateViewerActivity(sessionId, viewerId);
 
         if (!updated) {
-            // Viewer session expired or invalid - client should reload
-            Logger.warn({ sessionId, viewerId, segment }, 'Viewer session not found');
-            return new Response('Viewer session expired - please reload the page', { status: 410 });
+            // First time seeing this viewer_id - add them
+            try {
+                manager.addViewer(sessionId, viewerId, {
+                    userAgent: req.headers.get('user-agent') || undefined,
+                });
+                Logger.info({ sessionId, viewerId }, 'New viewer added via segment request');
+            } catch (error) {
+                // Session might have ended
+                Logger.error({ error, sessionId, viewerId }, 'Failed to add viewer');
+                return new Response('Session ended', { status: 410 });
+            }
         }
 
         // Serve the segment
