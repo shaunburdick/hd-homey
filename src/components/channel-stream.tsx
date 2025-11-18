@@ -36,7 +36,7 @@ export default function ChannelStream({ streamUrl }: ChannelStreamProps) {
             <p>
                 Copy this <a href={channelLink}>Link</a> into your favorite media player.
             </p>
-            <p>
+            <div style={{ marginBottom: 'var(--space-4)' }}>
                 <input
                     id="channelLink"
                     type='text'
@@ -51,13 +51,33 @@ export default function ChannelStream({ streamUrl }: ChannelStreamProps) {
                         fontSize: '0.85em',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        marginBottom: 'var(--space-3)',
+                        backgroundColor: 'var(--color-bg-tertiary)',
+                        color: 'var(--color-text-primary)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: 'var(--space-3)',
                     }}
                 />
-                <button onClick={handleCopy} style={{ marginTop: '0.5rem' }}>
-                    {isCopied ? 'Copied!' : 'Copy'}
+                <button
+                    onClick={handleCopy}
+                    style={{
+                        minHeight: 'var(--button-height)',
+                        padding: 'var(--space-3) var(--space-5)',
+                        borderRadius: 'var(--radius-md)',
+                        fontWeight: 'var(--font-weight-medium)',
+                        fontSize: 'var(--font-size-base)',
+                        cursor: 'pointer',
+                        transition: 'all var(--transition-fast)',
+                        border: '1px solid transparent',
+                        backgroundColor: isCopied ? 'var(--color-success)' : 'var(--color-accent)',
+                        color: 'white',
+                    }}
+                >
+                    {isCopied ? '✓ Copied!' : '📋 Copy to Clipboard'}
                 </button>
-            </p>
+            </div>
 
             <h3>Playback Instructions</h3>
             <div>
