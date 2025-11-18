@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
-import { PageHeader } from '@/components/layouts/PageHeader';
 import { Card } from '@/components/Card';
 
 interface PageParams {
@@ -26,18 +25,23 @@ export default async function EditTunerPage(props: { params: Promise<PageParams>
     }
 
     return (
-        <>
-            <Link href={`/tuners/${tuner.id}`} className="back-link">
-                ← Back to Tuner
-            </Link>
-
-            <PageHeader
-                title={`Edit Tuner: ${tuner.name}`}
-                subtitle="Update tuner settings and configuration"
-            />
+        <div className="container">
+            <div className="mb-6">
+                <Link
+                    href={`/tuners/${tuner.id}`}
+                    className="text-secondary no-underline text-sm inline-flex items-center gap-2 mb-4"
+                >
+                    ← Back to Tuner
+                </Link>
+                <h1 className="mb-2">Edit Tuner: {tuner.name}</h1>
+                <p className="text-secondary m-0">
+                    Update tuner settings and configuration
+                </p>
+            </div>
 
             <div className="grid-2col">
-                <Card title="Tuner Settings">
+                <Card>
+                    <h2 className="mt-0 mb-4">Tuner Settings</h2>
                     <form action={`/api/tuners/${tuner.id}`} method="POST">
                         <div className="form-group">
                             <label htmlFor="name">
@@ -97,7 +101,8 @@ export default async function EditTunerPage(props: { params: Promise<PageParams>
                     </form>
                 </Card>
 
-                <Card title="Tuner Information">
+                <Card>
+                    <h2 className="mt-0 mb-4">Tuner Information</h2>
                     <dl className="info-list">
                         <div>
                             <dt>ID</dt>
@@ -121,6 +126,6 @@ export default async function EditTunerPage(props: { params: Promise<PageParams>
                     </dl>
                 </Card>
             </div>
-        </>
+        </div>
     );
 }
