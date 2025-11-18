@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getDb } from '@/lib/database/db';
 import { channels } from '@/lib/database/schema';
 import { generateStreamToken } from '@/lib/stream-token';
+import { getTranscodingSettings } from '@/lib/settings';
 import ChannelStream from '@/components/channel-stream';
 
 interface PageParams {
@@ -31,9 +32,31 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
     const token = await generateStreamToken(parseInt(id, 10), parseInt(channel_id, 10));
     const streamUrl = `/tuners/${id}/channel/${channel_id}/stream?token=${token}`;
 
+    // Check if transcoding is enabled
+    const settings = await getTranscodingSettings();
+
     return (
         <main>
             <h1>Channel {channel.guideNumber}: {channel.guideName}</h1>
+
+            {settings.enabled && (
+                <p>
+                    <a
+                        href={`/tuners/${id}/channel/${channel_id}/watch`}
+                        style={{
+                            display: 'inline-block',
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#0066cc',
+                            color: 'white',
+                            textDecoration: 'none',
+                            borderRadius: '4px',
+                            fontWeight: 'bold',
+                        }}
+                    >
+                        ▶ Watch in Browser
+                    </a>
+                </p>
+            )}
 
             <h2>Channel Information</h2>
             <dl>

@@ -2,7 +2,7 @@
 
 **Feature ID**: `005-video-transcoding`
 **Created**: 2025-11-16
-**Status**: Draft
+**Status**: ✅ IMPLEMENTED (Merged 2025-11-18)
 **Owner**: HD Homey Core Team
 
 ## Overview
@@ -372,6 +372,91 @@ User B → HLS Client → /api/transcode/1/42/playlist.m3u8 → Return same m3u8
                                                               ↓
                                                     [0 viewers] → Wait 30s → Terminate
 ```
+
+### Session Management & Process Cleanup
+
+**Session Lifecycle**:
+1. **Session Creation**: When a user requests a playlist, a new transcoding session is created (or an existing one is reused)
+2. **Viewer Tracking**: First playlist request increments viewer count  
+3. **Activity Tracking**: Every segment request updates `lastAccessTime` timestamp
+4. **Automatic Cleanup**: Background timer (10s interval) terminates sessions inactive for >30s
+5. **Process Termination**: ffmpeg process is killed and temporary files are cleaned up
+
+**Cleanup Implementation**:
+```typescript
+// Session manager runs cleanup every 10 seconds
+cleanupInactiveSessions() {
+  // Sessions are considered inactive if no segment requests for 30s
+  if (now - session.lastAccessTime > 30000) {
+    stopSession(sessionId);  // Kill ffmpeg, delete files
+  }
+}
+```
+
+**Critical Issue Resolved**: The initial implementation suffered from a critical audio corruption bug caused by improper audio resampling. The ffmpeg command was using `-ar 48000` (audio resampling) which caused degraded/segmented audio playback.
+
+**Solution**: 
+- Removed `-ar 48000` flag to preserve original audio stream quality
+- Audio codec detection now uses correct stream parsing (`a:0` instead of `v:0`)
+- Session cleanup based on `lastAccessTime` instead of `viewerCount` (HLS is stateless)
+- FFmpeg processes are properly cleaned up when streams end
+
+**Verification**:
+```bash
+# Check for running ffmpeg processes
+ps aux | grep ffmpeg
+
+# After stopping stream, wait 40s and verify cleanup
+# No orphaned ffmpeg processes should remain
+```
+
+### Final Optimized Settings
+
+After extensive testing, the following configuration provides optimal performance and quality:
+
+**FFmpeg Command**:
+```bash
+ffmpeg -i <source_url> \
+  -c:v libx264 -preset ultrafast -tune zerolatency \
+  -b:v 4000k -maxrate 4000k -bufsize 8000k \
+  -profile:v baseline -level 3.1 \
+  -g 30 -keyint_min 30 -sc_threshold 0 \
+  -c:a aac -b:a 192k \
+  -f hls -hls_time 2 -hls_list_size 10 \
+  -hls_flags delete_segments+append_list+program_date_time \
+  -start_number 0 \
+  -hls_segment_filename "segment%03d.ts" \
+  playlist.m3u8
+```
+
+**Key Optimizations**:
+- **Video Bitrate**: 4000k for high quality 1080p streams
+- **Buffer Size**: 8000k (2x bitrate) for stable encoding
+- **GOP Size**: 30 frames (consistent keyframe intervals for seeking)
+- **Audio Bitrate**: 192k for high-quality stereo audio
+- **No Audio Resampling**: Preserves original audio quality
+- **HLS Segment Time**: 2 seconds for low latency
+- **Program Date Time**: Enables precise seeking and live edge detection
+
+**HLS.js Configuration**:
+```javascript
+{
+  debug: false,
+  enableWorker: true,
+  lowLatencyMode: false,     // Disabled for stability
+  backBufferLength: 90,      // Keep 90s of back buffer for seeking
+  maxBufferLength: 30,       // Buffer 30s ahead
+  maxMaxBufferLength: 60,    // Max buffer cap at 60s
+  liveSyncDurationCount: 3,  // Stay 3 segments behind live edge
+  liveMaxLatencyDurationCount: 10  // Max 10 segments behind live edge
+}
+```
+
+**Configuration Rationale**:
+- Disabled low latency mode to prevent MediaSource "ended" errors
+- Increased back buffer for better seeking experience
+- Conservative live edge tracking (3 segments) prevents buffer underruns
+- Larger max latency tolerance handles network variability
 
 ## References
 

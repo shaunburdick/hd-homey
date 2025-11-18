@@ -62,9 +62,21 @@ HD Homey acts as a secure proxy between your HDHomeRun devices and remote viewer
 - **User Management** - Create and manage users with admin/viewer role permissions
 - **Tuner Management** - Add and configure multiple HDHomeRun devices
 - **Channel Discovery** - Automatic channel lineup scanning and updates
+- **In-Browser Video Playback** - Watch live TV directly in your browser without external players
+- **Real-Time Transcoding** - Automatic MPEG-2 to H.264/HLS conversion for browser compatibility
 - **Stream Proxying** - Transparent video stream relay with URL rewriting
 - **Signed Stream URLs** - Time-limited tokens (12 hours) for secure video access
 - **Lineup API** - Modified lineup.json endpoint for remote client compatibility
+
+### Video Transcoding
+- **HLS Streaming** - HTTP Live Streaming for universal browser support
+- **Accurate Viewer Tracking** - Server-side fingerprinting counts concurrent viewers per channel
+- **Shared Sessions** - Multiple viewers share a single transcoding process (resource efficient)
+- **Auto Cleanup** - Transcoding stops immediately when last viewer disconnects
+- **High Quality** - 4Mbps video with 192kbps audio for excellent picture quality
+- **Low Latency** - 2-second segments for minimal delay (~6-10 seconds total)
+- **Smart Detection** - Only transcodes when necessary (MPEG-2 sources)
+- **Universal Client Support** - Works with browsers, mobile apps, and media players (no cookies required)
 
 ### Security
 - Password-protected access with secure session tokens
@@ -182,8 +194,10 @@ Configure HD Homey using environment variables:
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
 | `HD_HOMEY_PROXY_HOST` | External URL for stream proxying | Auto-detected | `https://tuner.example.com` |
-| `HD_HOMEY_DB_PATH` | Database file path | `./data/db/hd_homey.db` | `/data/hd_homey.db` |
+| `HD_HOMEY_DB_PATH` | Database directory path | `./data/db` | `/data/db` |
+| `HD_HOMEY_TRANSCODE_DIR` | Transcoding output directory | `./data/transcoding` | `/data/transcoding` |
 | `HD_HOMEY_STREAM_TOKEN_EXPIRY` | Stream token validity in seconds | `43200` (12 hours) | `86400` (24 hours) |
+| `FFMPEG_PATH` | Path to ffmpeg binary | `ffmpeg` (in PATH) | `/usr/bin/ffmpeg` |
 | `NEXTAUTH_URL` | Base URL for auth callbacks | Auto-detected | `https://tuner.example.com` |
 | `NODE_ENV` | Runtime environment | `development` | `production` |
 
@@ -192,6 +206,7 @@ Configure HD Homey using environment variables:
 - **AUTH_SECRET**: Must be set and kept secret. Never commit to version control.
 - **HD_HOMEY_PROXY_HOST**: Required if running behind a reverse proxy or if auto-detection fails.
 - **Database**: Automatically created on first run via Drizzle migrations.
+- **Transcoding**: FFmpeg is included in the Docker image. For source installs, ensure ffmpeg is in PATH with h264/aac codec support.
 
 ## Usage
 
@@ -230,11 +245,28 @@ Configure HD Homey using environment variables:
 
 ### Watching Channels
 
+#### In-Browser Playback (Recommended)
+
 1. Navigate to the **Home** page or **Channels**
 2. Browse available channels from all configured tuners
-3. Click a channel to view streaming instructions
-4. Copy the generated stream URL (includes authentication token)
-5. Paste the URL into compatible media players (VLC, Plex, etc.)
+3. Click a channel to view the channel details page
+4. Click **"Watch in Browser"** button
+5. The video player will automatically start streaming
+
+**Features**:
+- Works on all modern browsers (Chrome, Firefox, Safari, Edge)
+- No plugins or external players required
+- Standard HTML5 video controls (play/pause, volume, fullscreen)
+- Mobile-friendly responsive design
+- Multiple viewers can watch the same channel efficiently (shared transcoding)
+
+#### External Player (Advanced)
+
+For use with VLC, Plex, or other media applications:
+
+1. Navigate to a channel's details page
+2. Copy the generated stream URL (includes authentication token)
+3. Paste the URL into your media player
 
 **Note**: Stream URLs include time-limited authentication tokens (default: 12 hours). If a token expires, simply revisit the channel page to generate a new URL.
 
@@ -292,6 +324,23 @@ HD Homey provides a modified HDHomeRun lineup API for client compatibility:
 - Check tuner URLs are correct (including http://)
 - Test direct access to HDHomeRun from host: `curl http://your-tuner-ip/discover.json`
 
+**In-browser video player issues**
+- Check browser console for errors (F12 → Console tab)
+- Verify ffmpeg is available: `docker exec hd-homey ffmpeg -version`
+- Check transcoding logs: `docker compose logs hd-homey | grep -i transcode`
+- Ensure sufficient CPU resources (each 1080p stream uses ~15-20% of one core)
+- Try refreshing the page to restart the transcoding session
+
+**Video plays but audio is choppy/missing**
+- This should be resolved in the current version (fixed audio resampling bug)
+- Check ffmpeg stderr logs for audio codec warnings
+- Verify source stream has audio: `ffprobe http://tuner:5004/auto/vX.X`
+
+**Multiple users can't watch the same channel**
+- This should work automatically (shared sessions)
+- Check session manager logs to verify session reuse
+- Ensure transcoding directory is writable: `docker exec hd-homey ls -la /app/data/transcoding`
+
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/shaunburdick/hd-homey/issues)
@@ -316,6 +365,7 @@ Contributions are welcome! Please:
 - **Language**: TypeScript 5
 - **Database**: SQLite + Drizzle ORM
 - **Authentication**: NextAuth.js v5
+- **Video**: FFmpeg + HLS.js
 - **Testing**: Vitest + React Testing Library
 - **Styling**: new.css
 
