@@ -47,7 +47,7 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
         // Use HLS.js for other browsers
         if (Hls.isSupported()) {
             const hls = new Hls({
-                debug: true,
+                debug: false,
                 enableWorker: true,
                 lowLatencyMode: false,
                 backBufferLength: 10,
@@ -58,12 +58,39 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
                 liveSyncDurationCount: 2,
                 liveMaxLatencyDurationCount: Infinity,
                 liveDurationInfinity: true,
-                manifestLoadingTimeOut: 10000,
-                manifestLoadingMaxRetry: 3,
-                manifestLoadingRetryDelay: 500,
-                fragLoadingTimeOut: 20000,
-                fragLoadingMaxRetry: 6,
-                fragLoadingRetryDelay: 500,
+                // Use modern loader policy instead of deprecated timeout/retry options
+                manifestLoadPolicy: {
+                    default: {
+                        maxTimeToFirstByteMs: 10000,
+                        maxLoadTimeMs: 10000,
+                        timeoutRetry: {
+                            maxNumRetry: 3,
+                            retryDelayMs: 500,
+                            maxRetryDelayMs: 0,
+                        },
+                        errorRetry: {
+                            maxNumRetry: 3,
+                            retryDelayMs: 500,
+                            maxRetryDelayMs: 8000,
+                        },
+                    },
+                },
+                fragLoadPolicy: {
+                    default: {
+                        maxTimeToFirstByteMs: 20000,
+                        maxLoadTimeMs: 20000,
+                        timeoutRetry: {
+                            maxNumRetry: 6,
+                            retryDelayMs: 500,
+                            maxRetryDelayMs: 0,
+                        },
+                        errorRetry: {
+                            maxNumRetry: 6,
+                            retryDelayMs: 500,
+                            maxRetryDelayMs: 8000,
+                        },
+                    },
+                },
             });
 
             hlsRef.current = hls;
