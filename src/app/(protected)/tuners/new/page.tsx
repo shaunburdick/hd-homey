@@ -5,6 +5,7 @@ import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import Link from 'next/link';
 import { createTuner } from '../actions';
 import { Input, Button, Card } from '@/components';
+import { PageContainer } from '@/components/layouts';
 
 interface ValidationError {
     path: string;
@@ -35,24 +36,13 @@ export default function NewTunerPage() {
         : undefined;
 
     return (
-        <div className="container" style={{ maxWidth: '700px' }}>
-            <div style={{ marginBottom: 'var(--space-6)' }}>
-                <Link
-                    href="/tuners"
-                    style={{
-                        color: 'var(--color-text-secondary)',
-                        textDecoration: 'none',
-                        fontSize: 'var(--font-size-sm)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-2)',
-                        marginBottom: 'var(--space-4)',
-                    }}
-                >
+        <PageContainer maxWidth="md">
+            <div className="mb-6">
+                <Link href="/tuners" className="text-secondary no-underline text-sm inline-flex items-center gap-2 mb-4">
                     ← Back to Tuners
                 </Link>
-                <h1 style={{ marginBottom: 'var(--space-2)' }}>Add New Tuner</h1>
-                <p style={{ color: 'var(--color-text-secondary)', marginBottom: 0 }}>
+                <h1 className="mb-2">Add New Tuner</h1>
+                <p className="text-secondary m-0">
                     Connect a new HDHomeRun device to stream live TV
                 </p>
             </div>
@@ -60,22 +50,14 @@ export default function NewTunerPage() {
             <Card>
                 <form action={handleSubmit}>
                     {errors && (
-                        <div
-                            role="alert"
-                            style={{
-                                backgroundColor: 'var(--color-error-bg)',
-                                border: '1px solid var(--color-error)',
-                                borderRadius: 'var(--radius-md)',
-                                padding: 'var(--space-4)',
-                                marginBottom: 'var(--space-4)',
-                            }}
-                        >
+                        <div role="alert" className="rounded p-4 mb-4" style={{
+                            backgroundColor: 'var(--color-error-bg)',
+                            border: '1px solid var(--color-error)',
+                        }}>
                             <strong style={{ color: 'var(--color-error)' }}>
                                 Please fix the following errors:
                             </strong>
-                            <ul style={{
-                                marginTop: 'var(--space-2)',
-                                marginBottom: 0,
+                            <ul className="mt-2 m-0" style={{
                                 paddingLeft: 'var(--space-5)',
                                 color: 'var(--color-error)',
                             }}>
@@ -111,11 +93,7 @@ export default function NewTunerPage() {
                         disabled={isPending}
                     />
 
-                    <div style={{
-                        marginTop: 'var(--space-6)',
-                        display: 'flex',
-                        gap: 'var(--space-3)',
-                    }}>
+                    <div className="mt-6 flex gap-3">
                         <Button type="submit" loading={isPending} disabled={isPending}>
                             {isPending ? 'Adding Tuner...' : 'Add Tuner'}
                         </Button>
@@ -128,31 +106,19 @@ export default function NewTunerPage() {
                 </form>
             </Card>
 
-            <div style={{
-                marginTop: 'var(--space-5)',
-                padding: 'var(--space-4)',
+            <div className="mt-5 p-4 rounded" style={{
                 backgroundColor: 'var(--color-info-bg)',
                 border: '1px solid var(--color-info)',
-                borderRadius: 'var(--radius-md)',
             }}>
-                <h3 style={{
-                    marginTop: 0,
-                    marginBottom: 'var(--space-2)',
-                    fontSize: 'var(--font-size-base)',
-                    color: 'var(--color-info)',
-                }}>
+                <h3 className="mt-0 mb-2 text-base" style={{ color: 'var(--color-info)' }}>
                     💡 How to find your tuner
                 </h3>
-                <ul style={{
-                    marginBottom: 0,
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-secondary)',
-                }}>
+                <ul className="m-0 text-sm text-secondary">
                     <li>Check your router's DHCP client list</li>
                     <li>Use the HDHomeRun app to discover devices</li>
                     <li>Look for devices named "HDHomeRun-XXXXXXX"</li>
                 </ul>
             </div>
-        </div>
+        </PageContainer>
     );
 }
