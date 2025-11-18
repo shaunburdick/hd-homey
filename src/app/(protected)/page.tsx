@@ -6,6 +6,7 @@ import { auth } from '@/auth';
 import { getDb } from '@/lib/database/db';
 import { tuners, channels, users } from '@/lib/database/schema';
 import { Card } from '@/components';
+import { PageContainer } from '@/components/layouts';
 
 export default async function Home() {
     const session = await auth();
@@ -20,36 +21,22 @@ export default async function Home() {
     const isAdmin = session?.user?.isAdmin;
 
     return (
-        <div className="container">
-            <div style={{
-                display: 'grid',
-                gap: 'var(--space-6)',
-                gridTemplateColumns: '1fr',
-                maxWidth: '1200px',
-            }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-6)',
-                    flexWrap: 'wrap',
-                }}>
+        <PageContainer maxWidth="xl">
+            <div className="grid gap-6">
+                <div className="flex items-center gap-6 flex-wrap">
                     <Image
                         src={hdHomey}
                         alt="HD Homey"
                         width={150}
                         height={150}
                         priority
-                        style={{ borderRadius: 'var(--radius-lg)' }}
+                        className="rounded-lg"
                     />
                     <div>
-                        <h1 style={{ marginBottom: 'var(--space-2)' }}>
+                        <h1 className="mb-2">
                             Welcome back, {session?.user.name}!
                         </h1>
-                        <p style={{
-                            color: 'var(--color-text-secondary)',
-                            marginBottom: 0,
-                            fontSize: 'var(--font-size-lg)',
-                        }}>
+                        <p className="text-secondary m-0 text-lg">
                             Your HDHomeRun streaming dashboard
                         </p>
                     </div>
@@ -151,25 +138,15 @@ export default async function Home() {
                         gap: 'var(--space-3)',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                     }}>
-                        <Link href="/tuners" style={{ textDecoration: 'none' }}>
-                            <Card className="channel-card" style={{ cursor: 'pointer' }}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 'var(--space-3)',
-                                }}>
-                                    <span style={{ fontSize: 'var(--font-size-2xl)' }}>📡</span>
+                        <Link href="/tuners" className="no-underline">
+                            <Card className="channel-card cursor-pointer">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">📡</span>
                                     <div>
-                                        <div style={{
-                                            fontWeight: 'var(--font-weight-semibold)',
-                                            marginBottom: 'var(--space-1)',
-                                        }}>
+                                        <div className="font-semibold mb-1">
                                             Browse Tuners
                                         </div>
-                                        <div style={{
-                                            fontSize: 'var(--font-size-sm)',
-                                            color: 'var(--color-text-secondary)',
-                                        }}>
+                                        <div className="text-sm text-secondary">
                                             View and manage your HDHomeRun devices
                                         </div>
                                     </div>
@@ -178,25 +155,15 @@ export default async function Home() {
                         </Link>
 
                         {isAdmin && (
-                            <Link href="/settings" style={{ textDecoration: 'none' }}>
-                                <Card className="channel-card" style={{ cursor: 'pointer' }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 'var(--space-3)',
-                                    }}>
-                                        <span style={{ fontSize: 'var(--font-size-2xl)' }}>⚙️</span>
+                            <Link href="/settings" className="no-underline">
+                                <Card className="channel-card cursor-pointer">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">⚙️</span>
                                         <div>
-                                            <div style={{
-                                                fontWeight: 'var(--font-weight-semibold)',
-                                                marginBottom: 'var(--space-1)',
-                                            }}>
+                                            <div className="font-semibold mb-1">
                                                 Settings
                                             </div>
-                                            <div style={{
-                                                fontSize: 'var(--font-size-sm)',
-                                                color: 'var(--color-text-secondary)',
-                                            }}>
+                                            <div className="text-sm text-secondary">
                                                 Configure transcoding and manage users
                                             </div>
                                         </div>
@@ -205,25 +172,15 @@ export default async function Home() {
                             </Link>
                         )}
 
-                        <Link href="/about" style={{ textDecoration: 'none' }}>
-                            <Card className="channel-card" style={{ cursor: 'pointer' }}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 'var(--space-3)',
-                                }}>
-                                    <span style={{ fontSize: 'var(--font-size-2xl)' }}>ℹ️</span>
+                        <Link href="/about" className="no-underline">
+                            <Card className="channel-card cursor-pointer">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">ℹ️</span>
                                     <div>
-                                        <div style={{
-                                            fontWeight: 'var(--font-weight-semibold)',
-                                            marginBottom: 'var(--space-1)',
-                                        }}>
+                                        <div className="font-semibold mb-1">
                                             About
                                         </div>
-                                        <div style={{
-                                            fontSize: 'var(--font-size-sm)',
-                                            color: 'var(--color-text-secondary)',
-                                        }}>
+                                        <div className="text-sm text-secondary">
                                             Version info and documentation
                                         </div>
                                     </div>
@@ -233,6 +190,6 @@ export default async function Home() {
                     </div>
                 </div>
             </div>
-        </div>
+        </PageContainer>
     );
 }

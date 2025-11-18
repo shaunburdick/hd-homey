@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import Link from 'next/link';
 import { Input, Button, Card } from '@/components';
+import { PageContainer } from '@/components/layouts';
 import { createUser } from '@/lib/actions/users';
 import { AuthRoles } from '@/lib/auth-roles';
 
@@ -36,24 +37,13 @@ export default function Page() {
         : undefined;
 
     return (
-        <div className="container" style={{ maxWidth: '700px' }}>
-            <div style={{ marginBottom: 'var(--space-6)' }}>
-                <Link
-                    href="/users"
-                    style={{
-                        color: 'var(--color-text-secondary)',
-                        textDecoration: 'none',
-                        fontSize: 'var(--font-size-sm)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-2)',
-                        marginBottom: 'var(--space-4)',
-                    }}
-                >
+        <PageContainer maxWidth="md">
+            <div className="mb-6">
+                <Link href="/users" className="text-secondary no-underline text-sm inline-flex items-center gap-2 mb-4">
                     ← Back to Users
                 </Link>
-                <h1 style={{ marginBottom: 'var(--space-2)' }}>Add New User</h1>
-                <p style={{ color: 'var(--color-text-secondary)', marginBottom: 0 }}>
+                <h1 className="mb-2">Add New User</h1>
+                <p className="text-secondary m-0">
                     Create a new user account with admin or viewer permissions
                 </p>
             </div>
@@ -123,17 +113,8 @@ export default function Page() {
                         disabled={isPending}
                     />
 
-                    <div style={{ marginBottom: 'var(--space-4)' }}>
-                        <label
-                            htmlFor="role"
-                            style={{
-                                display: 'block',
-                                fontSize: 'var(--font-size-sm)',
-                                fontWeight: 'var(--font-weight-medium)',
-                                color: 'var(--color-text-primary)',
-                                marginBottom: 'var(--space-2)',
-                            }}
-                        >
+                    <div className="mb-4">
+                        <label htmlFor="role" className="block text-sm font-medium text-primary mb-2">
                             Role <span style={{ color: 'var(--color-error)' }}>*</span>
                         </label>
                         <select
@@ -141,35 +122,24 @@ export default function Page() {
                             name='role'
                             required
                             disabled={isPending}
+                            className="w-full text-base rounded"
                             style={{
-                                width: '100%',
                                 minHeight: 'var(--input-height)',
                                 padding: 'var(--space-3)',
                                 backgroundColor: 'var(--color-bg-secondary)',
                                 color: 'var(--color-text-primary)',
                                 border: '1px solid var(--color-border)',
-                                borderRadius: 'var(--radius-md)',
-                                fontSize: 'var(--font-size-base)',
                             }}
                         >
                             <option value={AuthRoles.Viewer}>👤 Viewer - View-only access</option>
                             <option value={AuthRoles.Admin}>👑 Admin - Full access</option>
                         </select>
-                        <p style={{
-                            marginTop: 'var(--space-1)',
-                            fontSize: 'var(--font-size-xs)',
-                            color: 'var(--color-text-tertiary)',
-                            marginBottom: 0,
-                        }}>
+                        <p className="mt-1 text-xs text-tertiary m-0">
                             Admins can manage tuners and users
                         </p>
                     </div>
 
-                    <div style={{
-                        marginTop: 'var(--space-6)',
-                        display: 'flex',
-                        gap: 'var(--space-3)',
-                    }}>
+                    <div className="mt-6 flex gap-3">
                         <Button type="submit" loading={isPending} disabled={isPending}>
                             {isPending ? 'Creating User...' : 'Create User'}
                         </Button>
@@ -182,30 +152,18 @@ export default function Page() {
                 </form>
             </Card>
 
-            <div style={{
-                marginTop: 'var(--space-5)',
-                padding: 'var(--space-4)',
+            <div className="mt-5 p-4 rounded" style={{
                 backgroundColor: 'var(--color-info-bg)',
                 border: '1px solid var(--color-info)',
-                borderRadius: 'var(--radius-md)',
             }}>
-                <h3 style={{
-                    marginTop: 0,
-                    marginBottom: 'var(--space-2)',
-                    fontSize: 'var(--font-size-base)',
-                    color: 'var(--color-info)',
-                }}>
+                <h3 className="mt-0 mb-2 text-base" style={{ color: 'var(--color-info)' }}>
                     💡 About User Roles
                 </h3>
-                <ul style={{
-                    marginBottom: 0,
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-secondary)',
-                }}>
+                <ul className="m-0 text-sm text-secondary">
                     <li><strong>Admins</strong> can add/edit tuners, manage channels, and create users</li>
                     <li><strong>Viewers</strong> can only view and stream available channels</li>
                 </ul>
             </div>
-        </div>
+        </PageContainer>
     );
 }
