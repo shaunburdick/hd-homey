@@ -29,6 +29,13 @@ export interface FFmpegInfo {
     path?: string;
 }
 
+export interface ViewerSession {
+    viewerId: string;
+    lastAccess: number;
+    startTime: number;
+    userAgent?: string;
+}
+
 export interface SessionStats {
     sessionId: string;
     tunerId: number;
@@ -37,6 +44,11 @@ export interface SessionStats {
     viewerCount: number;
     uptime: number;  // seconds
     status: 'starting' | 'running' | 'stopping' | 'error';
+    viewers?: {
+        id: string;
+        watching: number;
+        lastActivity: number;
+    }[];
 }
 
 export const DEFAULT_SETTINGS: TranscodeSettings = {

@@ -80,13 +80,16 @@ export async function GET(
             settings
         );
 
-        // Note: We don't track viewer count for HLS since it's stateless.
-        // The playlist is polled repeatedly by the player, which would
-        // artificially inflate the count. Session cleanup is based on
-        // lastAccessTime instead, updated by segment requests.
+        // Generate unique viewer session ID
+        const viewerId = crypto.randomUUID();
 
-        // Serve the playlist with token appended to segment URLs
-        const response = await servePlaylist(session.outputDir, token);
+        // Add viewer to session
+        manager.addViewer(session.sessionId, viewerId, {
+            userAgent: req.headers.get('user-agent') || undefined,
+        });
+
+        // Serve the playlist with token and viewer_id appended to segment URLs
+        const response = await servePlaylist(session.outputDir, token, viewerId);
 
         return response;
     } catch (error) {

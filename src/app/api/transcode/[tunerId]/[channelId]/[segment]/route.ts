@@ -16,11 +16,18 @@ export async function GET(
 ) {
     try {
         const { tunerId, channelId, segment } = await context.params;
-        const token = req.nextUrl.searchParams.get('token');
+        const { searchParams } = req.nextUrl;
+        const token = searchParams.get('token');
+        const viewerId = searchParams.get('viewer_id');
 
         if (!token) {
             Logger.warn({ tunerId, channelId, segment }, 'Segment request missing token');
             return new Response('Missing token', { status: 401 });
+        }
+
+        if (!viewerId) {
+            Logger.warn({ tunerId, channelId, segment }, 'Segment request missing viewer_id');
+            return new Response('Missing viewer_id - please reload the page', { status: 400 });
         }
 
         // Verify token
@@ -40,7 +47,7 @@ export async function GET(
             return new Response('Token does not match resource', { status: 403 });
         }
 
-        // Get session
+        // Get session and update viewer activity
         const manager = getSessionManager();
         const sessionId = `${tunerId}:${channelId}`;
         const session = manager.getSession(sessionId);
@@ -50,9 +57,14 @@ export async function GET(
             return new Response('Session not found', { status: 404 });
         }
 
-        // Update last access time by incrementing/decrementing (net zero but updates timestamp)
-        manager.incrementViewers(sessionId);
-        manager.decrementViewers(sessionId);
+        // Update viewer activity
+        const updated = manager.updateViewerActivity(sessionId, viewerId);
+
+        if (!updated) {
+            // Viewer session expired or invalid - client should reload
+            Logger.warn({ sessionId, viewerId, segment }, 'Viewer session not found');
+            return new Response('Viewer session expired - please reload the page', { status: 410 });
+        }
 
         // Serve the segment
         return await serveSegment(session.outputDir, segment);

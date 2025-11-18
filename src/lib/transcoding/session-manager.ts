@@ -4,7 +4,7 @@
 
 import { join } from 'path';
 import type { ChildProcess } from 'child_process';
-import type { TranscodeSettings, SessionStats } from './types';
+import type { TranscodeSettings, SessionStats, ViewerSession } from './types';
 import { startTranscode, stopTranscode, waitForPlaylist, cleanupTranscodeFiles } from './transcode';
 import Logger from '@/lib/logger';
 
@@ -13,13 +13,12 @@ interface TranscodingSession {
     tunerId: number;
     channelId: number;
     channelName: string;
-    viewerCount: number;
+    viewers: Map<string, ViewerSession>;
     process: ChildProcess;
     pid: number;
     outputDir: string;
     playlistPath: string;
     startTime: number;
-    lastAccessTime: number;
     settings: TranscodeSettings;
     status: 'starting' | 'running' | 'stopping' | 'error';
     error?: string;
@@ -53,8 +52,7 @@ class TranscodingSessionManager {
         // Check if session already exists
         const existing = this.sessions.get(sessionId);
         if (existing) {
-            Logger.info({ sessionId, viewerCount: existing.viewerCount }, 'Reusing existing session');
-            existing.lastAccessTime = Date.now();
+            Logger.info({ sessionId, viewerCount: existing.viewers.size }, 'Reusing existing session');
             return existing;
         }
 
@@ -81,13 +79,12 @@ class TranscodingSessionManager {
             tunerId,
             channelId,
             channelName,
-            viewerCount: 0,
+            viewers: new Map<string, ViewerSession>(),
             process: null as unknown as ChildProcess, // Will be set below
             pid: 0,
             outputDir,
             playlistPath,
             startTime: Date.now(),
-            lastAccessTime: Date.now(),
             settings,
             status: 'starting',
         };
@@ -127,30 +124,60 @@ class TranscodingSessionManager {
     }
 
     /**
-     * Increment viewer count for a session
+     * Add a viewer to a session
      */
-    public incrementViewers(sessionId: string): void {
+    public addViewer(
+        sessionId: string,
+        viewerId: string,
+        metadata?: { userAgent?: string }
+    ): void {
         const session = this.sessions.get(sessionId);
-        if (session) {
-            session.viewerCount++;
-            session.lastAccessTime = Date.now();
-            Logger.debug({ sessionId, viewerCount: session.viewerCount }, 'Viewer joined');
+        if (!session) {
+            throw new Error(`Session ${sessionId} not found`);
         }
+
+        session.viewers.set(viewerId, {
+            viewerId,
+            lastAccess: Date.now(),
+            startTime: Date.now(),
+            userAgent: metadata?.userAgent,
+        });
+
+        Logger.info(
+            { sessionId, viewerId, viewerCount: session.viewers.size },
+            'Viewer added to session'
+        );
     }
 
     /**
-     * Decrement viewer count for a session
+     * Update viewer activity timestamp
      */
-    public decrementViewers(sessionId: string): void {
+    public updateViewerActivity(sessionId: string, viewerId: string): boolean {
         const session = this.sessions.get(sessionId);
-        if (session) {
-            session.viewerCount = Math.max(0, session.viewerCount - 1);
-            session.lastAccessTime = Date.now();
-            Logger.debug(
-                { sessionId, viewerCount: session.viewerCount },
-                'Viewer left'
-            );
+        if (!session) {
+            return false;
         }
+
+        const viewer = session.viewers.get(viewerId);
+        if (!viewer) {
+            return false;
+        }
+
+        viewer.lastAccess = Date.now();
+        Logger.debug({ sessionId, viewerId }, 'Viewer activity updated');
+        return true;
+    }
+
+    /**
+     * Get active viewers for a session
+     */
+    public getSessionViewers(sessionId: string): ViewerSession[] {
+        const session = this.sessions.get(sessionId);
+        if (!session) {
+            return [];
+        }
+
+        return Array.from(session.viewers.values());
     }
 
     /**
@@ -170,7 +197,7 @@ class TranscodingSessionManager {
             return;
         }
 
-        Logger.info({ sessionId, viewerCount: session.viewerCount }, 'Stopping session');
+        Logger.info({ sessionId, viewerCount: session.viewers.size }, 'Stopping session');
 
         session.status = 'stopping';
 
@@ -186,27 +213,38 @@ class TranscodingSessionManager {
     }
 
     /**
-     * Clean up inactive sessions (no segment requests for > 30 seconds)
+     * Clean up inactive viewers and sessions with no viewers
      */
     public async cleanupInactiveSessions(): Promise<void> {
         const now = Date.now();
-        const inactiveSessions: string[] = [];
 
         for (const [sessionId, session] of this.sessions.entries()) {
-            // Clean up based on lastAccessTime, not viewerCount
-            // HLS is stateless - we detect "no viewers" by lack of segment requests
-            if (now - session.lastAccessTime > this.INACTIVE_TIMEOUT) {
-                inactiveSessions.push(sessionId);
+            // Remove inactive viewers
+            const inactiveViewers: string[] = [];
+
+            for (const [viewerId, viewer] of session.viewers.entries()) {
+                if (now - viewer.lastAccess > this.INACTIVE_TIMEOUT) {
+                    inactiveViewers.push(viewerId);
+                }
             }
-        }
 
-        if (inactiveSessions.length > 0) {
-            Logger.info(
-                { count: inactiveSessions.length, sessions: inactiveSessions },
-                'Cleaning up inactive sessions'
-            );
+            // Remove inactive viewers
+            if (inactiveViewers.length > 0) {
+                for (const viewerId of inactiveViewers) {
+                    session.viewers.delete(viewerId);
+                    Logger.debug(
+                        { sessionId, viewerId, remainingViewers: session.viewers.size },
+                        'Removed inactive viewer'
+                    );
+                }
+            }
 
-            for (const sessionId of inactiveSessions) {
+            // If no viewers remain, stop the transcoding session
+            if (session.viewers.size === 0) {
+                Logger.info(
+                    { sessionId },
+                    'No viewers remaining - stopping transcoding session'
+                );
                 await this.stopSession(sessionId);
             }
         }
@@ -222,9 +260,14 @@ class TranscodingSessionManager {
             tunerId: session.tunerId,
             channelId: session.channelId,
             channelName: session.channelName,
-            viewerCount: session.viewerCount,
+            viewerCount: session.viewers.size,
             uptime: Math.floor((now - session.startTime) / 1000),
             status: session.status,
+            viewers: Array.from(session.viewers.values()).map((viewer) => ({
+                id: viewer.viewerId.substring(0, 8),
+                watching: Math.floor((now - viewer.startTime) / 1000),
+                lastActivity: Math.floor((now - viewer.lastAccess) / 1000),
+            })),
         }));
     }
 

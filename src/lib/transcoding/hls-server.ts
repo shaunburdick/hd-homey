@@ -7,24 +7,28 @@ import { join } from 'path';
 import Logger from '@/lib/logger';
 
 /**
- * Serve an HLS playlist file
+ * Serve an HLS playlist file with token and viewer session ID
  */
 export async function servePlaylist(
     outputDir: string,
-    token?: string
+    token?: string,
+    viewerId?: string
 ): Promise<Response> {
     const playlistPath = join(outputDir, 'playlist.m3u8');
 
     try {
         let content = await fs.readFile(playlistPath, 'utf-8');
 
-        // Add token to segment URLs if provided
+        // Add token and viewer_id to segment URLs if provided
         if (token) {
             const lines = content.split('\n');
             const modifiedLines = lines.map(line => {
-                // Add token to .ts segment files
+                // Add token and viewer_id to .ts segment files
                 if (line.trim().endsWith('.ts')) {
-                    const modifiedLine = `${line}?token=${token}`;
+                    let modifiedLine = `${line}?token=${token}`;
+                    if (viewerId) {
+                        modifiedLine += `&viewer_id=${viewerId}`;
+                    }
                     Logger.debug({ original: line, modified: modifiedLine }, 'Modified segment URL');
                     return modifiedLine;
                 }
@@ -32,7 +36,7 @@ export async function servePlaylist(
             });
             content = modifiedLines.join('\n');
             const segmentCount = modifiedLines.filter(l => l.includes('.ts')).length;
-            Logger.debug({ segmentCount }, 'Playlist modified with tokens');
+            Logger.debug({ segmentCount, viewerId }, 'Playlist modified with token and viewer ID');
         }
 
         return new Response(content, {
