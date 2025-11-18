@@ -185,7 +185,7 @@ export default function TranscodingStatus() {
                                     {session.channelName}
                                 </a>
                             </td>
-                            <td>{session.viewerCount}</td>
+                            <td title="Viewer tracking not available for HLS (stateless protocol)">N/A</td>
                             <td>{formatUptime(session.uptime)}</td>
                             <td>{getStatusBadge(session.status)}</td>
                             <td>

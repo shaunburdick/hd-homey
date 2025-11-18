@@ -80,14 +80,13 @@ export async function GET(
             settings
         );
 
-        // Increment viewer count
-        manager.incrementViewers(session.sessionId);
+        // Note: We don't track viewer count for HLS since it's stateless.
+        // The playlist is polled repeatedly by the player, which would
+        // artificially inflate the count. Session cleanup is based on
+        // lastAccessTime instead, updated by segment requests.
 
         // Serve the playlist with token appended to segment URLs
         const response = await servePlaylist(session.outputDir, token);
-
-        // Note: We don't decrement viewers here because the client will keep polling
-        // The session manager will clean up inactive sessions automatically
 
         return response;
     } catch (error) {
