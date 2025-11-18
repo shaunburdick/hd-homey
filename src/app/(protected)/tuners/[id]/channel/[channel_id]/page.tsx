@@ -56,7 +56,7 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
                             </span>
                             <h1 className="m-0">{channel.guideName}</h1>
                         </div>
-                        {!!channel.hd && (
+                        {channel.hd === 1 && (
                             <span className="inline-block text-xs font-semibold" style={{
                                 backgroundColor: 'var(--color-success-bg)',
                                 color: 'var(--color-success)',
