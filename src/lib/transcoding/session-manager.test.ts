@@ -58,7 +58,7 @@ describe('TranscodingSessionManager', () => {
             expect(session.tunerId).toBe(1);
             expect(session.channelId).toBe(42);
             expect(session.channelName).toBe('Test Channel');
-            expect(session.viewerCount).toBe(0);
+            expect(session.viewers.size).toBe(0);
             expect(session.status).toBe('running');
             expect(transcode.startTranscode).toHaveBeenCalled();
         });
@@ -137,18 +137,18 @@ describe('TranscodingSessionManager', () => {
                 DEFAULT_SETTINGS
             );
 
-            expect(session.viewerCount).toBe(0);
+            expect(session.viewers.size).toBe(0);
 
-            manager.incrementViewers('1:42');
+            manager.addViewer('1:42', 'viewer-1');
             const updated = manager.getSession('1:42');
-            expect(updated?.viewerCount).toBe(1);
+            expect(updated?.viewers.size).toBe(1);
 
-            manager.incrementViewers('1:42');
+            manager.addViewer('1:42', 'viewer-2');
             const updated2 = manager.getSession('1:42');
-            expect(updated2?.viewerCount).toBe(2);
+            expect(updated2?.viewers.size).toBe(2);
         });
 
-        it('should decrement viewer count', async () => {
+        it('should update viewer activity', async () => {
             const manager = getSessionManager();
 
             await manager.getOrCreateSession(
@@ -159,35 +159,39 @@ describe('TranscodingSessionManager', () => {
                 DEFAULT_SETTINGS
             );
 
-            manager.incrementViewers('1:42');
-            manager.incrementViewers('1:42');
+            manager.addViewer('1:42', 'viewer-1');
+            manager.addViewer('1:42', 'viewer-2');
 
-            let session = manager.getSession('1:42');
-            expect(session?.viewerCount).toBe(2);
-
-            manager.decrementViewers('1:42');
-            session = manager.getSession('1:42');
-            expect(session?.viewerCount).toBe(1);
-
-            manager.decrementViewers('1:42');
-            session = manager.getSession('1:42');
-            expect(session?.viewerCount).toBe(0);
-        });
-
-        it('should not decrement below zero', async () => {
-            const manager = getSessionManager();
-
-            await manager.getOrCreateSession(
-                1,
-                42,
-                'Test Channel',
-                'http://tuner:5004/auto/v10.1',
-                DEFAULT_SETTINGS
-            );
-
-            manager.decrementViewers('1:42');
             const session = manager.getSession('1:42');
-            expect(session?.viewerCount).toBe(0);
+            expect(session?.viewers.size).toBe(2);
+
+            // Update activity should succeed for existing viewer
+            const updated = manager.updateViewerActivity('1:42', 'viewer-1');
+            expect(updated).toBe(true);
+
+            // Update should fail for non-existent viewer
+            const notFound = manager.updateViewerActivity('1:42', 'viewer-3');
+            expect(notFound).toBe(false);
+        });
+
+        it('should get session viewers', async () => {
+            const manager = getSessionManager();
+
+            await manager.getOrCreateSession(
+                1,
+                42,
+                'Test Channel',
+                'http://tuner:5004/auto/v10.1',
+                DEFAULT_SETTINGS
+            );
+
+            manager.addViewer('1:42', 'viewer-1');
+            manager.addViewer('1:42', 'viewer-2');
+
+            const viewers = manager.getSessionViewers('1:42');
+            expect(viewers).toHaveLength(2);
+            expect(viewers[0].viewerId).toBe('viewer-1');
+            expect(viewers[1].viewerId).toBe('viewer-2');
         });
     });
 
@@ -237,7 +241,7 @@ describe('TranscodingSessionManager', () => {
                 DEFAULT_SETTINGS
             );
 
-            manager.incrementViewers('1:42');
+            manager.addViewer('1:42', 'viewer-1');
 
             const stats = manager.getActiveSessions();
             expect(stats).toHaveLength(2);
@@ -271,7 +275,7 @@ describe('TranscodingSessionManager', () => {
                 DEFAULT_SETTINGS
             );
 
-            manager.incrementViewers('1:42');
+            manager.addViewer('1:42', 'viewer-1');
 
             await manager.cleanupInactiveSessions();
 
@@ -279,7 +283,7 @@ describe('TranscodingSessionManager', () => {
             expect(transcode.stopTranscode).not.toHaveBeenCalled();
         });
 
-        it('should cleanup sessions with no viewers after timeout', async () => {
+        it('should cleanup inactive viewers and stop session when all gone', async () => {
             const manager = getSessionManager();
 
             const session = await manager.getOrCreateSession(
@@ -290,8 +294,14 @@ describe('TranscodingSessionManager', () => {
                 DEFAULT_SETTINGS
             );
 
-            // Simulate 31 seconds passing
-            session.lastAccessTime = Date.now() - 31000;
+            // Add a viewer
+            manager.addViewer('1:42', 'viewer-1');
+
+            // Get the viewer and simulate 31 seconds passing
+            const viewer = session.viewers.get('viewer-1');
+            if (viewer) {
+                viewer.lastAccess = Date.now() - 31000;
+            }
 
             await manager.cleanupInactiveSessions();
 
