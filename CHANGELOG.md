@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.3] - 2025-11-18
+
+**Note**: This release adds the most requested feature - in-browser video playback with automatic transcoding.
+
 ### Added
 
 - **Video Transcoding & In-Browser Playback** (SPEC-005): Complete implementation
