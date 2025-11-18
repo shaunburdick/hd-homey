@@ -4,7 +4,7 @@ import Link from 'next/link';
 import UserEditForm from './UserEditForm';
 import { getDb } from '@/lib/database/db';
 import { users } from '@/lib/database/schema';
-import { AdminLink } from '@/components/AdminLink';
+import { Card } from '@/components';
 
 interface PageParams {
     id: string
@@ -26,40 +26,138 @@ export default async function Page(props: { params: Promise<PageParams> }) {
     }
 
     return (
-        <>
-            <h1>{user.name}</h1>
-            <p><Link href="/users">← Back to Users</Link></p>
+        <div className="container" style={{ maxWidth: '900px' }}>
+            <div style={{ marginBottom: 'var(--space-6)' }}>
+                <Link
+                    href="/users"
+                    style={{
+                        color: 'var(--color-text-secondary)',
+                        textDecoration: 'none',
+                        fontSize: 'var(--font-size-sm)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 'var(--space-2)',
+                        marginBottom: 'var(--space-4)',
+                    }}
+                >
+                    ← Back to Users
+                </Link>
 
-            <hr />
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-3)',
+                }}>
+                    <h1 style={{ marginBottom: 0 }}>{user.name}</h1>
+                    <span style={{
+                        display: 'inline-block',
+                        backgroundColor: user.role === 'admin'
+                            ? 'var(--color-info-bg)'
+                            : 'var(--color-bg-tertiary)',
+                        color: user.role === 'admin'
+                            ? 'var(--color-info)'
+                            : 'var(--color-text-secondary)',
+                        padding: 'var(--space-1) var(--space-3)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-semibold)',
+                    }}>
+                        {user.role === 'admin' ? '👑 Admin' : '👤 Viewer'}
+                    </span>
+                    {!user.is_active && (
+                        <span style={{
+                            display: 'inline-block',
+                            backgroundColor: 'var(--color-error-bg)',
+                            color: 'var(--color-error)',
+                            padding: 'var(--space-1) var(--space-2)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)',
+                            fontWeight: 'var(--font-weight-semibold)',
+                        }}>
+                            Inactive
+                        </span>
+                    )}
+                </div>
+            </div>
 
-            <h2>User Information</h2>
-            <dl>
-                <dt><strong>Username:</strong></dt>
-                <dd>{user.username}</dd>
+            <Card style={{ marginBottom: 'var(--space-6)' }}>
+                <h2 style={{ marginTop: 0, marginBottom: 'var(--space-4)' }}>
+                    User Information
+                </h2>
+                <dl style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr',
+                    gap: 'var(--space-3)',
+                    marginBottom: 0,
+                }}>
+                    <dt style={{
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--color-text-secondary)',
+                    }}>
+                        Username
+                    </dt>
+                    <dd style={{ margin: 0 }}>@{user.username}</dd>
 
-                <dt><strong>Display Name:</strong></dt>
-                <dd>{user.name}</dd>
+                    <dt style={{
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--color-text-secondary)',
+                    }}>
+                        Display Name
+                    </dt>
+                    <dd style={{ margin: 0 }}>{user.name}</dd>
 
-                <dt><strong>Role:</strong></dt>
-                <dd>{user.role}</dd>
+                    <dt style={{
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--color-text-secondary)',
+                    }}>
+                        Role
+                    </dt>
+                    <dd style={{ margin: 0 }}>
+                        {user.role === 'admin' ? 'Administrator' : 'Viewer'}
+                    </dd>
 
-                <dt><strong>Status:</strong></dt>
-                <dd>{user.is_active ? 'Active' : 'Inactive'}</dd>
+                    <dt style={{
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--color-text-secondary)',
+                    }}>
+                        Status
+                    </dt>
+                    <dd style={{ margin: 0 }}>
+                        <span style={{
+                            color: user.is_active ? 'var(--color-success)' : 'var(--color-error)',
+                        }}>
+                            {user.is_active ? '✓ Active' : '✗ Inactive'}
+                        </span>
+                    </dd>
 
-                <dt><strong>Created:</strong></dt>
-                <dd>{user.created_at.toLocaleString()}</dd>
+                    <dt style={{
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--color-text-secondary)',
+                    }}>
+                        Created
+                    </dt>
+                    <dd style={{ margin: 0 }}>
+                        {user.created_at.toLocaleString()}
+                    </dd>
 
-                <dt><strong>Last Modified:</strong></dt>
-                <dd>{user.modified_at.toLocaleString()}</dd>
-            </dl>
+                    <dt style={{
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--color-text-secondary)',
+                    }}>
+                        Last Modified
+                    </dt>
+                    <dd style={{ margin: 0 }}>
+                        {user.modified_at.toLocaleString()}
+                    </dd>
+                </dl>
+            </Card>
 
-            <hr />
-
-            <AdminLink href={`/users/${user.id}/edit`}>
-                <h2>Edit User</h2>
-            </AdminLink>
-
-            <UserEditForm user={user} />
-        </>
+            <Card>
+                <h2 style={{ marginTop: 0, marginBottom: 'var(--space-4)' }}>
+                    Edit User
+                </h2>
+                <UserEditForm user={user} />
+            </Card>
+        </div>
     );
 }
