@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { Input, Button, Card } from '@/components';
+import { PageContainer } from '@/components/layouts';
 
 export default function SignIn() {
     const [error, setError] = useState<string | null>(null);
@@ -40,28 +41,20 @@ export default function SignIn() {
     };
 
     return (
-        <main style={{
-            maxWidth: '500px',
-            margin: '0 auto',
-            padding: 'var(--space-6)',
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-        }}>
-            <div style={{ width: '100%' }}>
-                <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
+        <main className="flex items-center justify-center p-6" style={{ minHeight: '100vh' }}>
+            <PageContainer maxWidth="sm">
+                <div className="text-center" style={{ marginBottom: 'var(--space-8)' }}>
                     <img
                         src="/icon.png"
                         alt="HD Homey"
                         width="64"
                         height="64"
-                        style={{ borderRadius: 'var(--radius-lg)' }}
+                        className="rounded-lg"
                     />
-                    <h1 style={{ marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
+                    <h1 className="mb-2" style={{ marginTop: 'var(--space-4)' }}>
                         Sign In
                     </h1>
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-base)' }}>
+                    <p className="text-secondary text-base">
                         Welcome back to HD Homey
                     </p>
                 </div>
@@ -69,17 +62,11 @@ export default function SignIn() {
                 <Card>
                     <form onSubmit={handleSubmit}>
                         {error && (
-                            <div
-                                role="alert"
-                                style={{
-                                    backgroundColor: 'var(--color-error-bg)',
-                                    border: '1px solid var(--color-error)',
-                                    borderRadius: 'var(--radius-md)',
-                                    padding: 'var(--space-4)',
-                                    marginBottom: 'var(--space-4)',
-                                    color: 'var(--color-error)',
-                                }}
-                            >
+                            <div role="alert" className="rounded p-4 mb-4" style={{
+                                backgroundColor: 'var(--color-error-bg)',
+                                border: '1px solid var(--color-error)',
+                                color: 'var(--color-error)',
+                            }}>
                                 {error}
                             </div>
                         )}
@@ -103,12 +90,12 @@ export default function SignIn() {
                             disabled={isLoading}
                         />
 
-                        <div style={{ marginTop: 'var(--space-6)' }}>
+                        <div className="mt-6">
                             <Button
                                 type="submit"
                                 loading={isLoading}
                                 disabled={isLoading}
-                                style={{ width: '100%' }}
+                                className="w-full"
                             >
                                 {isLoading ? 'Signing In...' : 'Sign In'}
                             </Button>
@@ -116,15 +103,10 @@ export default function SignIn() {
                     </form>
                 </Card>
 
-                <p style={{
-                    marginTop: 'var(--space-5)',
-                    textAlign: 'center',
-                    fontSize: 'var(--font-size-sm)',
-                    color: 'var(--color-text-tertiary)',
-                }}>
+                <p className="mt-5 text-center text-sm text-tertiary">
                     Need help? Contact your administrator.
                 </p>
-            </div>
+            </PageContainer>
         </main>
     );
 }

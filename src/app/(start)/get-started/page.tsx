@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { createFirstUser } from './actions';
 import { Input, Button, Card } from '@/components';
+import { PageContainer } from '@/components/layouts';
 
 interface ValidationError {
     path: string;
@@ -34,23 +35,19 @@ export default function GetStarted() {
         : undefined;
 
     return (
-        <main style={{ maxWidth: '600px', margin: '0 auto', padding: 'var(--space-6)' }}>
-            <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
+        <PageContainer maxWidth="md" className="p-6">
+            <div className="text-center" style={{ marginBottom: 'var(--space-8)' }}>
                 <h1>Welcome to HD Homey!</h1>
-                <p style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text-secondary)' }}>
+                <p className="text-lg text-secondary">
                     Let's get started by creating your admin account.
                 </p>
             </div>
 
             <Card>
                 <form action={handleSubmit}>
-                    <h2 style={{ marginTop: 0 }}>Create Admin Account</h2>
+                    <h2 className="mt-0">Create Admin Account</h2>
 
-                    <p style={{
-                        color: 'var(--color-text-secondary)',
-                        fontSize: 'var(--font-size-sm)',
-                        marginBottom: 'var(--space-5)',
-                    }}>
+                    <p className="text-secondary text-sm mb-5">
                         This will be the primary administrator account with full access
                         to manage tuners, channels, and users.
                     </p>
@@ -119,7 +116,7 @@ export default function GetStarted() {
                         disabled={isPending}
                     />
 
-                    <div style={{ marginTop: 'var(--space-6)' }}>
+                    <div className="mt-6">
                         <Button type="submit" loading={isPending} disabled={isPending}>
                             {isPending ? 'Creating Account...' : 'Create Admin Account'}
                         </Button>
@@ -127,14 +124,9 @@ export default function GetStarted() {
                 </form>
             </Card>
 
-            <p style={{
-                marginTop: 'var(--space-5)',
-                textAlign: 'center',
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-text-tertiary)',
-            }}>
+            <p className="mt-5 text-center text-sm text-tertiary">
                 🔒 This account will have full administrative access to HD Homey
             </p>
-        </main>
+        </PageContainer>
     );
 }
