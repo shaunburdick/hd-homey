@@ -69,7 +69,7 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                     </div>
                     <RoleGuard allowedRoles={[AuthRoles.Admin]}>
                         <form action={`/tuners/${tuner.id}/poll`} method="POST">
-                            <Button type="submit" variant="secondary" size="sm">
+                            <Button type="submit" variant="secondary">
                                 🔄 Refresh Channels
                             </Button>
                         </form>
