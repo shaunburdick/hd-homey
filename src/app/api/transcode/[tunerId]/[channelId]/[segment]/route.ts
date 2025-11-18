@@ -6,6 +6,7 @@ import type { NextRequest } from 'next/server';
 import { verifyStreamToken } from '@/lib/stream-token';
 import { getSessionManager } from '@/lib/transcoding/session-manager';
 import { serveSegment } from '@/lib/transcoding/hls-server';
+import { generateViewerFingerprint } from '@/lib/viewer-fingerprint';
 import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -18,16 +19,18 @@ export async function GET(
         const { tunerId, channelId, segment } = await context.params;
         const { searchParams } = req.nextUrl;
         const token = searchParams.get('token');
-        const viewerId = searchParams.get('viewer_id');
+        let viewerId = searchParams.get('viewer_id');
 
         if (!token) {
             Logger.warn({ tunerId, channelId, segment }, 'Segment request missing token');
             return new Response('Missing token', { status: 401 });
         }
 
+        // If viewer_id not in URL, generate from fingerprint
+        // This handles cases where old URLs are cached or direct segment access
         if (!viewerId) {
-            Logger.warn({ tunerId, channelId, segment }, 'Segment request missing viewer_id');
-            return new Response('Missing viewer_id - please reload the page', { status: 400 });
+            viewerId = generateViewerFingerprint(req);
+            Logger.debug({ tunerId, channelId, segment, viewerId }, 'Generated viewer_id from fingerprint');
         }
 
         // Verify token

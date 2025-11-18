@@ -10,6 +10,7 @@ import { verifyStreamToken } from '@/lib/stream-token';
 import { getTranscodingSettings } from '@/lib/settings';
 import { getSessionManager } from '@/lib/transcoding/session-manager';
 import { servePlaylist } from '@/lib/transcoding/hls-server';
+import { generateViewerFingerprint } from '@/lib/viewer-fingerprint';
 import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -80,14 +81,16 @@ export async function GET(
             settings
         );
 
-        // Generate unique viewer ID for this playlist request
-        // Note: We generate a new ID each time, but only the FIRST segment request
-        // will create the viewer session. Subsequent playlist polls will reuse
-        // the same viewer_id in their segments, so the viewer count stays accurate.
-        const viewerId = crypto.randomUUID();
+        // Generate viewer fingerprint from IP + User-Agent
+        // This creates a stable identifier that persists across playlist polls,
+        // allowing accurate viewer counting without cookies or client-side code.
+        // Works with browsers, mobile apps, and media players.
+        const viewerId = generateViewerFingerprint(req);
+
+        Logger.debug({ sessionId: session.sessionId, viewerId }, 'Serving playlist with viewer fingerprint');
 
         // Serve the playlist with token and viewer_id appended to segment URLs
-        // Viewer tracking happens in the segment endpoint, not here
+        // Viewer tracking happens in the segment endpoint
         const response = await servePlaylist(session.outputDir, token, viewerId);
 
         return response;
