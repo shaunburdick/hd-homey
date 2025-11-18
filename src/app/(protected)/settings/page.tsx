@@ -23,79 +23,47 @@ export default async function SettingsPage() {
     return (
         <RoleGuard allowedRoles={[AuthRoles.Admin]}>
             <div className="container">
-                <div style={{ marginBottom: 'var(--space-6)' }}>
-                    <h1 style={{ marginBottom: 'var(--space-2)' }}>Settings</h1>
-                    <p style={{ color: 'var(--color-text-secondary)', marginBottom: 0 }}>
+                <div className="mb-6">
+                    <h1 className="mb-2">Settings</h1>
+                    <p className="text-secondary m-0">
                         Configure application settings and manage system resources
                     </p>
                 </div>
 
-                <div style={{
-                    display: 'grid',
-                    gap: 'var(--space-5)',
-                }}>
+                <div className="grid gap-5">
                     <section>
-                        <h2 style={{
-                            marginTop: 0,
-                            marginBottom: 'var(--space-3)',
-                            fontSize: 'var(--font-size-xl)',
-                        }}>
+                        <h2 className="mt-0 mb-3 text-xl">
                             User Management
                         </h2>
                         <Link
                             href="/users"
-                            className="settings-link"
+                            className="settings-link inline-flex items-center gap-2 p-4 rounded no-underline text-primary transition"
                             style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 'var(--space-2)',
-                                padding: 'var(--space-3) var(--space-4)',
                                 backgroundColor: 'var(--color-bg-secondary)',
                                 border: '1px solid var(--color-border)',
-                                borderRadius: 'var(--radius-md)',
-                                textDecoration: 'none',
-                                color: 'var(--color-text-primary)',
-                                transition: 'all var(--transition-fast)',
                             }}
                         >
                             <span>👥</span>
                             <span>Manage Users</span>
-                            <span style={{ marginLeft: 'auto', color: 'var(--color-text-tertiary)' }}>
-                                →
-                            </span>
+                            <span className="text-tertiary" style={{ marginLeft: 'auto' }}>→</span>
                         </Link>
                     </section>
 
                     <section>
-                        <h2 style={{
-                            marginTop: 0,
-                            marginBottom: 'var(--space-3)',
-                            fontSize: 'var(--font-size-xl)',
-                        }}>
+                        <h2 className="mt-0 mb-3 text-xl">
                             Video Transcoding
                         </h2>
 
-                        <div style={{
-                            display: 'grid',
-                            gap: 'var(--space-4)',
-                        }}>
+                        <div className="grid gap-4">
                             <div>
-                                <h3 style={{
-                                    marginTop: 0,
-                                    marginBottom: 'var(--space-3)',
-                                    fontSize: 'var(--font-size-lg)',
-                                }}>
+                                <h3 className="mt-0 mb-3 text-lg">
                                     Active Sessions
                                 </h3>
                                 <TranscodingStatus />
                             </div>
 
                             <div>
-                                <h3 style={{
-                                    marginTop: 0,
-                                    marginBottom: 'var(--space-3)',
-                                    fontSize: 'var(--font-size-lg)',
-                                }}>
+                                <h3 className="mt-0 mb-3 text-lg">
                                     Configuration
                                 </h3>
                                 <TranscodingSettings
@@ -108,11 +76,7 @@ export default async function SettingsPage() {
                     </section>
 
                     <section>
-                        <h2 style={{
-                            marginTop: 0,
-                            marginBottom: 'var(--space-3)',
-                            fontSize: 'var(--font-size-xl)',
-                        }}>
+                        <h2 className="mt-0 mb-3 text-xl">
                             Stream Authentication
                         </h2>
                         <StreamSecretManager

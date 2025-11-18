@@ -1,39 +1,31 @@
 import Image from 'next/image';
 import hdHomey from '@public/hd-homey.webp';
 import { Card } from '@/components';
+import { PageContainer, InfoCard } from '@/components/layouts';
 
 export default function AboutPage() {
     const version = process.env.npm_package_version || '1.0.0-alpha.3';
 
     return (
-        <div className="container" style={{ maxWidth: '800px' }}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-4)',
-                marginBottom: 'var(--space-6)',
-            }}>
+        <PageContainer maxWidth="lg">
+            <div className="flex items-center gap-4 mb-6">
                 <Image
                     src={hdHomey}
                     alt="HD Homey"
                     width={80}
                     height={80}
-                    style={{ borderRadius: 'var(--radius-lg)' }}
+                    className="rounded-lg"
                 />
                 <div>
-                    <h1 style={{ marginBottom: 'var(--space-1)' }}>HD Homey</h1>
-                    <p style={{
-                        color: 'var(--color-text-secondary)',
-                        marginBottom: 0,
-                        fontSize: 'var(--font-size-lg)',
-                    }}>
+                    <h1 className="mb-1">HD Homey</h1>
+                    <p className="text-secondary m-0 text-lg">
                         Version {version}
                     </p>
                 </div>
             </div>
 
-            <Card style={{ marginBottom: 'var(--space-5)' }}>
-                <h2 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>
+            <Card className="mb-5">
+                <h2 className="mt-0 mb-3">
                     About HD Homey
                 </h2>
                 <p style={{ marginBottom: 'var(--space-3)' }}>
@@ -65,57 +57,17 @@ export default function AboutPage() {
                 </ul>
             </Card>
 
-            <Card style={{ marginBottom: 'var(--space-5)' }}>
-                <h2 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>
-                    Technology Stack
-                </h2>
-                <dl style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'auto 1fr',
-                    gap: 'var(--space-3)',
-                    marginBottom: 0,
-                }}>
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Framework
-                    </dt>
-                    <dd style={{ margin: 0 }}>Next.js 15 (App Router)</dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Language
-                    </dt>
-                    <dd style={{ margin: 0 }}>TypeScript 5</dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Database
-                    </dt>
-                    <dd style={{ margin: 0 }}>SQLite with Drizzle ORM</dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Authentication
-                    </dt>
-                    <dd style={{ margin: 0 }}>NextAuth.js v5</dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Styling
-                    </dt>
-                    <dd style={{ margin: 0 }}>new.css with custom design tokens</dd>
-                </dl>
-            </Card>
+            <InfoCard
+                title="Technology Stack"
+                className="mb-5"
+                items={[
+                    { label: 'Framework', value: 'Next.js 15 (App Router)' },
+                    { label: 'Language', value: 'TypeScript 5' },
+                    { label: 'Database', value: 'SQLite with Drizzle ORM' },
+                    { label: 'Authentication', value: 'NextAuth.js v5' },
+                    { label: 'Styling', value: 'new.css with custom design tokens' },
+                ]}
+            />
 
             <Card>
                 <h2 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>
@@ -163,15 +115,10 @@ export default function AboutPage() {
                 </ul>
             </Card>
 
-            <div style={{
-                marginTop: 'var(--space-6)',
-                textAlign: 'center',
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-text-tertiary)',
-            }}>
+            <div className="mt-6 text-center text-sm text-tertiary">
                 <p>© 2024 Shaun Burdick</p>
                 <p>Licensed under MIT License</p>
             </div>
-        </div>
+        </PageContainer>
     );
 }
