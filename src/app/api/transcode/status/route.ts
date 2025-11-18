@@ -4,6 +4,7 @@
 
 import type { NextRequest } from 'next/server';
 import { auth } from '@/auth';
+import { AuthRoles } from '@/lib/auth-roles';
 import { getSessionManager } from '@/lib/transcoding/session-manager';
 import Logger from '@/lib/logger';
 
@@ -13,7 +14,7 @@ export async function GET() {
     try {
         // Check admin auth
         const session = await auth();
-        if (!session?.user?.isAdmin) {
+        if (!session?.user || session.user.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user }, 'Unauthorized status request');
             return new Response('Unauthorized', { status: 403 });
         }
@@ -38,7 +39,7 @@ export async function DELETE(req: NextRequest) {
     try {
         // Check admin auth
         const session = await auth();
-        if (!session?.user?.isAdmin) {
+        if (!session?.user || session.user.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user }, 'Unauthorized stop session request');
             return new Response('Unauthorized', { status: 403 });
         }

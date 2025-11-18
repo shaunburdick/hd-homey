@@ -6,6 +6,7 @@
 
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
+import { AuthRoles } from '@/lib/auth-roles';
 import { getTranscodingSettings, updateTranscodingSettings } from '@/lib/settings';
 import { validateSettings , detectFFmpeg } from '@/lib/transcoding/ffmpeg';
 import type { TranscodeSettings } from '@/lib/transcoding/types';
@@ -21,7 +22,7 @@ export interface FormState {
  */
 export async function getTranscodingSettingsAction(): Promise<TranscodeSettings> {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         throw new Error('Unauthorized');
     }
 
@@ -33,7 +34,7 @@ export async function getTranscodingSettingsAction(): Promise<TranscodeSettings>
  */
 export async function getFFmpegInfo() {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         throw new Error('Unauthorized');
     }
 
@@ -48,7 +49,7 @@ export async function updateTranscodingSettingsAction(
     formData: FormData
 ): Promise<FormState> {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         return { errors: { auth: ['Unauthorized'] } };
     }
 
