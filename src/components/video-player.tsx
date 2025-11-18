@@ -29,30 +29,41 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
         // Check if browser supports HLS natively (Safari)
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = playlistUrl;
-            video.addEventListener('loadedmetadata', () => {
+            const handleLoaded = () => {
                 setLoading(false);
-            });
-            return;
+                if (autoplay) {
+                    video.play().catch(() => {
+                        // Autoplay might fail due to browser policies
+                    });
+                }
+            };
+            video.addEventListener('loadedmetadata', handleLoaded);
+            return () => {
+                video.removeEventListener('loadedmetadata', handleLoaded);
+                video.src = '';
+            };
         }
 
         // Use HLS.js for other browsers
         if (Hls.isSupported()) {
-            // Extract token from playlist URL to add to segment requests
-            const token = new URL(playlistUrl, window.location.origin).searchParams.get('token');
-            
             const hls = new Hls({
-                debug: false,
+                debug: true,
                 enableWorker: true,
-                lowLatencyMode: true,
-                backBufferLength: 90,
-                xhrSetup: (xhr, url) => {
-                    // Add token to all segment requests
-                    if (token && url.includes('.ts')) {
-                        const segmentUrl = new URL(url, window.location.origin);
-                        segmentUrl.searchParams.set('token', token);
-                        xhr.open('GET', segmentUrl.toString(), true);
-                    }
-                },
+                lowLatencyMode: false,
+                backBufferLength: 10,
+                maxBufferLength: 30,
+                maxMaxBufferLength: 60,
+                maxBufferSize: 60 * 1000 * 1000,
+                maxBufferHole: 0.5,
+                liveSyncDurationCount: 2,
+                liveMaxLatencyDurationCount: Infinity,
+                liveDurationInfinity: true,
+                manifestLoadingTimeOut: 10000,
+                manifestLoadingMaxRetry: 3,
+                manifestLoadingRetryDelay: 500,
+                fragLoadingTimeOut: 20000,
+                fragLoadingMaxRetry: 6,
+                fragLoadingRetryDelay: 500,
             });
 
             hlsRef.current = hls;
@@ -63,7 +74,9 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
                 setLoading(false);
                 if (autoplay) {
-                    void video.play();
+                    video.play().catch(() => {
+                        // Autoplay might fail due to browser policies
+                    });
                 }
             });
 
@@ -71,15 +84,15 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
                 if (data.fatal) {
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
-                            setError('Network error loading stream');
+                            setError(null);
                             hls.startLoad();
                             break;
                         case Hls.ErrorTypes.MEDIA_ERROR:
-                            setError('Media error');
+                            setError(null);
                             hls.recoverMediaError();
                             break;
                         default:
-                            setError('Fatal error occurred');
+                            setError(`Playback error: ${data.details || 'Unknown error'}`);
                             hls.destroy();
                             break;
                     }

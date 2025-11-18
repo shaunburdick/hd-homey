@@ -12,7 +12,7 @@ interface ChannelStreamProps {
 export default function ChannelStream({ streamUrl }: ChannelStreamProps) {
     const [isCopied, setIsCopied] = useState(false);
     const [channelLink, setChannelLink] = useState(streamUrl);
-    
+
     // Convert relative URL to absolute for VLC (client-side only)
     useEffect(() => {
         if (streamUrl.startsWith('/')) {

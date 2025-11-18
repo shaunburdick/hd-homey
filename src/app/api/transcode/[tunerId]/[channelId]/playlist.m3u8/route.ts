@@ -69,8 +69,8 @@ export async function GET(
 
         // Get or create transcoding session
         const manager = getSessionManager();
-        // tuners.path already includes http:// protocol
-        const sourceUrl = `${channel.tuners.path}:5004/auto/v${channel.guideNumber}`;
+        // tuners.path already includes http:// protocol and port
+        const sourceUrl = `${channel.tuners.path}/auto/v${channel.guideNumber}`;
 
         const session = await manager.getOrCreateSession(
             tokenData.tunerId,
@@ -83,8 +83,8 @@ export async function GET(
         // Increment viewer count
         manager.incrementViewers(session.sessionId);
 
-        // Serve the playlist
-        const response = await servePlaylist(session.outputDir);
+        // Serve the playlist with token appended to segment URLs
+        const response = await servePlaylist(session.outputDir, token);
 
         // Note: We don't decrement viewers here because the client will keep polling
         // The session manager will clean up inactive sessions automatically

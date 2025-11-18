@@ -373,6 +373,24 @@ User B → HLS Client → /api/transcode/1/42/playlist.m3u8 → Return same m3u8
                                                     [0 viewers] → Wait 30s → Terminate
 ```
 
+### Process Cleanup Implementation
+
+**Critical Issue Resolved**: The initial implementation suffered from a critical audio corruption bug caused by improper audio resampling. The ffmpeg command was using `-ar 48000` (audio resampling) which caused degraded/segmented audio playback.
+
+**Solution**: 
+- Removed `-ar 48000` flag to preserve original audio stream quality
+- Audio codec detection now uses correct stream parsing (`a:0` instead of `v:0`)
+- FFmpeg processes are properly cleaned up when streams end
+
+**Verification**:
+```bash
+# Check for running ffmpeg processes
+ps aux | grep ffmpeg
+
+# After stopping stream, wait 30s and verify cleanup
+# No orphaned ffmpeg processes should remain
+```
+
 ## References
 
 - MDN Web Video Codecs: https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Video_codecs

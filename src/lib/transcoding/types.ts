@@ -49,7 +49,7 @@ export const DEFAULT_SETTINGS: TranscodeSettings = {
     framerate: 30,
     maxSessions: 5,
     segmentDuration: 2,
-    playlistSize: 3,
+    playlistSize: 20,
     hardwareAccel: 'none',
 };
 

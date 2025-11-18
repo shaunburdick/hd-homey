@@ -10,12 +10,30 @@ import Logger from '@/lib/logger';
  * Serve an HLS playlist file
  */
 export async function servePlaylist(
-    outputDir: string
+    outputDir: string,
+    token?: string
 ): Promise<Response> {
     const playlistPath = join(outputDir, 'playlist.m3u8');
 
     try {
-        const content = await fs.readFile(playlistPath, 'utf-8');
+        let content = await fs.readFile(playlistPath, 'utf-8');
+
+        // Add token to segment URLs if provided
+        if (token) {
+            const lines = content.split('\n');
+            const modifiedLines = lines.map(line => {
+                // Add token to .ts segment files
+                if (line.trim().endsWith('.ts')) {
+                    const modifiedLine = `${line}?token=${token}`;
+                    Logger.debug({ original: line, modified: modifiedLine }, 'Modified segment URL');
+                    return modifiedLine;
+                }
+                return line;
+            });
+            content = modifiedLines.join('\n');
+            const segmentCount = modifiedLines.filter(l => l.includes('.ts')).length;
+            Logger.debug({ segmentCount }, 'Playlist modified with tokens');
+        }
 
         return new Response(content, {
             status: 200,

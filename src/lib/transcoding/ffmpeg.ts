@@ -153,18 +153,29 @@ export function buildFFmpegCommand(
     args.push('-profile:v', 'baseline');
     args.push('-level', '3.1');
 
-    // Audio encoding
+    // Audio encoding with proper timing
     args.push('-c:a', 'aac');
     args.push('-b:a', `${settings.audioBitrate}k`);
     args.push('-ar', '48000');
+    args.push('-ac', '2');
+    // Strict audio timing to prevent drift
+    args.push('-async', '1');
+    args.push('-af', 'aresample=async=1:min_hard_comp=0.100000:first_pts=0');
 
     // HLS output format
     args.push('-f', 'hls');
     args.push('-hls_time', settings.segmentDuration.toString());
+    // Keep a rolling window of segments for live streaming
     args.push('-hls_list_size', settings.playlistSize.toString());
-    args.push('-hls_flags', 'delete_segments+append_list+independent_segments');
+    // Use delete_threshold instead of delete_segments for better player compatibility
+    args.push('-hls_delete_threshold', '1');
+    args.push('-hls_flags', 'independent_segments+omit_endlist+program_date_time+discont_start');
     args.push('-hls_segment_type', 'mpegts');
     args.push('-hls_segment_filename', `${outputDir}/segment%03d.ts`);
+    args.push('-start_number', '0');
+    // Force timestamp normalization and continuous stream
+    args.push('-avoid_negative_ts', 'make_zero');
+    args.push('-fflags', '+genpts');
 
     // Output playlist
     args.push(`${outputDir}/playlist.m3u8`);
