@@ -5,6 +5,7 @@ import UserEditForm from './UserEditForm';
 import { getDb } from '@/lib/database/db';
 import { users } from '@/lib/database/schema';
 import { Card } from '@/components';
+import { PageContainer, InfoCard } from '@/components/layouts';
 
 interface PageParams {
     id: string
@@ -26,7 +27,7 @@ export default async function Page(props: { params: Promise<PageParams> }) {
     }
 
     return (
-        <div className="container" style={{ maxWidth: '900px' }}>
+        <PageContainer maxWidth="lg">
             <div style={{ marginBottom: 'var(--space-6)' }}>
                 <Link
                     href="/users"
@@ -80,84 +81,32 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                 </div>
             </div>
 
-            <Card style={{ marginBottom: 'var(--space-6)' }}>
-                <h2 style={{ marginTop: 0, marginBottom: 'var(--space-4)' }}>
-                    User Information
-                </h2>
-                <dl style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'auto 1fr',
-                    gap: 'var(--space-3)',
-                    marginBottom: 0,
-                }}>
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Username
-                    </dt>
-                    <dd style={{ margin: 0 }}>@{user.username}</dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Display Name
-                    </dt>
-                    <dd style={{ margin: 0 }}>{user.name}</dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Role
-                    </dt>
-                    <dd style={{ margin: 0 }}>
-                        {user.role === 'admin' ? 'Administrator' : 'Viewer'}
-                    </dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Status
-                    </dt>
-                    <dd style={{ margin: 0 }}>
-                        <span style={{
-                            color: user.is_active ? 'var(--color-success)' : 'var(--color-error)',
-                        }}>
-                            {user.is_active ? '✓ Active' : '✗ Inactive'}
-                        </span>
-                    </dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Created
-                    </dt>
-                    <dd style={{ margin: 0 }}>
-                        {user.created_at.toLocaleString()}
-                    </dd>
-
-                    <dt style={{
-                        fontWeight: 'var(--font-weight-semibold)',
-                        color: 'var(--color-text-secondary)',
-                    }}>
-                        Last Modified
-                    </dt>
-                    <dd style={{ margin: 0 }}>
-                        {user.modified_at.toLocaleString()}
-                    </dd>
-                </dl>
-            </Card>
+            <InfoCard
+                title="User Information"
+                className="mb-6"
+                items={[
+                    { label: 'Username', value: `@${user.username}` },
+                    { label: 'Display Name', value: user.name },
+                    { label: 'Role', value: user.role === 'admin' ? 'Administrator' : 'Viewer' },
+                    {
+                        label: 'Status',
+                        value: (
+                            <span style={{
+                                color: user.is_active ? 'var(--color-success)' : 'var(--color-error)',
+                            }}>
+                                {user.is_active ? '✓ Active' : '✗ Inactive'}
+                            </span>
+                        ),
+                    },
+                    { label: 'Created', value: user.created_at.toLocaleString() },
+                    { label: 'Last Modified', value: user.modified_at.toLocaleString() },
+                ]}
+            />
 
             <Card>
-                <h2 style={{ marginTop: 0, marginBottom: 'var(--space-4)' }}>
-                    Edit User
-                </h2>
+                <h2 className="mt-0 mb-4">Edit User</h2>
                 <UserEditForm user={user} />
             </Card>
-        </div>
+        </PageContainer>
     );
 }
