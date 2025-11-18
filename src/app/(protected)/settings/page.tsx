@@ -37,7 +37,8 @@ export default async function SettingsPage() {
                         </h2>
                         <Link
                             href="/users"
-                            className="settings-link inline-flex items-center gap-2 p-4 rounded no-underline text-primary transition"
+                            className="settings-link inline-flex items-center gap-2 p-4
+                                rounded no-underline text-primary transition"
                             style={{
                                 backgroundColor: 'var(--color-bg-secondary)',
                                 border: '1px solid var(--color-border)',

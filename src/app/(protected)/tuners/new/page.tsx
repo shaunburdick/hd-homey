@@ -38,7 +38,10 @@ export default function NewTunerPage() {
     return (
         <PageContainer maxWidth="md">
             <div className="mb-6">
-                <Link href="/tuners" className="text-secondary no-underline text-sm inline-flex items-center gap-2 mb-4">
+                <Link
+                    href="/tuners"
+                    className="text-secondary no-underline text-sm inline-flex items-center gap-2 mb-4"
+                >
                     ← Back to Tuners
                 </Link>
                 <h1 className="mb-2">Add New Tuner</h1>
