@@ -44,6 +44,7 @@ export default async function SettingsPage() {
                         </h2>
                         <Link
                             href="/users"
+                            className="settings-link"
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -55,14 +56,6 @@ export default async function SettingsPage() {
                                 textDecoration: 'none',
                                 color: 'var(--color-text-primary)',
                                 transition: 'all var(--transition-fast)',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)';
-                                e.currentTarget.style.borderColor = 'var(--color-border-hover)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
-                                e.currentTarget.style.borderColor = 'var(--color-border)';
                             }}
                         >
                             <span>👥</span>

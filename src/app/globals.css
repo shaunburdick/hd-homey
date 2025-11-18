@@ -373,6 +373,12 @@ small {
   border-color: var(--color-border-hover) !important;
 }
 
+/* Settings link hover effects */
+.settings-link:hover {
+  background-color: var(--color-bg-tertiary) !important;
+  border-color: var(--color-border-hover) !important;
+}
+
 /* ========================================
    Animations
    ======================================== */
