@@ -2,13 +2,13 @@
  * FFmpeg detection and command building utilities
  */
 
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { cpus } from 'os';
 import type { FFmpegInfo, TranscodeSettings } from './types';
 import Logger from '@/lib/logger';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 let cachedFFmpegInfo: FFmpegInfo | null = null;
 
@@ -23,22 +23,25 @@ export async function detectFFmpeg(): Promise<FFmpegInfo> {
     const ffmpegPath = process.env.FFMPEG_PATH || 'ffmpeg';
 
     try {
-        const { stdout: versionOutput } = await execAsync(`${ffmpegPath} -version`);
+        // Use execFile instead of exec to avoid shell injection risks
+        const { stdout: versionOutput } = await execFileAsync(ffmpegPath, ['-version']);
         const versionMatch = versionOutput.match(/ffmpeg version (\S+)/);
         const version = versionMatch ? versionMatch[1] : 'unknown';
 
-        const { stdout: codecOutput } = await execAsync(`${ffmpegPath} -codecs 2>&1`);
+        const { stdout: codecOutput, stderr: codecStderr } = await execFileAsync(ffmpegPath, ['-codecs']);
+        const codecsOutput = codecOutput + codecStderr;
         const codecs: string[] = [];
 
-        if (codecOutput.includes('h264') || codecOutput.includes('libx264')) {
+        if (codecsOutput.includes('h264') || codecsOutput.includes('libx264')) {
             codecs.push('h264');
         }
-        if (codecOutput.includes('aac')) {
+        if (codecsOutput.includes('aac')) {
             codecs.push('aac');
         }
 
-        const { stdout: hwAccelOutput } = await execAsync(`${ffmpegPath} -hwaccels 2>&1`);
-        const hwAccel = hwAccelOutput
+        const { stdout: hwAccelOutput, stderr: hwAccelStderr } = await execFileAsync(ffmpegPath, ['-hwaccels']);
+        const hwAccelFullOutput = hwAccelOutput + hwAccelStderr;
+        const hwAccel = hwAccelFullOutput
             .split('\n')
             .slice(1)
             .map(line => line.trim())
