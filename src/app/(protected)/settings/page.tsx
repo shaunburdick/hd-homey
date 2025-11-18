@@ -22,39 +22,113 @@ export default async function SettingsPage() {
 
     return (
         <RoleGuard allowedRoles={[AuthRoles.Admin]}>
-            <h1>Settings</h1>
-            <p>Administrative settings and user management</p>
+            <div className="container">
+                <div style={{ marginBottom: 'var(--space-6)' }}>
+                    <h1 style={{ marginBottom: 'var(--space-2)' }}>Settings</h1>
+                    <p style={{ color: 'var(--color-text-secondary)', marginBottom: 0 }}>
+                        Configure application settings and manage system resources
+                    </p>
+                </div>
 
-            <hr />
+                <div style={{
+                    display: 'grid',
+                    gap: 'var(--space-5)',
+                }}>
+                    <section>
+                        <h2 style={{
+                            marginTop: 0,
+                            marginBottom: 'var(--space-3)',
+                            fontSize: 'var(--font-size-xl)',
+                        }}>
+                            User Management
+                        </h2>
+                        <Link
+                            href="/users"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 'var(--space-2)',
+                                padding: 'var(--space-3) var(--space-4)',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: 'var(--radius-md)',
+                                textDecoration: 'none',
+                                color: 'var(--color-text-primary)',
+                                transition: 'all var(--transition-fast)',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)';
+                                e.currentTarget.style.borderColor = 'var(--color-border-hover)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
+                                e.currentTarget.style.borderColor = 'var(--color-border)';
+                            }}
+                        >
+                            <span>👥</span>
+                            <span>Manage Users</span>
+                            <span style={{ marginLeft: 'auto', color: 'var(--color-text-tertiary)' }}>
+                                →
+                            </span>
+                        </Link>
+                    </section>
 
-            <h2>User Management</h2>
-            <ul>
-                <li><Link href="/users">Manage Users</Link> - View, add, and edit users</li>
-            </ul>
+                    <section>
+                        <h2 style={{
+                            marginTop: 0,
+                            marginBottom: 'var(--space-3)',
+                            fontSize: 'var(--font-size-xl)',
+                        }}>
+                            Video Transcoding
+                        </h2>
 
-            <hr />
+                        <div style={{
+                            display: 'grid',
+                            gap: 'var(--space-4)',
+                        }}>
+                            <div>
+                                <h3 style={{
+                                    marginTop: 0,
+                                    marginBottom: 'var(--space-3)',
+                                    fontSize: 'var(--font-size-lg)',
+                                }}>
+                                    Active Sessions
+                                </h3>
+                                <TranscodingStatus />
+                            </div>
 
-            <h2>Video Transcoding</h2>
+                            <div>
+                                <h3 style={{
+                                    marginTop: 0,
+                                    marginBottom: 'var(--space-3)',
+                                    fontSize: 'var(--font-size-lg)',
+                                }}>
+                                    Configuration
+                                </h3>
+                                <TranscodingSettings
+                                    initialSettings={transcodingSettings}
+                                    ffmpegInfo={ffmpegInfo}
+                                    recommendedMaxSessions={recommendedMaxSessions}
+                                />
+                            </div>
+                        </div>
+                    </section>
 
-            <h3>Active Sessions</h3>
-            <TranscodingStatus />
-
-            <hr />
-
-            <h3>Transcoding Configuration</h3>
-            <TranscodingSettings
-                initialSettings={transcodingSettings}
-                ffmpegInfo={ffmpegInfo}
-                recommendedMaxSessions={recommendedMaxSessions}
-            />
-
-            <hr />
-
-            <h2>Stream Authentication</h2>
-            <StreamSecretManager
-                secretPreview={secretInfo?.preview || 'Not available'}
-                regenerateAction={regenerateAppStreamSecret}
-            />
+                    <section>
+                        <h2 style={{
+                            marginTop: 0,
+                            marginBottom: 'var(--space-3)',
+                            fontSize: 'var(--font-size-xl)',
+                        }}>
+                            Stream Authentication
+                        </h2>
+                        <StreamSecretManager
+                            secretPreview={secretInfo?.preview || 'Not available'}
+                            regenerateAction={regenerateAppStreamSecret}
+                        />
+                    </section>
+                </div>
+            </div>
         </RoleGuard>
     );
 }
