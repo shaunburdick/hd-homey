@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface CardProps {
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement | HTMLButtonElement> {
     children: React.ReactNode;
     clickable?: boolean;
     onClick?: () => void;
@@ -8,7 +8,14 @@ export interface CardProps {
     style?: React.CSSProperties;
 }
 
-export function Card({ children, clickable = false, onClick, className = '', style = {} }: CardProps) {
+export function Card({
+    children,
+    clickable = false,
+    onClick,
+    className = '',
+    style = {},
+    ...props
+}: CardProps) {
     const Component = clickable ? 'button' : 'div';
 
     return (
@@ -34,6 +41,7 @@ export function Card({ children, clickable = false, onClick, className = '', sty
                 ...style,
             }}
             {...(clickable && { type: 'button' })}
+            {...props}
         >
             {children}
         </Component>
