@@ -186,17 +186,16 @@ class TranscodingSessionManager {
     }
 
     /**
-     * Clean up inactive sessions (no viewers for > 30 seconds)
+     * Clean up inactive sessions (no segment requests for > 30 seconds)
      */
     public async cleanupInactiveSessions(): Promise<void> {
         const now = Date.now();
         const inactiveSessions: string[] = [];
 
         for (const [sessionId, session] of this.sessions.entries()) {
-            if (
-                session.viewerCount === 0 &&
-                now - session.lastAccessTime > this.INACTIVE_TIMEOUT
-            ) {
+            // Clean up based on lastAccessTime, not viewerCount
+            // HLS is stateless - we detect "no viewers" by lack of segment requests
+            if (now - session.lastAccessTime > this.INACTIVE_TIMEOUT) {
                 inactiveSessions.push(sessionId);
             }
         }

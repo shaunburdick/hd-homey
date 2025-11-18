@@ -150,7 +150,7 @@ export function buildFFmpegCommand(
     args.push('-sc_threshold', '0');
 
     // H.264 profile for compatibility
-    args.push('-profile:v', 'baseline');
+    args.push('-profile:v', 'main');
     args.push('-level', '3.1');
 
     // Audio encoding with proper timing

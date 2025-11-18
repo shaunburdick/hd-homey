@@ -373,13 +373,32 @@ User B → HLS Client → /api/transcode/1/42/playlist.m3u8 → Return same m3u8
                                                     [0 viewers] → Wait 30s → Terminate
 ```
 
-### Process Cleanup Implementation
+### Session Management & Process Cleanup
+
+**Session Lifecycle**:
+1. **Session Creation**: When a user requests a playlist, a new transcoding session is created (or an existing one is reused)
+2. **Viewer Tracking**: First playlist request increments viewer count  
+3. **Activity Tracking**: Every segment request updates `lastAccessTime` timestamp
+4. **Automatic Cleanup**: Background timer (10s interval) terminates sessions inactive for >30s
+5. **Process Termination**: ffmpeg process is killed and temporary files are cleaned up
+
+**Cleanup Implementation**:
+```typescript
+// Session manager runs cleanup every 10 seconds
+cleanupInactiveSessions() {
+  // Sessions are considered inactive if no segment requests for 30s
+  if (now - session.lastAccessTime > 30000) {
+    stopSession(sessionId);  // Kill ffmpeg, delete files
+  }
+}
+```
 
 **Critical Issue Resolved**: The initial implementation suffered from a critical audio corruption bug caused by improper audio resampling. The ffmpeg command was using `-ar 48000` (audio resampling) which caused degraded/segmented audio playback.
 
 **Solution**: 
 - Removed `-ar 48000` flag to preserve original audio stream quality
 - Audio codec detection now uses correct stream parsing (`a:0` instead of `v:0`)
+- Session cleanup based on `lastAccessTime` instead of `viewerCount` (HLS is stateless)
 - FFmpeg processes are properly cleaned up when streams end
 
 **Verification**:
@@ -387,7 +406,7 @@ User B → HLS Client → /api/transcode/1/42/playlist.m3u8 → Return same m3u8
 # Check for running ffmpeg processes
 ps aux | grep ffmpeg
 
-# After stopping stream, wait 30s and verify cleanup
+# After stopping stream, wait 40s and verify cleanup
 # No orphaned ffmpeg processes should remain
 ```
 
