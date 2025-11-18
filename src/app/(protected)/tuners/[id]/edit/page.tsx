@@ -1,7 +1,10 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
+import { PageHeader } from '@/components/layouts/PageHeader';
+import { Card } from '@/components/Card';
 
 interface PageParams {
     id: string
@@ -24,58 +27,100 @@ export default async function EditTunerPage(props: { params: Promise<PageParams>
 
     return (
         <>
-            <h1>Edit Tuner: {tuner.name}</h1>
+            <Link href={`/tuners/${tuner.id}`} className="back-link">
+                ← Back to Tuner
+            </Link>
 
-            <form action={`/api/tuners/${tuner.id}`} method="POST">
-                <div>
-                    <label htmlFor="name">Tuner Name</label>
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        defaultValue={tuner.name}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="path">Path</label>
-                    <input
-                        type="text"
-                        id="path"
-                        name="path"
-                        defaultValue={tuner.path}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="is_active">Active</label>
-                    <input
-                        type="checkbox"
-                        id="is_active"
-                        name="is_active"
-                        defaultChecked={tuner.is_active}
-                    />
-                </div>
-                <button type="submit">Update Tuner</button>
-            </form>
+            <PageHeader
+                title={`Edit Tuner: ${tuner.name}`}
+                subtitle="Update tuner settings and configuration"
+            />
 
-            <hr />
-            <h2>Tuner Information</h2>
-            <dl>
-                <dt>ID</dt>
-                <dd>{tuner.id}</dd>
+            <div className="grid-2col">
+                <Card title="Tuner Settings">
+                    <form action={`/api/tuners/${tuner.id}`} method="POST">
+                        <div className="form-group">
+                            <label htmlFor="name">
+                                Tuner Name
+                                <span className="required" aria-label="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                defaultValue={tuner.name}
+                                required
+                                aria-required="true"
+                            />
+                            <small className="form-help">
+                                A friendly name to identify this tuner
+                            </small>
+                        </div>
 
-                <dt>Last Scanned</dt>
-                <dd>{tuner.last_scanned ? new Date(tuner.last_scanned).toLocaleString() : 'Never'}</dd>
+                        <div className="form-group">
+                            <label htmlFor="path">
+                                Path (URL)
+                                <span className="required" aria-label="required">*</span>
+                            </label>
+                            <input
+                                type="url"
+                                id="path"
+                                name="path"
+                                defaultValue={tuner.path}
+                                placeholder="http://192.168.1.100"
+                                required
+                                aria-required="true"
+                            />
+                            <small className="form-help">
+                                The network address of your HDHomeRun device
+                            </small>
+                        </div>
 
-                <dt>Created</dt>
-                <dd>{new Date(tuner.created_at).toLocaleString()}</dd>
+                        <div className="form-group">
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    id="is_active"
+                                    name="is_active"
+                                    defaultChecked={tuner.is_active}
+                                />
+                                <span>Active</span>
+                            </label>
+                            <small className="form-help">
+                                Inactive tuners will not be available for streaming
+                            </small>
+                        </div>
 
-                <dt>Last Modified</dt>
-                <dd>{new Date(tuner.modified_at).toLocaleString()}</dd>
-            </dl>
+                        <button type="submit" className="btn-primary">
+                            Update Tuner
+                        </button>
+                    </form>
+                </Card>
 
-            <p>
-                <a href={`/tuners/${tuner.id}`}>Back to Tuner</a>
-            </p>
+                <Card title="Tuner Information">
+                    <dl className="info-list">
+                        <div>
+                            <dt>ID</dt>
+                            <dd>{tuner.id}</dd>
+                        </div>
+
+                        <div>
+                            <dt>Last Scanned</dt>
+                            <dd>{tuner.last_scanned ? new Date(tuner.last_scanned).toLocaleString() : 'Never'}</dd>
+                        </div>
+
+                        <div>
+                            <dt>Created</dt>
+                            <dd>{new Date(tuner.created_at).toLocaleString()}</dd>
+                        </div>
+
+                        <div>
+                            <dt>Last Modified</dt>
+                            <dd>{new Date(tuner.modified_at).toLocaleString()}</dd>
+                        </div>
+                    </dl>
+                </Card>
+            </div>
         </>
     );
 }
