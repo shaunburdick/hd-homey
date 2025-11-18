@@ -158,18 +158,11 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                             style={{ textDecoration: 'none' }}
                         >
                             <Card
+                                className="channel-card"
                                 style={{
                                     transition: 'all var(--transition-fast)',
                                     cursor: 'pointer',
                                     padding: 'var(--space-4)',
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)';
-                                    e.currentTarget.style.borderColor = 'var(--color-border-hover)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'var(--color-bg-secondary)';
-                                    e.currentTarget.style.borderColor = 'var(--color-border)';
                                 }}
                             >
                                 <div style={{

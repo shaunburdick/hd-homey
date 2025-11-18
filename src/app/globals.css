@@ -356,3 +356,19 @@ small {
     padding-right: var(--space-6);
   }
 }
+
+/* ========================================
+   Component-Specific Styles
+   ======================================== */
+
+/* Channel card hover effects */
+.channel-card:hover {
+  background-color: var(--color-bg-tertiary) !important;
+  border-color: var(--color-border-hover) !important;
+}
+
+/* Tuner card hover effects */
+.tuner-card:hover {
+  box-shadow: var(--shadow-md) !important;
+  border-color: var(--color-border-hover) !important;
+}

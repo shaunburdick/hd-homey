@@ -73,18 +73,11 @@ export default async function TunersPage() {
                             style={{ textDecoration: 'none' }}
                         >
                             <Card
+                                className="tuner-card"
                                 style={{
                                     height: '100%',
                                     transition: 'all var(--transition-fast)',
                                     cursor: 'pointer',
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                                    e.currentTarget.style.borderColor = 'var(--color-border-hover)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-                                    e.currentTarget.style.borderColor = 'var(--color-border)';
                                 }}
                             >
                                 <h3 style={{
