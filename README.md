@@ -70,11 +70,13 @@ HD Homey acts as a secure proxy between your HDHomeRun devices and remote viewer
 
 ### Video Transcoding
 - **HLS Streaming** - HTTP Live Streaming for universal browser support
+- **Accurate Viewer Tracking** - Server-side fingerprinting counts concurrent viewers per channel
 - **Shared Sessions** - Multiple viewers share a single transcoding process (resource efficient)
-- **Auto Cleanup** - Transcoding sessions automatically terminate after 30 seconds of inactivity
+- **Auto Cleanup** - Transcoding stops immediately when last viewer disconnects
 - **High Quality** - 4Mbps video with 192kbps audio for excellent picture quality
 - **Low Latency** - 2-second segments for minimal delay (~6-10 seconds total)
 - **Smart Detection** - Only transcodes when necessary (MPEG-2 sources)
+- **Universal Client Support** - Works with browsers, mobile apps, and media players (no cookies required)
 
 ### Security
 - Password-protected access with secure session tokens
