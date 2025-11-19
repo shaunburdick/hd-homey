@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.7] - 2025-11-19
+
+**Note**: This patch fixes test failures in CI/CD by excluding build artifacts from test discovery.
+
+### Fixed
+
+- **Test Discovery**: Vitest now excludes `.next/**` build directory to prevent import errors in CI/CD
+- **Release Process**: Updated release instructions in AGENTS.md with pre-release validation steps
+
 ## [1.0.0-alpha.6] - 2025-11-19
 
 **Note**: This release focuses on comprehensive tuner management improvements including connection validation, automatic channel scanning, inactive tuner enforcement, and soft-delete functionality.

@@ -177,20 +177,34 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-alpha.5** - Alpha release with React 19, Next.js 16, all dependencies updated, zero ESLint errors, and optimized CI/CD.
+**1.0.0-alpha.7** - Alpha release with comprehensive tuner management improvements including connection validation, auto-scan, and soft-delete. CI/CD test fixes.
 
 ### Release Process
 
-1. **Update version**: Use `npm version <version> --no-git-tag-version` to update package.json
-2. **Update CHANGELOG.md**: Document changes under appropriate section (Added/Changed/Fixed/Removed)
-3. **Update README.md**: Update version badge and current version reference
-4. **Commit and tag**:
+1. **Pre-release validation**:
    ```bash
+   npm test              # Run all tests (must pass)
+   npm run build         # Verify build succeeds
+   ```
+   
+2. **Update version**: Use `npm version <version> --no-git-tag-version` to update package.json
+
+3. **Update CHANGELOG.md**: Document changes under appropriate section (Added/Changed/Fixed/Removed)
+
+4. **Update version references** in all files:
+   - `README.md`: Update version badge (search for "badge/version")
+   - `AGENTS.md`: Update "Current Version" section (this file)
+   - Search entire project for previous version number to catch any other references
+
+5. **Commit and tag**:
+   ```bash
+   git add package.json package-lock.json CHANGELOG.md README.md AGENTS.md
    git commit -m "chore: release v<version>"
    git tag -a v<version> -m "Release v<version>"
    git push origin main --tags
    ```
-5. **GitHub Actions**: The `release.yml` workflow automatically:
+
+6. **GitHub Actions**: The `release.yml` workflow automatically:
    - Builds Docker image
    - Publishes to ghcr.io/shaunburdick/hd-homey
    - Creates GitHub Release
