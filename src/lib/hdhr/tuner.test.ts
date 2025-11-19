@@ -10,6 +10,7 @@ describe('HDTuner', () => {
     let db: DB;
     let tuner: HDTuner;
     const testAddress = 'http://192.168.20.25';
+    const TEST_AUTO_PATH = '/auto/v3.1';
 
     beforeEach(async () => {
         db = createTestDatabase();

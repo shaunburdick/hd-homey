@@ -74,6 +74,20 @@ export async function regenerateStreamSecret(): Promise<string> {
 }
 
 /**
+ * Check if a setting value is valid (not null or empty)
+ */
+function isValidSetting(value: string | null): boolean {
+    return value !== null && value !== '';
+}
+
+/**
+ * Parse string setting as integer with fallback
+ */
+function parseIntSetting(value: string | null, fallback: number): number {
+    return isValidSetting(value) ? parseInt(value as string, 10) : fallback;
+}
+
+/**
  * Get transcoding settings from database (with defaults)
  */
 export async function getTranscodingSettings(): Promise<TranscodeSettings> {
@@ -90,45 +104,21 @@ export async function getTranscodingSettings(): Promise<TranscodeSettings> {
         const playlistSize = await getSetting('transcoding.playlist_size');
         const hardwareAccel = await getSetting('transcoding.hardware_accel');
 
-        const hasPreset = preset !== null && preset !== '';
-        const hasVideoCodec = videoCodec !== null && videoCodec !== '';
-        const hasVideoBitrate = videoBitrate !== null && videoBitrate !== '';
-        const hasAudioBitrate = audioBitrate !== null && audioBitrate !== '';
-        const hasResolution = resolution !== null && resolution !== '';
-        const hasFramerate = framerate !== null && framerate !== '';
-        const hasMaxSessions = maxSessions !== null && maxSessions !== '';
-        const hasSegmentDuration = segmentDuration !== null && segmentDuration !== '';
-        const hasPlaylistSize = playlistSize !== null && playlistSize !== '';
-        const hasHardwareAccel = hardwareAccel !== null && hardwareAccel !== '';
-
         return {
             enabled: enabled === 'true',
-            preset: (hasPreset ? preset as TranscodeSettings['preset'] : null) ?? DEFAULT_SETTINGS.preset,
-            videoCodec:
-                (hasVideoCodec ? videoCodec as TranscodeSettings['videoCodec'] : null)
+            preset: (isValidSetting(preset) ? preset as TranscodeSettings['preset'] : null)
+                ?? DEFAULT_SETTINGS.preset,
+            videoCodec: (isValidSetting(videoCodec) ? videoCodec as TranscodeSettings['videoCodec'] : null)
                 ?? DEFAULT_SETTINGS.videoCodec,
-            videoBitrate: hasVideoBitrate
-                ? parseInt(videoBitrate, 10)
-                : DEFAULT_SETTINGS.videoBitrate,
-            audioBitrate: hasAudioBitrate
-                ? parseInt(audioBitrate, 10)
-                : DEFAULT_SETTINGS.audioBitrate,
-            resolution: (hasResolution ? resolution as TranscodeSettings['resolution'] : null)
+            videoBitrate: parseIntSetting(videoBitrate, DEFAULT_SETTINGS.videoBitrate),
+            audioBitrate: parseIntSetting(audioBitrate, DEFAULT_SETTINGS.audioBitrate),
+            resolution: (isValidSetting(resolution) ? resolution as TranscodeSettings['resolution'] : null)
                 ?? DEFAULT_SETTINGS.resolution,
-            framerate: hasFramerate
-                ? parseInt(framerate, 10) as TranscodeSettings['framerate']
-                : DEFAULT_SETTINGS.framerate,
-            maxSessions: hasMaxSessions
-                ? parseInt(maxSessions, 10)
-                : DEFAULT_SETTINGS.maxSessions,
-            segmentDuration: hasSegmentDuration
-                ? parseInt(segmentDuration, 10)
-                : DEFAULT_SETTINGS.segmentDuration,
-            playlistSize: hasPlaylistSize
-                ? parseInt(playlistSize, 10)
-                : DEFAULT_SETTINGS.playlistSize,
-            hardwareAccel:
-                (hasHardwareAccel ? hardwareAccel as TranscodeSettings['hardwareAccel'] : null)
+            framerate: parseIntSetting(framerate, DEFAULT_SETTINGS.framerate) as TranscodeSettings['framerate'],
+            maxSessions: parseIntSetting(maxSessions, DEFAULT_SETTINGS.maxSessions),
+            segmentDuration: parseIntSetting(segmentDuration, DEFAULT_SETTINGS.segmentDuration),
+            playlistSize: parseIntSetting(playlistSize, DEFAULT_SETTINGS.playlistSize),
+            hardwareAccel: (isValidSetting(hardwareAccel) ? hardwareAccel as TranscodeSettings['hardwareAccel'] : null)
                 ?? DEFAULT_SETTINGS.hardwareAccel,
         };
     } catch (err) {
