@@ -51,7 +51,7 @@ class TranscodingSessionManager {
 
         // Check if session already exists
         const existing = this.sessions.get(sessionId);
-        if (existing) {
+        if (existing !== undefined) {
             Logger.info({ sessionId, viewerCount: existing.viewers.size }, 'Reusing existing session');
             return existing;
         }
@@ -64,8 +64,10 @@ class TranscodingSessionManager {
         }
 
         // Create new session
-        const transcodeDir = process.env.HD_HOMEY_TRANSCODE_DIR
-            || join('./data', 'transcoding');
+        const transcodeDirEnv = process.env.HD_HOMEY_TRANSCODE_DIR;
+        const transcodeDir = (transcodeDirEnv !== undefined && transcodeDirEnv !== '')
+            ? transcodeDirEnv
+            : join('./data', 'transcoding');
         const outputDir = join(transcodeDir, sessionId.replace(':', '-'));
         const playlistPath = join(outputDir, 'playlist.m3u8');
 
@@ -93,7 +95,7 @@ class TranscodingSessionManager {
             // Start the transcode process
             const process = await startTranscode(sourceUrl, outputDir, settings);
             session.process = process;
-            session.pid = process.pid || 0;
+            session.pid = (process.pid !== undefined && !isNaN(process.pid) && process.pid !== 0) ? process.pid : 0;
 
             // Wait for playlist to be created
             const playlistReady = await waitForPlaylist(playlistPath, 10000);
@@ -132,7 +134,7 @@ class TranscodingSessionManager {
         metadata?: { userAgent?: string }
     ): void {
         const session = this.sessions.get(sessionId);
-        if (!session) {
+        if (session === undefined) {
             throw new Error(`Session ${sessionId} not found`);
         }
 
@@ -154,12 +156,12 @@ class TranscodingSessionManager {
      */
     public updateViewerActivity(sessionId: string, viewerId: string): boolean {
         const session = this.sessions.get(sessionId);
-        if (!session) {
+        if (session === undefined) {
             return false;
         }
 
         const viewer = session.viewers.get(viewerId);
-        if (!viewer) {
+        if (viewer === undefined) {
             return false;
         }
 
@@ -173,7 +175,7 @@ class TranscodingSessionManager {
      */
     public getSessionViewers(sessionId: string): ViewerSession[] {
         const session = this.sessions.get(sessionId);
-        if (!session) {
+        if (session === undefined) {
             return [];
         }
 
@@ -192,7 +194,7 @@ class TranscodingSessionManager {
      */
     public async stopSession(sessionId: string): Promise<void> {
         const session = this.sessions.get(sessionId);
-        if (!session) {
+        if (session === undefined) {
             Logger.warn({ sessionId }, 'Attempted to stop non-existent session');
             return;
         }
@@ -287,7 +289,7 @@ class TranscodingSessionManager {
      * Stop the cleanup timer
      */
     public stopCleanupTimer(): void {
-        if (this.cleanupTimer) {
+        if (this.cleanupTimer !== null) {
             clearInterval(this.cleanupTimer);
             this.cleanupTimer = null;
             Logger.debug('Session cleanup timer stopped');
@@ -298,7 +300,7 @@ class TranscodingSessionManager {
      * Start the cleanup timer
      */
     private startCleanupTimer(): void {
-        if (this.cleanupTimer) {
+        if (this.cleanupTimer !== null) {
             return;
         }
 
@@ -317,9 +319,7 @@ let sessionManagerInstance: TranscodingSessionManager | null = null;
  * Get the singleton session manager instance
  */
 export function getSessionManager(): TranscodingSessionManager {
-    if (!sessionManagerInstance) {
-        sessionManagerInstance = new TranscodingSessionManager();
-    }
+    sessionManagerInstance ??= new TranscodingSessionManager();
     return sessionManagerInstance;
 }
 
@@ -329,14 +329,14 @@ export function getSessionManager(): TranscodingSessionManager {
 if (typeof process !== 'undefined') {
     process.on('SIGTERM', () => {
         Logger.info('SIGTERM received, cleaning up transcoding sessions');
-        if (sessionManagerInstance) {
+        if (sessionManagerInstance !== null) {
             void sessionManagerInstance.stopAllSessions();
         }
     });
 
     process.on('SIGINT', () => {
         Logger.info('SIGINT received, cleaning up transcoding sessions');
-        if (sessionManagerInstance) {
+        if (sessionManagerInstance !== null) {
             void sessionManagerInstance.stopAllSessions();
         }
     });
