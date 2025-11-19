@@ -13,7 +13,9 @@ export { AuthRoles };
 export async function requireRole(role: AuthRoles) {
     const session = await auth();
 
-    if (session?.user === undefined) {
+    // Check for valid session and user
+    // Note: TypeScript types don't allow null user, but NextAuth may return it in edge cases
+    if (session?.user === undefined || session.user === null) {
         throw new Error('Not authenticated');
     }
 
