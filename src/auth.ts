@@ -65,7 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
         session({ session, token }) {
             // Add user data from token to session
-            if (session.user !== undefined) {
+            if (session.user) {
                 session.user.id = Number(token.id);
                 session.user.username = token.username;
                 session.user.role = token.role;

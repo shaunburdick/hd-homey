@@ -30,6 +30,7 @@ export function Input({
     // Style constants
     const colorError = 'var(--color-error)';
     const spaceTwo = 'var(--space-2)';
+    const spaceOne = 'var(--space-1)';
 
     return (
         <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>
@@ -45,7 +46,7 @@ export function Input({
             >
                 {label}
                 {props.required && (
-                    <span style={{ color: colorError, marginLeft: 'var(--space-1)' }} aria-label="required">
+                    <span style={{ color: colorError, marginLeft: spaceOne }} aria-label="required">
                         *
                     </span>
                 )}

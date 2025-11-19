@@ -16,7 +16,9 @@ export default function Error({
         // Error is already logged by Next.js error boundary
         // Additional client-side logging could be added here if needed
         // Error is automatically logged by Next.js
+        // In development, log for easier debugging
         if (process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line no-console
             console.error('Client error:', error);
         }
     }, [error]);
