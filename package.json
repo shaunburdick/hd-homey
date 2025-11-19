@@ -51,6 +51,7 @@
     "@vitest/coverage-v8": "^4.0.10",
     "drizzle-kit": "^0.31.7",
     "eslint": "^9.19.0",
+    "eslint-config-next": "^16.0.3",
     "eslint-config-shaunburdick": "^5.0.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "jsdom": "^27.2.0",

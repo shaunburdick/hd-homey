@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import './nav.css';
@@ -57,7 +58,7 @@ export default function Nav() {
                 <ul>
                     <li className='desktop-menu-item logo'>
                         <Link href="/" aria-label="HD Homey Home">
-                            <img src='/icon.png' alt='' width="32" height="32"/>
+                            <Image src='/icon.png' alt='' width={32} height={32}/>
                         </Link>
                     </li>
                     {menuItems.map((item) => (
