@@ -153,7 +153,7 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
             {loading && (
                 <p>Loading stream...</p>
             )}
-            <video
+            <video aria-label="Live TV stream"
                 ref={videoRef}
                 controls
                 style={{

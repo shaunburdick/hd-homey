@@ -31,6 +31,7 @@ export function Input({
     const colorError = 'var(--color-error)';
     const spaceTwo = 'var(--space-2)';
     const spaceOne = 'var(--space-1)';
+    const fontSizeSm = fontSizeSm;
 
     return (
         <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>
@@ -38,7 +39,7 @@ export function Input({
                 htmlFor={inputId}
                 style={{
                     display: 'block',
-                    fontSize: 'var(--font-size-sm)',
+                    fontSize: fontSizeSm,
                     fontWeight: 'var(--font-weight-medium)',
                     color: 'var(--color-text-primary)',
                     marginBottom: spaceTwo,
@@ -91,7 +92,7 @@ export function Input({
                             color: 'var(--color-text-secondary)',
                             cursor: 'pointer',
                             padding: spaceTwo,
-                            fontSize: 'var(--font-size-sm)',
+                            fontSize: fontSizeSm,
                             minHeight: 'var(--min-touch-target)',
                             minWidth: 'var(--min-touch-target)',
                         }}
@@ -121,7 +122,7 @@ export function Input({
                     role="alert"
                     style={{
                         marginTop: 'var(--space-1)',
-                        fontSize: 'var(--font-size-sm)',
+                        fontSize: fontSizeSm,
                         color: colorError,
                         marginBottom: 0,
                     }}

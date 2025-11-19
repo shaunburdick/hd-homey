@@ -14,7 +14,7 @@ export default function Nav() {
 
     // Close menu on route change
     useEffect(() => {
-        setIsOpen(false);
+        setIsOpen(false); // Close on route change
     }, [pathname]);
 
     // Prevent body scroll when mobile menu is open
