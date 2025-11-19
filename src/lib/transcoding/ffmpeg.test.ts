@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-const FFMPEG_CMD = 'ffmpeg';
 import { validateSettings, buildFFmpegCommand, getRecommendedSettings } from './ffmpeg';
 import { DEFAULT_SETTINGS } from './types';
 

@@ -1,6 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-const TEST_TUNER_NAME = 'Test Tuner';
-const TEST_URL = 'http://test.example';
 import { eq } from 'drizzle-orm';
 import type { DB } from './db';
 import { users, tuners, channels } from './schema';

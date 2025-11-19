@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-const ACTIVE_TUNER_NAME = 'Active Tuner';
 import { GET, POST } from './route';
 import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
 import type { DB } from '@/lib/database/db';
