@@ -21,7 +21,7 @@ export async function GET(
         const token = searchParams.get('token');
         let viewerId = searchParams.get('viewer_id');
 
-        if (token === null || token === '') {
+        if (!token) {
             Logger.warn({ tunerId, channelId, segment }, 'Segment request missing token');
             return new Response('Missing token', { status: 401 });
         }
@@ -35,7 +35,7 @@ export async function GET(
 
         // Verify token
         const tokenData = await verifyStreamToken(token);
-        if (tokenData === null || tokenData === undefined) {
+        if (!tokenData) {
             Logger.warn({ tunerId, channelId, segment }, 'Invalid or expired stream token');
             return new Response('Invalid or expired token', { status: 403 });
         }
@@ -55,7 +55,7 @@ export async function GET(
         const sessionId = `${tunerId}:${channelId}`;
         const session = manager.getSession(sessionId);
 
-        if (session === null || session === undefined) {
+        if (!session) {
             Logger.warn({ sessionId, segment }, 'Session not found for segment request');
             return new Response('Session not found', { status: 404 });
         }

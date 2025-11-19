@@ -9,7 +9,7 @@ export type DB = BetterSQLite3Database<typeof schema>;
 let cachedConnection: Database.Database;
 
 export function connection() {
-    if (cachedConnection) {
+    if (cachedConnection !== undefined) {
         return cachedConnection;
     }
     Logger.info(`Opening SQL DB: ${Config.DB_PATH}...`);
