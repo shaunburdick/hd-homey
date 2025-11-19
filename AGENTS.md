@@ -7,7 +7,8 @@ This document provides AI agents with essential context to quickly understand an
 **HD Homey** is a Next.js-based proxy application for HDHomeRun devices that enables secure remote access to live TV streams over the internet.
 
 ### Tech Stack
-- **Framework**: Next.js 15.1.6 (App Router)
+- **Framework**: Next.js 16.0.3 (App Router)
+- **UI Library**: React 19.2.0
 - **Language**: TypeScript 5
 - **Database**: SQLite via better-sqlite3 + Drizzle ORM
 - **Authentication**: NextAuth.js v5 (beta)
@@ -215,7 +216,8 @@ gh workflow run release.yml -f version=v1.0.0-alpha.2
 
 ## Resources
 
-- [Next.js 15 Docs](https://nextjs.org/docs)
+- [Next.js 16 Docs](https://nextjs.org/docs)
+- [React 19 Docs](https://react.dev/)
 - [NextAuth.js v5 Docs](https://authjs.dev/)
 - [Drizzle ORM Docs](https://orm.drizzle.team/)
 - [HDHomeRun API](https://www.silicondust.com/hdhomerun/developers/)

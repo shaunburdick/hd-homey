@@ -53,7 +53,7 @@ HD Homey acts as a secure proxy between your HDHomeRun devices and remote viewer
 - **Multi-Device Support**: Manage multiple HDHomeRun tuners from a single interface
 - **User Management**: Control who can access your streams with admin and viewer roles
 
-**Built with**: Next.js 15, TypeScript, SQLite, NextAuth.js v5, and Docker
+**Built with**: Next.js 16, React 19, TypeScript, SQLite, NextAuth.js v5, and Docker
 
 ## Features
 
@@ -361,7 +361,8 @@ Contributions are welcome! Please:
 
 ### Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
+- **UI Library**: React 19
 - **Language**: TypeScript 5
 - **Database**: SQLite + Drizzle ORM
 - **Authentication**: NextAuth.js v5

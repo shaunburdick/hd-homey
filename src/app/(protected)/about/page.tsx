@@ -64,7 +64,8 @@ export default function AboutPage() {
                 title="Technology Stack"
                 className="mb-5"
                 items={[
-                    { label: 'Framework', value: 'Next.js 15 (App Router)' },
+                    { label: 'Framework', value: 'Next.js 16 (App Router)' },
+                    { label: 'UI Library', value: 'React 19' },
                     { label: 'Language', value: 'TypeScript 5' },
                     { label: 'Database', value: 'SQLite with Drizzle ORM' },
                     { label: 'Authentication', value: 'NextAuth.js v5' },
