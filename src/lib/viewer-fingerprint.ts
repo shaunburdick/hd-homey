@@ -19,12 +19,14 @@ import type { NextRequest } from 'next/server';
  */
 export function generateViewerFingerprint(req: NextRequest): string {
     // Get IP address (handle various header formats)
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
-        || req.headers.get('x-real-ip')
-        || 'unknown';
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const realIp = req.headers.get('x-real-ip');
+    const ip = (forwardedFor !== null && forwardedFor !== '') 
+        ? forwardedFor.split(',')[0].trim()
+        : (realIp ?? 'unknown');
 
     // Get User-Agent
-    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const userAgent = req.headers.get('user-agent') ?? 'unknown';
 
     // Create a stable hash of IP + User-Agent
     const fingerprint = crypto
@@ -40,11 +42,13 @@ export function generateViewerFingerprint(req: NextRequest): string {
  * Get human-readable info about a viewer (for logging/debugging)
  */
 export function getViewerInfo(req: NextRequest) {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
-        || req.headers.get('x-real-ip')
-        || 'unknown';
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const realIp = req.headers.get('x-real-ip');
+    const ip = (forwardedFor !== null && forwardedFor !== '') 
+        ? forwardedFor.split(',')[0].trim()
+        : (realIp ?? 'unknown');
 
-    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const userAgent = req.headers.get('user-agent') ?? 'unknown';
 
     return {
         ip,
