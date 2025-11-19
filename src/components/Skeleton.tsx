@@ -66,7 +66,7 @@ export function SkeletonGroup({ count = 3, gap = 'var(--space-3)', children }: S
     return (
         <div style={{ display: 'grid', gap }}>
             {Array.from({ length: count }).map((_, i) => (
-                <Skeleton key={i} height="3rem" />
+                <Skeleton key={`skeleton-${i}`} height="3rem" />
             ))}
         </div>
     );

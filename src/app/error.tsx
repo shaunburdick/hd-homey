@@ -15,7 +15,10 @@ export default function Error({
     useEffect(() => {
         // Error is already logged by Next.js error boundary
         // Additional client-side logging could be added here if needed
-        console.error('Client error:', error);
+        // Error is automatically logged by Next.js
+        if (process.env.NODE_ENV === 'development') {
+            console.error('Client error:', error);
+        }
     }, [error]);
 
     return (

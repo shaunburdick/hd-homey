@@ -44,7 +44,7 @@ export async function updateTuner(prevState: unknown, formData: FormData) {
     const db = await getDb();
     const id = parseInt(formData.get('id') as string, 10);
 
-    if (!id || isNaN(id) || id === 0) {
+    if (isNaN(id) || id === 0) {
         return [{ path: 'id', message: 'Invalid tuner ID' }];
     }
 

@@ -112,7 +112,7 @@ export function Toast({ message, type = 'info', duration = 3000, onClose }: Toas
             >
                 ✕
             </button>
-            <style jsx>{`
+            <style>{`
                 @keyframes slideIn {
                     from {
                         transform: translateX(100%);
