@@ -16,7 +16,7 @@ let cachedFFmpegInfo: FFmpegInfo | null = null;
  * Detect if ffmpeg is available and get its capabilities
  */
 export async function detectFFmpeg(): Promise<FFmpegInfo> {
-    if (cachedFFmpegInfo !== undefined) {
+    if (cachedFFmpegInfo) {
         return cachedFFmpegInfo;
     }
 
@@ -45,7 +45,7 @@ export async function detectFFmpeg(): Promise<FFmpegInfo> {
             .split('\n')
             .slice(1)
             .map(line => line.trim())
-            .filter(line => (line !== null && line !== '') && !line.startsWith('Hardware'));
+            .filter(line => line !== '' && !line.startsWith('Hardware'));
 
         cachedFFmpegInfo = {
             available: true,

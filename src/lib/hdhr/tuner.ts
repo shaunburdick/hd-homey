@@ -62,7 +62,7 @@ export class HDTuner {
                 guideName: c.GuideName,
                 audioCodec: c.AudioCodec,
                 videoCodec: c.VideoCodec,
-                hd: (c.HD !== null && c.HD !== undefined && c.HD !== 0) ? c.HD : 0,
+                hd: c.HD ?? 0,
                 url: c.URL
             }))).onConflictDoUpdate({
                 target: [channels.fk_tuner, channels.guideNumber],

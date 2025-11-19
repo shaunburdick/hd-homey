@@ -20,7 +20,7 @@ export async function createUser(prevState: unknown, formData: FormData) {
     const db = await getDb();
 
     const password = formData.get('password');
-    const passwordString = (password !== null && password !== undefined)
+    const passwordString = password !== null
         ? password.toString()
         : '';
 
@@ -50,15 +50,15 @@ export async function updateUser(prevState: unknown, formData: FormData) {
     }
 
     const idValue = formData.get('id');
-    const idString = (idValue !== null && idValue !== undefined) ? idValue.toString() : '0';
+    const idString = idValue !== null ? idValue.toString() : '0';
     const userId = parseInt(idString, 10);
-    if (!userId || isNaN(userId) || userId === 0) {
+    if (isNaN(userId) || userId === 0) {
         return [{ path: 'id', message: 'Invalid user ID' }];
     }
 
     const db = await getDb();
     const passwordValue = formData.get('password');
-    const password = (passwordValue !== null && passwordValue !== undefined) ? passwordValue.toString() : null;
+    const password = passwordValue !== null ? passwordValue.toString() : null;
 
     // Build update object - only include password if provided
     const updateData: {
