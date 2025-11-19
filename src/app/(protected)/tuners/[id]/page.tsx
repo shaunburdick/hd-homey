@@ -46,10 +46,36 @@ export default async function Page(props: { params: Promise<PageParams> }) {
 
                 <div className="flex justify-between items-start flex-wrap gap-4">
                     <div>
-                        <h1 className="mb-2">{tuner.name}</h1>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h1 className="m-0">{tuner.name}</h1>
+                            {!tuner.is_active && (
+                                <span
+                                    className="text-sm"
+                                    style={{
+                                        padding: 'var(--space-2) var(--space-3)',
+                                        backgroundColor: 'var(--color-warning-bg)',
+                                        color: 'var(--color-warning)',
+                                        borderRadius: 'var(--radius-md)',
+                                        fontWeight: 'var(--font-weight-medium)',
+                                    }}
+                                >
+                                    ⚠️ Inactive
+                                </span>
+                            )}
+                        </div>
                         <p className="text-secondary text-sm m-0">
                             {tuner.path}
                         </p>
+                        {!tuner.is_active && (
+                            <p
+                                className="text-sm mt-2 mb-0"
+                                style={{
+                                    color: 'var(--color-warning)',
+                                }}
+                            >
+                                This tuner is inactive and unavailable for streaming
+                            </p>
+                        )}
                     </div>
                     <AdminLink href={`/tuners/${tuner.id}/edit`}>
                         <Button variant="secondary">✏️ Edit Tuner</Button>

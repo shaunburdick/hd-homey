@@ -79,6 +79,13 @@ export async function GET(
             notFound();
         }
 
+        // Check if tuner is active
+        if (!channel.tuners.is_active) {
+            Logger.warn({ tunerId: id, channelId: channel_id, tunerName: channel.tuners.name },
+                'Stream request for inactive tuner');
+            return new Response('Tuner is not active', { status: 403 });
+        }
+
         const tuner = new HDTuner(channel.tuners.path);
         const stream = await tuner.stream(channel.guideNumber);
         return new MessageResponse(stream);

@@ -86,7 +86,7 @@ Tuner Management allows administrators to configure, monitor, and manage HD Home
 
 ---
 
-### Story 6: Automatic Channel Scanning (Priority: P3)
+### Story 6: Automatic Channel Scanning (Priority: P3) ✅ IMPLEMENTED
 
 **As a** user  
 **I want** the system to automatically scan for channels when a tuner is first added  
@@ -95,8 +95,9 @@ Tuner Management allows administrators to configure, monitor, and manage HD Home
 **Why this priority**: Nice-to-have quality of life improvement
 
 **Acceptance Criteria**:
-- **Given** I add a new tuner, **When** the tuner is created, **Then** an initial channel scan is automatically triggered
-- **Given** the scan completes, **When** I navigate to the tuner page, **Then** channels are already populated
+- ✅ **Given** I add a new tuner, **When** the tuner is created, **Then** an initial channel scan is automatically triggered
+- ✅ **Given** the scan completes, **When** I navigate to the tuner page, **Then** channels are already populated
+- ✅ **Given** the scan fails, **When** the error occurs, **Then** the tuner is still created and error is logged
 
 ## Requirements
 
@@ -111,6 +112,7 @@ Tuner Management allows administrators to configure, monitor, and manage HD Home
 - **FR-007**: System MUST update or create channels when refreshing lineup
 - **FR-008**: System MUST allow administrators to edit tuner name and path
 - **FR-009**: System MUST sort channels by guide number for display
+- **FR-010**: System MUST automatically scan for channels when a new tuner is created
 
 ### Non-Functional Requirements
 

@@ -62,6 +62,16 @@ export async function GET(
             return new Response('Channel not found', { status: 404 });
         }
 
+        // Check if tuner is active
+        if (!channel.tuners.is_active) {
+            Logger.warn({
+                tunerId,
+                channelId,
+                tunerName: channel.tuners.name,
+            }, 'Transcode playlist request for inactive tuner');
+            return new Response('Tuner is not active', { status: 403 });
+        }
+
         // Check if transcoding is enabled
         const settings = await getTranscodingSettings();
         if (!settings.enabled) {

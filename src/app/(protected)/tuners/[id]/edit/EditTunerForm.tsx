@@ -1,9 +1,9 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState, useTransition } from 'react';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import Link from 'next/link';
-import { updateTuner } from '../../actions';
+import { updateTuner, deleteTuner, validateTunerConnection, type ValidationResult } from '../../actions';
 import { Input, Button, Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
 import type { Tuner } from '@/lib/database/schema';
@@ -13,13 +13,47 @@ interface ValidationError {
     message: string;
 }
 
+const ERROR_COLOR = 'var(--color-error)';
+const ERROR_BG_COLOR = 'var(--color-error-bg)';
+const TEXT_SECONDARY = 'var(--color-text-secondary)';
+
 export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
     const [state, formAction, isPending] = useActionState(updateTuner, null);
+    const [, deleteAction, isDeleting] = useActionState(deleteTuner, null);
+    const [validationState, validateAction] = useActionState<
+        ValidationResult | null,
+        FormData
+    >(validateTunerConnection, null);
+    const [isValidating, startTransition] = useTransition();
+    const [pathValue, setPathValue] = useState(tuner.path);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const isAnyActionPending = isPending || isDeleting;
 
     const handleSubmit = async (formData: FormData) => {
         formData.append('id', tuner.id.toString());
         try {
             await formAction(formData);
+        } catch (error) {
+            if (isRedirectError(error)) {
+                throw error;
+            }
+        }
+    };
+
+    const handleTest = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('path', pathValue);
+        startTransition(() => {
+            validateAction(formData);
+        });
+    };
+
+    const handleDelete = async (formData: FormData) => {
+        formData.append('id', tuner.id.toString());
+        try {
+            await deleteAction(formData);
         } catch (error) {
             if (isRedirectError(error)) {
                 throw error;
@@ -61,18 +95,18 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                                 role="alert"
                                 className="rounded p-4 mb-4"
                                 style={{
-                                    backgroundColor: 'var(--color-error-bg)',
-                                    border: '1px solid var(--color-error)',
+                                    backgroundColor: ERROR_BG_COLOR,
+                                    border: `1px solid ${ERROR_COLOR}`,
                                 }}
                             >
-                                <strong style={{ color: 'var(--color-error)' }}>
+                                <strong style={{ color: ERROR_COLOR }}>
                                     Please fix the following errors:
                                 </strong>
                                 <ul
                                     className="mt-2 m-0"
                                     style={{
                                         paddingLeft: 'var(--space-5)',
-                                        color: 'var(--color-error)',
+                                        color: ERROR_COLOR,
                                     }}
                                 >
                                     {Object.entries(errors).map(([field, messages]) =>
@@ -101,12 +135,57 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                             name="path"
                             type="url"
                             required
-                            defaultValue={tuner.path}
+                            value={pathValue}
                             placeholder="http://192.168.1.100"
                             helpText="The network address of your HDHomeRun device"
                             error={errors?.path?.[0]}
                             disabled={isPending}
+                            onChange={(e) => setPathValue(e.target.value)}
                         />
+
+                        {isValidating && (
+                            <div
+                                role="status"
+                                className="rounded p-4 mb-4"
+                                style={{
+                                    backgroundColor: 'var(--color-info-bg)',
+                                    border: '1px solid var(--color-info)',
+                                }}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="spinner" aria-hidden="true" />
+                                    <strong style={{ color: 'var(--color-info)' }}>
+                                        Testing connection...
+                                    </strong>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isValidating && validationState && (() => {
+                            const colorVar = validationState.success ? 'var(--color-success)' : 'var(--color-error)';
+                            return (
+                                <div
+                                    role="alert"
+                                    className="rounded p-4 mb-4"
+                                    style={{
+                                        backgroundColor: validationState.success
+                                            ? 'var(--color-success-bg)'
+                                            : ERROR_BG_COLOR,
+                                        border: `1px solid ${colorVar}`,
+                                    }}
+                                >
+                                    <strong style={{ color: colorVar }}>
+                                        {validationState.success ? '✓ ' : '✗ '}
+                                        {validationState.message}
+                                    </strong>
+                                    {validationState.error && (
+                                        <p className="mt-2 mb-0 text-sm" style={{ color: colorVar }}>
+                                            {validationState.error}
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         <div className="form-group">
                             <label className="checkbox-label">
@@ -123,12 +202,21 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                             </small>
                         </div>
 
-                        <div className="mt-6 flex gap-3">
-                            <Button type="submit" loading={isPending} disabled={isPending}>
+                        <div className="mt-6 flex gap-3 flex-wrap">
+                            <Button type="submit" loading={isPending} disabled={isPending || isValidating}>
                                 {isPending ? 'Updating...' : 'Update Tuner'}
                             </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={handleTest}
+                                loading={isValidating}
+                                disabled={isPending || isValidating || !pathValue}
+                            >
+                                {isValidating ? 'Testing...' : 'Test Connection'}
+                            </Button>
                             <Link href={`/tuners/${tuner.id}`}>
-                                <Button type="button" variant="secondary" disabled={isPending}>
+                                <Button type="button" variant="secondary" disabled={isPending || isValidating}>
                                     Cancel
                                 </Button>
                             </Link>
@@ -181,6 +269,62 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                         },
                     ]}
                 />
+
+                <Card style={{
+                    borderColor: ERROR_COLOR,
+                    backgroundColor: ERROR_BG_COLOR,
+                }}>
+                    <h2 className="mt-0 mb-3" style={{ color: ERROR_COLOR }}>
+                        Danger Zone
+                    </h2>
+                    <p className="text-sm mb-4" style={{ color: TEXT_SECONDARY }}>
+                        Deleting a tuner will remove it and all its channels. This action cannot be undone.
+                    </p>
+
+                    {!showDeleteConfirm ? (
+                        <Button
+                            type="button"
+                            variant="danger"
+                            onClick={() => setShowDeleteConfirm(true)}
+                            disabled={isAnyActionPending}
+                        >
+                            🗑️ Delete Tuner
+                        </Button>
+                    ) : (
+                        <div>
+                            <p
+                                className="text-sm mb-3"
+                                style={{
+                                    color: ERROR_COLOR,
+                                    fontWeight: 'var(--font-weight-medium)',
+                                }}
+                            >
+                                Are you sure? This will permanently delete &quot;{tuner.name}&quot;
+                                and all its channels.
+                            </p>
+                            <form action={handleDelete}>
+                                <div className="flex gap-3">
+                                    <Button
+                                        type="submit"
+                                        variant="danger"
+                                        loading={isDeleting}
+                                        disabled={isAnyActionPending}
+                                    >
+                                        {isDeleting ? 'Deleting...' : 'Yes, Delete Tuner'}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={() => setShowDeleteConfirm(false)}
+                                        disabled={isAnyActionPending}
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                </Card>
             </div>
         </PageContainer>
     );

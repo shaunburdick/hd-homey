@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Tuner Connection Validation**: Test button on tuner forms to validate HDHomeRun connectivity before saving
+  - Validates tuner path points to a valid HDHomeRun device
+  - Shows channel count on successful connection
+  - Provides clear error messages for common connection issues (timeout, invalid URL, device unreachable)
+  - Works on both new tuner and edit tuner forms
+  - Non-blocking: allows saving even if test fails
+  - Visible loading indicator during test
+- **Automatic Channel Scan**: New tuners automatically scan for channels on creation
+  - No need to manually refresh channels after adding a tuner
+  - Channels are available immediately on the tuner detail page
+  - Gracefully handles scan errors without failing tuner creation
+
+### Added
+
+- **Tuner Deletion**: Ability to soft-delete tuners from the edit page
+  - Confirmation dialog prevents accidental deletion
+  - Soft delete preserves data (sets deleted_at timestamp)
+  - Automatically soft-deletes all channels belonging to the tuner
+  - Deleted tuners hidden from all tuner lists
+  - "Danger Zone" section with clear warnings
+  - Comprehensive unit tests (7 test cases)
+
+### Fixed
+
+- **Inactive Tuner Enforcement**: Inactive tuners are now properly blocked from streaming
+  - Direct stream requests return 403 Forbidden
+  - Transcoding playlist requests return 403 Forbidden
+  - Inactive status clearly shown on tuners list page with visual indicators
+  - Inactive tuners displayed with reduced opacity and "Inactive" badge
+  - Tuner detail page shows prominent inactive warning with explanation
+
 ## [1.0.0-alpha.5] - 2025-11-19
 
 **Note**: This release updates all dependencies to latest versions including React 19 and Next.js 16, resolves all code quality issues, and optimizes CI/CD workflows.

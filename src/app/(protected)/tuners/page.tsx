@@ -42,10 +42,31 @@ export default async function TunersPage() {
                             href={`/tuners/${tuner.id}`}
                             className="no-underline cursor-pointer"
                         >
-                            <Card className="tuner-card transition" style={{ height: '100%' }}>
-                                <h3 className="mt-0 mb-2" style={{ color: 'var(--color-accent)' }}>
-                                    {tuner.name}
-                                </h3>
+                            <Card className="tuner-card transition" style={{
+                                height: '100%',
+                                opacity: tuner.is_active ? 1 : 0.6,
+                                border: tuner.is_active
+                                    ? undefined
+                                    : '1px solid var(--color-border)'
+                            }}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="mt-0 mb-0" style={{ color: 'var(--color-accent)' }}>
+                                        {tuner.name}
+                                    </h3>
+                                    {!tuner.is_active && (
+                                        <span
+                                            className="text-xs"
+                                            style={{
+                                                padding: 'var(--space-1) var(--space-2)',
+                                                backgroundColor: 'var(--color-warning-bg)',
+                                                color: 'var(--color-warning)',
+                                                borderRadius: 'var(--radius-sm)',
+                                            }}
+                                        >
+                                            Inactive
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="text-secondary text-sm mb-3" style={{ wordBreak: 'break-all' }}>
                                     {tuner.path}
                                 </p>
