@@ -39,7 +39,7 @@ export default function GetStarted() {
             <div className="text-center" style={{ marginBottom: 'var(--space-8)' }}>
                 <h1>Welcome to HD Homey!</h1>
                 <p className="text-lg text-secondary">
-                    Let's get started by creating your admin account.
+                    Let&apos;s get started by creating your admin account.
                 </p>
             </div>
 
@@ -73,8 +73,8 @@ export default function GetStarted() {
                                 color: 'var(--color-error)',
                             }}>
                                 {Object.entries(errors).map(([field, messages]) =>
-                                    messages.map((message, idx) => (
-                                        <li key={`${field}-${idx}`}>
+                                    messages.map((message) => (
+                                        <li key={`${field}-${message}`}>
                                             <strong>{field}:</strong> {message}
                                         </li>
                                     )))}
