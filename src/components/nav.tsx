@@ -32,10 +32,11 @@ export default function Nav() {
         };
     }, [isOpen]);
 
-    const handleSignOut = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const handleSignOut = async (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         setIsOpen(false);
-        signOut({ callbackUrl: '/users/signin' });
+        await signOut({ redirect: false });
+        window.location.href = '/users/signin';
     };
 
     const menuItems = [
