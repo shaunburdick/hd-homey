@@ -39,13 +39,19 @@ export async function detectFFmpeg(): Promise<FFmpegInfo> {
             codecs.push('aac');
         }
 
-        const { stdout: hwAccelOutput, stderr: hwAccelStderr } = await execFileAsync(ffmpegPath, ['-hwaccels']);
-        const hwAccelFullOutput = hwAccelOutput + hwAccelStderr;
-        const hwAccel = hwAccelFullOutput
+        const { stdout: hwAccelOutput } = await execFileAsync(ffmpegPath, ['-hwaccels']);
+        const hwAccel = hwAccelOutput
             .split('\n')
-            .slice(1)
+            .slice(1) // Skip the "Hardware acceleration methods:" line
             .map(line => line.trim())
-            .filter(line => line !== '' && !line.startsWith('Hardware'));
+            .filter(line => {
+                // Filter out empty lines and FFmpeg version/build info
+                return line !== '' &&
+                    !line.includes('ffmpeg version') &&
+                    !line.includes('built with') &&
+                    !line.includes('configuration:') &&
+                    !line.includes('lib');
+            });
 
         cachedFFmpegInfo = {
             available: true,
