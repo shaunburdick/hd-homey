@@ -20,13 +20,13 @@ export async function servePlaylist(
         let content = await fs.readFile(playlistPath, 'utf-8');
 
         // Add token and viewer_id to segment URLs if provided
-        if (token) {
+        if (token !== null && token !== undefined && token !== '') {
             const lines = content.split('\n');
             const modifiedLines = lines.map(line => {
                 // Add token and viewer_id to .ts segment files
                 if (line.trim().endsWith('.ts')) {
                     let modifiedLine = `${line}?token=${token}`;
-                    if (viewerId) {
+                    if (viewerId !== null && viewerId !== undefined && viewerId !== '') {
                         modifiedLine += `&viewer_id=${viewerId}`;
                     }
                     Logger.debug({ original: line, modified: modifiedLine }, 'Modified segment URL');

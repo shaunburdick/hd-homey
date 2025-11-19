@@ -20,7 +20,7 @@ export async function startTranscode(
     // Ensure output directory exists
     await fs.mkdir(outputDir, { recursive: true });
 
-    const ffmpegPath = process.env.FFMPEG_PATH || 'ffmpeg';
+    const ffmpegPath = process.env.FFMPEG_PATH ?? 'ffmpeg';
     const args = buildFFmpegCommand(sourceUrl, outputDir, settings);
 
     Logger.info(
@@ -38,13 +38,17 @@ export async function startTranscode(
     });
 
     // Log ffmpeg output
-    ffmpeg.stdout?.on('data', (data) => {
-        Logger.debug({ output: data.toString() }, 'FFmpeg stdout');
-    });
+    if (ffmpeg.stdout !== null) {
+        ffmpeg.stdout.on('data', (data) => {
+            Logger.debug({ output: data.toString() }, 'FFmpeg stdout');
+        });
+    }
 
-    ffmpeg.stderr?.on('data', (data) => {
-        Logger.debug({ output: data.toString() }, 'FFmpeg stderr');
-    });
+    if (ffmpeg.stderr !== null) {
+        ffmpeg.stderr.on('data', (data) => {
+            Logger.debug({ output: data.toString() }, 'FFmpeg stderr');
+        });
+    }
 
     ffmpeg.on('error', (error) => {
         Logger.error({ error, sourceUrl }, 'FFmpeg process error');
@@ -64,7 +68,7 @@ export async function startTranscode(
  * Stop a transcoding process gracefully
  */
 export async function stopTranscode(process: ChildProcess): Promise<void> {
-    if (!process.pid) {
+    if (process.pid === undefined || process.pid === 0 || isNaN(process.pid)) {
         Logger.warn('Attempted to stop process with no PID');
         return;
     }
