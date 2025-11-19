@@ -36,6 +36,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "public/**/*",
     ".next/types/**/*.ts",
     "vitest.config.mts",
     ".next/dev/types/**/*.ts"

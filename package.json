@@ -1,6 +1,6 @@
 {
   "name": "hd-homey",
-  "version": "1.0.0-alpha.7",
+  "version": "1.0.0-alpha.8",
   "license": "AGPL-3.0-only",
   "private": true,
   "scripts": {

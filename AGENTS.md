@@ -177,7 +177,7 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-alpha.7** - Alpha release with comprehensive tuner management improvements including connection validation, auto-scan, and soft-delete. CI/CD test fixes.
+**1.0.0-alpha.8** - Alpha release with comprehensive tuner management improvements including connection validation, auto-scan, and soft-delete. CI/CD fixes for tests and TypeScript.
 
 ### Release Process
 

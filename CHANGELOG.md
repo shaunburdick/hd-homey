@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.8] - 2025-11-19
+
+**Note**: This patch fixes TypeScript compilation in CI/CD by including public folder in tsconfig.
+
+### Fixed
+
+- **TypeScript Config**: Added `public/**/*` to tsconfig include to resolve @public/* path imports in CI/CD
+
 ## [1.0.0-alpha.7] - 2025-11-19
 
 **Note**: This patch fixes test failures in CI/CD by excluding build artifacts from test discovery.
