@@ -78,6 +78,8 @@ export default function SignIn() {
                             type="text"
                             required
                             autoComplete="username"
+                            // eslint-disable-next-line jsx-a11y/no-autofocus
+                            autoFocus
                             disabled={isLoading}
                         />
 
