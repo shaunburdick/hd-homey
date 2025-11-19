@@ -28,7 +28,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         )
                     });
 
-                    if (foundUser === null || foundUser === undefined) {
+                    if (!foundUser) {
                         // No user found, so this is their first attempt to login
                         // meaning this is also the place you could do registration
                         throw new Error('User not found.');
@@ -56,7 +56,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     callbacks: {
         jwt({ token, user }) {
             // Persist user data to JWT token on sign in
-            if (user !== null && user !== undefined) {
+            if (user) {
                 token.id = user.id;
                 token.username = user.username;
                 token.role = user.role;
@@ -65,7 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
         session({ session, token }) {
             // Add user data from token to session
-            if (token !== null && token !== undefined && session.user !== null && session.user !== undefined) {
+            if (token && session.user) {
                 session.user.id = Number(token.id);
                 session.user.username = token.username;
                 session.user.role = token.role;
