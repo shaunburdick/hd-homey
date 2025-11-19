@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
         )
     });
 
-    if (tuner === null || tuner === undefined) {
+    if (tuner === undefined) {
         notFound();
     }
 

@@ -6,7 +6,7 @@ import Config from '@/lib/config';
 import Logger from '@/lib/logger';
 
 export type DB = BetterSQLite3Database<typeof schema>;
-let cachedConnection: Database.Database;
+let cachedConnection: Database.Database | undefined;
 
 export function connection() {
     if (cachedConnection !== undefined) {

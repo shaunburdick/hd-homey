@@ -29,10 +29,10 @@ export function Input({
 
     // Style constants
     const colorError = 'var(--color-error)';
+    const spaceThree = 'var(--space-3)';
     const spaceTwo = 'var(--space-2)';
     const spaceOne = 'var(--space-1)';
-    const fontSizeSm = fontSizeSm;
-    const fontSizeSm = fontSizeSm;
+    const fontSizeSm = 'var(--font-size-sm)';
 
     return (
         <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>
@@ -66,7 +66,7 @@ export function Input({
                     style={{
                         width: '100%',
                         minHeight: 'var(--input-height)',
-                        padding: 'var(--space-3)',
+                        padding: spaceThree,
                         backgroundColor: 'var(--color-bg-secondary)',
                         color: 'var(--color-text-primary)',
                         border: `1px solid ${error !== undefined ? colorError : 'var(--color-border)'}`,
@@ -85,7 +85,7 @@ export function Input({
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                         style={{
                             position: 'absolute',
-                            right: 'var(--space-3)',
+                            right: spaceThree,
                             top: '50%',
                             transform: 'translateY(-50%)',
                             background: 'none',
@@ -107,7 +107,7 @@ export function Input({
                 <p
                     id={helpId}
                     style={{
-                        marginTop: 'var(--space-1)',
+                        marginTop: spaceOne,
                         fontSize: 'var(--font-size-xs)',
                         color: 'var(--color-text-tertiary)',
                         marginBottom: 0,
@@ -122,7 +122,7 @@ export function Input({
                     id={errorId}
                     role="alert"
                     style={{
-                        marginTop: 'var(--space-1)',
+                        marginTop: spaceOne,
                         fontSize: fontSizeSm,
                         color: colorError,
                         marginBottom: 0,

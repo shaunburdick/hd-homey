@@ -20,6 +20,12 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Check HLS support early (before effect)
+    const hlsSupported = typeof window !== 'undefined' && (
+        Hls.isSupported() ||
+        document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== ''
+    );
+
     useEffect(() => {
         const video = videoRef.current;
         if (!video) {
@@ -129,10 +135,17 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
             return () => {
                 hls.destroy();
             };
-        } else {
-            setError('HLS is not supported in this browser');
         }
     }, [playlistUrl, autoplay]);
+
+    if (!hlsSupported) {
+        return (
+            <div style={{ padding: '1rem', backgroundColor: '#fee', border: '1px solid #fcc' }}>
+                <h3>Playback Error</h3>
+                <p>HLS is not supported in this browser</p>
+            </div>
+        );
+    }
 
     if (error) {
         return (
@@ -153,7 +166,7 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
             {loading && (
                 <p>Loading stream...</p>
             )}
-            <video aria-label="Live TV stream"
+            <video
                 ref={videoRef}
                 controls
                 style={{
@@ -163,7 +176,9 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
                 }}
                 playsInline
                 aria-label={`Video player for ${channelName}`}
-            />
+            >
+                <track kind="captions" />
+            </video>
         </div>
     );
 }

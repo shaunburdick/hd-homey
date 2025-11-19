@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Logger from '@/lib/logger';
 import type { Channel } from '@/lib/database/schema';
 
@@ -11,14 +11,11 @@ interface ChannelStreamProps {
 
 export default function ChannelStream({ streamUrl }: ChannelStreamProps) {
     const [isCopied, setIsCopied] = useState(false);
-    const [channelLink, setChannelLink] = useState(streamUrl);
 
     // Convert relative URL to absolute for VLC (client-side only)
-    useEffect(() => {
-        if (streamUrl.startsWith('/')) {
-            setChannelLink(new URL(streamUrl, window.location.origin).toString());
-        }
-    }, [streamUrl]);
+    const channelLink = typeof window !== 'undefined' && streamUrl.startsWith('/')
+        ? new URL(streamUrl, window.location.origin).toString()
+        : streamUrl;
 
     const handleCopy = async () => {
         try {

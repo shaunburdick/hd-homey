@@ -8,14 +8,16 @@ import { signOut , useSession } from 'next-auth/react';
 
 export default function Nav() {
 
-    const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
+    const [isOpen, setIsOpen] = useState(false);
+    const [lastPathname, setLastPathname] = useState(pathname);
     const { data: session } = useSession();
 
     // Close menu on route change
-    useEffect(() => {
-        setIsOpen(false); // Close on route change
-    }, [pathname]);
+    if (pathname !== lastPathname) {
+        setIsOpen(false);
+        setLastPathname(pathname);
+    }
 
     // Prevent body scroll when mobile menu is open
     useEffect(() => {

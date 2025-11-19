@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
         )
     });
 
-    if (data === null || data === undefined) {
+    if (data === undefined) {
         notFound();
     }
 
@@ -53,7 +53,7 @@ export async function POST(
 
         const nameValue = formData.get('name');
         const pathValue = formData.get('path');
-        
+
         const updateData = {
             name: (nameValue !== null && nameValue !== '') ? nameValue.toString() : tuner.name,
             path: (pathValue !== null && pathValue !== '') ? pathValue.toString() : tuner.path,

@@ -38,13 +38,12 @@ export async function startTranscode(
     });
 
     // Log ffmpeg output
-    if (ffmpeg.stdout) { ffmpeg.stdout.on('data', (data) => {
+    ffmpeg.stdout.on('data', (data) => {
         Logger.debug({ output: data.toString() }, 'FFmpeg stdout');
     });
 
-    } if (ffmpeg.stderr) { ffmpeg.stderr.on('data', (data) => {
+    ffmpeg.stderr.on('data', (data) => {
         Logger.debug({ output: data.toString() }, 'FFmpeg stderr');
-    }
     });
 
     ffmpeg.on('error', (error) => {
