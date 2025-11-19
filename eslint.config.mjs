@@ -1,4 +1,5 @@
 import shaunburdick from 'eslint-config-shaunburdick';
+// eslint-disable-next-line import/no-extraneous-dependencies -- Provided by eslint-config-next
 import nextPlugin from '@next/eslint-plugin-next';
 
 export default [
@@ -13,13 +14,6 @@ export default [
         rules: {
             ...nextPlugin.configs.recommended.rules,
             ...nextPlugin.configs['core-web-vitals'].rules,
-        }
-    },
-    {
-        name: 'eslint-config',
-        files: ['eslint.config.mjs'],
-        rules: {
-            'import/no-extraneous-dependencies': 'off'
         }
     },
     {
