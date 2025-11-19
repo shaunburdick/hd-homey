@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+const TEST_TUNER_NAME = 'Test Tuner';
+const TEST_URL = 'http://test.example';
 import { eq } from 'drizzle-orm';
 import type { DB } from './db';
 import { users, tuners, channels } from './schema';
@@ -132,12 +134,12 @@ describe('Database Schema', () => {
     describe('Tuners Table', () => {
         it('should create tuner with required fields', () => {
             const tuner = db.insert(tuners).values({
-                name: 'Test Tuner',
+                name: TEST_TUNER_NAME,
                 path: 'http://192.168.1.100'
             }).returning().get();
 
             expect(tuner.id).toBeDefined();
-            expect(tuner.name).toBe('Test Tuner');
+            expect(tuner.name).toBe(TEST_TUNER_NAME);
             expect(tuner.path).toBe('http://192.168.1.100');
             expect(tuner.is_active).toBe(true);
         });
@@ -193,7 +195,7 @@ describe('Database Schema', () => {
 
         beforeEach(() => {
             const tuner = db.insert(tuners).values({
-                name: 'Test Tuner',
+                name: TEST_TUNER_NAME,
                 path: 'http://192.168.1.100'
             }).returning().get();
             tunerId = tuner.id;

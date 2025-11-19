@@ -23,6 +23,13 @@ vi.mock('@/lib/database/db', () => ({
 }));
 
 describe('User Actions', () => {
+    // Test constants
+    const TEST_ADMIN_USERNAME = 'admin';
+    const TEST_ADMIN_NAME = 'Admin User';
+    const TEST_UPDATED_NAME = 'Updated Name';
+    const TEST_ACTIVE_VALUE = 'true';
+    const TEST_SETUP_ERROR = 'Test setup failed: no user found';
+
     beforeEach(async () => {
         testDb = createTestDatabase();
         await seedTestDatabase(testDb);
@@ -39,8 +46,8 @@ describe('User Actions', () => {
             vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN_USERNAME,
+                    name: TEST_ADMIN_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -95,8 +102,8 @@ describe('User Actions', () => {
             vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN_USERNAME,
+                    name: TEST_ADMIN_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -123,8 +130,8 @@ describe('User Actions', () => {
             vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN_USERNAME,
+                    name: TEST_ADMIN_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -160,8 +167,8 @@ describe('User Actions', () => {
             vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN_USERNAME,
+                    name: TEST_ADMIN_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -171,14 +178,14 @@ describe('User Actions', () => {
             // Get existing user ID
             const { users } = await import('@/lib/database/schema');
             const existingUser = testDb.select().from(users).limit(1).get();
-            if (!existingUser) {
-                throw new Error('Test setup failed: no user found');
+            if (existingUser === undefined) {
+                throw new Error(TEST_SETUP_ERROR);
             }
 
             const formData = new FormData();
             formData.append('id', existingUser.id.toString());
-            formData.append('name', 'Updated Name');
-            formData.append('is_active', 'true');
+            formData.append('name', TEST_UPDATED_NAME);
+            formData.append('is_active', TEST_ACTIVE_VALUE);
 
             try {
                 await updateUser(null, formData);
@@ -192,7 +199,7 @@ describe('User Actions', () => {
             // Verify user was updated
             const { eq } = await import('drizzle-orm');
             const updatedUser = testDb.select().from(users).where(eq(users.id, existingUser.id)).get();
-            expect(updatedUser?.name).toBe('Updated Name');
+            expect(updatedUser?.name).toBe(TEST_UPDATED_NAME);
         });
 
         it('should reject update when not authenticated as admin', async () => {
@@ -200,8 +207,8 @@ describe('User Actions', () => {
 
             const formData = new FormData();
             formData.append('id', '1');
-            formData.append('name', 'Updated Name');
-            formData.append('is_active', 'true');
+            formData.append('name', TEST_UPDATED_NAME);
+            formData.append('is_active', TEST_ACTIVE_VALUE);
 
             const result = await updateUser(null, formData);
 
@@ -214,8 +221,8 @@ describe('User Actions', () => {
             vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN_USERNAME,
+                    name: TEST_ADMIN_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -224,7 +231,7 @@ describe('User Actions', () => {
 
             const formData = new FormData();
             formData.append('id', 'invalid');
-            formData.append('name', 'Updated Name');
+            formData.append('name', TEST_UPDATED_NAME);
 
             const result = await updateUser(null, formData);
 
@@ -237,8 +244,8 @@ describe('User Actions', () => {
             vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN_USERNAME,
+                    name: TEST_ADMIN_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -247,8 +254,8 @@ describe('User Actions', () => {
 
             const { users } = await import('@/lib/database/schema');
             const existingUser = testDb.select().from(users).limit(1).get();
-            if (!existingUser) {
-                throw new Error('Test setup failed: no user found');
+            if (existingUser === undefined) {
+                throw new Error(TEST_SETUP_ERROR);
             }
             const originalPasswordHash = existingUser.passHash;
 
@@ -256,7 +263,7 @@ describe('User Actions', () => {
             const formData1 = new FormData();
             formData1.append('id', existingUser.id.toString());
             formData1.append('name', 'Name Change 1');
-            formData1.append('is_active', 'true');
+            formData1.append('is_active', TEST_ACTIVE_VALUE);
 
             try {
                 await updateUser(null, formData1);
@@ -273,7 +280,7 @@ describe('User Actions', () => {
             formData2.append('id', existingUser.id.toString());
             formData2.append('name', 'Name Change 2');
             formData2.append('password', 'newPassword123');
-            formData2.append('is_active', 'true');
+            formData2.append('is_active', TEST_ACTIVE_VALUE);
 
             try {
                 await updateUser(null, formData2);
@@ -290,8 +297,8 @@ describe('User Actions', () => {
             vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN_USERNAME,
+                    name: TEST_ADMIN_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -301,8 +308,8 @@ describe('User Actions', () => {
             const { users } = await import('@/lib/database/schema');
             const { eq } = await import('drizzle-orm');
             const existingUser = testDb.select().from(users).limit(1).get();
-            if (!existingUser) {
-                throw new Error('Test setup failed: no user found');
+            if (existingUser === undefined) {
+                throw new Error(TEST_SETUP_ERROR);
             }
 
             // Deactivate user

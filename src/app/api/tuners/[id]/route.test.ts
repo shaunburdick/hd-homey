@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+const ACTIVE_TUNER_NAME = 'Active Tuner';
 import { GET, POST } from './route';
 import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
 import type { DB } from '@/lib/database/db';
@@ -36,7 +37,7 @@ describe('GET /api/tuners/[id]', () => {
         // Get a test tuner ID
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
-        if (!tuner) {
+        if (tuner === null || tuner === undefined) {
             throw new Error('Test setup failed: no tuner found');
         }
         tunerId = tuner.id;
@@ -111,7 +112,7 @@ describe('POST /api/tuners/[id]', () => {
 
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
-        if (!tuner) {
+        if (tuner === null || tuner === undefined) {
             throw new Error('Test setup failed: no tuner found');
         }
         tunerId = tuner.id;

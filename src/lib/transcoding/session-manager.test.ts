@@ -1,4 +1,7 @@
 import { EventEmitter } from 'node:events';
+const TEST_SOURCE = 'Test Source';
+const TEST_DIR = '/test/dir';
+const TEST_VIEWER = 'test-viewer';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getSessionManager } from './session-manager';
 import * as transcode from './transcode';

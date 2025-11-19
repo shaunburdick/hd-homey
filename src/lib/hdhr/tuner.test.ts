@@ -1,4 +1,6 @@
 import http from 'node:http';
+const TEST_TUNER_NAME = 'Test Tuner';
+const TEST_TUNER_URL = 'http://192.168.1.1';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HDTuner } from './tuner';
 import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
