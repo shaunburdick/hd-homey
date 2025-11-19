@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
         )
     });
 
-    if (!data) {
+    if (data === null || data === undefined) {
         notFound();
     }
 
@@ -44,16 +44,19 @@ export async function POST(
             )
         });
 
-        if (tuner === null || tuner === undefined) {
+        if (tuner === undefined) {
             return Response.json(
                 { error: 'Tuner not found' },
                 { status: 404 }
             );
         }
 
+        const nameValue = formData.get('name');
+        const pathValue = formData.get('path');
+        
         const updateData = {
-            name: formData.get('name')?.toString() || tuner.name,
-            path: formData.get('path')?.toString() || tuner.path,
+            name: (nameValue !== null && nameValue !== '') ? nameValue.toString() : tuner.name,
+            path: (pathValue !== null && pathValue !== '') ? pathValue.toString() : tuner.path,
             is_active: formData.has('is_active'),
             modified_at: new Date()
         };
