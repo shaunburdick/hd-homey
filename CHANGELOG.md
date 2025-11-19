@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.9] - 2025-11-19
+
+**Note**: This patch adds image file type declarations for TypeScript compilation.
+
+### Fixed
+
+- **TypeScript Types**: Added type declarations for image files (webp, png, jpg, svg) to resolve import errors
+
 ## [1.0.0-alpha.8] - 2025-11-19
 
 **Note**: This patch fixes TypeScript compilation in CI/CD by including public folder in tsconfig.
