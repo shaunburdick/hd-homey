@@ -36,7 +36,7 @@ describe('GET /api/tuners', () => {
 
         // Get a tuner and soft-delete it
         const tuner = testDb.select().from(tuners).limit(1).get();
-        if (!tuner) {
+        if (tuner === undefined) {
             throw new Error('Test setup failed: no tuner found');
         }
 

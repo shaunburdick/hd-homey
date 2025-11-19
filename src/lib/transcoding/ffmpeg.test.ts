@@ -4,7 +4,9 @@ import { DEFAULT_SETTINGS } from './types';
 
 
 // Test constants
-const FFMPEG_VERSION_OUTPUT = FFMPEG_VERSION_OUTPUT;
+const TEST_URL = 'http://test';
+const TEST_TMP_PATH = '/tmp';
+
 describe('ffmpeg utilities', () => {
     describe('validateSettings', () => {
         it('should pass validation for default settings', () => {
@@ -76,7 +78,7 @@ describe('ffmpeg utilities', () => {
 
         it('should include resolution scaling when not source', () => {
             const settings = { ...DEFAULT_SETTINGS, resolution: '720p' as const };
-            const args = buildFFmpegCommand('http://test', '/tmp', settings);
+            const args = buildFFmpegCommand(TEST_URL, TEST_TMP_PATH, settings);
 
             expect(args).toContain('-s');
             expect(args).toContain('1280x720');
@@ -84,14 +86,14 @@ describe('ffmpeg utilities', () => {
 
         it('should not include resolution scaling when source', () => {
             const settings = { ...DEFAULT_SETTINGS, resolution: 'source' as const };
-            const args = buildFFmpegCommand('http://test', '/tmp', settings);
+            const args = buildFFmpegCommand(TEST_URL, TEST_TMP_PATH, settings);
 
             expect(args).not.toContain('-s');
         });
 
         it('should include framerate when specified', () => {
             const settings = { ...DEFAULT_SETTINGS, framerate: 60 as const };
-            const args = buildFFmpegCommand('http://test', '/tmp', settings);
+            const args = buildFFmpegCommand(TEST_URL, TEST_TMP_PATH, settings);
 
             expect(args).toContain('-r');
             expect(args).toContain('60');
@@ -99,7 +101,7 @@ describe('ffmpeg utilities', () => {
 
         it('should not include framerate when source (0)', () => {
             const settings = { ...DEFAULT_SETTINGS, framerate: 0 as const };
-            const args = buildFFmpegCommand('http://test', '/tmp', settings);
+            const args = buildFFmpegCommand(TEST_URL, TEST_TMP_PATH, settings);
 
             const rIndex = args.indexOf('-r');
             expect(rIndex).toBe(-1);
@@ -107,7 +109,7 @@ describe('ffmpeg utilities', () => {
 
         it('should calculate GOP size based on framerate and segment duration', () => {
             const settings = { ...DEFAULT_SETTINGS, framerate: 30 as const, segmentDuration: 2 };
-            const args = buildFFmpegCommand('http://test', '/tmp', settings);
+            const args = buildFFmpegCommand(TEST_URL, TEST_TMP_PATH, settings);
 
             const gIndex = args.indexOf('-g');
             expect(args[gIndex + 1]).toBe('60'); // 30fps * 2s = 60
@@ -115,7 +117,7 @@ describe('ffmpeg utilities', () => {
 
         it('should include bitrate settings', () => {
             const settings = { ...DEFAULT_SETTINGS, videoBitrate: 3000, audioBitrate: 192 };
-            const args = buildFFmpegCommand('http://test', '/tmp', settings);
+            const args = buildFFmpegCommand(TEST_URL, TEST_TMP_PATH, settings);
 
             expect(args).toContain('3000k');
             expect(args).toContain('192k');
@@ -123,7 +125,7 @@ describe('ffmpeg utilities', () => {
 
         it('should include HLS segment settings', () => {
             const settings = { ...DEFAULT_SETTINGS, segmentDuration: 3, playlistSize: 5 };
-            const args = buildFFmpegCommand('http://test', '/tmp', settings);
+            const args = buildFFmpegCommand(TEST_URL, TEST_TMP_PATH, settings);
 
             const timeIndex = args.indexOf('-hls_time');
             expect(args[timeIndex + 1]).toBe('3');

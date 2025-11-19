@@ -85,7 +85,7 @@ export async function expectToThrow(
         await fn();
         throw new Error('Expected function to throw, but it did not');
     } catch (error) {
-        if (errorMessage && error instanceof Error && expectFn) {
+        if (errorMessage !== undefined && errorMessage !== '' && error instanceof Error && expectFn !== undefined) {
             expectFn(error.message).toContain(errorMessage);
         }
     }

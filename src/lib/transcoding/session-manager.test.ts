@@ -305,7 +305,7 @@ describe('TranscodingSessionManager', () => {
 
             // Get the viewer and simulate 31 seconds passing
             const viewer = session.viewers.get(TEST_VIEWER_1);
-            if (viewer !== null && viewer !== undefined) {
+            if (viewer !== undefined) {
                 viewer.lastAccess = Date.now() - 31000;
             }
 
