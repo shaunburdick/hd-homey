@@ -1,0 +1,536 @@
+=== page.tsx (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(protected)/about/page.tsx
+
+  Line 31: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 47: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 4 times.
+=== page.tsx (6 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(protected)/page.tsx
+
+  Line 54: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 58: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 59: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 65: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 66: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 71: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+=== EditTunerForm.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(protected)/tuners/[id]/edit/EditTunerForm.tsx
+
+  Line 80: react/no-array-index-key
+    Do not use Array index in keys
+=== actions.ts (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(protected)/tuners/actions.ts
+
+  Line 47: @typescript-eslint/strict-boolean-expressions
+    Unexpected number value in conditional. An explicit zero/NaN check is required.
+=== page.tsx (4 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(protected)/tuners/new/page.tsx
+
+  Line 69: react/no-array-index-key
+    Do not use Array index in keys
+  Line 120: react/no-unescaped-entities
+    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.
+  Line 122: react/no-unescaped-entities
+    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.
+  Line 122: react/no-unescaped-entities
+    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.
+=== UserEditForm.tsx (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(protected)/users/[id]/UserEditForm.tsx
+
+  Line 61: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 76: react/no-array-index-key
+    Do not use Array index in keys
+=== page.tsx (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(protected)/users/new/page.tsx
+
+  Line 64: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 75: react/no-array-index-key
+    Do not use Array index in keys
+=== actions.ts (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(start)/get-started/actions.ts
+
+  Line 16: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 16: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+=== page.tsx (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/(start)/get-started/page.tsx
+
+  Line 42: react/no-unescaped-entities
+    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.
+  Line 77: react/no-array-index-key
+    Do not use Array index in keys
+=== route.ts (6 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/api/transcode/[tunerId]/[channelId]/[segment]/route.ts
+
+  Line 24: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 31: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 38: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 58: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 72: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 72: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+=== route.ts (3 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/api/transcode/[tunerId]/[channelId]/playlist.m3u8/route.ts
+
+  Line 26: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 33: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 61: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+=== route.ts (3 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/api/transcode/status/route.ts
+
+  Line 17: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+  Line 42: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+  Line 50: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+=== route.ts (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/api/tuners/[id]/channels/route.ts
+
+  Line 21: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+=== route.ts (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/api/tuners/[id]/poll/route.ts
+
+  Line 22: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+=== route.test.ts (6 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/api/tuners/[id]/route.test.ts
+
+  Line 39: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 114: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 153: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 186: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+  Line 186: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 238: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+=== route.ts (6 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/api/tuners/[id]/route.ts
+
+  Line 23: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 47: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 55: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 55: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 56: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 56: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+=== route.test.ts (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/api/tuners/route.test.ts
+
+  Line 39: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+=== error.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/error.tsx
+
+  Line 15: react-you-might-not-need-an-effect/no-empty-effect
+    This effect is empty and could be removed.
+  Line 37: react/no-unescaped-entities
+    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.
+=== not-found.tsx (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/app/not-found.tsx
+
+  Line 27: react/no-unescaped-entities
+    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.
+  Line 27: react/no-unescaped-entities
+    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.
+=== auth.ts (7 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/auth.ts
+
+  Line 31: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 38: @typescript-eslint/no-unnecessary-condition
+    Unnecessary optional chain on a non-nullish value.
+  Line 59: @typescript-eslint/strict-boolean-expressions
+    Unexpected object value in conditional. The condition is always true.
+  Line 59: @typescript-eslint/no-unnecessary-condition
+    Unnecessary conditional, value is always truthy.
+  Line 68: @typescript-eslint/strict-boolean-expressions
+    Unexpected object value in conditional. The condition is always true.
+  Line 68: @typescript-eslint/no-unnecessary-condition
+    Unnecessary conditional, value is always truthy.
+  Line 68: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+=== FormErrors.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/FormErrors.tsx
+
+  Line 46: react/no-array-index-key
+    Do not use Array index in keys
+=== Input.tsx (3 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/Input.tsx
+
+  Line 36: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 44: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 44: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+=== RoleGuard.tsx (3 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/RoleGuard.tsx
+
+  Line 30: react/jsx-no-useless-fragment
+    Fragments should contain more than one child - otherwise, there’s no need for a Fragment at all.
+  Line 37: react/jsx-no-useless-fragment
+    Fragments should contain more than one child - otherwise, there’s no need for a Fragment at all.
+  Line 37: react/jsx-no-useless-fragment
+    Fragments should contain more than one child - otherwise, there’s no need for a Fragment at all.
+=== Skeleton.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/Skeleton.tsx
+
+  Line 69: react/no-array-index-key
+    Do not use Array index in keys
+=== Toast.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/Toast.tsx
+
+  Line 115: react/no-unknown-property
+    Unknown property 'jsx' found
+=== channel-stream.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/channel-stream.tsx
+
+  Line 19: react-hooks/set-state-in-effect
+    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/channel-stream.tsx:19:13
+  17 |     useEffect(() => {
+  18 |         if (streamUrl.startsWith('/')) {
+> 19 |             setChannelLink(new URL(streamUrl, window.location.origin).toString());
+     |             ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  20 |         }
+  21 |     }, [streamUrl]);
+  22 |
+=== InfoCard.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/layouts/InfoCard.tsx
+
+  Line 21: react/no-array-index-key
+    Do not use Array index in keys
+=== nav.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/nav.tsx
+
+  Line 17: react-hooks/set-state-in-effect
+    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/nav.tsx:17:9
+  15 |     // Close menu on route change
+  16 |     useEffect(() => {
+> 17 |         setIsOpen(false);
+     |         ^^^^^^^^^ Avoid calling setState() directly within an effect
+  18 |     }, [pathname]);
+  19 |
+  20 |     // Prevent body scroll when mobile menu is open
+=== stream-secret-manager.tsx (5 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/stream-secret-manager.tsx
+
+  Line 27: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 5 times.
+  Line 28: jsx-a11y/label-has-associated-control
+    A form label must be associated with a control.
+  Line 30: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 39: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 5 times.
+  Line 41: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 4 times.
+=== transcoding-settings.tsx (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/transcoding-settings.tsx
+
+  Line 40: promise/always-return
+    Each then() should return a value or throw
+=== video-player.tsx (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/video-player.tsx
+
+  Line 133: react-hooks/set-state-in-effect
+    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/shaun.burdick/github/shaunburdick/hd-homey/src/components/video-player.tsx:133:13
+  131 |             };
+  132 |         } else {
+> 133 |             setError('HLS is not supported in this browser');
+      |             ^^^^^^^^ Avoid calling setState() directly within an effect
+  134 |         }
+  135 |     }, [playlistUrl, autoplay]);
+  136 |
+  Line 133: react-you-might-not-need-an-effect/no-adjust-state-on-prop-change
+    Avoid adjusting state when a prop changes. Instead, adjust the state directly during render, or refactor your state to avoid this need entirely.
+  Line 156: jsx-a11y/media-has-caption
+    Media elements such as <audio> and <video> must have a <track> for captions.
+=== settings.ts (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/actions/settings.ts
+
+  Line 26: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+  Line 49: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+=== transcoding.ts (3 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/actions/transcoding.ts
+
+  Line 25: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+  Line 37: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+  Line 52: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+=== users.test.ts (6 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/actions/users.test.ts
+
+  Line 43: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 7 times.
+  Line 174: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 175: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 180: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 4 times.
+  Line 250: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 304: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+=== users.ts (6 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/actions/users.ts
+
+  Line 25: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 25: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 47: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 47: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 48: @typescript-eslint/strict-boolean-expressions
+    Unexpected number value in conditional. An explicit zero/NaN check is required.
+  Line 66: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+=== auth.test.ts (3 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/auth.test.ts
+
+  Line 22: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 4 times.
+  Line 38: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 4 times.
+  Line 46: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+=== auth.ts (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/auth.ts
+
+  Line 16: @typescript-eslint/strict-boolean-expressions
+    Unexpected any value in conditional. An explicit comparison or type conversion is required.
+=== config.ts (8 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/config.ts
+
+  Line 5: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 5: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 12: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 12: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 17: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 17: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 23: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 23: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+=== db.ts (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/database/db.ts
+
+  Line 12: @typescript-eslint/strict-boolean-expressions
+    Unexpected object value in conditional. The condition is always true.
+  Line 12: @typescript-eslint/no-unnecessary-condition
+    Unnecessary conditional, value is always truthy.
+=== schema.test.ts (4 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/database/schema.test.ts
+
+  Line 49: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 135: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 136: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+  Line 148: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 13 times.
+=== tuner.test.ts (3 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/hdhr/tuner.test.ts
+
+  Line 35: @typescript-eslint/no-unnecessary-condition
+    Unnecessary optional chain on a non-nullish value.
+  Line 89: @typescript-eslint/no-unnecessary-condition
+    Unnecessary optional chain on a non-nullish value.
+  Line 255: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 3 times.
+=== tuner.ts (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/hdhr/tuner.ts
+
+  Line 65: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly.
+  Line 65: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+=== settings.ts (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/settings.ts
+
+  Line 79: sonarjs/cognitive-complexity
+    Refactor this function to reduce its Cognitive Complexity from 21 to the 15 allowed.
+=== ffmpeg.test.ts (1 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/transcoding/ffmpeg.test.ts
+
+  Line 76: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 7 times.
+=== ffmpeg.ts (6 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/transcoding/ffmpeg.ts
+
+  Line 19: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 23: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 23: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 29: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 48: @typescript-eslint/strict-boolean-expressions
+    Unexpected value in conditional. A boolean expression is required.
+  Line 48: @typescript-eslint/strict-boolean-expressions
+    Unexpected string value in conditional. An explicit empty string check is required.
+=== hls-server.ts (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/transcoding/hls-server.ts
+
+  Line 23: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 29: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+=== session-manager.test.ts (3 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/transcoding/session-manager.test.ts
+
+  Line 51: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 11 times.
+  Line 52: sonarjs/no-duplicate-string
+    Define a constant instead of duplicating this literal 12 times.
+  Line 302: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+=== session-manager.ts (16 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/transcoding/session-manager.ts
+
+  Line 54: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 67: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 68: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 96: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly.
+  Line 96: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 135: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 157: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 162: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 176: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 195: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 290: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 301: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 320: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??=`) instead of an assignment expression, as it is simpler to read.
+  Line 320: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 332: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+  Line 339: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.
+=== transcode.ts (5 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/transcoding/transcode.ts
+
+  Line 23: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 23: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 41: @typescript-eslint/no-unnecessary-condition
+    Unnecessary optional chain on a non-nullish value.
+  Line 45: @typescript-eslint/no-unnecessary-condition
+    Unnecessary optional chain on a non-nullish value.
+  Line 67: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly.
+=== viewer-fingerprint.ts (12 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/lib/viewer-fingerprint.ts
+
+  Line 22: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 23: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 23: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 24: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 27: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 27: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 43: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 44: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 44: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 45: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+  Line 47: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 47: @typescript-eslint/prefer-nullish-coalescing
+    Prefer using nullish coalescing operator (`??`) instead of a logical or (`||`), as it is a safer operator.
+=== test-helpers.ts (2 errors) ===
+Path: /Users/shaun.burdick/github/shaunburdick/hd-homey/src/test-utils/test-helpers.ts
+
+  Line 88: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly.
+  Line 88: @typescript-eslint/strict-boolean-expressions
+    Unexpected nullable object value in conditional. An explicit null check is required.

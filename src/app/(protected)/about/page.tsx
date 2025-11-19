@@ -5,6 +5,9 @@ import { PageContainer, InfoCard } from '@/components/layouts';
 
 export default function AboutPage() {
     const version = process.env.npm_package_version || '1.0.0-alpha.3';
+    const spaceTwo = 'var(--space-2)';
+    const spaceThree = 'var(--space-3)';
+    const spaceFive = 'var(--space-5)';
 
     return (
         <PageContainer maxWidth="lg">
@@ -28,7 +31,7 @@ export default function AboutPage() {
                 <h2 className="mt-0 mb-3">
                     About HD Homey
                 </h2>
-                <p style={{ marginBottom: 'var(--space-3)' }}>
+                <p style={{ marginBottom: spaceThree }}>
                     HD Homey is a Next.js-based proxy application for HDHomeRun devices that enables
                     secure remote access to live TV streams over the internet.
                 </p>
@@ -38,14 +41,14 @@ export default function AboutPage() {
                 </p>
             </Card>
 
-            <Card style={{ marginBottom: 'var(--space-5)' }}>
-                <h2 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>
+            <Card style={{ marginBottom: spaceFive }}>
+                <h2 style={{ marginTop: 0, marginBottom: spaceThree }}>
                     Features
                 </h2>
                 <ul style={{
                     display: 'grid',
-                    gap: 'var(--space-2)',
-                    paddingLeft: 'var(--space-5)',
+                    gap: spaceTwo,
+                    paddingLeft: spaceFive,
                     marginBottom: 0,
                 }}>
                     <li>📡 HDHomeRun tuner management</li>
@@ -70,12 +73,12 @@ export default function AboutPage() {
             />
 
             <Card>
-                <h2 style={{ marginTop: 0, marginBottom: 'var(--space-3)' }}>
+                <h2 style={{ marginTop: 0, marginBottom: spaceThree }}>
                     Links & Resources
                 </h2>
                 <ul style={{
                     display: 'grid',
-                    gap: 'var(--space-2)',
+                    gap: spaceTwo,
                     listStyle: 'none',
                     paddingLeft: 0,
                     marginBottom: 0,
@@ -88,7 +91,7 @@ export default function AboutPage() {
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 'var(--space-2)',
+                                gap: spaceTwo,
                                 textDecoration: 'none',
                             }}
                         >

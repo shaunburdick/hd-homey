@@ -65,8 +65,8 @@ export default function NewTunerPage() {
                                 color: 'var(--color-error)',
                             }}>
                                 {Object.entries(errors).map(([field, messages]) =>
-                                    messages.map((message, idx) => (
-                                        <li key={`${field}-${idx}`}>
+                                    messages.map((message) => (
+                                        <li key={`${field}-${message}`}>
                                             <strong>{field}:</strong> {message}
                                         </li>
                                     )))}
@@ -117,9 +117,9 @@ export default function NewTunerPage() {
                     💡 How to find your tuner
                 </h3>
                 <ul className="m-0 text-sm text-secondary">
-                    <li>Check your router's DHCP client list</li>
+                    <li>Check your router&apos;s DHCP client list</li>
                     <li>Use the HDHomeRun app to discover devices</li>
-                    <li>Look for devices named "HDHomeRun-XXXXXXX"</li>
+                    <li>Look for devices named &quot;HDHomeRun-XXXXXXX&quot;</li>
                 </ul>
             </div>
         </PageContainer>
