@@ -32,6 +32,7 @@ export function Input({
     const spaceTwo = 'var(--space-2)';
     const spaceOne = 'var(--space-1)';
     const fontSizeSm = fontSizeSm;
+    const fontSizeSm = fontSizeSm;
 
     return (
         <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>

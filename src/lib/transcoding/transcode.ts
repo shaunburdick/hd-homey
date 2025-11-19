@@ -18,7 +18,7 @@ export async function startTranscode(
     settings: TranscodeSettings
 ): Promise<ChildProcess> {
     // Ensure output directory exists
-    await fs.mkdir(outputDir, { recursive: true }); }
+    await fs.mkdir(outputDir, { recursive: true });
 
     const ffmpegPath = process.env.FFMPEG_PATH ?? 'ffmpeg';
     const args = buildFFmpegCommand(sourceUrl, outputDir, settings);
@@ -35,27 +35,28 @@ export async function startTranscode(
 
     const ffmpeg = spawn(ffmpegPath, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
-    }); }
+    });
 
     // Log ffmpeg output
     if (ffmpeg.stdout) { ffmpeg.stdout.on('data', (data) => {
         Logger.debug({ output: data.toString() }, 'FFmpeg stdout');
-    }); }
+    });
 
     } if (ffmpeg.stderr) { ffmpeg.stderr.on('data', (data) => {
         Logger.debug({ output: data.toString() }, 'FFmpeg stderr');
-    }); }
+    }
+    });
 
     ffmpeg.on('error', (error) => {
         Logger.error({ error, sourceUrl }, 'FFmpeg process error');
-    }); }
+    });
 
     ffmpeg.on('exit', (code, signal) => {
         Logger.info(
             { code, signal, sourceUrl, outputDir },
             'FFmpeg process exited'
         );
-    }); }
+    });
 
     return ffmpeg;
 }
@@ -80,10 +81,10 @@ export async function stopTranscode(process: ChildProcess): Promise<void> {
         process.on('exit', () => {
             clearTimeout(timeout);
             resolve();
-        }); }
+        });
 
         process.kill('SIGTERM');
-    }); }
+    });
 }
 
 /**
@@ -115,7 +116,7 @@ export async function waitForPlaylist(
 export async function cleanupTranscodeFiles(outputDir: string): Promise<void> {
     try {
         Logger.debug({ outputDir }, 'Cleaning up transcode files');
-        await fs.rm(outputDir, { recursive: true, force: true }); }
+        await fs.rm(outputDir, { recursive: true, force: true });
     } catch (error) {
         Logger.error({ error, outputDir }, 'Failed to cleanup transcode files');
     }
