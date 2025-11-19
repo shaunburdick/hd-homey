@@ -56,7 +56,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     callbacks: {
         jwt({ token, user }) {
             // Persist user data to JWT token on sign in
-            if (user !== undefined) {
+            if (user) {
                 token.id = user.id;
                 token.username = user.username;
                 token.role = user.role;

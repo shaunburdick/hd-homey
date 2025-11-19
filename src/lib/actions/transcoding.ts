@@ -22,7 +22,7 @@ export interface FormState {
  */
 export async function getTranscodingSettingsAction(): Promise<TranscodeSettings> {
     const session = await auth();
-    if (!session?.user || session.user.role !== AuthRoles.Admin) {
+    if (session === null || session === undefined || session.user === null || session.user === undefined || session.user.role !== AuthRoles.Admin) {
         throw new Error('Unauthorized');
     }
 
@@ -34,7 +34,7 @@ export async function getTranscodingSettingsAction(): Promise<TranscodeSettings>
  */
 export async function getFFmpegInfo() {
     const session = await auth();
-    if (!session?.user || session.user.role !== AuthRoles.Admin) {
+    if (session === null || session === undefined || session.user === null || session.user === undefined || session.user.role !== AuthRoles.Admin) {
         throw new Error('Unauthorized');
     }
 
@@ -49,7 +49,7 @@ export async function updateTranscodingSettingsAction(
     formData: FormData
 ): Promise<FormState> {
     const session = await auth();
-    if (!session?.user || session.user.role !== AuthRoles.Admin) {
+    if (session === null || session === undefined || session.user === null || session.user === undefined || session.user.role !== AuthRoles.Admin) {
         return { errors: { auth: ['Unauthorized'] } };
     }
 

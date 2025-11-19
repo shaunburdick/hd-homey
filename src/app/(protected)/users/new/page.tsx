@@ -1,4 +1,5 @@
 'use client';
+const SPACE_FOUR = SPACE_FOUR;
 
 import { useActionState } from 'react';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
@@ -15,7 +16,7 @@ interface ValidationError {
 
 export default function Page() {
     const [state, formAction, isPending] = useActionState(createUser, null);
-    const spaceFour = 'var(--space-4)';
+    const spaceFour = SPACE_FOUR;
 
     const handleSubmit = async (formData: FormData) => {
         try {
