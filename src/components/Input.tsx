@@ -27,6 +27,10 @@ export function Input({
     const isPasswordField = type === 'password';
     const actualType = isPasswordField && showPassword ? 'text' : type;
 
+    // Style constants
+    const colorError = 'var(--color-error)';
+    const spaceTwo = 'var(--space-2)';
+
     return (
         <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>
             <label
@@ -36,12 +40,12 @@ export function Input({
                     fontSize: 'var(--font-size-sm)',
                     fontWeight: 'var(--font-weight-medium)',
                     color: 'var(--color-text-primary)',
-                    marginBottom: 'var(--space-2)',
+                    marginBottom: spaceTwo,
                 }}
             >
                 {label}
                 {props.required && (
-                    <span style={{ color: 'var(--color-error)', marginLeft: 'var(--space-1)' }} aria-label="required">
+                    <span style={{ color: colorError, marginLeft: 'var(--space-1)' }} aria-label="required">
                         *
                     </span>
                 )}
@@ -62,7 +66,7 @@ export function Input({
                         padding: 'var(--space-3)',
                         backgroundColor: 'var(--color-bg-secondary)',
                         color: 'var(--color-text-primary)',
-                        border: `1px solid ${error ? 'var(--color-error)' : 'var(--color-border)'}`,
+                        border: `1px solid ${error !== undefined ? colorError : 'var(--color-border)'}`,
                         borderRadius: 'var(--radius-md)',
                         fontSize: 'var(--font-size-base)',
                         transition: 'border-color var(--transition-fast)',
@@ -85,7 +89,7 @@ export function Input({
                             border: 'none',
                             color: 'var(--color-text-secondary)',
                             cursor: 'pointer',
-                            padding: 'var(--space-2)',
+                            padding: spaceTwo,
                             fontSize: 'var(--font-size-sm)',
                             minHeight: 'var(--min-touch-target)',
                             minWidth: 'var(--min-touch-target)',
@@ -117,7 +121,7 @@ export function Input({
                     style={{
                         marginTop: 'var(--space-1)',
                         fontSize: 'var(--font-size-sm)',
-                        color: 'var(--color-error)',
+                        color: colorError,
                         marginBottom: 0,
                     }}
                 >
