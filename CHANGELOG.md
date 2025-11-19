@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.6] - 2025-11-19
+
+**Note**: This release focuses on comprehensive tuner management improvements including connection validation, automatic channel scanning, inactive tuner enforcement, and soft-delete functionality.
+
 ### Added
 
 - **Tuner Connection Validation**: Test button on tuner forms to validate HDHomeRun connectivity before saving
@@ -15,14 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides clear error messages for common connection issues (timeout, invalid URL, device unreachable)
   - Works on both new tuner and edit tuner forms
   - Non-blocking: allows saving even if test fails
-  - Visible loading indicator during test
+  - Visible loading indicator during test with blue info box
 - **Automatic Channel Scan**: New tuners automatically scan for channels on creation
   - No need to manually refresh channels after adding a tuner
   - Channels are available immediately on the tuner detail page
   - Gracefully handles scan errors without failing tuner creation
-
-### Added
-
 - **Tuner Deletion**: Ability to soft-delete tuners from the edit page
   - Confirmation dialog prevents accidental deletion
   - Soft delete preserves data (sets deleted_at timestamp)
