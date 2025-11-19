@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import Logger from '@/lib/logger';
 
-// Simple logging middleware - authentication handled by layouts
-export function middleware(req: NextRequest) {
+// Simple logging proxy - authentication handled by layouts
+export function proxy(req: NextRequest) {
     Logger.info({
         method: req.method,
         url: req.url,

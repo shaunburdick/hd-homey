@@ -48,7 +48,8 @@ export default [
     {
         ignores: [
             '.next/**/*',
-            'data/**/*'
+            'data/**/*',
+            'next-env.d.ts'
         ]
     }
 ];
