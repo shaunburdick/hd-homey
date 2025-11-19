@@ -4,7 +4,7 @@
 
 [![Docker](https://github.com/shaunburdick/hd-homey/actions/workflows/docker.yml/badge.svg)](https://github.com/shaunburdick/hd-homey/actions/workflows/docker.yml)
 [![Tests](https://github.com/shaunburdick/hd-homey/actions/workflows/test.yml/badge.svg)](https://github.com/shaunburdick/hd-homey/actions/workflows/test.yml)
-![Version](https://img.shields.io/badge/version-1.0.0--alpha.3-orange)
+![Version](https://img.shields.io/badge/version-1.0.0--alpha.4-orange)
 
 **A secure web proxy for [HDHomeRun](https://www.silicondust.com/hdhomerun/) devices that enables remote access to your live TV streams over the internet.**
 
@@ -393,7 +393,7 @@ npm run dev
 
 See [Releases section in AGENTS.md](AGENTS.md#releases) for detailed release instructions.
 
-**Current version**: `1.0.0-alpha.2` (Alpha - under active development)
+**Current version**: `1.0.0-alpha.4` (Alpha - under active development)
 
 ## License
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.4] - 2025-01-18
+
+**Note**: This release completes the design system overhaul with enhanced accessibility, mobile optimization, and comprehensive UI/UX improvements.
+
 ### Added
 
 - **Design System & Accessibility** (SPEC-004): Complete UI/UX overhaul

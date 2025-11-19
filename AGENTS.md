@@ -176,7 +176,7 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-alpha.3** - Alpha release with video transcoding and in-browser playback. Functional but needs more testing and UX improvements.
+**1.0.0-alpha.4** - Alpha release with complete design system, enhanced accessibility (WCAG 2.2 AA), and mobile-first responsive design.
 
 ### Release Process
 
