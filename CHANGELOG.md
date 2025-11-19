@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Design System & Accessibility** (SPEC-004): Complete UI/UX overhaul
+  - Enhanced dark theme with WCAG 2.2 AA compliance (all color contrast issues resolved)
+  - Complete design token system (spacing, colors, typography, transitions)
+  - Reusable component library (Button, Input, Card, Toast, Skeleton, FormErrors)
+  - Layout components (PageContainer, PageHeader, InfoCard, Section, EmptyState)
+  - Mobile-first responsive design with proper touch targets (44px minimum)
+  - Error boundary (error.tsx) and friendly 404 page (not-found.tsx)
+  - Loading states and skeleton screens throughout
+  - Consistent form patterns with validation feedback
+  - Enhanced navigation with mobile hamburger menu
+
+- **Page Redesigns**: All pages updated with new design system
+  - Authentication pages (sign in, get started)
+  - Tuner management (list, detail, add, edit)
+  - Channel browsing and streaming
+  - User management (list, detail, add, edit)
+  - Settings page with improved layout
+  - Dashboard with quick stats and actions
+  - About page with version information
+
+### Changed
+
+- **CSS Architecture**: Migrated to utility-first approach with design tokens
+  - 55% reduction in inline styles through utility classes
+  - Centralized design tokens in globals.css
+  - Mobile-first breakpoints (640px, 768px, 1024px, 1280px)
+  - Consistent spacing scale (0.25rem to 4rem)
+
+- **Accessibility Improvements**:
+  - Fixed all WCAG 2.2 AA color contrast violations
+  - Proper ARIA labels and semantic HTML throughout
+  - Keyboard navigation support
+  - Screen reader friendly components
+  - Focus indicators on all interactive elements
+
+- **Mobile Optimization**:
+  - Touch-friendly button sizes (44px height minimum)
+  - Responsive grid layouts with auto-fit
+  - Proper viewport configuration
+  - Next.js Image component for optimized loading
+  - Reduced bundle sizes (102 kB shared JS)
+
+### Fixed
+
+- Tuner edit page help text now displays as block below checkbox
+- Date formatting shows local time instead of UTC (e.g., "11/18/2024, 8:35:52 PM")
+- Active status display added to Tuner Information card
+- Home page test database initialization fixed (all 128 tests passing)
+- Footer link contrast increased for better readability
+- Non-HD channels no longer show "0" for HD indicator
+- Cursor pointer added to all clickable links
+
 ## [1.0.0-alpha.3] - 2025-11-18
 
 **Note**: This release adds the most requested feature - in-browser video playback with automatic transcoding.
