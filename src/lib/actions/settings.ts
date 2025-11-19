@@ -23,7 +23,7 @@ export async function regenerateAppStreamSecret(
 ): Promise<FormState> {
     const session = await auth();
 
-    if (session === null || session === undefined || session.user === null || session.user === undefined || session.user.role !== AuthRoles.Admin) {
+    if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
         return { errors: { auth: ['Admin access required'] } };
     }
 
@@ -46,7 +46,7 @@ export async function regenerateAppStreamSecret(
 export async function getStreamSecretInfo(): Promise<{ preview: string } | null> {
     const session = await auth();
 
-    if (session === null || session === undefined || session.user === null || session.user === undefined || session.user.role !== AuthRoles.Admin) {
+    if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
         return null;
     }
 
