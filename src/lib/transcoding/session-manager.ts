@@ -2,8 +2,8 @@
  * Transcoding session manager - handles shared sessions across multiple viewers
  */
 
-import { join } from 'path';
-import type { ChildProcess } from 'child_process';
+import { join } from 'node:path';
+import type { ChildProcess } from 'node:child_process';
 import type { TranscodeSettings, SessionStats, ViewerSession } from './types';
 import { startTranscode, stopTranscode, waitForPlaylist, cleanupTranscodeFiles } from './transcode';
 import Logger from '@/lib/logger';
@@ -28,7 +28,7 @@ interface TranscodingSession {
  * Singleton session manager
  */
 class TranscodingSessionManager {
-    private sessions = new Map<string, TranscodingSession>();
+    private readonly sessions = new Map<string, TranscodingSession>();
     private cleanupTimer: NodeJS.Timeout | null = null;
     private readonly CLEANUP_INTERVAL = 10000; // Check every 10 seconds
     private readonly INACTIVE_TIMEOUT = 30000; // 30 seconds of inactivity

@@ -2,8 +2,9 @@
  * Core transcoding logic using ffmpeg
  */
 
-import { spawn, type ChildProcess } from 'child_process';
-import { promises as fs } from 'fs';
+import { spawn  } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
+import { promises as fs } from 'node:fs';
 import type { TranscodeSettings } from './types';
 import { buildFFmpegCommand } from './ffmpeg';
 import Logger from '@/lib/logger';
@@ -70,7 +71,7 @@ export async function stopTranscode(process: ChildProcess): Promise<void> {
 
     Logger.info({ pid: process.pid }, 'Stopping transcode process');
 
-    return new Promise((resolve) => {
+    return await new Promise((resolve) => {
         const timeout = setTimeout(() => {
             Logger.warn({ pid: process.pid }, 'Process did not exit gracefully, sending SIGKILL');
             process.kill('SIGKILL');

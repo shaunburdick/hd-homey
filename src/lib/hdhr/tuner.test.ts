@@ -1,4 +1,4 @@
-import http from 'http';
+import http from 'node:http';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HDTuner } from './tuner';
 import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
@@ -30,7 +30,7 @@ describe('HDTuner', () => {
             const lineup = await tuner.lineup();
 
             expect(mockFetch).toHaveBeenCalled();
-            const calls = vi.mocked(mockFetch).mock.calls;
+            const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
             expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
             expect(lineup).toEqual(mockLineupData);
@@ -45,7 +45,7 @@ describe('HDTuner', () => {
 
             await tuner.lineup();
 
-            const calls = vi.mocked(mockFetch).mock.calls;
+            const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0] as URL | undefined;
             expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
         });
@@ -84,7 +84,7 @@ describe('HDTuner', () => {
 
             await tunerWithPort.lineup();
 
-            const calls = vi.mocked(mockFetch).mock.calls;
+            const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
             expect(callArg?.toString()).toBe('http://192.168.20.25:8080/lineup.json');
         });

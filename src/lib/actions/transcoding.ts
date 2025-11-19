@@ -26,7 +26,7 @@ export async function getTranscodingSettingsAction(): Promise<TranscodeSettings>
         throw new Error('Unauthorized');
     }
 
-    return getTranscodingSettings();
+    return await getTranscodingSettings();
 }
 
 /**
@@ -38,7 +38,7 @@ export async function getFFmpegInfo() {
         throw new Error('Unauthorized');
     }
 
-    return detectFFmpeg();
+    return await detectFFmpeg();
 }
 
 /**

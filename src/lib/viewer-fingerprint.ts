@@ -3,7 +3,7 @@
  * Creates a stable identifier from IP address and User-Agent
  */
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import type { NextRequest } from 'next/server';
 
 /**

@@ -1,4 +1,4 @@
-import type { IncomingMessage } from 'http';
+import type { IncomingMessage } from 'node:http';
 import { NextRequest } from 'next/server';
 import { and, eq, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';

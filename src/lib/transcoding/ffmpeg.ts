@@ -2,9 +2,9 @@
  * FFmpeg detection and command building utilities
  */
 
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-import { cpus } from 'os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { cpus } from 'node:os';
 import type { FFmpegInfo, TranscodeSettings } from './types';
 import Logger from '@/lib/logger';
 

@@ -2,8 +2,8 @@
  * HLS file serving utilities
  */
 
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
 import Logger from '@/lib/logger';
 
 /**

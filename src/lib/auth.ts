@@ -31,5 +31,5 @@ export async function requireRole(role: AuthRoles) {
  * @throws Error if not admin
  */
 export async function requireAdmin() {
-    return requireRole(AuthRoles.Admin);
+    return await requireRole(AuthRoles.Admin);
 }

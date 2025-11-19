@@ -80,7 +80,7 @@ describe('Stream Token', () => {
 
         it('should reject tampered token', async () => {
             const token = await generateStreamToken(2, 42);
-            const tampered = token.slice(0, -4) + 'XXXX';
+            const tampered = `${token.slice(0, -4)  }XXXX`;
 
             const verified = await verifyStreamToken(tampered);
             expect(verified).toBeNull();

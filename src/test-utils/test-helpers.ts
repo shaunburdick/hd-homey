@@ -96,8 +96,8 @@ export async function expectToThrow(
  */
 export function createMockFormData(data: Record<string, string>): FormData {
     const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(data)) {
         formData.append(key, value);
-    });
+    }
     return formData;
 }

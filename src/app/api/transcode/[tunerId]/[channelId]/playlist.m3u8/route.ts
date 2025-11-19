@@ -58,7 +58,7 @@ export async function GET(
             },
         });
 
-        if (!channel || !channel.tuners) {
+        if (!channel?.tuners) {
             return new Response('Channel not found', { status: 404 });
         }
 
