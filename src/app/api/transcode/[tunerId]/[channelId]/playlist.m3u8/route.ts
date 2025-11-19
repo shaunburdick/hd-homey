@@ -30,7 +30,7 @@ export async function GET(
 
         // Verify token
         const tokenData = await verifyStreamToken(token);
-        if (tokenData === null || tokenData === undefined) {
+        if (tokenData === undefined) {
             Logger.warn({ tunerId, channelId }, 'Invalid or expired stream token');
             return new Response('Invalid or expired token', { status: 403 });
         }
@@ -58,7 +58,7 @@ export async function GET(
             },
         });
 
-        if (channel === null || channel === undefined || channel.tuners === null || channel.tuners === undefined) {
+        if (!channel?.tuners) {
             return new Response('Channel not found', { status: 404 });
         }
 

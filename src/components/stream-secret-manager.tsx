@@ -17,6 +17,12 @@ export default function StreamSecretManager({
 }: StreamSecretManagerProps) {
     const [state, action, pending] = useActionState(regenerateAction, initialState);
 
+    // Style constants to avoid duplication
+    const spaceThree = 'var(--space-3)';
+    const spaceFour = 'var(--space-4)';
+    const radiusMd = 'var(--radius-md)';
+    const fontSizeSm = 'var(--font-size-sm)';
+
     return (
         <Card>
             <p style={{ marginTop: 0 }}>
@@ -24,23 +30,23 @@ export default function StreamSecretManager({
                 will invalidate all existing stream URLs immediately.
             </p>
 
-            <div style={{ marginBottom: 'var(--space-4)' }}>
-                <label style={{
+            <div style={{ marginBottom: spaceFour }}>
+                <label htmlFor="stream-secret-preview" style={{
                     display: 'block',
-                    fontSize: 'var(--font-size-sm)',
+                    fontSize: fontSizeSm,
                     fontWeight: 'var(--font-weight-semibold)',
                     color: 'var(--color-text-secondary)',
                     marginBottom: 'var(--space-2)',
                 }}>
                     Current Secret
                 </label>
-                <code style={{
+                <code id="stream-secret-preview" style={{
                     display: 'block',
-                    padding: 'var(--space-3)',
+                    padding: spaceThree,
                     backgroundColor: 'var(--color-bg-tertiary)',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: radiusMd,
                     fontFamily: 'monospace',
-                    fontSize: 'var(--font-size-sm)',
+                    fontSize: fontSizeSm,
                 }}>
                     {secretPreview}
                 </code>
@@ -48,12 +54,12 @@ export default function StreamSecretManager({
 
             {state.success && (
                 <div style={{
-                    padding: 'var(--space-3)',
+                    padding: spaceThree,
                     backgroundColor: 'var(--color-success-bg)',
                     border: '1px solid var(--color-success)',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: radiusMd,
                     color: 'var(--color-success)',
-                    marginBottom: 'var(--space-4)',
+                    marginBottom: spaceFour,
                 }}>
                     ✓ Stream secret regenerated successfully
                 </div>
@@ -61,12 +67,12 @@ export default function StreamSecretManager({
 
             {state.errors.form && (
                 <div style={{
-                    padding: 'var(--space-3)',
+                    padding: spaceThree,
                     backgroundColor: 'var(--color-error-bg)',
                     border: '1px solid var(--color-error)',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: radiusMd,
                     color: 'var(--color-error)',
-                    marginBottom: 'var(--space-4)',
+                    marginBottom: spaceFour,
                 }}>
                     {state.errors.form.join(', ')}
                 </div>
@@ -74,12 +80,12 @@ export default function StreamSecretManager({
 
             {state.errors.auth && (
                 <div style={{
-                    padding: 'var(--space-3)',
+                    padding: spaceThree,
                     backgroundColor: 'var(--color-error-bg)',
                     border: '1px solid var(--color-error)',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: radiusMd,
                     color: 'var(--color-error)',
-                    marginBottom: 'var(--space-4)',
+                    marginBottom: spaceFour,
                 }}>
                     {state.errors.auth.join(', ')}
                 </div>
@@ -91,13 +97,13 @@ export default function StreamSecretManager({
                 </Button>
             </form>
 
-            <details style={{ marginTop: 'var(--space-4)' }}>
+            <details style={{ marginTop: spaceFour }}>
                 <summary style={{ cursor: 'pointer', fontWeight: 'var(--font-weight-medium)' }}>
                     What happens when I regenerate?
                 </summary>
                 <ul style={{
-                    marginTop: 'var(--space-3)',
-                    fontSize: 'var(--font-size-sm)',
+                    marginTop: spaceThree,
+                    fontSize: fontSizeSm,
                     color: 'var(--color-text-secondary)',
                 }}>
                     <li>A new random 64-character secret is generated</li>
