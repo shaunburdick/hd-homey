@@ -44,7 +44,7 @@ export async function POST(
             )
         });
 
-        if (!tuner) {
+        if (tuner === null || tuner === undefined) {
             return Response.json(
                 { error: 'Tuner not found' },
                 { status: 404 }
