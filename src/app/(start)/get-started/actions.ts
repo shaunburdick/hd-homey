@@ -11,10 +11,10 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
     const db = await getDb();
 
     const password = formData.get('password');
-    const passwordString = (password !== null && password !== undefined) 
-        ? password.toString() 
+    const passwordString = password !== null
+        ? password.toString()
         : '';
-    
+
     const newUser = {
         username: formData.get('username'),
         name: formData.get('name'),
