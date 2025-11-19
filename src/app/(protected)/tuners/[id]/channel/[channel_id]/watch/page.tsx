@@ -1,10 +1,13 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { getDb } from '@/lib/database/db';
 import { channels } from '@/lib/database/schema';
 import { generateStreamToken } from '@/lib/stream-token';
 import { getTranscodingSettings } from '@/lib/settings';
 import VideoPlayer from '@/components/video-player';
+import { Card } from '@/components';
+import { PageContainer } from '@/components/layouts';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,36 +38,27 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
 
     if (!settings.enabled) {
         return (
-            <main>
+            <PageContainer>
                 <h1>
-                    Channel
-                    {' '}
-                    {channel.guideNumber}
-                    :
-                    {' '}
-                    {channel.guideName}
+                    Channel {channel.guideNumber}: {channel.guideName}
                 </h1>
 
-                <div
-                    style={{
-                        padding: '1rem',
-                        backgroundColor: '#fff3cd',
-                        border: '1px solid #ffc107',
-                        marginBottom: '1rem',
-                    }}
-                >
-                    <h3>Transcoding Not Available</h3>
+                <Card className="p-4 mb-4" style={{
+                    backgroundColor: '#fff3cd',
+                    border: '1px solid #ffc107',
+                }}>
+                    <h3 className="mt-0">Transcoding Not Available</h3>
                     <p>
                         In-browser playback is not available.
                         Transcoding is not enabled on this server.
                     </p>
-                    <p>
-                        <a href={`/tuners/${id}/channel/${channel_id}`}>
+                    <p className="m-0">
+                        <Link href={`/tuners/${id}/channel/${channel_id}`}>
                             ← Back to Channel Info
-                        </a>
+                        </Link>
                     </p>
-                </div>
-            </main>
+                </Card>
+            </PageContainer>
         );
     }
 
@@ -73,14 +67,9 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
     const playlistUrl = `/api/transcode/${id}/${channel_id}/playlist.m3u8?token=${token}`;
 
     return (
-        <main>
+        <PageContainer>
             <h1>
-                Watch Channel
-                {' '}
-                {channel.guideNumber}
-                :
-                {' '}
-                {channel.guideName}
+                Watch Channel {channel.guideNumber}: {channel.guideName}
             </h1>
 
             <VideoPlayer
@@ -89,7 +78,7 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
                 autoplay={true}
             />
 
-            <details style={{ marginTop: '1rem' }}>
+            <details className="mt-4">
                 <summary>Channel Information</summary>
                 <dl>
                     <dt>Guide Number</dt>
@@ -109,17 +98,15 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
                 </dl>
             </details>
 
-            <p style={{ marginTop: '1rem' }}>
-                <a href={`/tuners/${id}/channel/${channel_id}`}>
+            <p className="mt-4">
+                <Link href={`/tuners/${id}/channel/${channel_id}`}>
                     ← Back to Channel Info
-                </a>
-                {' '}
-                |
-                {' '}
-                <a href={`/tuners/${id}`}>
+                </Link>
+                {' | '}
+                <Link href={`/tuners/${id}`}>
                     View All Channels
-                </a>
+                </Link>
             </p>
-        </main>
+        </PageContainer>
     );
 }

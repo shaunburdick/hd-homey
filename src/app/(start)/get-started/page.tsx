@@ -1,69 +1,132 @@
 'use client';
 
 import { useActionState } from 'react';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { createFirstUser } from './actions';
+import { Input, Button, Card } from '@/components';
+import { PageContainer } from '@/components/layouts';
+
+interface ValidationError {
+    path: string;
+    message: string;
+}
 
 export default function GetStarted() {
-    const [state, formAction] = useActionState(createFirstUser, null);
+    const [state, formAction, isPending] = useActionState(createFirstUser, null);
+
+    const handleSubmit = async (formData: FormData) => {
+        try {
+            await formAction(formData);
+        } catch (error) {
+            if (isRedirectError(error)) {
+                throw error;
+            }
+        }
+    };
+
+    const errors = state && Array.isArray(state)
+        ? state.reduce((acc: Record<string, string[]>, err: ValidationError) => {
+            if (!acc[err.path]) {
+                acc[err.path] = [];
+            }
+            acc[err.path].push(err.message);
+            return acc;
+        }, {})
+        : undefined;
 
     return (
-        <main>
-            <h1>Welcome to HD Homey!</h1>
-            <p>Let's get started by creating your admin account.</p>
-
-            <form action={formAction}>
-                <h2>Create Admin Account</h2>
-
-                <p>
-                    <label htmlFor='username'>Username: </label>
-                    <input
-                        id='username'
-                        name='username'
-                        type='text'
-                        required
-                        autoComplete='username'
-                    />
+        <PageContainer maxWidth="md" className="p-6">
+            <div className="text-center" style={{ marginBottom: 'var(--space-8)' }}>
+                <h1>Welcome to HD Homey!</h1>
+                <p className="text-lg text-secondary">
+                    Let's get started by creating your admin account.
                 </p>
+            </div>
 
-                <p>
-                    <label htmlFor='name'>Display Name: </label>
-                    <input
-                        id='name'
-                        name='name'
-                        type='text'
+            <Card>
+                <form action={handleSubmit}>
+                    <h2 className="mt-0">Create Admin Account</h2>
+
+                    <p className="text-secondary text-sm mb-5">
+                        This will be the primary administrator account with full access
+                        to manage tuners, channels, and users.
+                    </p>
+
+                    {errors && (
+                        <div
+                            role="alert"
+                            style={{
+                                backgroundColor: 'var(--color-error-bg)',
+                                border: '1px solid var(--color-error)',
+                                borderRadius: 'var(--radius-md)',
+                                padding: 'var(--space-4)',
+                                marginBottom: 'var(--space-4)',
+                            }}
+                        >
+                            <strong style={{ color: 'var(--color-error)' }}>
+                                Please fix the following errors:
+                            </strong>
+                            <ul style={{
+                                marginTop: 'var(--space-2)',
+                                marginBottom: 0,
+                                paddingLeft: 'var(--space-5)',
+                                color: 'var(--color-error)',
+                            }}>
+                                {Object.entries(errors).map(([field, messages]) =>
+                                    messages.map((message, idx) => (
+                                        <li key={`${field}-${idx}`}>
+                                            <strong>{field}:</strong> {message}
+                                        </li>
+                                    )))}
+                            </ul>
+                        </div>
+                    )}
+
+                    <Input
+                        label="Username"
+                        name="username"
+                        type="text"
                         required
-                        autoComplete='name'
+                        autoComplete="username"
+                        helpText="This will be used to sign in"
+                        error={errors?.username?.[0]}
+                        disabled={isPending}
                     />
-                </p>
 
-                <p>
-                    <label htmlFor='password'>Password: </label>
-                    <input
-                        id='password'
-                        name='password'
-                        type='password'
+                    <Input
+                        label="Display Name"
+                        name="name"
+                        type="text"
                         required
-                        autoComplete='new-password'
+                        autoComplete="name"
+                        helpText="Your full name or preferred display name"
+                        error={errors?.name?.[0]}
+                        disabled={isPending}
                     />
-                </p>
 
-                {/* Display errors if any */}
-                {state && Array.isArray(state) && state.length > 0 && (
-                    <div aria-live="polite" style={{ color: 'red' }}>
-                        <p><strong>Please fix the following errors:</strong></p>
-                        <ul>
-                            {state.map((err, idx) => (
-                                <li key={idx}>{err.path}: {err.message}</li>
-                            ))}
-                        </ul>
+                    <Input
+                        label="Password"
+                        name="password"
+                        type="password"
+                        required
+                        autoComplete="new-password"
+                        helpText="Choose a strong password"
+                        showPasswordToggle
+                        error={errors?.password?.[0]}
+                        disabled={isPending}
+                    />
+
+                    <div className="mt-6">
+                        <Button type="submit" loading={isPending} disabled={isPending}>
+                            {isPending ? 'Creating Account...' : 'Create Admin Account'}
+                        </Button>
                     </div>
-                )}
+                </form>
+            </Card>
 
-                <button type='submit'>Create Admin Account</button>
-            </form>
-
-            <hr />
-            <p><small>This account will have full administrative access to HD Homey.</small></p>
-        </main>
+            <p className="mt-5 text-center text-sm text-tertiary">
+                🔒 This account will have full administrative access to HD Homey
+            </p>
+        </PageContainer>
     );
 }

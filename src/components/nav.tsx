@@ -1,15 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import './nav.css';
 import { signOut , useSession } from 'next-auth/react';
 
 export default function Nav() {
 
     const [isOpen, setIsOpen] = useState(false);
-
+    const pathname = usePathname();
     const { data: session } = useSession();
+
+    // Close menu on route change
+    useEffect(() => {
+        setIsOpen(false);
+    }, [pathname]);
+
+    // Prevent body scroll when mobile menu is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
 
     const handleSignOut = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
@@ -24,16 +42,31 @@ export default function Nav() {
         { name: 'About', href: '/about' }
     ];
 
+    const isActive = (href: string) => {
+        if (href === '/') {
+            return pathname === '/';
+        }
+        return pathname.startsWith(href);
+    };
+
     return (
         <>
-            <nav>
+            <nav aria-label="Main navigation">
                 <ul>
-                    <li className='desktop-menu-item'>
-                        <img src='/icon.png' alt='HD Homey Logo'/>
+                    <li className='desktop-menu-item logo'>
+                        <Link href="/" aria-label="HD Homey Home">
+                            <img src='/icon.png' alt='' width="32" height="32"/>
+                        </Link>
                     </li>
                     {menuItems.map((item) => (
                         <li key={item.name} className="desktop-menu-item">
-                            <Link href={item.href}>{item.name}</Link>
+                            <Link
+                                href={item.href}
+                                className={isActive(item.href) ? 'active' : ''}
+                                aria-current={isActive(item.href) ? 'page' : undefined}
+                            >
+                                {item.name}
+                            </Link>
                         </li>
                     ))}
                     {session ? (
@@ -48,38 +81,60 @@ export default function Nav() {
                         </li>
                     )}
                     <li className="mobile-menu-button">
-                        <button onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
-                            {isOpen ? 'X' : '☰'}
+                        <button
+                            onClick={() => setIsOpen(!isOpen)}
+                            aria-label={isOpen ? 'Close menu' : 'Open menu'}
+                            aria-expanded={isOpen}
+                            aria-controls="mobile-menu"
+                        >
+                            {isOpen ? '✕' : '☰'}
                         </button>
                     </li>
                 </ul>
             </nav>
+
+            {/* Mobile menu backdrop */}
             {isOpen && (
-                <nav className="mobile-menu">
-                    <ul>
-                        {menuItems.map((item) => (
-                            <li key={item.name}>
-                                <Link href={item.href} onClick={() => setIsOpen(false)}>
-                                    {item.name}
-                                </Link>
-                            </li>
-                        ))}
-                        {session ? (
-                            <li>
-                                <Link href="#" onClick={handleSignOut}>
-                                    Sign Out
-                                </Link>
-                            </li>
-                        ) : (
-                            <li>
-                                <Link href="/users/signin" onClick={() => setIsOpen(false)}>
-                                    Sign In
-                                </Link>
-                            </li>
-                        )}
-                    </ul>
-                </nav>
+                <div
+                    className="mobile-menu-backdrop"
+                    onClick={() => setIsOpen(false)}
+                    aria-hidden="true"
+                />
             )}
+
+            {/* Mobile menu */}
+            <nav
+                id="mobile-menu"
+                className={`mobile-menu ${isOpen ? 'open' : ''}`}
+                aria-label="Mobile navigation"
+            >
+                <ul>
+                    {menuItems.map((item) => (
+                        <li key={item.name}>
+                            <Link
+                                href={item.href}
+                                className={isActive(item.href) ? 'active' : ''}
+                                aria-current={isActive(item.href) ? 'page' : undefined}
+                            >
+                                {item.name}
+                            </Link>
+                        </li>
+                    ))}
+                    {session ? (
+                        <li>
+                            <Link href="#" onClick={handleSignOut}>
+                                Sign Out
+                            </Link>
+                        </li>
+                    ) : (
+                        <li>
+                            <Link href="/users/signin">
+                                Sign In
+                            </Link>
+                        </li>
+                    )}
+                </ul>
+            </nav>
         </>
     );
 }

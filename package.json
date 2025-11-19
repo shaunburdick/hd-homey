@@ -55,6 +55,7 @@
     "eslint-import-resolver-typescript": "^3.7.0",
     "jsdom": "^26.0.0",
     "msw": "^2.12.2",
+    "pa11y": "^9.0.1",
     "sharp": "^0.33.5",
     "tsx": "^4.19.2",
     "typescript": "^5",

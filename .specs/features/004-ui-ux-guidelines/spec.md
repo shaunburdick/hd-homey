@@ -133,24 +133,29 @@ This specification establishes comprehensive UI/UX guidelines and a design syste
 - **FR-014**: Form validation MUST show inline, specific error messages
 - **FR-015**: Submit buttons MUST show loading states during processing
 - **FR-016**: Forms MUST be keyboard navigable with logical tab order
+- **FR-017**: Password inputs MUST include show/hide toggle (WCAG 2.2 Accessible Authentication)
+- **FR-018**: Forms MUST NOT require users to re-enter information already provided (WCAG 2.2 Redundant Entry)
 
 #### Navigation
-- **FR-017**: Navigation MUST be accessible on all screen sizes
-- **FR-018**: Mobile navigation MUST use a hamburger menu pattern
-- **FR-019**: Current page MUST be visually indicated in navigation
-- **FR-020**: Navigation links MUST have adequate spacing for touch interaction
+- **FR-019**: Navigation MUST be accessible on all screen sizes
+- **FR-020**: Mobile navigation MUST use a hamburger menu pattern
+- **FR-021**: Current page MUST be visually indicated in navigation
+- **FR-022**: Navigation links MUST have adequate spacing for touch interaction
+- **FR-023**: Help mechanisms MUST be consistently located across pages (WCAG 2.2 Consistent Help)
 
 #### Feedback & States
-- **FR-021**: System MUST provide visual feedback for all user actions
-- **FR-022**: Loading states MUST be shown for asynchronous operations
-- **FR-023**: Error messages MUST be clear, specific, and actionable
-- **FR-024**: Success messages MUST confirm completed actions
-- **FR-025**: Disabled states MUST be visually distinct
+- **FR-024**: System MUST provide visual feedback for all user actions
+- **FR-025**: Loading states MUST be shown for asynchronous operations
+- **FR-026**: Error messages MUST be clear, specific, and actionable
+- **FR-027**: Success messages MUST confirm completed actions
+- **FR-028**: Disabled states MUST be visually distinct
+- **FR-029**: Focus indicators MUST meet WCAG 2.2 enhanced requirements (visible, sufficient contrast, not obscured)
+- **FR-030**: Focused elements MUST NOT be completely hidden by other content (WCAG 2.2 Focus Not Obscured)
 
 ### Non-Functional Requirements
 
 - **NFR-001**: Performance - First Contentful Paint < 1.5s, Time to Interactive < 3s
-- **NFR-002**: Accessibility - WCAG 2.1 AA compliance minimum
+- **NFR-002**: Accessibility - WCAG 2.2 Level AA compliance minimum
 - **NFR-003**: Mobile Performance - Lighthouse mobile score > 85
 - **NFR-004**: Browser Support - Modern browsers (Chrome/Edge/Firefox/Safari last 2 versions)
 - **NFR-005**: Touch Responsiveness - Touch interactions respond within 100ms
@@ -350,10 +355,11 @@ This specification establishes comprehensive UI/UX guidelines and a design syste
 - **SC-001**: Lighthouse accessibility score > 95
 - **SC-002**: Mobile usability score: 100 (no mobile-specific issues)
 - **SC-003**: First Contentful Paint < 1.5s on 4G connection
-- **SC-004**: All interactive elements pass 44×44px minimum touch target
-- **SC-005**: All text passes WCAG AA contrast requirements (4.5:1 minimum)
+- **SC-004**: All interactive elements pass 44×44px minimum touch target (exceeds WCAG 2.2's 24px requirement)
+- **SC-005**: All text passes WCAG 2.2 Level AA contrast requirements (4.5:1 normal text, 3:1 large text/UI)
 - **SC-006**: Zero keyboard navigation dead-ends
-- **SC-007**: Form completion rate increases by 20% (measured after implementation)
+- **SC-007**: All WCAG 2.2 Level AA success criteria met (including new criteria: Target Size, Focus Appearance, Consistent Help, Accessible Authentication, Redundant Entry, Focus Not Obscured)
+- **SC-008**: Form completion rate increases by 20% (measured after implementation)
 
 ### User Validation
 
@@ -461,7 +467,8 @@ This specification does NOT include:
 
 ## References
 
-- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [WCAG 2.2 Guidelines](https://www.w3.org/WAI/WCAG22/quickref/) (Latest - October 2023)
+- [What's New in WCAG 2.2](https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/)
 - [iOS Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
 - [Material Design Accessibility](https://material.io/design/usability/accessibility.html)
 - [MDN: Responsive Design](https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Responsive_Design)

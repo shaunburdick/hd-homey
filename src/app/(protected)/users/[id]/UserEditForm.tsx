@@ -1,6 +1,8 @@
 'use client';
 
 import { useActionState } from 'react';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
+import { Input, Button } from '@/components';
 import { updateUser } from '@/lib/actions/users';
 import RoleGuard from '@/components/RoleGuard';
 import { AuthRoles } from '@/lib/auth-roles';
@@ -16,64 +18,132 @@ interface UserEditFormProps {
     user: User;
 }
 
+interface ValidationError {
+    path: string;
+    message: string;
+}
+
 export default function UserEditForm({ user }: UserEditFormProps) {
-    const [state, formAction] = useActionState(updateUser, null);
+    const [state, formAction, isPending] = useActionState(updateUser, null);
+
+    const handleSubmit = async (formData: FormData) => {
+        try {
+            await formAction(formData);
+        } catch (error) {
+            if (isRedirectError(error)) {
+                throw error;
+            }
+        }
+    };
+
+    const errors = state && Array.isArray(state)
+        ? state.reduce((acc: Record<string, string[]>, err: ValidationError) => {
+            if (!acc[err.path]) {
+                acc[err.path] = [];
+            }
+            acc[err.path].push(err.message);
+            return acc;
+        }, {})
+        : undefined;
 
     return (
         <RoleGuard allowedRoles={[AuthRoles.Admin]}>
-            <form action={formAction}>
+            <form action={handleSubmit}>
                 <input type="hidden" name="id" value={user.id} />
 
-                <p>
-                    <label htmlFor="name">Display Name: </label>
-                    <input
-                        id="name"
-                        name="name"
-                        type="text"
-                        defaultValue={user.name}
-                        required
-                    />
-                </p>
+                {errors && (
+                    <div
+                        role="alert"
+                        style={{
+                            backgroundColor: 'var(--color-error-bg)',
+                            border: '1px solid var(--color-error)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: 'var(--space-4)',
+                            marginBottom: 'var(--space-4)',
+                        }}
+                    >
+                        <strong style={{ color: 'var(--color-error)' }}>
+                            Please fix the following errors:
+                        </strong>
+                        <ul style={{
+                            marginTop: 'var(--space-2)',
+                            marginBottom: 0,
+                            paddingLeft: 'var(--space-5)',
+                            color: 'var(--color-error)',
+                        }}>
+                            {Object.entries(errors).map(([field, messages]) =>
+                                messages.map((message, idx) => (
+                                    <li key={`${field}-${idx}`}>
+                                        <strong>{field}:</strong> {message}
+                                    </li>
+                                )))}
+                        </ul>
+                    </div>
+                )}
 
-                <p>
-                    <label htmlFor="password">New Password: </label>
-                    <input
-                        id="password"
-                        name="password"
-                        type="password"
-                        placeholder="Leave blank to keep current password"
-                    />
-                    <br />
-                    <small>Leave blank if you don't want to change the password</small>
-                </p>
+                <Input
+                    label="Display Name"
+                    name="name"
+                    type="text"
+                    defaultValue={user.name}
+                    required
+                    error={errors?.name?.[0]}
+                    disabled={isPending}
+                />
 
-                <p>
-                    <label htmlFor="is_active">
+                <Input
+                    label="New Password"
+                    name="password"
+                    type="password"
+                    placeholder="Leave blank to keep current"
+                    showPasswordToggle
+                    helpText="Only enter a password if you want to change it"
+                    error={errors?.password?.[0]}
+                    disabled={isPending}
+                />
+
+                <div style={{ marginBottom: 'var(--space-4)' }}>
+                    <label
+                        htmlFor="is_active"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--space-2)',
+                            cursor: 'pointer',
+                            fontSize: 'var(--font-size-base)',
+                        }}
+                    >
                         <input
                             id="is_active"
                             name="is_active"
                             type="checkbox"
                             value="true"
                             defaultChecked={user.is_active}
+                            disabled={isPending}
+                            style={{
+                                width: '20px',
+                                height: '20px',
+                                cursor: 'pointer',
+                            }}
                         />
-                        {' '}User is active
+                        <span>User is active</span>
                     </label>
-                    <br />
-                    <small>Inactive users cannot sign in</small>
-                </p>
+                    <p style={{
+                        marginTop: 'var(--space-1)',
+                        marginLeft: 'calc(20px + var(--space-2))',
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--color-text-tertiary)',
+                        marginBottom: 0,
+                    }}>
+                        Inactive users cannot sign in
+                    </p>
+                </div>
 
-                {state && Array.isArray(state) && state.length > 0 && (
-                    <div aria-live="polite" style={{ color: 'red' }}>
-                        <p><strong>Errors:</strong></p>
-                        <ul>
-                            {state.map((err, idx) => (
-                                <li key={idx}>{err.path}: {err.message}</li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-
-                <button type="submit">Update User</button>
+                <div style={{ marginTop: 'var(--space-6)' }}>
+                    <Button type="submit" loading={isPending} disabled={isPending}>
+                        {isPending ? 'Updating User...' : 'Update User'}
+                    </Button>
+                </div>
             </form>
         </RoleGuard>
     );

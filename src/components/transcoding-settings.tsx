@@ -65,9 +65,14 @@ export default function TranscodingSettings({
 
     if (!ffmpegInfo.available) {
         return (
-            <div style={{ padding: '1rem', backgroundColor: '#fee', border: '1px solid #fcc' }}>
-                <h3>FFmpeg Not Available</h3>
-                <p>
+            <div style={{
+                padding: 'var(--space-4)',
+                backgroundColor: 'var(--color-error-bg)',
+                border: '1px solid var(--color-error)',
+                borderRadius: 'var(--radius-md)',
+            }}>
+                <h3 style={{ marginTop: 0, color: 'var(--color-error)' }}>FFmpeg Not Available</h3>
+                <p style={{ marginBottom: 0, color: 'var(--color-error)' }}>
                     Transcoding requires FFmpeg to be installed.
                     Please install FFmpeg and restart the application.
                 </p>
@@ -76,8 +81,13 @@ export default function TranscodingSettings({
     }
 
     return (
-        <form onSubmit={handleSubmit}>
-            <h3>FFmpeg Status</h3>
+        <form onSubmit={handleSubmit} style={{
+            padding: 'var(--space-4)',
+            backgroundColor: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-lg)',
+        }}>
+            <h3 style={{ marginTop: 0 }}>FFmpeg Status</h3>
             <dl>
                 <dt>Version</dt>
                 <dd>{ffmpegInfo.version}</dd>
@@ -348,11 +358,27 @@ export default function TranscodingSettings({
 
             <input type="hidden" name="hardwareAccel" value={settings.hardwareAccel} />
 
-            <p>
-                <button type="submit" disabled={isPending || !settings.enabled}>
-                    {isPending ? 'Saving...' : 'Save Settings'}
+            <div style={{ marginTop: 'var(--space-6)' }}>
+                <button
+                    type="submit"
+                    disabled={isPending || !settings.enabled}
+                    style={{
+                        minHeight: 'var(--button-height)',
+                        padding: 'var(--space-3) var(--space-5)',
+                        borderRadius: 'var(--radius-md)',
+                        fontWeight: 'var(--font-weight-medium)',
+                        fontSize: 'var(--font-size-base)',
+                        cursor: (isPending || !settings.enabled) ? 'not-allowed' : 'pointer',
+                        transition: 'all var(--transition-fast)',
+                        border: 'none',
+                        backgroundColor: 'var(--color-accent)',
+                        color: 'white',
+                        opacity: (isPending || !settings.enabled) ? 0.6 : 1,
+                    }}
+                >
+                    {isPending ? 'Saving...' : '💾 Save Settings'}
                 </button>
-            </p>
+            </div>
         </form>
     );
 }

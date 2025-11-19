@@ -22,39 +22,71 @@ export default async function SettingsPage() {
 
     return (
         <RoleGuard allowedRoles={[AuthRoles.Admin]}>
-            <h1>Settings</h1>
-            <p>Administrative settings and user management</p>
+            <div className="container">
+                <div className="mb-6">
+                    <h1 className="mb-2">Settings</h1>
+                    <p className="text-secondary m-0">
+                        Configure application settings and manage system resources
+                    </p>
+                </div>
 
-            <hr />
+                <div className="grid gap-5">
+                    <section>
+                        <h2 className="mt-0 mb-3 text-xl">
+                            User Management
+                        </h2>
+                        <Link
+                            href="/users"
+                            className="settings-link inline-flex items-center gap-2 p-4
+                                rounded no-underline text-primary transition"
+                            style={{
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                border: '1px solid var(--color-border)',
+                            }}
+                        >
+                            <span>👥</span>
+                            <span>Manage Users</span>
+                            <span className="text-tertiary" style={{ marginLeft: 'auto' }}>→</span>
+                        </Link>
+                    </section>
 
-            <h2>User Management</h2>
-            <ul>
-                <li><Link href="/users">Manage Users</Link> - View, add, and edit users</li>
-            </ul>
+                    <section>
+                        <h2 className="mt-0 mb-3 text-xl">
+                            Video Transcoding
+                        </h2>
 
-            <hr />
+                        <div className="grid gap-4">
+                            <div>
+                                <h3 className="mt-0 mb-3 text-lg">
+                                    Active Sessions
+                                </h3>
+                                <TranscodingStatus />
+                            </div>
 
-            <h2>Video Transcoding</h2>
+                            <div>
+                                <h3 className="mt-0 mb-3 text-lg">
+                                    Configuration
+                                </h3>
+                                <TranscodingSettings
+                                    initialSettings={transcodingSettings}
+                                    ffmpegInfo={ffmpegInfo}
+                                    recommendedMaxSessions={recommendedMaxSessions}
+                                />
+                            </div>
+                        </div>
+                    </section>
 
-            <h3>Active Sessions</h3>
-            <TranscodingStatus />
-
-            <hr />
-
-            <h3>Transcoding Configuration</h3>
-            <TranscodingSettings
-                initialSettings={transcodingSettings}
-                ffmpegInfo={ffmpegInfo}
-                recommendedMaxSessions={recommendedMaxSessions}
-            />
-
-            <hr />
-
-            <h2>Stream Authentication</h2>
-            <StreamSecretManager
-                secretPreview={secretInfo?.preview || 'Not available'}
-                regenerateAction={regenerateAppStreamSecret}
-            />
+                    <section>
+                        <h2 className="mt-0 mb-3 text-xl">
+                            Stream Authentication
+                        </h2>
+                        <StreamSecretManager
+                            secretPreview={secretInfo?.preview || 'Not available'}
+                            regenerateAction={regenerateAppStreamSecret}
+                        />
+                    </section>
+                </div>
+            </div>
         </RoleGuard>
     );
 }

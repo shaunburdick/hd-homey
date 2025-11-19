@@ -1,7 +1,16 @@
-/* Custom styles for responsive behavior */
+/* ============================================
+   Navigation Styles
+   Enhanced for WCAG 2.2 and mobile UX
+   ============================================ */
+
 header {
-    padding-top: 0.5rem;
+    padding-top: var(--space-2);
     padding-bottom: 0;
+    position: sticky;
+    top: 0;
+    background-color: var(--color-bg-primary);
+    z-index: var(--z-sticky);
+    border-bottom: 1px solid var(--color-border);
 }
 
 header > nav:first-child {
@@ -15,30 +24,107 @@ header > nav > ul {
     justify-content: space-between;
     align-items: center;
     list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
 }
 
+/* Logo styles */
+.logo a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo img {
+    border-radius: var(--radius-sm);
+}
+
+/* Desktop menu items - hidden on mobile */
 .desktop-menu-item {
     display: none;
 }
 
-.mobile-menu-button button {
-    background: none;
-    border: none;
-    color: var(--nc-tx-1);
-    cursor: pointer;
-    padding: 0.5rem;
-    margin-left: 70vw;
+/* Active page indicator */
+.desktop-menu-item a.active {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-accent);
+    border-bottom: 2px solid var(--color-accent);
 }
 
+/* Mobile menu button - enhanced touch target */
+.mobile-menu-button {
+    margin-left: auto;
+}
+
+.mobile-menu-button button {
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    /* WCAG 2.2: Enhanced touch target */
+    min-width: var(--min-touch-target);
+    min-height: var(--min-touch-target);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.mobile-menu-button button:hover {
+    background-color: var(--color-bg-secondary);
+    border-color: var(--color-border-hover);
+}
+
+/* Mobile menu backdrop */
+.mobile-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: var(--z-modal-backdrop);
+    animation: fadeIn var(--transition-fast);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Mobile menu slide-in */
 .mobile-menu {
-    background-color: var(--nc-bg-2);
-    padding: 1rem;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 80%;
+    max-width: 320px;
+    background-color: var(--color-bg-secondary);
+    z-index: var(--z-modal);
+    padding: var(--space-6);
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+    transform: translateX(100%);
+    transition: transform var(--transition-base);
+}
+
+.mobile-menu.open {
+    transform: translateX(0);
 }
 
 .mobile-menu ul {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--space-2);
     padding: 0;
     margin: 0;
     list-style-type: none;
@@ -50,28 +136,56 @@ header > nav > ul {
 
 .mobile-menu a {
     display: block;
-    padding: 0.5rem 1rem;
+    /* WCAG 2.2: Enhanced touch target */
+    min-height: var(--min-touch-target);
+    padding: var(--space-3) var(--space-4);
     text-decoration: none;
-    color: var(--nc-tx-1);
-    transition: background-color 0.2s ease;
+    color: var(--color-text-primary);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-fast);
+    display: flex;
+    align-items: center;
 }
 
 .mobile-menu a:hover,
 .mobile-menu a:focus {
-    background-color: var(--nc-bg-3);
+    background-color: var(--color-bg-tertiary);
 }
 
+.mobile-menu a.active {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-accent);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Desktop styles (768px and up) */
 @media (min-width: 768px) {
     .desktop-menu-item {
         display: block;
-        margin-left: 1rem;
+        margin-left: var(--space-4);
+    }
+    
+    .desktop-menu-item.logo {
+        margin-left: 0;
+        margin-right: var(--space-4);
+    }
+
+    .desktop-menu-item a {
+        padding: var(--space-2) var(--space-3);
+        text-decoration: none;
+        transition: color var(--transition-fast);
+    }
+
+    .desktop-menu-item a:hover {
+        color: var(--color-accent-hover);
     }
 
     .mobile-menu-button {
         display: none;
     }
 
-    .mobile-menu {
-        display: none;
+    .mobile-menu,
+    .mobile-menu-backdrop {
+        display: none !important;
     }
 }

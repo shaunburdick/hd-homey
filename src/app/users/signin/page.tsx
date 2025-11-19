@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { Input, Button, Card } from '@/components';
+import { PageContainer } from '@/components/layouts';
 
 export default function SignIn() {
     const [error, setError] = useState<string | null>(null);
@@ -29,9 +31,8 @@ export default function SignIn() {
                 setError('Invalid username or password');
                 setIsLoading(false);
             } else if (result?.ok) {
-                // Sign in successful, redirect to home
                 router.push('/');
-                router.refresh(); // Force refresh to update session
+                router.refresh();
             }
         } catch {
             setError('An error occurred during sign in');
@@ -40,32 +41,72 @@ export default function SignIn() {
     };
 
     return (
-        <main>
-            <div>
-                <h1>Sign In</h1>
-                <form onSubmit={handleSubmit}>
-                    <p>
-                        <label>
-                            Username
-                            <input name="username" type="text" required disabled={isLoading} />
-                        </label>
+        <main className="flex items-center justify-center p-6" style={{ minHeight: '100vh' }}>
+            <PageContainer maxWidth="sm">
+                <div className="text-center" style={{ marginBottom: 'var(--space-8)' }}>
+                    <img
+                        src="/icon.png"
+                        alt="HD Homey"
+                        width="64"
+                        height="64"
+                        className="rounded-lg"
+                    />
+                    <h1 className="mb-2" style={{ marginTop: 'var(--space-4)' }}>
+                        Sign In
+                    </h1>
+                    <p className="text-secondary text-base">
+                        Welcome back to HD Homey
                     </p>
-                    <p>
-                        <label>
-                            Password
-                            <input name="password" type="password" required disabled={isLoading} />
-                        </label>
-                    </p>
-                    {error && (
-                        <p style={{ color: 'red' }}>
-                            {error}
-                        </p>
-                    )}
-                    <button type="submit" disabled={isLoading}>
-                        {isLoading ? 'Signing In...' : 'Sign In'}
-                    </button>
-                </form>
-            </div>
+                </div>
+
+                <Card>
+                    <form onSubmit={handleSubmit}>
+                        {error && (
+                            <div role="alert" className="rounded p-4 mb-4" style={{
+                                backgroundColor: 'var(--color-error-bg)',
+                                border: '1px solid var(--color-error)',
+                                color: 'var(--color-error)',
+                            }}>
+                                {error}
+                            </div>
+                        )}
+
+                        <Input
+                            label="Username"
+                            name="username"
+                            type="text"
+                            required
+                            autoComplete="username"
+                            disabled={isLoading}
+                        />
+
+                        <Input
+                            label="Password"
+                            name="password"
+                            type="password"
+                            required
+                            autoComplete="current-password"
+                            showPasswordToggle
+                            disabled={isLoading}
+                        />
+
+                        <div className="mt-6">
+                            <Button
+                                type="submit"
+                                loading={isLoading}
+                                disabled={isLoading}
+                                className="w-full"
+                            >
+                                {isLoading ? 'Signing In...' : 'Sign In'}
+                            </Button>
+                        </div>
+                    </form>
+                </Card>
+
+                <p className="mt-5 text-center text-sm text-tertiary">
+                    Need help? Contact your administrator.
+                </p>
+            </PageContainer>
         </main>
     );
 }
