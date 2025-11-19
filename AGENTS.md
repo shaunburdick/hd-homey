@@ -176,7 +176,7 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-alpha.4** - Alpha release with complete design system, enhanced accessibility (WCAG 2.2 AA), and mobile-first responsive design.
+**1.0.0-alpha.5** - Alpha release with React 19, Next.js 16, all dependencies updated, zero ESLint errors, and optimized CI/CD.
 
 ### Release Process
 

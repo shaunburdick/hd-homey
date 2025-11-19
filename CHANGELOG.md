@@ -7,18 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-alpha.5] - 2025-11-19
+
+**Note**: This release updates all dependencies to latest versions including React 19 and Next.js 16, resolves all code quality issues, and optimizes CI/CD workflows.
+
 ### Changed
 
 - **Dependencies**: Updated all npm dependencies to latest versions
-  - React 18 → 19.2.0 (major)
-  - Next.js 15 → 16.0.3 (major)
-  - bcrypt 5 → 6.0.0 (major)
-  - better-sqlite3 11 → 12.4.1 (major)
+  - React 18.3.1 → 19.2.0 (major)
+  - Next.js 15.1.6 → 16.0.3 (major)
+  - bcrypt 5.1.1 → 6.0.0 (major)
+  - better-sqlite3 11.8.1 → 12.4.1 (major)
   - next-auth 5.0.0-beta.25 → 5.0.0-beta.30 (beta)
   - All type definitions updated to match
   - eslint-config-next updated to 16.0.3
 
+- **Framework Migrations**: Migrated to Next.js 16 conventions
+  - Renamed `middleware.ts` → `proxy.ts` (Next.js 16 convention)
+  - Separated viewport configuration from metadata export
+  - Converted `<img>` tags to Next.js `<Image>` component
+
 - **ESLint Configuration**: Added Next.js ESLint plugin with recommended and core-web-vitals rules
+
 - **Code Quality**: Fixed all ESLint errors (223 → 0)
   - Refactored React setState-in-effect patterns
   - Fixed accessibility issues
@@ -27,7 +37,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Reduced cognitive complexity
   - Added proper viewport configuration
 
-- **Images**: Converted `<img>` tags to Next.js `<Image>` component for better optimization
+- **CI/CD**: Simplified Docker workflow
+  - Removed ARM64 build (emulation too slow)
+  - Build time reduced from ~60 minutes to ~5 minutes
+  - Docker images now linux/amd64 only
+
+### Fixed
+
+- **Authentication**: Fixed logout redirect to 0.0.0.0 issue
+- **Session Validation**: Fixed null user edge case handling
+- **Tests**: Added missing test constants
+
+### Added
+
+- **UX**: Added autofocus to username field on sign-in page
 
 ## [1.0.0-alpha.4] - 2025-01-18
 
