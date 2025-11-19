@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { validateSettings, buildFFmpegCommand, getRecommendedSettings } from './ffmpeg';
 import { DEFAULT_SETTINGS } from './types';
 
+
+// Test constants
+const FFMPEG_VERSION_OUTPUT = FFMPEG_VERSION_OUTPUT;
 describe('ffmpeg utilities', () => {
     describe('validateSettings', () => {
         it('should pass validation for default settings', () => {

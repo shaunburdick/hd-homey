@@ -32,6 +32,7 @@ describe('HDTuner', () => {
             expect(mockFetch).toHaveBeenCalled();
             const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
+            expect(callArg).toBeDefined();
             expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
             expect(lineup).toEqual(mockLineupData);
             expect(lineup).toHaveLength(6);
@@ -86,6 +87,7 @@ describe('HDTuner', () => {
 
             const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
+            expect(callArg).toBeDefined();
             expect(callArg?.toString()).toBe('http://192.168.20.25:8080/lineup.json');
         });
     });
@@ -252,7 +254,7 @@ describe('HDTuner', () => {
             await tuner.stream('3.1');
 
             expect(capturedUrl?.port).toBe('5004');
-            expect(capturedUrl?.pathname).toBe('/auto/v3.1');
+            expect(capturedUrl?.pathname).toBe(TEST_AUTO_PATH);
         });
 
         it('should add v prefix if not present', async () => {
@@ -272,7 +274,7 @@ describe('HDTuner', () => {
 
             await tuner.stream('3.1'); // Without v prefix
 
-            expect(capturedUrl?.pathname).toBe('/auto/v3.1');
+            expect(capturedUrl?.pathname).toBe(TEST_AUTO_PATH);
         });
 
         it('should not double-add v prefix if already present', async () => {
@@ -292,7 +294,7 @@ describe('HDTuner', () => {
 
             await tuner.stream('v3.1'); // With v prefix
 
-            expect(capturedUrl?.pathname).toBe('/auto/v3.1');
+            expect(capturedUrl?.pathname).toBe(TEST_AUTO_PATH);
         });
 
         it('should reject on non-200 status code', async () => {

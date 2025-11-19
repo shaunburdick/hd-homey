@@ -5,6 +5,10 @@ import { users, tuners, channels } from './schema';
 import { AuthRoles } from '@/lib/auth-roles';
 import { createTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
 
+
+// Test constants
+const TEST_TUNER_NAME = TEST_TUNER_NAME;
+const TEST_CHANNEL_NAME = TEST_CHANNEL_NAME;
 describe('Database Schema', () => {
     let db: DB;
 
@@ -353,7 +357,7 @@ describe('Database Schema', () => {
             const channel = db.insert(channels).values({
                 fk_tuner: tuner.id,
                 guideNumber: '2.1',
-                guideName: 'Test Channel',
+                guideName: TEST_CHANNEL_NAME,
                 videoCodec: 'H264',
                 audioCodec: 'AAC',
                 hd: 1,

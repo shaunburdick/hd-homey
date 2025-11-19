@@ -26,6 +26,9 @@ vi.mock('@/lib/logger', () => ({
     }
 }));
 
+
+// Test constants
+const ACTIVE_TUNER_NAME = ACTIVE_TUNER_NAME;
 describe('GET /api/tuners/[id]', () => {
     let tunerId: number;
 
@@ -36,7 +39,7 @@ describe('GET /api/tuners/[id]', () => {
         // Get a test tuner ID
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
-        if (tuner === null || tuner === undefined) {
+        if (tuner === undefined) {
             throw new Error('Test setup failed: no tuner found');
         }
         tunerId = tuner.id;
@@ -111,7 +114,7 @@ describe('POST /api/tuners/[id]', () => {
 
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
-        if (tuner === null || tuner === undefined) {
+        if (tuner === undefined) {
             throw new Error('Test setup failed: no tuner found');
         }
         tunerId = tuner.id;
