@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import './nav.css';
@@ -8,14 +9,16 @@ import { signOut , useSession } from 'next-auth/react';
 
 export default function Nav() {
 
-    const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
+    const [isOpen, setIsOpen] = useState(false);
+    const [lastPathname, setLastPathname] = useState(pathname);
     const { data: session } = useSession();
 
     // Close menu on route change
-    useEffect(() => {
+    if (pathname !== lastPathname) {
         setIsOpen(false);
-    }, [pathname]);
+        setLastPathname(pathname);
+    }
 
     // Prevent body scroll when mobile menu is open
     useEffect(() => {
@@ -29,10 +32,11 @@ export default function Nav() {
         };
     }, [isOpen]);
 
-    const handleSignOut = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const handleSignOut = async (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         setIsOpen(false);
-        signOut({ callbackUrl: '/users/signin' });
+        await signOut({ redirect: false });
+        window.location.href = '/users/signin';
     };
 
     const menuItems = [
@@ -55,7 +59,7 @@ export default function Nav() {
                 <ul>
                     <li className='desktop-menu-item logo'>
                         <Link href="/" aria-label="HD Homey Home">
-                            <img src='/icon.png' alt='' width="32" height="32"/>
+                            <Image src='/icon.png' alt='' width={32} height={32}/>
                         </Link>
                     </li>
                     {menuItems.map((item) => (

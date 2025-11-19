@@ -14,7 +14,7 @@ export async function GET() {
     try {
         // Check admin auth
         const session = await auth();
-        if (!session?.user || session.user.role !== AuthRoles.Admin) {
+        if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user }, 'Unauthorized status request');
             return new Response('Unauthorized', { status: 403 });
         }
@@ -39,7 +39,7 @@ export async function DELETE(req: NextRequest) {
     try {
         // Check admin auth
         const session = await auth();
-        if (!session?.user || session.user.role !== AuthRoles.Admin) {
+        if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user }, 'Unauthorized stop session request');
             return new Response('Unauthorized', { status: 403 });
         }
@@ -47,7 +47,7 @@ export async function DELETE(req: NextRequest) {
         const { searchParams } = req.nextUrl;
         const sessionId = searchParams.get('sessionId');
 
-        if (!sessionId) {
+        if (sessionId === null || sessionId === '') {
             return new Response('Missing sessionId', { status: 400 });
         }
 

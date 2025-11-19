@@ -27,12 +27,12 @@ export default function RoleGuard({ allowedRoles, children, fallback = null }: R
 
     // No session or no user - hide content
     if (!session?.user) {
-        return <>{fallback}</>;
+        return fallback;
     }
 
     // Check if user's role is in allowed roles
     const hasRole = allowedRoles.includes(session.user.role as AuthRoles);
 
     // Show children if authorized, otherwise show fallback (default: nothing)
-    return hasRole ? <>{children}</> : <>{fallback}</>;
+    return hasRole ? children : fallback;
 }

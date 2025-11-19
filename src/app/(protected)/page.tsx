@@ -20,6 +20,14 @@ export default async function Home() {
 
     const isAdmin = session?.user?.isAdmin;
 
+    // Style constants
+    const fontSize3xl = 'var(--font-size-3xl)';
+    const fontSize4xl = 'var(--font-size-4xl)';
+    const fontSizeSm = 'var(--font-size-sm)';
+    const fontWeightBold = 'var(--font-weight-bold)';
+    const colorTextSecondary = 'var(--color-text-secondary)';
+    const spaceBetween = 'space-between';
+
     return (
         <PageContainer maxWidth="xl">
             <div className="grid gap-6">
@@ -51,24 +59,24 @@ export default async function Home() {
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
+                            justifyContent: spaceBetween,
                         }}>
                             <div>
                                 <div style={{
-                                    fontSize: 'var(--font-size-3xl)',
-                                    fontWeight: 'var(--font-weight-bold)',
+                                    fontSize: fontSize3xl,
+                                    fontWeight: fontWeightBold,
                                     color: 'var(--color-accent)',
                                 }}>
                                     {tunerCount}
                                 </div>
                                 <div style={{
-                                    color: 'var(--color-text-secondary)',
-                                    fontSize: 'var(--font-size-sm)',
+                                    color: colorTextSecondary,
+                                    fontSize: fontSizeSm,
                                 }}>
                                     {tunerCount === 1 ? 'Tuner' : 'Tuners'}
                                 </div>
                             </div>
-                            <div style={{ fontSize: 'var(--font-size-4xl)', opacity: 0.3 }}>
+                            <div style={{ fontSize: fontSize4xl, opacity: 0.3 }}>
                                 📡
                             </div>
                         </div>
@@ -78,24 +86,24 @@ export default async function Home() {
                         <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
+                            justifyContent: spaceBetween,
                         }}>
                             <div>
                                 <div style={{
-                                    fontSize: 'var(--font-size-3xl)',
-                                    fontWeight: 'var(--font-weight-bold)',
+                                    fontSize: fontSize3xl,
+                                    fontWeight: fontWeightBold,
                                     color: 'var(--color-success)',
                                 }}>
                                     {channelCount}
                                 </div>
                                 <div style={{
-                                    color: 'var(--color-text-secondary)',
-                                    fontSize: 'var(--font-size-sm)',
+                                    color: colorTextSecondary,
+                                    fontSize: fontSizeSm,
                                 }}>
                                     {channelCount === 1 ? 'Channel' : 'Channels'}
                                 </div>
                             </div>
-                            <div style={{ fontSize: 'var(--font-size-4xl)', opacity: 0.3 }}>
+                            <div style={{ fontSize: fontSize4xl, opacity: 0.3 }}>
                                 📺
                             </div>
                         </div>
@@ -106,24 +114,24 @@ export default async function Home() {
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'space-between',
+                                justifyContent: spaceBetween,
                             }}>
                                 <div>
                                     <div style={{
-                                        fontSize: 'var(--font-size-3xl)',
-                                        fontWeight: 'var(--font-weight-bold)',
+                                        fontSize: fontSize3xl,
+                                        fontWeight: fontWeightBold,
                                         color: 'var(--color-info)',
                                     }}>
                                         {userCount}
                                     </div>
                                     <div style={{
-                                        color: 'var(--color-text-secondary)',
-                                        fontSize: 'var(--font-size-sm)',
+                                        color: colorTextSecondary,
+                                        fontSize: fontSizeSm,
                                     }}>
                                         {userCount === 1 ? 'User' : 'Users'}
                                     </div>
                                 </div>
-                                <div style={{ fontSize: 'var(--font-size-4xl)', opacity: 0.3 }}>
+                                <div style={{ fontSize: fontSize4xl, opacity: 0.3 }}>
                                     👥
                                 </div>
                             </div>

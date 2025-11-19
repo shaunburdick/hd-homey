@@ -19,10 +19,15 @@ export async function createUser(prevState: unknown, formData: FormData) {
 
     const db = await getDb();
 
+    const password = formData.get('password');
+    const passwordString = password !== null
+        ? password.toString()
+        : '';
+
     const newUser = {
         username: formData.get('username'),
         name: formData.get('name'),
-        passHash: await generateHashPassword(formData.get('password')?.toString() || ''),
+        passHash: await generateHashPassword(passwordString),
         role: formData.get('role')
     };
 
@@ -44,13 +49,16 @@ export async function updateUser(prevState: unknown, formData: FormData) {
         return [{ path: 'authorization', message: error instanceof Error ? error.message : 'Unauthorized' }];
     }
 
-    const userId = parseInt(formData.get('id')?.toString() || '0', 10);
-    if (!userId) {
+    const idValue = formData.get('id');
+    const idString = idValue !== null ? idValue.toString() : '0';
+    const userId = parseInt(idString, 10);
+    if (isNaN(userId) || userId === 0) {
         return [{ path: 'id', message: 'Invalid user ID' }];
     }
 
     const db = await getDb();
-    const password = formData.get('password')?.toString();
+    const passwordValue = formData.get('password');
+    const password = passwordValue !== null ? passwordValue.toString() : null;
 
     // Build update object - only include password if provided
     const updateData: {
@@ -63,7 +71,7 @@ export async function updateUser(prevState: unknown, formData: FormData) {
     };
 
     // Only update password if a new one is provided
-    if (password && password.trim() !== '') {
+    if (password !== null && password !== '' && password.trim() !== '') {
         updateData.passHash = await generateHashPassword(password);
     }
 

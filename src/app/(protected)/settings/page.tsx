@@ -9,7 +9,7 @@ import { getTranscodingSettings } from '@/lib/settings';
 import { detectFFmpeg } from '@/lib/transcoding/ffmpeg';
 
 async function getRecommendedMaxSessions(): Promise<number> {
-    const { cpus } = await import('os');
+    const { cpus } = await import('node:os');
     const cpuCount = cpus().length;
     return Math.min(cpuCount + 1, 10);
 }

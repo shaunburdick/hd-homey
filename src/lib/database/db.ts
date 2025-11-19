@@ -6,10 +6,10 @@ import Config from '@/lib/config';
 import Logger from '@/lib/logger';
 
 export type DB = BetterSQLite3Database<typeof schema>;
-let cachedConnection: Database.Database;
+let cachedConnection: Database.Database | undefined;
 
 export function connection() {
-    if (cachedConnection) {
+    if (cachedConnection !== undefined) {
         return cachedConnection;
     }
     Logger.info(`Opening SQL DB: ${Config.DB_PATH}...`);

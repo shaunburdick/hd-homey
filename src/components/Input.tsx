@@ -27,21 +27,28 @@ export function Input({
     const isPasswordField = type === 'password';
     const actualType = isPasswordField && showPassword ? 'text' : type;
 
+    // Style constants
+    const colorError = 'var(--color-error)';
+    const spaceThree = 'var(--space-3)';
+    const spaceTwo = 'var(--space-2)';
+    const spaceOne = 'var(--space-1)';
+    const fontSizeSm = 'var(--font-size-sm)';
+
     return (
         <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>
             <label
                 htmlFor={inputId}
                 style={{
                     display: 'block',
-                    fontSize: 'var(--font-size-sm)',
+                    fontSize: fontSizeSm,
                     fontWeight: 'var(--font-weight-medium)',
                     color: 'var(--color-text-primary)',
-                    marginBottom: 'var(--space-2)',
+                    marginBottom: spaceTwo,
                 }}
             >
                 {label}
                 {props.required && (
-                    <span style={{ color: 'var(--color-error)', marginLeft: 'var(--space-1)' }} aria-label="required">
+                    <span style={{ color: colorError, marginLeft: spaceOne }} aria-label="required">
                         *
                     </span>
                 )}
@@ -59,10 +66,10 @@ export function Input({
                     style={{
                         width: '100%',
                         minHeight: 'var(--input-height)',
-                        padding: 'var(--space-3)',
+                        padding: spaceThree,
                         backgroundColor: 'var(--color-bg-secondary)',
                         color: 'var(--color-text-primary)',
-                        border: `1px solid ${error ? 'var(--color-error)' : 'var(--color-border)'}`,
+                        border: `1px solid ${error !== undefined ? colorError : 'var(--color-border)'}`,
                         borderRadius: 'var(--radius-md)',
                         fontSize: 'var(--font-size-base)',
                         transition: 'border-color var(--transition-fast)',
@@ -78,15 +85,15 @@ export function Input({
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                         style={{
                             position: 'absolute',
-                            right: 'var(--space-3)',
+                            right: spaceThree,
                             top: '50%',
                             transform: 'translateY(-50%)',
                             background: 'none',
                             border: 'none',
                             color: 'var(--color-text-secondary)',
                             cursor: 'pointer',
-                            padding: 'var(--space-2)',
-                            fontSize: 'var(--font-size-sm)',
+                            padding: spaceTwo,
+                            fontSize: fontSizeSm,
                             minHeight: 'var(--min-touch-target)',
                             minWidth: 'var(--min-touch-target)',
                         }}
@@ -100,7 +107,7 @@ export function Input({
                 <p
                     id={helpId}
                     style={{
-                        marginTop: 'var(--space-1)',
+                        marginTop: spaceOne,
                         fontSize: 'var(--font-size-xs)',
                         color: 'var(--color-text-tertiary)',
                         marginBottom: 0,
@@ -115,9 +122,9 @@ export function Input({
                     id={errorId}
                     role="alert"
                     style={{
-                        marginTop: 'var(--space-1)',
-                        fontSize: 'var(--font-size-sm)',
-                        color: 'var(--color-error)',
+                        marginTop: spaceOne,
+                        fontSize: fontSizeSm,
+                        color: colorError,
                         marginBottom: 0,
                     }}
                 >

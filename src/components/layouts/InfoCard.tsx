@@ -17,8 +17,8 @@ export function InfoCard({ title, items, className = '' }: InfoCardProps) {
         <Card className={className}>
             {title && <h2 className="mt-0 mb-4">{title}</h2>}
             <dl className="grid grid-cols-auto gap-3 m-0">
-                {items.map((item, index) => (
-                    <React.Fragment key={index}>
+                {items.map((item) => (
+                    <React.Fragment key={`${item.label}-${item.value}`}>
                         <dt className="font-semibold text-secondary">
                             {item.label}
                         </dt>

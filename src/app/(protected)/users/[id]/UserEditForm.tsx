@@ -25,6 +25,7 @@ interface ValidationError {
 
 export default function UserEditForm({ user }: UserEditFormProps) {
     const [state, formAction, isPending] = useActionState(updateUser, null);
+    const spaceFour = 'var(--space-4)';
 
     const handleSubmit = async (formData: FormData) => {
         try {
@@ -58,8 +59,8 @@ export default function UserEditForm({ user }: UserEditFormProps) {
                             backgroundColor: 'var(--color-error-bg)',
                             border: '1px solid var(--color-error)',
                             borderRadius: 'var(--radius-md)',
-                            padding: 'var(--space-4)',
-                            marginBottom: 'var(--space-4)',
+                            padding: spaceFour,
+                            marginBottom: spaceFour,
                         }}
                     >
                         <strong style={{ color: 'var(--color-error)' }}>
@@ -72,8 +73,8 @@ export default function UserEditForm({ user }: UserEditFormProps) {
                             color: 'var(--color-error)',
                         }}>
                             {Object.entries(errors).map(([field, messages]) =>
-                                messages.map((message, idx) => (
-                                    <li key={`${field}-${idx}`}>
+                                messages.map((message) => (
+                                    <li key={`${field}-${message}`}>
                                         <strong>{field}:</strong> {message}
                                     </li>
                                 )))}

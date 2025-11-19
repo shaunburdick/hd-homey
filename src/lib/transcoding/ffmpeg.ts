@@ -2,9 +2,9 @@
  * FFmpeg detection and command building utilities
  */
 
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-import { cpus } from 'os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { cpus } from 'node:os';
 import type { FFmpegInfo, TranscodeSettings } from './types';
 import Logger from '@/lib/logger';
 
@@ -16,17 +16,17 @@ let cachedFFmpegInfo: FFmpegInfo | null = null;
  * Detect if ffmpeg is available and get its capabilities
  */
 export async function detectFFmpeg(): Promise<FFmpegInfo> {
-    if (cachedFFmpegInfo) {
+    if (cachedFFmpegInfo !== null) {
         return cachedFFmpegInfo;
     }
 
-    const ffmpegPath = process.env.FFMPEG_PATH || 'ffmpeg';
+    const ffmpegPath = process.env.FFMPEG_PATH ?? 'ffmpeg';
 
     try {
         // Use execFile instead of exec to avoid shell injection risks
         const { stdout: versionOutput } = await execFileAsync(ffmpegPath, ['-version']);
         const versionMatch = versionOutput.match(/ffmpeg version (\S+)/);
-        const version = versionMatch ? versionMatch[1] : 'unknown';
+        const version = versionMatch !== null ? versionMatch[1] : 'unknown';
 
         const { stdout: codecOutput, stderr: codecStderr } = await execFileAsync(ffmpegPath, ['-codecs']);
         const codecsOutput = codecOutput + codecStderr;
@@ -45,7 +45,7 @@ export async function detectFFmpeg(): Promise<FFmpegInfo> {
             .split('\n')
             .slice(1)
             .map(line => line.trim())
-            .filter(line => line && !line.startsWith('Hardware'));
+            .filter(line => line !== '' && !line.startsWith('Hardware'));
 
         cachedFFmpegInfo = {
             available: true,

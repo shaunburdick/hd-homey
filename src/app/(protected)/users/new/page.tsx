@@ -16,6 +16,10 @@ interface ValidationError {
 export default function Page() {
     const [state, formAction, isPending] = useActionState(createUser, null);
 
+    // Style constants to avoid duplication
+    const spaceFour = 'var(--space-4)';
+    const colorError = 'var(--color-error)';
+
     const handleSubmit = async (formData: FormData) => {
         try {
             await formAction(formData);
@@ -55,24 +59,24 @@ export default function Page() {
                             role="alert"
                             style={{
                                 backgroundColor: 'var(--color-error-bg)',
-                                border: '1px solid var(--color-error)',
+                                border: `1px solid ${colorError}`,
                                 borderRadius: 'var(--radius-md)',
-                                padding: 'var(--space-4)',
-                                marginBottom: 'var(--space-4)',
+                                padding: spaceFour,
+                                marginBottom: spaceFour,
                             }}
                         >
-                            <strong style={{ color: 'var(--color-error)' }}>
+                            <strong style={{ color: colorError }}>
                                 Please fix the following errors:
                             </strong>
                             <ul style={{
                                 marginTop: 'var(--space-2)',
                                 marginBottom: 0,
                                 paddingLeft: 'var(--space-5)',
-                                color: 'var(--color-error)',
+                                color: colorError,
                             }}>
                                 {Object.entries(errors).map(([field, messages]) =>
-                                    messages.map((message, idx) => (
-                                        <li key={`${field}-${idx}`}>
+                                    messages.map((message) => (
+                                        <li key={`${field}-${message}`}>
                                             <strong>{field}:</strong> {message}
                                         </li>
                                     )))}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { Input, Button, Card } from '@/components';
@@ -44,11 +45,11 @@ export default function SignIn() {
         <main className="flex items-center justify-center p-6" style={{ minHeight: '100vh' }}>
             <PageContainer maxWidth="sm">
                 <div className="text-center" style={{ marginBottom: 'var(--space-8)' }}>
-                    <img
+                    <Image
                         src="/icon.png"
                         alt="HD Homey"
-                        width="64"
-                        height="64"
+                        width={64}
+                        height={64}
                         className="rounded-lg"
                     />
                     <h1 className="mb-2" style={{ marginTop: 'var(--space-4)' }}>
@@ -77,6 +78,8 @@ export default function SignIn() {
                             type="text"
                             required
                             autoComplete="username"
+                            // eslint-disable-next-line jsx-a11y/no-autofocus
+                            autoFocus
                             disabled={isLoading}
                         />
 

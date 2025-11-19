@@ -1,4 +1,4 @@
-import http from 'http';
+import http from 'node:http';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HDTuner } from './tuner';
 import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
@@ -10,6 +10,7 @@ describe('HDTuner', () => {
     let db: DB;
     let tuner: HDTuner;
     const testAddress = 'http://192.168.20.25';
+    const TEST_AUTO_PATH = '/auto/v3.1';
 
     beforeEach(async () => {
         db = createTestDatabase();
@@ -30,8 +31,10 @@ describe('HDTuner', () => {
             const lineup = await tuner.lineup();
 
             expect(mockFetch).toHaveBeenCalled();
-            const calls = vi.mocked(mockFetch).mock.calls;
+            const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
+            expect(callArg).toBeDefined();
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
             expect(lineup).toEqual(mockLineupData);
             expect(lineup).toHaveLength(6);
@@ -45,7 +48,7 @@ describe('HDTuner', () => {
 
             await tuner.lineup();
 
-            const calls = vi.mocked(mockFetch).mock.calls;
+            const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0] as URL | undefined;
             expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
         });
@@ -84,8 +87,10 @@ describe('HDTuner', () => {
 
             await tunerWithPort.lineup();
 
-            const calls = vi.mocked(mockFetch).mock.calls;
+            const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
+            expect(callArg).toBeDefined();
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             expect(callArg?.toString()).toBe('http://192.168.20.25:8080/lineup.json');
         });
     });
@@ -252,7 +257,7 @@ describe('HDTuner', () => {
             await tuner.stream('3.1');
 
             expect(capturedUrl?.port).toBe('5004');
-            expect(capturedUrl?.pathname).toBe('/auto/v3.1');
+            expect(capturedUrl?.pathname).toBe(TEST_AUTO_PATH);
         });
 
         it('should add v prefix if not present', async () => {
@@ -272,7 +277,7 @@ describe('HDTuner', () => {
 
             await tuner.stream('3.1'); // Without v prefix
 
-            expect(capturedUrl?.pathname).toBe('/auto/v3.1');
+            expect(capturedUrl?.pathname).toBe(TEST_AUTO_PATH);
         });
 
         it('should not double-add v prefix if already present', async () => {
@@ -292,7 +297,7 @@ describe('HDTuner', () => {
 
             await tuner.stream('v3.1'); // With v prefix
 
-            expect(capturedUrl?.pathname).toBe('/auto/v3.1');
+            expect(capturedUrl?.pathname).toBe(TEST_AUTO_PATH);
         });
 
         it('should reject on non-200 status code', async () => {

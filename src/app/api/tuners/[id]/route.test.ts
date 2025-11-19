@@ -26,6 +26,11 @@ vi.mock('@/lib/logger', () => ({
     }
 }));
 
+
+// Test constants
+const TEST_URL = 'http://test.local';
+const TEST_NAME = 'Test';
+
 describe('GET /api/tuners/[id]', () => {
     let tunerId: number;
 
@@ -36,7 +41,7 @@ describe('GET /api/tuners/[id]', () => {
         // Get a test tuner ID
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
-        if (!tuner) {
+        if (tuner === undefined) {
             throw new Error('Test setup failed: no tuner found');
         }
         tunerId = tuner.id;
@@ -111,7 +116,7 @@ describe('POST /api/tuners/[id]', () => {
 
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
-        if (!tuner) {
+        if (tuner === undefined) {
             throw new Error('Test setup failed: no tuner found');
         }
         tunerId = tuner.id;
@@ -149,8 +154,8 @@ describe('POST /api/tuners/[id]', () => {
 
     it('should handle non-existent tuner request', async () => {
         const formData = new FormData();
-        formData.append('name', 'Test');
-        formData.append('path', 'http://test.local');
+        formData.append('name', TEST_NAME);
+        formData.append('path', TEST_URL);
 
         const request = new Request('http://localhost:3000/api/tuners/99999', {
             method: 'POST',
@@ -183,7 +188,9 @@ describe('POST /api/tuners/[id]', () => {
         expect(response.status).toBeGreaterThanOrEqual(400);
 
         const json = await response.json();
-        expect(json.error || json.errors).toBeDefined();
+        const hasError = (json.error !== undefined && json.error !== null) ||
+                        (json.errors !== undefined && json.errors !== null);
+        expect(hasError).toBe(true);
     });
 
     it('should handle partial updates', async () => {
@@ -213,7 +220,7 @@ describe('POST /api/tuners/[id]', () => {
         // Test with is_active present (checked)
         const formData1 = new FormData();
         formData1.append('name', 'Test');
-        formData1.append('path', 'http://test.local');
+        formData1.append('path', TEST_URL);
         formData1.append('is_active', 'on'); // Checkbox sends 'on' when checked
 
         const request1 = new Request(`http://localhost:3000/api/tuners/${tunerId}`, {
@@ -235,7 +242,7 @@ describe('POST /api/tuners/[id]', () => {
         const { eq } = await import('drizzle-orm');
 
         const originalTuner = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
-        if (!originalTuner) {
+        if (originalTuner === undefined) {
             throw new Error('Test setup failed: tuner not found');
         }
 
@@ -269,7 +276,7 @@ describe('POST /api/tuners/[id]', () => {
 
         const formData = new FormData();
         formData.append('name', 'Test');
-        formData.append('path', 'http://test.local');
+        formData.append('path', TEST_URL);
 
         const request = new Request(`http://localhost:3000/api/tuners/${tunerId}`, {
             method: 'POST',

@@ -10,10 +10,15 @@ import { AuthRoles } from '@/lib/auth-roles';
 export async function createFirstUser(prevState: unknown, formData: FormData) {
     const db = await getDb();
 
+    const password = formData.get('password');
+    const passwordString = password !== null
+        ? password.toString()
+        : '';
+
     const newUser = {
         username: formData.get('username'),
         name: formData.get('name'),
-        passHash: await generateHashPassword(formData.get('password')?.toString() || ''),
+        passHash: await generateHashPassword(passwordString),
         role: AuthRoles.Admin // Always create first user as admin
     };
 

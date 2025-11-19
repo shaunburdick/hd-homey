@@ -5,7 +5,18 @@ import { users, tuners, channels } from './schema';
 import { AuthRoles } from '@/lib/auth-roles';
 import { createTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
 
-describe('Database Schema', () => {
+
+// Test constants
+const TEST_TUNER_NAME = 'Test Tuner';
+const TEST_CHANNEL_NAME = 'Test Channel';
+const TEST_TUNER_PATH = 'http://192.168.1.100';
+const TEST_URL = 'http://test.local';
+const TEST_PASSHASH = 'hash123';
+const TEST_HASH = 'hash';
+const TEST_DESCRIBE = 'Database Schema';
+const TEST_DEFAULT_VALUES = 'should apply default values correctly';
+
+describe(TEST_DESCRIBE, () => {
     let db: DB;
 
     beforeEach(() => {
@@ -21,7 +32,7 @@ describe('Database Schema', () => {
             const user1 = {
                 username: 'testuser',
                 name: 'Test User',
-                passHash: 'hash123',
+                passHash: TEST_PASSHASH,
                 role: AuthRoles.Viewer
             };
 
@@ -46,11 +57,11 @@ describe('Database Schema', () => {
             }
         });
 
-        it('should apply default values correctly', () => {
+        it(TEST_DEFAULT_VALUES, () => {
             const newUser = db.insert(users).values({
                 username: 'newuser',
                 name: 'New User',
-                passHash: 'hash123',
+                passHash: TEST_PASSHASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
@@ -93,14 +104,14 @@ describe('Database Schema', () => {
             const adminUser = db.insert(users).values({
                 username: 'admin',
                 name: 'Admin',
-                passHash: 'hash',
+                passHash: TEST_HASH,
                 role: AuthRoles.Admin
             }).returning().get();
 
             const viewerUser = db.insert(users).values({
                 username: 'viewer',
                 name: 'Viewer',
-                passHash: 'hash',
+                passHash: TEST_HASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
@@ -112,7 +123,7 @@ describe('Database Schema', () => {
             const user = db.insert(users).values({
                 username: 'softdelete',
                 name: 'Soft Delete Test',
-                passHash: 'hash',
+                passHash: TEST_HASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
@@ -132,20 +143,20 @@ describe('Database Schema', () => {
     describe('Tuners Table', () => {
         it('should create tuner with required fields', () => {
             const tuner = db.insert(tuners).values({
-                name: 'Test Tuner',
-                path: 'http://192.168.1.100'
+                name: TEST_TUNER_NAME,
+                path: TEST_TUNER_PATH
             }).returning().get();
 
             expect(tuner.id).toBeDefined();
-            expect(tuner.name).toBe('Test Tuner');
-            expect(tuner.path).toBe('http://192.168.1.100');
+            expect(tuner.name).toBe(TEST_TUNER_NAME);
+            expect(tuner.path).toBe(TEST_TUNER_PATH);
             expect(tuner.is_active).toBe(true);
         });
 
-        it('should apply default values correctly', () => {
+        it(TEST_DEFAULT_VALUES, () => {
             const tuner = db.insert(tuners).values({
                 name: 'Default Test',
-                path: 'http://test.local'
+                path: TEST_URL
             }).returning().get();
 
             expect(tuner.is_active).toBe(true);
@@ -158,7 +169,7 @@ describe('Database Schema', () => {
         it('should allow updating last_scanned timestamp', () => {
             const tuner = db.insert(tuners).values({
                 name: 'Scan Test',
-                path: 'http://test.local'
+                path: TEST_URL
             }).returning().get();
 
             const scanTime = new Date();
@@ -174,7 +185,7 @@ describe('Database Schema', () => {
         it('should support soft delete', () => {
             const tuner = db.insert(tuners).values({
                 name: 'Delete Test',
-                path: 'http://test.local'
+                path: TEST_URL
             }).returning().get();
 
             db.update(tuners)
@@ -193,7 +204,7 @@ describe('Database Schema', () => {
 
         beforeEach(() => {
             const tuner = db.insert(tuners).values({
-                name: 'Test Tuner',
+                name: TEST_TUNER_NAME,
                 path: 'http://192.168.1.100'
             }).returning().get();
             tunerId = tuner.id;
@@ -224,7 +235,7 @@ describe('Database Schema', () => {
                     videoCodec: 'H264',
                     audioCodec: 'AAC',
                     hd: 0,
-                    url: 'http://test.local'
+                    url: TEST_URL
                 }).run();
             }).toThrow();
         });
@@ -279,7 +290,7 @@ describe('Database Schema', () => {
             expect(channel1.fk_tuner).not.toBe(channel2.fk_tuner);
         });
 
-        it('should apply default values correctly', () => {
+        it(TEST_DEFAULT_VALUES, () => {
             const channel = db.insert(channels).values({
                 fk_tuner: tunerId,
                 guideNumber: '5.1',
@@ -287,7 +298,7 @@ describe('Database Schema', () => {
                 videoCodec: 'MPEG2',
                 audioCodec: 'AC3',
                 hd: 0,
-                url: 'http://test.local'
+                url: TEST_URL
             }).returning().get();
 
             expect(channel.is_active).toBe(true);
@@ -304,7 +315,7 @@ describe('Database Schema', () => {
                 videoCodec: 'H264',
                 audioCodec: 'AAC',
                 hd: 1,
-                url: 'http://test.local'
+                url: TEST_URL
             }).returning().get();
 
             db.update(channels)
@@ -325,7 +336,7 @@ describe('Database Schema', () => {
                 videoCodec: 'H264',
                 audioCodec: 'AAC',
                 hd: 1,
-                url: 'http://test.local'
+                url: TEST_URL
             }).returning().get();
 
             const sdChannel = db.insert(channels).values({
@@ -335,7 +346,7 @@ describe('Database Schema', () => {
                 videoCodec: 'MPEG2',
                 audioCodec: 'AC3',
                 hd: 0,
-                url: 'http://test.local'
+                url: TEST_URL
             }).returning().get();
 
             expect(hdChannel.hd).toBe(1);
@@ -347,17 +358,17 @@ describe('Database Schema', () => {
         it('should maintain referential integrity on channel insert', () => {
             const tuner = db.insert(tuners).values({
                 name: 'Relationship Test',
-                path: 'http://test.local'
+                path: TEST_URL
             }).returning().get();
 
             const channel = db.insert(channels).values({
                 fk_tuner: tuner.id,
                 guideNumber: '2.1',
-                guideName: 'Test Channel',
+                guideName: TEST_CHANNEL_NAME,
                 videoCodec: 'H264',
                 audioCodec: 'AAC',
                 hd: 1,
-                url: 'http://test.local'
+                url: TEST_URL
             }).returning().get();
 
             // Verify relationship
@@ -371,7 +382,7 @@ describe('Database Schema', () => {
         it('should cascade soft delete from tuner to channels', () => {
             const tuner = db.insert(tuners).values({
                 name: 'Cascade Test',
-                path: 'http://test.local'
+                path: TEST_URL
             }).returning().get();
 
             // Insert multiple channels
@@ -383,7 +394,7 @@ describe('Database Schema', () => {
                     videoCodec: 'H264',
                     audioCodec: 'AAC',
                     hd: 1,
-                    url: 'http://test.local'
+                    url: TEST_URL
                 },
                 {
                     fk_tuner: tuner.id,
@@ -392,7 +403,7 @@ describe('Database Schema', () => {
                     videoCodec: 'MPEG2',
                     audioCodec: 'AC3',
                     hd: 0,
-                    url: 'http://test.local'
+                    url: TEST_URL
                 }
             ]).run();
 
@@ -423,7 +434,7 @@ describe('Database Schema', () => {
             const user = db.insert(users).values({
                 username: 'timestamp test',
                 name: 'Timestamp Test',
-                passHash: 'hash',
+                passHash: TEST_HASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
@@ -441,7 +452,7 @@ describe('Database Schema', () => {
             const user = db.insert(users).values({
                 username: 'updatetest',
                 name: 'Update Test',
-                passHash: 'hash',
+                passHash: TEST_HASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 

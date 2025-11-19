@@ -85,7 +85,7 @@ export async function expectToThrow(
         await fn();
         throw new Error('Expected function to throw, but it did not');
     } catch (error) {
-        if (errorMessage && error instanceof Error && expectFn) {
+        if (errorMessage !== undefined && errorMessage !== '' && error instanceof Error && expectFn !== undefined) {
             expectFn(error.message).toContain(errorMessage);
         }
     }
@@ -96,8 +96,8 @@ export async function expectToThrow(
  */
 export function createMockFormData(data: Record<string, string>): FormData {
     const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(data)) {
         formData.append(key, value);
-    });
+    }
     return formData;
 }

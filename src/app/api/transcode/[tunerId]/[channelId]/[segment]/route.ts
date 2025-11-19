@@ -21,21 +21,21 @@ export async function GET(
         const token = searchParams.get('token');
         let viewerId = searchParams.get('viewer_id');
 
-        if (!token) {
+        if (token === null || token === '') {
             Logger.warn({ tunerId, channelId, segment }, 'Segment request missing token');
             return new Response('Missing token', { status: 401 });
         }
 
         // If viewer_id not in URL, generate from fingerprint
         // This handles cases where old URLs are cached or direct segment access
-        if (!viewerId) {
+        if (viewerId === null || viewerId === '') {
             viewerId = generateViewerFingerprint(req);
             Logger.debug({ tunerId, channelId, segment, viewerId }, 'Generated viewer_id from fingerprint');
         }
 
         // Verify token
         const tokenData = await verifyStreamToken(token);
-        if (!tokenData) {
+        if (tokenData === null) {
             Logger.warn({ tunerId, channelId, segment }, 'Invalid or expired stream token');
             return new Response('Invalid or expired token', { status: 403 });
         }
@@ -55,7 +55,7 @@ export async function GET(
         const sessionId = `${tunerId}:${channelId}`;
         const session = manager.getSession(sessionId);
 
-        if (!session) {
+        if (session === undefined) {
             Logger.warn({ sessionId, segment }, 'Session not found for segment request');
             return new Response('Session not found', { status: 404 });
         }
@@ -68,8 +68,9 @@ export async function GET(
         if (!updated) {
             // First time seeing this viewer_id - add them
             try {
+                const userAgentHeader = req.headers.get('user-agent');
                 manager.addViewer(sessionId, viewerId, {
-                    userAgent: req.headers.get('user-agent') || undefined,
+                    userAgent: userAgentHeader ?? undefined,
                 });
                 Logger.info({ sessionId, viewerId }, 'New viewer added via segment request');
             } catch (error) {

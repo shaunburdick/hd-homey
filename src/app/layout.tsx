@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Fira_Code } from 'next/font/google';
 import './globals.css';
 import Link from 'next/link';
@@ -9,11 +9,12 @@ const fira = Fira_Code({ subsets: ['latin'] });
 export const metadata: Metadata = {
     title: 'HD Homey',
     description: 'A proxy for HD Homerun devices',
-    viewport: {
-        width: 'device-width',
-        initialScale: 1,
-        maximumScale: 5,
-    },
+};
+
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
 };
 
 export default function RootLayout({

@@ -41,9 +41,9 @@ export function FormErrors({ errors, className = '' }: FormErrorsProps) {
                 }}
             >
                 {Object.entries(errors).map(([field, messages]) =>
-                    messages.map((message, idx) => (
+                    messages.map((message) => (
                         <li
-                            key={`${field}-${idx}`}
+                            key={`${field}-${message}`}
                             style={{
                                 marginBottom: 'var(--space-1)',
                             }}

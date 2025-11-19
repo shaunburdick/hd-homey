@@ -76,8 +76,8 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                                     }}
                                 >
                                     {Object.entries(errors).map(([field, messages]) =>
-                                        messages.map((message, idx) => (
-                                            <li key={`${field}-${idx}`}>
+                                        messages.map((message) => (
+                                            <li key={`${field}-${message}`}>
                                                 <strong>{field}:</strong>{' '}{message}
                                             </li>
                                         )))}

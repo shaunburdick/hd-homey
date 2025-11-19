@@ -28,14 +28,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         )
                     });
 
-                    if (!foundUser) {
+                    if (foundUser === undefined) {
                         // No user found, so this is their first attempt to login
                         // meaning this is also the place you could do registration
                         throw new Error('User not found.');
                     }
 
                     // verify the password
-                    if (await verifyPassword(foundUser?.passHash, credentials.password)) {
+                    if (await verifyPassword(foundUser.passHash, credentials.password)) {
                         // Convert id to string for NextAuth compatibility
                         user = {
                             ...foundUser,
@@ -55,17 +55,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ],
     callbacks: {
         jwt({ token, user }) {
-            // Persist user data to JWT token on sign in
-            if (user) {
-                token.id = user.id;
-                token.username = user.username;
-                token.role = user.role;
+            // Persist user data to JWT token on sign in (only on initial sign-in)
+            // User parameter is only present during sign-in, not on token refresh
+            const userData = user as typeof user | undefined;
+            if (userData !== undefined) {
+                token.id = userData.id;
+                token.username = userData.username;
+                token.role = userData.role;
             }
             return token;
         },
         session({ session, token }) {
             // Add user data from token to session
-            if (token && session.user) {
+            if (session.user !== undefined) {
                 session.user.id = Number(token.id);
                 session.user.username = token.username;
                 session.user.role = token.role;

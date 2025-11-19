@@ -1,9 +1,10 @@
-import type { IncomingMessage } from 'http';
-import http from 'http';
+import type { IncomingMessage } from 'node:http';
+import http from 'node:http';
 import { and, eq, inArray, not, sql } from 'drizzle-orm';
 import type { ChannelInfo } from './types';
 import type { DB } from '@/lib/database/db';
-import { channels, tuners, type Channel } from '@/lib/database/schema';
+import { channels, tuners  } from '@/lib/database/schema';
+import type { Channel } from '@/lib/database/schema';
 
 /**
  * Represents a HD Homerun Tuner
@@ -23,7 +24,7 @@ export class HDTuner {
 
         const lineUpRequest = await fetch(reqUrl);
 
-        return lineUpRequest.json();
+        return await lineUpRequest.json();
     }
 
     /**
@@ -61,7 +62,7 @@ export class HDTuner {
                 guideName: c.GuideName,
                 audioCodec: c.AudioCodec,
                 videoCodec: c.VideoCodec,
-                hd: c.HD || 0,
+                hd: c.HD ?? 0,
                 url: c.URL
             }))).onConflictDoUpdate({
                 target: [channels.fk_tuner, channels.guideNumber],
@@ -87,7 +88,7 @@ export class HDTuner {
      * @return A Readable Stream of the HTTP request for the channel
      */
     public async stream(channel: string): Promise<IncomingMessage> {
-        return new Promise<IncomingMessage>((resolve, reject) => {
+        return await new Promise<IncomingMessage>((resolve, reject) => {
             const url = new URL(this.address);
             url.port = '5004'; // streaming is usually on port 5004
             // auto: use any tuner

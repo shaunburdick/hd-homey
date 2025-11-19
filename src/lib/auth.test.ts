@@ -3,6 +3,13 @@ import type { Session } from 'next-auth';
 import { requireAdmin, requireRole, AuthRoles } from './auth';
 import * as authModule from '@/auth';
 
+// Test constants
+const TEST_ADMIN = 'admin';
+const TEST_VIEWER_ROLE = 'viewer';
+const ADMIN_USER_NAME = 'Admin User';
+const VIEWER_USER_NAME = 'Viewer User';
+const NOT_AUTHENTICATED_ERROR = 'Not authenticated';
+
 // Mock the auth module
 vi.mock('@/auth', () => ({
     auth: vi.fn()
@@ -18,8 +25,8 @@ describe('Authorization Helpers', () => {
             const mockSession: Session = {
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN,
+                    name: ADMIN_USER_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -35,15 +42,15 @@ describe('Authorization Helpers', () => {
         it('should throw error when user is not authenticated', async () => {
             vi.spyOn(authModule, 'auth').mockResolvedValue(null as never);
 
-            await expect(requireRole(AuthRoles.Admin)).rejects.toThrow('Not authenticated');
+            await expect(requireRole(AuthRoles.Admin)).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
         });
 
         it('should throw error when user does not have required role', async () => {
             const mockSession: Session = {
                 user: {
                     id: '1',
-                    username: 'viewer',
-                    name: 'Viewer User',
+                    username: TEST_VIEWER_ROLE,
+                    name: VIEWER_USER_NAME,
                     role: AuthRoles.Viewer,
                     is_active: true
                 },
@@ -59,8 +66,8 @@ describe('Authorization Helpers', () => {
             const mockSession: Session = {
                 user: {
                     id: '2',
-                    username: 'viewer',
-                    name: 'Viewer User',
+                    username: TEST_VIEWER_ROLE,
+                    name: VIEWER_USER_NAME,
                     role: AuthRoles.Viewer,
                     is_active: true
                 },
@@ -77,8 +84,8 @@ describe('Authorization Helpers', () => {
             const mockSession: Session = {
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN,
+                    name: ADMIN_USER_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -92,7 +99,7 @@ describe('Authorization Helpers', () => {
                 expect.fail('Should have thrown error');
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
-                expect((error as Error).message).toContain('viewer');
+                expect((error as Error).message).toContain(TEST_VIEWER_ROLE);
             }
         });
     });
@@ -102,8 +109,8 @@ describe('Authorization Helpers', () => {
             const mockSession: Session = {
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN,
+                    name: ADMIN_USER_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -120,8 +127,8 @@ describe('Authorization Helpers', () => {
             const mockSession: Session = {
                 user: {
                     id: '2',
-                    username: 'viewer',
-                    name: 'Viewer User',
+                    username: TEST_VIEWER_ROLE,
+                    name: VIEWER_USER_NAME,
                     role: AuthRoles.Viewer,
                     is_active: true
                 },
@@ -136,15 +143,15 @@ describe('Authorization Helpers', () => {
         it('should throw error when user is not authenticated', async () => {
             vi.spyOn(authModule, 'auth').mockResolvedValue(null as never);
 
-            await expect(requireAdmin()).rejects.toThrow('Not authenticated');
+            await expect(requireAdmin()).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
         });
 
         it('should be alias for requireRole(AuthRoles.Admin)', async () => {
             const adminSession: Session = {
                 user: {
                     id: '1',
-                    username: 'admin',
-                    name: 'Admin User',
+                    username: TEST_ADMIN,
+                    name: ADMIN_USER_NAME,
                     role: AuthRoles.Admin,
                     is_active: true
                 },
@@ -169,7 +176,7 @@ describe('Authorization Helpers', () => {
 
             vi.spyOn(authModule, 'auth').mockResolvedValue(invalidSession as never);
 
-            await expect(requireAdmin()).rejects.toThrow('Not authenticated');
+            await expect(requireAdmin()).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
         });
 
         it('should validate role matches exactly', async () => {
@@ -192,7 +199,7 @@ describe('Authorization Helpers', () => {
         it('should handle expired or missing session', async () => {
             vi.spyOn(authModule, 'auth').mockResolvedValue(undefined as never);
 
-            await expect(requireAdmin()).rejects.toThrow('Not authenticated');
+            await expect(requireAdmin()).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
         });
     });
 

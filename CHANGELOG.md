@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Dependencies**: Updated all npm dependencies to latest versions
+  - React 18 → 19.2.0 (major)
+  - Next.js 15 → 16.0.3 (major)
+  - bcrypt 5 → 6.0.0 (major)
+  - better-sqlite3 11 → 12.4.1 (major)
+  - next-auth 5.0.0-beta.25 → 5.0.0-beta.30 (beta)
+  - All type definitions updated to match
+  - eslint-config-next updated to 16.0.3
+
+- **ESLint Configuration**: Added Next.js ESLint plugin with recommended and core-web-vitals rules
+- **Code Quality**: Fixed all ESLint errors (223 → 0)
+  - Refactored React setState-in-effect patterns
+  - Fixed accessibility issues
+  - Eliminated duplicate string literals
+  - Improved null/undefined checks
+  - Reduced cognitive complexity
+  - Added proper viewport configuration
+
+- **Images**: Converted `<img>` tags to Next.js `<Image>` component for better optimization
+
 ## [1.0.0-alpha.4] - 2025-01-18
 
 **Note**: This release completes the design system overhaul with enhanced accessibility, mobile optimization, and comprehensive UI/UX improvements.

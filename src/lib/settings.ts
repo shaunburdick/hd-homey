@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { getDb } from './database/db';
 import { settings } from './database/schema';
@@ -15,7 +15,7 @@ export async function getSetting(key: string): Promise<string | null> {
         const setting = await db.query.settings.findFirst({
             where: eq(settings.key, key)
         });
-        return setting?.value || null;
+        return setting?.value ?? null;
     } catch (err) {
         Logger.error({ err, key }, 'Failed to get setting');
         return null;
@@ -54,7 +54,7 @@ export function generateStreamSecret(): string {
 export async function getStreamSecret(): Promise<string> {
     let secret = await getSetting('stream_secret');
 
-    if (!secret) {
+    if (secret === null || secret === '') {
         Logger.warn('Stream secret not found, generating new one');
         secret = generateStreamSecret();
         await setSetting('stream_secret', secret);
@@ -71,6 +71,20 @@ export async function regenerateStreamSecret(): Promise<string> {
     await setSetting('stream_secret', newSecret);
     Logger.info('Stream secret regenerated');
     return newSecret;
+}
+
+/**
+ * Check if a setting value is valid (not null or empty)
+ */
+function isValidSetting(value: string | null): boolean {
+    return value !== null && value !== '';
+}
+
+/**
+ * Parse string setting as integer with fallback
+ */
+function parseIntSetting(value: string | null, fallback: number): number {
+    return isValidSetting(value) ? parseInt(value as string, 10) : fallback;
 }
 
 /**
@@ -92,21 +106,20 @@ export async function getTranscodingSettings(): Promise<TranscodeSettings> {
 
         return {
             enabled: enabled === 'true',
-            preset: (preset as TranscodeSettings['preset']) || DEFAULT_SETTINGS.preset,
-            videoCodec:
-                (videoCodec as TranscodeSettings['videoCodec']) || DEFAULT_SETTINGS.videoCodec,
-            videoBitrate: videoBitrate ? parseInt(videoBitrate, 10) : DEFAULT_SETTINGS.videoBitrate,
-            audioBitrate: audioBitrate ? parseInt(audioBitrate, 10) : DEFAULT_SETTINGS.audioBitrate,
-            resolution: (resolution as TranscodeSettings['resolution']) || DEFAULT_SETTINGS.resolution,
-            framerate: framerate
-                ? parseInt(framerate, 10) as TranscodeSettings['framerate']
-                : DEFAULT_SETTINGS.framerate,
-            maxSessions: maxSessions ? parseInt(maxSessions, 10) : DEFAULT_SETTINGS.maxSessions,
-            segmentDuration:
-                segmentDuration ? parseInt(segmentDuration, 10) : DEFAULT_SETTINGS.segmentDuration,
-            playlistSize: playlistSize ? parseInt(playlistSize, 10) : DEFAULT_SETTINGS.playlistSize,
-            hardwareAccel:
-                (hardwareAccel as TranscodeSettings['hardwareAccel']) || DEFAULT_SETTINGS.hardwareAccel,
+            preset: (isValidSetting(preset) ? preset as TranscodeSettings['preset'] : null)
+                ?? DEFAULT_SETTINGS.preset,
+            videoCodec: (isValidSetting(videoCodec) ? videoCodec as TranscodeSettings['videoCodec'] : null)
+                ?? DEFAULT_SETTINGS.videoCodec,
+            videoBitrate: parseIntSetting(videoBitrate, DEFAULT_SETTINGS.videoBitrate),
+            audioBitrate: parseIntSetting(audioBitrate, DEFAULT_SETTINGS.audioBitrate),
+            resolution: (isValidSetting(resolution) ? resolution as TranscodeSettings['resolution'] : null)
+                ?? DEFAULT_SETTINGS.resolution,
+            framerate: parseIntSetting(framerate, DEFAULT_SETTINGS.framerate) as TranscodeSettings['framerate'],
+            maxSessions: parseIntSetting(maxSessions, DEFAULT_SETTINGS.maxSessions),
+            segmentDuration: parseIntSetting(segmentDuration, DEFAULT_SETTINGS.segmentDuration),
+            playlistSize: parseIntSetting(playlistSize, DEFAULT_SETTINGS.playlistSize),
+            hardwareAccel: (isValidSetting(hardwareAccel) ? hardwareAccel as TranscodeSettings['hardwareAccel'] : null)
+                ?? DEFAULT_SETTINGS.hardwareAccel,
         };
     } catch (err) {
         Logger.error({ err }, 'Failed to get transcoding settings');
