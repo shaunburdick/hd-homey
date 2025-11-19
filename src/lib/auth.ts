@@ -13,7 +13,7 @@ export { AuthRoles };
 export async function requireRole(role: AuthRoles) {
     const session = await auth();
 
-    if (session === null || session === undefined || !session.user) {
+    if (!session?.user) {
         throw new Error('Not authenticated');
     }
 

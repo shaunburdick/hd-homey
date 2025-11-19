@@ -23,7 +23,7 @@ export async function createUser(prevState: unknown, formData: FormData) {
     const passwordString = (password !== null && password !== undefined)
         ? password.toString()
         : '';
-    
+
     const newUser = {
         username: formData.get('username'),
         name: formData.get('name'),
