@@ -16,7 +16,7 @@ let cachedFFmpegInfo: FFmpegInfo | null = null;
  * Detect if ffmpeg is available and get its capabilities
  */
 export async function detectFFmpeg(): Promise<FFmpegInfo> {
-    if (cachedFFmpegInfo !== null && cachedFFmpegInfo !== undefined) {
+    if (cachedFFmpegInfo) {
         return cachedFFmpegInfo;
     }
 
