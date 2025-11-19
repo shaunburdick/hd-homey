@@ -82,8 +82,8 @@ jobs:
                       type=semver,pattern={{version}}
                       type=semver,pattern={{major}}.{{minor}}
                       type=semver,pattern={{major}}
-                      # Tag with sha for traceability
-                      type=sha,prefix={{branch}}-
+                      # Tag with sha for traceability (branch pushes only)
+                      type=sha,prefix={{branch}}-,enable={{is_default_branch}}
                       # Latest tag for default branch
                       type=raw,value=latest,enable={{is_default_branch}}
                   labels: |
@@ -181,7 +181,7 @@ jobs:
                       type=semver,pattern={{version}}
                       type=semver,pattern={{major}}.{{minor}}
                       type=semver,pattern={{major}}
-                      type=sha,prefix={{branch}}-
+                      type=sha,prefix={{branch}}-,enable={{is_default_branch}}
                       type=raw,value=latest,enable={{is_default_branch}}
 
             - name: Create and push image tags
