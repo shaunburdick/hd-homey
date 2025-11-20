@@ -21,12 +21,13 @@ header > nav:first-child {
 
 header > nav > ul {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     list-style-type: none;
     margin: 0;
     padding: 0;
     width: 100%;
+    gap: var(--space-2);
 }
 
 /* Logo styles */
@@ -43,6 +44,10 @@ header > nav > ul {
 /* Desktop menu items - hidden on mobile */
 .desktop-menu-item {
     display: none;
+}
+
+.desktop-menu-item:last-child {
+    margin-left: auto;
 }
 
 /* Active page indicator */
@@ -162,12 +167,10 @@ header > nav > ul {
 @media (min-width: 768px) {
     .desktop-menu-item {
         display: block;
-        margin-left: var(--space-4);
     }
     
     .desktop-menu-item.logo {
-        margin-left: 0;
-        margin-right: var(--space-4);
+        margin-right: var(--space-2);
     }
 
     .desktop-menu-item a {
