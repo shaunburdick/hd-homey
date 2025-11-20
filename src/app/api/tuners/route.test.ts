@@ -1,23 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GET } from './route';
-import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
+import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import type { DB } from '@/lib/database/db';
 
-// Mock the database module
 let testDb: DB;
+
 vi.mock('@/lib/database/db', () => ({
-    getDb: vi.fn(() => Promise.resolve(testDb))
+    getDb: vi.fn(() => Promise.resolve(testDb)),
 }));
+
+const { refreshDb } = setupTestDatabase();
 
 describe('GET /api/tuners', () => {
     beforeEach(async () => {
-        testDb = createTestDatabase();
-        await seedTestDatabase(testDb);
+        testDb = await refreshDb({ seed: true });
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        cleanupTestDatabase(testDb);
     });
 
     it('should return all active tuners', async () => {

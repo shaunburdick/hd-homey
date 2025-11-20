@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from './database/db';
 import { settings } from './database/schema';
 import Logger from './logger';
@@ -23,6 +23,32 @@ export async function getSetting(key: string): Promise<string | null> {
 }
 
 /**
+ * Get multiple settings in a single query
+ */
+export async function getSettings(keys: string[]): Promise<Record<string, string | null>> {
+    try {
+        if (keys.length === 0) {
+            return {};
+        }
+
+        const db = await getDb();
+        const results = await db.query.settings.findMany({
+            where: inArray(settings.key, keys)
+        });
+
+        const settingsMap: Record<string, string | null> = {};
+        for (const key of keys) {
+            settingsMap[key] = results.find(s => s.key === key)?.value ?? null;
+        }
+
+        return settingsMap;
+    } catch (err) {
+        Logger.error({ err, keys }, 'Failed to get settings');
+        return Object.fromEntries(keys.map(key => [key, null]));
+    }
+}
+
+/**
  * Set a setting value in database
  */
 export async function setSetting(key: string, value: string): Promise<void> {
@@ -37,6 +63,35 @@ export async function setSetting(key: string, value: string): Promise<void> {
             });
     } catch (err) {
         Logger.error({ err, key }, 'Failed to set setting');
+        throw err;
+    }
+}
+
+/**
+ * Set multiple settings in a single operation
+ */
+export async function setSettings(kvPairs: Record<string, string>): Promise<void> {
+    try {
+        const entries = Object.entries(kvPairs);
+        if (entries.length === 0) {
+            return;
+        }
+
+        const db = await getDb();
+        const modifiedDate = new Date();
+
+        await db
+            .insert(settings)
+            .values(entries.map(([key, value]) => ({ key, value })))
+            .onConflictDoUpdate({
+                target: settings.key,
+                set: {
+                    value: sql`excluded.value`,
+                    modified_at: modifiedDate
+                }
+            });
+    } catch (err) {
+        Logger.error({ err, count: Object.keys(kvPairs).length }, 'Failed to set settings');
         throw err;
     }
 }
@@ -92,34 +147,45 @@ function parseIntSetting(value: string | null, fallback: number): number {
  */
 export async function getTranscodingSettings(): Promise<TranscodeSettings> {
     try {
-        const enabled = await getSetting('transcoding.enabled');
-        const preset = await getSetting('transcoding.preset');
-        const videoCodec = await getSetting('transcoding.video_codec');
-        const videoBitrate = await getSetting('transcoding.video_bitrate');
-        const audioBitrate = await getSetting('transcoding.audio_bitrate');
-        const resolution = await getSetting('transcoding.resolution');
-        const framerate = await getSetting('transcoding.framerate');
-        const maxSessions = await getSetting('transcoding.max_sessions');
-        const segmentDuration = await getSetting('transcoding.segment_duration');
-        const playlistSize = await getSetting('transcoding.playlist_size');
-        const hardwareAccel = await getSetting('transcoding.hardware_accel');
+        const keys = [
+            'transcoding.enabled',
+            'transcoding.preset',
+            'transcoding.video_codec',
+            'transcoding.video_bitrate',
+            'transcoding.audio_bitrate',
+            'transcoding.resolution',
+            'transcoding.framerate',
+            'transcoding.max_sessions',
+            'transcoding.segment_duration',
+            'transcoding.playlist_size',
+            'transcoding.hardware_accel',
+        ];
+
+        const values = await getSettings(keys);
 
         return {
-            enabled: enabled === 'true',
-            preset: (isValidSetting(preset) ? preset as TranscodeSettings['preset'] : null)
-                ?? DEFAULT_SETTINGS.preset,
-            videoCodec: (isValidSetting(videoCodec) ? videoCodec as TranscodeSettings['videoCodec'] : null)
-                ?? DEFAULT_SETTINGS.videoCodec,
-            videoBitrate: parseIntSetting(videoBitrate, DEFAULT_SETTINGS.videoBitrate),
-            audioBitrate: parseIntSetting(audioBitrate, DEFAULT_SETTINGS.audioBitrate),
-            resolution: (isValidSetting(resolution) ? resolution as TranscodeSettings['resolution'] : null)
-                ?? DEFAULT_SETTINGS.resolution,
-            framerate: parseIntSetting(framerate, DEFAULT_SETTINGS.framerate) as TranscodeSettings['framerate'],
-            maxSessions: parseIntSetting(maxSessions, DEFAULT_SETTINGS.maxSessions),
-            segmentDuration: parseIntSetting(segmentDuration, DEFAULT_SETTINGS.segmentDuration),
-            playlistSize: parseIntSetting(playlistSize, DEFAULT_SETTINGS.playlistSize),
-            hardwareAccel: (isValidSetting(hardwareAccel) ? hardwareAccel as TranscodeSettings['hardwareAccel'] : null)
-                ?? DEFAULT_SETTINGS.hardwareAccel,
+            enabled: values['transcoding.enabled'] === 'true',
+            preset: (isValidSetting(values['transcoding.preset'])
+                ? values['transcoding.preset'] as TranscodeSettings['preset']
+                : null) ?? DEFAULT_SETTINGS.preset,
+            videoCodec: (isValidSetting(values['transcoding.video_codec'])
+                ? values['transcoding.video_codec'] as TranscodeSettings['videoCodec']
+                : null) ?? DEFAULT_SETTINGS.videoCodec,
+            videoBitrate: parseIntSetting(values['transcoding.video_bitrate'], DEFAULT_SETTINGS.videoBitrate),
+            audioBitrate: parseIntSetting(values['transcoding.audio_bitrate'], DEFAULT_SETTINGS.audioBitrate),
+            resolution: (isValidSetting(values['transcoding.resolution'])
+                ? values['transcoding.resolution'] as TranscodeSettings['resolution']
+                : null) ?? DEFAULT_SETTINGS.resolution,
+            framerate: parseIntSetting(
+                values['transcoding.framerate'],
+                DEFAULT_SETTINGS.framerate
+            ) as TranscodeSettings['framerate'],
+            maxSessions: parseIntSetting(values['transcoding.max_sessions'], DEFAULT_SETTINGS.maxSessions),
+            segmentDuration: parseIntSetting(values['transcoding.segment_duration'], DEFAULT_SETTINGS.segmentDuration),
+            playlistSize: parseIntSetting(values['transcoding.playlist_size'], DEFAULT_SETTINGS.playlistSize),
+            hardwareAccel: (isValidSetting(values['transcoding.hardware_accel'])
+                ? values['transcoding.hardware_accel'] as TranscodeSettings['hardwareAccel']
+                : null) ?? DEFAULT_SETTINGS.hardwareAccel,
         };
     } catch (err) {
         Logger.error({ err }, 'Failed to get transcoding settings');
@@ -132,17 +198,19 @@ export async function getTranscodingSettings(): Promise<TranscodeSettings> {
  */
 export async function updateTranscodingSettings(newSettings: TranscodeSettings): Promise<void> {
     try {
-        await setSetting('transcoding.enabled', newSettings.enabled.toString());
-        await setSetting('transcoding.preset', newSettings.preset);
-        await setSetting('transcoding.video_codec', newSettings.videoCodec);
-        await setSetting('transcoding.video_bitrate', newSettings.videoBitrate.toString());
-        await setSetting('transcoding.audio_bitrate', newSettings.audioBitrate.toString());
-        await setSetting('transcoding.resolution', newSettings.resolution);
-        await setSetting('transcoding.framerate', newSettings.framerate.toString());
-        await setSetting('transcoding.max_sessions', newSettings.maxSessions.toString());
-        await setSetting('transcoding.segment_duration', newSettings.segmentDuration.toString());
-        await setSetting('transcoding.playlist_size', newSettings.playlistSize.toString());
-        await setSetting('transcoding.hardware_accel', newSettings.hardwareAccel);
+        await setSettings({
+            'transcoding.enabled': newSettings.enabled.toString(),
+            'transcoding.preset': newSettings.preset,
+            'transcoding.video_codec': newSettings.videoCodec,
+            'transcoding.video_bitrate': newSettings.videoBitrate.toString(),
+            'transcoding.audio_bitrate': newSettings.audioBitrate.toString(),
+            'transcoding.resolution': newSettings.resolution,
+            'transcoding.framerate': newSettings.framerate.toString(),
+            'transcoding.max_sessions': newSettings.maxSessions.toString(),
+            'transcoding.segment_duration': newSettings.segmentDuration.toString(),
+            'transcoding.playlist_size': newSettings.playlistSize.toString(),
+            'transcoding.hardware_accel': newSettings.hardwareAccel,
+        });
 
         Logger.info({ settings: newSettings }, 'Transcoding settings updated');
     } catch (err) {

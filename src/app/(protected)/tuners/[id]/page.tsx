@@ -2,7 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getDb } from '@/lib/database/db';
-import { tuners } from '@/lib/database/schema';
+import { tuners, channels } from '@/lib/database/schema';
 import { AdminLink } from '@/components/AdminLink';
 import RoleGuard from '@/components/RoleGuard';
 import { AuthRoles } from '@/lib/auth-roles';
@@ -23,7 +23,12 @@ export default async function Page(props: { params: Promise<PageParams> }) {
             isNull(tuners.deleted_at)
         ),
         with: {
-            channels: true
+            channels: {
+                where: and(
+                    eq(channels.is_active, true),
+                    isNull(channels.deleted_at)
+                )
+            }
         }
     });
 

@@ -1,13 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GET, POST } from './route';
-import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
+import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import type { DB } from '@/lib/database/db';
 
-// Mock the database module
 let testDb: DB;
+
 vi.mock('@/lib/database/db', () => ({
-    getDb: vi.fn(() => Promise.resolve(testDb))
+    getDb: vi.fn(() => Promise.resolve(testDb)),
 }));
+
+const { refreshDb } = setupTestDatabase();
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
@@ -35,8 +37,7 @@ describe('GET /api/tuners/[id]', () => {
     let tunerId: number;
 
     beforeEach(async () => {
-        testDb = createTestDatabase();
-        await seedTestDatabase(testDb);
+        testDb = await refreshDb({ seed: true });
 
         // Get a test tuner ID
         const { tuners } = await import('@/lib/database/schema');
@@ -47,10 +48,6 @@ describe('GET /api/tuners/[id]', () => {
         tunerId = tuner.id;
 
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        cleanupTestDatabase(testDb);
     });
 
     it('should return tuner by ID', async () => {
@@ -111,8 +108,7 @@ describe('POST /api/tuners/[id]', () => {
     let tunerId: number;
 
     beforeEach(async () => {
-        testDb = createTestDatabase();
-        await seedTestDatabase(testDb);
+        await refreshDb({ seed: true });
 
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();
@@ -122,10 +118,6 @@ describe('POST /api/tuners/[id]', () => {
         tunerId = tuner.id;
 
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        cleanupTestDatabase(testDb);
     });
 
     it('should handle update request', async () => {

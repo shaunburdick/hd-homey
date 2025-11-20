@@ -1,25 +1,27 @@
 import http from 'node:http';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HDTuner } from './tuner';
-import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
+import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import { mockLineupData, createMockLineup, createMockChannel } from '@/test-utils/mock-hdhr';
 import { createMockFetch } from '@/test-utils/test-helpers';
 import type { DB } from '@/lib/database/db';
 
+let testDb: DB;
+
+vi.mock('@/lib/database/db', () => ({
+    getDb: vi.fn(() => Promise.resolve(testDb)),
+}));
+
+const { refreshDb } = setupTestDatabase();
+
 describe('HDTuner', () => {
-    let db: DB;
     let tuner: HDTuner;
     const testAddress = 'http://192.168.20.25';
     const TEST_AUTO_PATH = '/auto/v3.1';
 
     beforeEach(async () => {
-        db = createTestDatabase();
-        await seedTestDatabase(db);
+        testDb = await refreshDb({ seed: true });
         tuner = new HDTuner(testAddress);
-    });
-
-    afterEach(() => {
-        cleanupTestDatabase(db);
         vi.restoreAllMocks();
     });
 
@@ -101,7 +103,7 @@ describe('HDTuner', () => {
             global.fetch = mockFetch;
 
             const tunerId = 1;
-            const result = await tuner.updateLineup(db, tunerId);
+            const result = await tuner.updateLineup(testDb, tunerId);
 
             expect(result).toHaveLength(3);
             expect(result[0]).toHaveProperty('guideNumber', '3.1');
@@ -115,12 +117,12 @@ describe('HDTuner', () => {
             // First insert
             const mockFetch1 = createMockFetch([createMockChannel({ GuideNumber: '3.1', GuideName: 'Original Name' })]);
             global.fetch = mockFetch1;
-            await tuner.updateLineup(db, tunerId);
+            await tuner.updateLineup(testDb, tunerId);
 
             // Update with new name
             const mockFetch2 = createMockFetch([createMockChannel({ GuideNumber: '3.1', GuideName: 'Updated Name' })]);
             global.fetch = mockFetch2;
-            const result = await tuner.updateLineup(db, tunerId);
+            const result = await tuner.updateLineup(testDb, tunerId);
 
             expect(result).toHaveLength(1);
             expect(result[0].guideName).toBe('Updated Name');
@@ -134,15 +136,15 @@ describe('HDTuner', () => {
             // First insert with 3 channels
             const mockFetch1 = createMockFetch(createMockLineup(3));
             global.fetch = mockFetch1;
-            await tuner.updateLineup(db, tunerId);
+            await tuner.updateLineup(testDb, tunerId);
 
             // Update with only 1 channel
             const mockFetch2 = createMockFetch(createMockLineup(1));
             global.fetch = mockFetch2;
-            await tuner.updateLineup(db, tunerId);
+            await tuner.updateLineup(testDb, tunerId);
 
             // Check that 2 channels from the first update were deactivated
-            const allChannels = db.select().from(channels).where(eq(channels.fk_tuner, tunerId)).all();
+            const allChannels = testDb.select().from(channels).where(eq(channels.fk_tuner, tunerId)).all();
             const activeChannels = allChannels.filter(c => c.is_active);
             const inactiveChannels = allChannels.filter(c => !c.is_active);
 
@@ -157,7 +159,7 @@ describe('HDTuner', () => {
             const { tuners } = await import('@/lib/database/schema');
             const { eq } = await import('drizzle-orm');
 
-            const beforeScan = db.select().from(tuners).where(eq(tuners.id, tunerId)).get();
+            const beforeScan = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
             const originalLastScanned = beforeScan?.last_scanned;
 
             const mockFetch = createMockFetch(createMockLineup(2));
@@ -165,9 +167,9 @@ describe('HDTuner', () => {
 
             // Wait a tiny bit to ensure timestamp differs
             await new Promise(resolve => setTimeout(resolve, 10));
-            await tuner.updateLineup(db, tunerId);
+            await tuner.updateLineup(testDb, tunerId);
 
-            const afterScan = db.select().from(tuners).where(eq(tuners.id, tunerId)).get();
+            const afterScan = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
             expect(afterScan?.last_scanned).not.toBe(originalLastScanned);
             expect(afterScan?.last_scanned).toBeTruthy();
         });
@@ -179,7 +181,7 @@ describe('HDTuner', () => {
             const tunerId = 1;
 
             // Empty lineup causes insert error - this is a known issue
-            await expect(tuner.updateLineup(db, tunerId)).rejects.toThrow(
+            await expect(tuner.updateLineup(testDb, tunerId)).rejects.toThrow(
                 'values() must be called with at least one value'
             );
         });
@@ -192,7 +194,7 @@ describe('HDTuner', () => {
             global.fetch = mockFetch;
 
             const tunerId = 1;
-            const result = await tuner.updateLineup(db, tunerId);
+            const result = await tuner.updateLineup(testDb, tunerId);
 
             expect(result[0].hd).toBe(1);
             expect(result[1].hd).toBe(0); // Should default to 0
@@ -207,7 +209,7 @@ describe('HDTuner', () => {
             global.fetch = mockFetch;
 
             const tunerId = 1;
-            const result = await tuner.updateLineup(db, tunerId);
+            const result = await tuner.updateLineup(testDb, tunerId);
 
             expect(result[0].videoCodec).toBe('MPEG2');
             expect(result[0].audioCodec).toBe('AC3');

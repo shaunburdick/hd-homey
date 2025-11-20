@@ -5,6 +5,7 @@
  */
 
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { AuthRoles } from '@/lib/auth-roles';
 import { getTranscodingSettings, updateTranscodingSettings } from '@/lib/settings';
@@ -92,6 +93,7 @@ export async function updateTranscodingSettingsAction(
         // Save settings
         await updateTranscodingSettings(settings);
 
+        revalidatePath('/settings');
         redirect('/settings');
     } catch (error) {
         if (error instanceof Error && error.message === 'NEXT_REDIRECT') {

@@ -5,7 +5,7 @@ import * as schema from '@/lib/database/schema';
 import type { DB } from '@/lib/database/db';
 
 /**
- * Create an in-memory SQLite database for testing
+ * Create an in-memory SQLite database for testing with migrations applied
  */
 export function createTestDatabase(): DB {
     const sqlite = new Database(':memory:');
@@ -89,4 +89,51 @@ export function cleanupTestDatabase(db: DB) {
     db.delete(channels).run();
     db.delete(tuners).run();
     db.delete(users).run();
+}
+
+/**
+ * Setup test database helper - creates fresh database and optionally mocks getDb()
+ *
+ * This helper simplifies test setup by handling database creation and mocking.
+ * The mock MUST be set up at module level for vi.mock() hoisting to work properly.
+ *
+ * @returns Object with testDb ref and refreshDb function
+ *
+ * @example
+ * // At top of test file
+ * import { setupTestDatabase } from '@/test-utils/setup-test-db';
+ *
+ * // Create test database reference
+ * let testDb: DB;
+ *
+ * // Mock getDb() - MUST be at module level for hoisting
+ * vi.mock('@/lib/database/db', () => ({
+ *     getDb: vi.fn(() => Promise.resolve(testDb))
+ * }));
+ *
+ * const { refreshDb } = setupTestDatabase();
+ *
+ * describe('My Tests', () => {
+ *   beforeEach(async () => {
+ *     testDb = await refreshDb({ seed: true });
+ *   });
+ * });
+ */
+export function setupTestDatabase() {
+    return {
+        /**
+         * Creates a fresh database instance with migrations.
+         * Call this in beforeEach to get a clean database for each test.
+         *
+         * @param options.seed - Whether to seed the database with test data (default: false)
+         * @returns The created database instance
+         */
+        async refreshDb(options?: { seed?: boolean }): Promise<DB> {
+            const db = createTestDatabase();
+            if (options?.seed === true) {
+                await seedTestDatabase(db);
+            }
+            return db;
+        },
+    };
 }

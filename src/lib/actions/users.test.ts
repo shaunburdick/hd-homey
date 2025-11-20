@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createUser, updateUser } from './users';
-import { createTestDatabase, seedTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
+import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import { AuthRoles } from '@/lib/auth-roles';
 import type { DB } from '@/lib/database/db';
 import * as authModule from '@/lib/auth';
@@ -16,11 +16,13 @@ vi.mock('next/cache', () => ({
     revalidatePath: vi.fn()
 }));
 
-// Mock database getter
 let testDb: DB;
+
 vi.mock('@/lib/database/db', () => ({
-    getDb: vi.fn(() => Promise.resolve(testDb))
+    getDb: vi.fn(() => Promise.resolve(testDb)),
 }));
+
+const { refreshDb } = setupTestDatabase();
 
 describe('User Actions', () => {
     // Test constants
@@ -31,13 +33,8 @@ describe('User Actions', () => {
     const TEST_SETUP_ERROR = 'Test setup failed: no user found';
 
     beforeEach(async () => {
-        testDb = createTestDatabase();
-        await seedTestDatabase(testDb);
+        testDb = await refreshDb({ seed: true });
         vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-        cleanupTestDatabase(testDb);
     });
 
     describe('createUser', () => {

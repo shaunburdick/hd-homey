@@ -13,6 +13,10 @@ interface StatusResponse {
     count: number;
 }
 
+// Design system token constants
+const SPACE_4 = 'var(--space-4)';
+const TEXT_PRIMARY = 'var(--color-text-primary)';
+
 export default function TranscodingStatus() {
     const [status, setStatus] = useState<StatusResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -83,9 +87,21 @@ export default function TranscodingStatus() {
 
     if (error) {
         return (
-            <div style={{ padding: '1rem', backgroundColor: '#fee', border: '1px solid #fcc' }}>
+            <div
+                style={{
+                    padding: SPACE_4,
+                    backgroundColor: 'var(--color-error-bg)',
+                    border: '1px solid var(--color-error)',
+                    marginBottom: SPACE_4,
+                    color: 'var(--color-error)',
+                }}
+            >
                 <p>Error loading status: {error}</p>
-                <button type="button" onClick={() => void fetchStatus()}>
+                <button
+                    type="button"
+                    onClick={() => void fetchStatus()}
+                    style={{ color: TEXT_PRIMARY }}
+                >
                     Retry
                 </button>
             </div>
@@ -139,21 +155,30 @@ export default function TranscodingStatus() {
             {stoppingSession && (
                 <div
                     style={{
-                        padding: '1rem',
-                        backgroundColor: '#fff3cd',
-                        border: '1px solid #ffc107',
-                        marginBottom: '1rem',
+                        padding: SPACE_4,
+                        backgroundColor: 'var(--color-warning-bg)',
+                        border: '1px solid var(--color-warning)',
+                        marginBottom: SPACE_4,
+                        color: 'var(--color-warning)',
                     }}
                 >
                     <p>
                         <strong>Stop session {stoppingSession}?</strong>
                     </p>
                     <p>
-                        <button type="button" onClick={() => void confirmStopSession()}>
+                        <button
+                            type="button"
+                            onClick={() => void confirmStopSession()}
+                            style={{ color: TEXT_PRIMARY }}
+                        >
                             Yes, Stop Session
                         </button>
                         {' '}
-                        <button type="button" onClick={() => setStoppingSession(null)}>
+                        <button
+                            type="button"
+                            onClick={() => setStoppingSession(null)}
+                            style={{ color: TEXT_PRIMARY }}
+                        >
                             Cancel
                         </button>
                     </p>
@@ -193,7 +218,7 @@ export default function TranscodingStatus() {
                                     type="button"
                                     onClick={() => void stopSession(session.sessionId)}
                                     disabled={session.status === 'stopping'}
-                                    style={{ fontSize: '0.875rem' }}
+                                    style={{ fontSize: '0.875rem', color: 'inherit' }}
                                 >
                                     Stop
                                 </button>

@@ -5,7 +5,6 @@
  */
 
 import { useActionState, useEffect, useState } from 'react';
-import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import type { FormState } from '@/lib/actions/transcoding';
 import { updateTranscodingSettingsAction, applyPreset } from '@/lib/actions/transcoding';
 import type { TranscodeSettings, FFmpegInfo } from '@/lib/transcoding/types';
@@ -44,20 +43,6 @@ export default function TranscodingSettings({
         }
     };
 
-    // Handle form submission with error handling
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-
-        try {
-            await formAction(formData);
-        } catch (error) {
-            if (isRedirectError(error)) {
-                throw error;
-            }
-        }
-    };
-
     useEffect(() => {
         if (state.success) {
             // Settings saved successfully - page will redirect
@@ -82,7 +67,7 @@ export default function TranscodingSettings({
     }
 
     return (
-        <form onSubmit={handleSubmit} style={{
+        <form action={formAction} style={{
             padding: 'var(--space-4)',
             backgroundColor: 'var(--color-bg-secondary)',
             border: '1px solid var(--color-border)',

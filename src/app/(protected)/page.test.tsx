@@ -1,19 +1,19 @@
-import { expect, test, vi, beforeAll } from 'vitest';
+import { expect, test, beforeAll, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { createTestDatabase, seedTestDatabase } from '@/test-utils/setup-test-db';
+import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import type { DB } from '@/lib/database/db';
 
 let testDb: DB;
 
-// Mock the database before importing the component
 vi.mock('@/lib/database/db', () => ({
-    getDb: vi.fn(() => testDb)
+    getDb: vi.fn(() => Promise.resolve(testDb)),
 }));
+
+const { refreshDb } = setupTestDatabase();
 
 // Set up test database
 beforeAll(async () => {
-    testDb = createTestDatabase();
-    await seedTestDatabase(testDb);
+    testDb = await refreshDb({ seed: true });
 });
 
 test('Page', async () => {
