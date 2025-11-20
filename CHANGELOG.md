@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] - 2025-11-20
+
+**Note**: This is the first beta release! All core features are now complete and tested. Beta releases focus on stability, bug fixes, and user feedback before moving to release candidate status.
+
+### Added
+
+- **User Profile Page**: New `/profile` page accessible to all authenticated users
+  - View account information (username, display name, role, account creation date)
+  - Change password functionality with validation
+  - Profile menu item added to navigation for all users
+- **Password Change**: Secure password management for all users
+  - Requires current password verification
+  - Enforces 8 character minimum for new passwords
+  - Confirmation password validation
+  - Users can only change their own password
+  - Success message displayed after password change
+- **Settings Database Optimization**: Batch operations for settings
+  - New `getSetting()` function for retrieving multiple settings at once
+  - New `updateSettings()` function for batch updates
+  - Reduces database queries from N to 1 for settings operations
+- **Comprehensive Test Coverage**: 154 tests total (was 147)
+  - 7 new tests for profile password change functionality
+  - Tests cover validation, security, and success scenarios
+
+### Changed
+
+- **Navigation Layout**: Improved menu item spacing
+  - Changed from `space-between` to `flex-start` with gap spacing
+  - Better accommodates additional menu items without wrapping
+  - Sign Out button pushed to the right with auto margin
+- **Settings Page Access**: Now admin-only with proper navigation hiding
+  - Settings menu item hidden from viewer role
+  - Viewers see Profile menu item instead
+  - Better UX - users don't see options they can't access
+- **Channel Queries**: Inactive channels now filtered at database query level
+  - More efficient than client-side filtering
+  - Consistent behavior across all channel listings
+
+### Fixed
+
+- **Settings Page Refresh**: Transcoding settings now update immediately after save
+  - Added `router.refresh()` after successful save
+  - No need to manually refresh page to see updated values
+- **Transcoding Settings Form**: Fixed React useActionState transition warning
+  - Wrapped formAction call in `startTransition`
+  - Proper async handling with redirect error detection
+- **UI Consistency**: Fixed text color issues across multiple components
+  - Active sessions action buttons now have proper contrast
+  - Stop confirmation dialog text and buttons use design tokens
+  - Error displays use proper text colors
+- **Quick Start Documentation**: Improved setup instructions
+  - Now downloads and uses `.env-example` file
+  - Auto-generates secure AUTH_SECRET
+  - NEXTAUTH_URL marked as optional (auto-detected)
+  - More user-friendly workflow
+- **CI/CD TypeCheck**: Fixed TypeScript path resolution in GitHub Actions
+  - Added `next typegen` step before typecheck
+  - Generates required type definitions for proper module resolution
+  - `@public/*` path alias now works in CI environment
+- **Cursor Indicators**: All clickable cards now show pointer cursor
+  - Fixed on tuner cards, channel cards, and user cards
+  - Better UX showing interactive elements
+- **Account Information Display**: Profile page now uses InfoCard component
+  - Consistent styling with other info cards throughout the app
+  - Professional presentation of user information
+
 ## [1.0.0-alpha.9] - 2025-11-19
 
 **Note**: This patch adds image file type declarations for TypeScript compilation.

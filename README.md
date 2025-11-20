@@ -4,7 +4,7 @@
 
 [![Docker](https://github.com/shaunburdick/hd-homey/actions/workflows/docker.yml/badge.svg)](https://github.com/shaunburdick/hd-homey/actions/workflows/docker.yml)
 [![Tests](https://github.com/shaunburdick/hd-homey/actions/workflows/test.yml/badge.svg)](https://github.com/shaunburdick/hd-homey/actions/workflows/test.yml)
-![Version](https://img.shields.io/badge/version-1.0.0--alpha.8-orange)
+![Version](https://img.shields.io/badge/version-1.0.0--beta.1-blue)
 
 **A secure web proxy for [HDHomeRun](https://www.silicondust.com/hdhomerun/) devices that enables remote access to your live TV streams over the internet.**
 
