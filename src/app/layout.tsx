@@ -3,6 +3,7 @@ import { Fira_Code } from 'next/font/google';
 import './globals.css';
 import Link from 'next/link';
 import { SessionProvider } from '@/components/SessionProvider';
+import { getVersion } from '@/lib/version';
 
 const fira = Fira_Code({ subsets: ['latin'] });
 
@@ -22,6 +23,8 @@ export default function RootLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const version = getVersion();
+
     return (
         <html lang="en" style={{ height: '100%' }}>
             <head>
@@ -37,7 +40,7 @@ export default function RootLayout({
                     </main>
                     <footer>
                         <hr />
-                        2024 © Shaun Burdick - <Link href='https://github.com/shaunburdick/hd-homey' style={{ color: '#5c9fff' }}>GitHub</Link>
+                        2024 © Shaun Burdick - <Link href='https://github.com/shaunburdick/hd-homey' style={{ color: '#5c9fff' }}>GitHub</Link> - v{version}
                     </footer>
                 </SessionProvider>
             </body>
