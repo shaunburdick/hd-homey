@@ -2,10 +2,10 @@
 
 **Feature ID**: `003-user-authentication`  
 **Created**: 2025-11-15  
-**Status**: In Progress 🔄  
+**Status**: ✅ Complete  
 **Owner**: HD Homey Core Team  
-**Completed**: 2025-11-15  
-**Updated**: 2025-11-16 - Stream authentication requirements added
+**Completed**: 2025-11-18 (Stream authentication completed)  
+**Updated**: 2025-11-20 - Status updated to complete
 
 ## Overview
 
@@ -111,21 +111,21 @@ User Authentication provides secure access control for HD Homey with role-based 
 
 ---
 
-### Story 7: Secure Stream URLs (Priority: P1) 🔄
+### Story 7: Secure Stream URLs (Priority: P1) ✅
 
 **As a** user  
 **I want** stream URLs to be authenticated with expiring tokens  
 **So that** I can securely watch streams in external players like VLC
 
-**Why this priority**: Critical security gap - streams currently accessible without authentication
+**Why this priority**: Critical security requirement for production deployment
 
 **Acceptance Criteria**:
-- **Given** I am authenticated and view a channel page, **When** the page loads, **Then** a signed stream URL with token is generated
-- **Given** I copy the stream URL to VLC, **When** VLC requests the stream with valid token, **Then** the video plays
-- **Given** I try to use an expired token, **When** accessing the stream, **Then** I receive a 403 Forbidden error
-- **Given** I try to use a tampered token, **When** accessing the stream, **Then** I receive a 403 Forbidden error
-- **Given** I try to use a token for wrong tuner/channel, **When** accessing the stream, **Then** I receive a 403 Forbidden error
-- **Given** I bookmark a stream URL, **When** the token expires (30 min), **Then** I must revisit the channel page for a new URL
+- ✅ **Given** I am authenticated and view a channel page, **When** the page loads, **Then** a signed stream URL with token is generated
+- ✅ **Given** I copy the stream URL to VLC, **When** VLC requests the stream with valid token, **Then** the video plays
+- ✅ **Given** I try to use an expired token, **When** accessing the stream, **Then** I receive a 403 Forbidden error
+- ✅ **Given** I try to use a tampered token, **When** accessing the stream, **Then** I receive a 403 Forbidden error
+- ✅ **Given** I try to use a token for wrong tuner/channel, **When** accessing the stream, **Then** I receive a 403 Forbidden error
+- ✅ **Given** I bookmark a stream URL, **When** the token expires (12 hours default), **Then** I must revisit the channel page for a new URL
 
 ## Requirements
 
@@ -146,16 +146,16 @@ User Authentication provides secure access control for HD Homey with role-based 
 - **FR-013**: System MUST allow Admins to enable/disable user accounts ✅
 - **FR-014**: System MUST prevent editing of username and role after creation ✅
 - **FR-015**: System MUST show user creation and modification timestamps ✅
-- **FR-016**: System MUST generate signed tokens for stream URLs using app-wide stream secret 🔄
-- **FR-017**: System MUST validate stream tokens before serving video 🔄
-- **FR-018**: System MUST reject expired stream tokens 🔄
-- **FR-019**: System MUST reject tampered stream tokens 🔄
-- **FR-020**: Stream tokens MUST be time-limited (default: 12 hours) 🔄
-- **FR-021**: Stream tokens MUST be bound to specific tuner and channel 🔄
-- **FR-022**: System MUST store stream secret in database settings table 🔄
-- **FR-023**: Admins MUST be able to regenerate stream secret from settings page 🔄
-- **FR-024**: System MUST generate initial stream secret on first run 🔄
-- **FR-025**: Regenerating stream secret MUST invalidate all existing tokens 🔄
+- **FR-016**: System MUST generate signed tokens for stream URLs using app-wide stream secret ✅
+- **FR-017**: System MUST validate stream tokens before serving video ✅
+- **FR-018**: System MUST reject expired stream tokens ✅
+- **FR-019**: System MUST reject tampered stream tokens ✅
+- **FR-020**: Stream tokens MUST be time-limited (default: 12 hours) ✅
+- **FR-021**: Stream tokens MUST be bound to specific tuner and channel ✅
+- **FR-022**: System MUST store stream secret in database settings table ✅
+- **FR-023**: Admins MUST be able to regenerate stream secret from settings page ✅
+- **FR-024**: System MUST generate initial stream secret on first run ✅
+- **FR-025**: Regenerating stream secret MUST invalidate all existing tokens ✅
 
 ### Non-Functional Requirements
 
@@ -165,14 +165,14 @@ User Authentication provides secure access control for HD Homey with role-based 
 - **NFR-004**: Performance - Authentication check must complete in under 100ms
 - **NFR-005**: Usability - Clear error messages for failed authentication
 - **NFR-006**: Reliability - Session must persist across server restarts (if using database sessions)
-- **NFR-007**: Security - Stream tokens must use HMAC-SHA256 signatures 🔄
-- **NFR-008**: Security - Stream token validation must use timing-safe comparison 🔄
-- **NFR-009**: Performance - Stream token generation must complete in under 1ms 🔄
-- **NFR-010**: Performance - Stream token validation must complete in under 2ms (includes DB lookup) 🔄
-- **NFR-011**: Usability - Stream URLs must work in VLC, browsers, and mobile players 🔄
-- **NFR-012**: Security - Stream secret must be cryptographically random (32 bytes) 🔄
-- **NFR-013**: Usability - Stream secret regeneration must be simple (single button click) 🔄
-- **NFR-014**: Security - Settings page must be admin-only 🔄
+- **NFR-007**: Security - Stream tokens must use HMAC-SHA256 signatures ✅
+- **NFR-008**: Security - Stream token validation must use timing-safe comparison ✅
+- **NFR-009**: Performance - Stream token generation must complete in under 1ms ✅
+- **NFR-010**: Performance - Stream token validation must complete in under 2ms (includes DB lookup) ✅
+- **NFR-011**: Usability - Stream URLs must work in VLC, browsers, and mobile players ✅
+- **NFR-012**: Security - Stream secret must be cryptographically random (32 bytes) ✅
+- **NFR-013**: Usability - Stream secret regeneration must be simple (single button click) ✅
+- **NFR-014**: Security - Settings page must be admin-only ✅
 
 ### Data Requirements
 
@@ -269,11 +269,11 @@ User Authentication provides secure access control for HD Homey with role-based 
 - **SC-002**: Zero passwords stored in plain text
 - **SC-003**: Authentication check completes in under 100ms (p95)
 - **SC-004**: First-time setup completes in under 2 minutes
-- **SC-005**: Stream token generation completes in under 1ms 🔄
-- **SC-006**: Stream token validation completes in under 2ms (includes DB lookup) 🔄
-- **SC-007**: Zero stream access without valid token 🔄
-- **SC-008**: Stream secret regeneration invalidates all tokens 🔄
-- **SC-009**: Settings page accessible only to admins 🔄
+- **SC-005**: Stream token generation completes in under 1ms ✅
+- **SC-006**: Stream token validation completes in under 2ms (includes DB lookup) ✅
+- **SC-007**: Zero stream access without valid token ✅
+- **SC-008**: Stream secret regeneration invalidates all tokens ✅
+- **SC-009**: Settings page accessible only to admins ✅
 
 ### User Validation
 
@@ -281,26 +281,26 @@ User Authentication provides secure access control for HD Homey with role-based 
 - [x] Viewers cannot access admin functions
 - [x] Admins can perform all operations
 - [x] Initial setup flow is clear and simple
-- [ ] Stream URLs work in VLC with valid tokens 🔄
-- [ ] Expired tokens are rejected 🔄
-- [ ] Tampered tokens are rejected 🔄
-- [ ] Stream secret regeneration invalidates existing tokens 🔄
-- [ ] Settings page shows secret preview 🔄
-- [ ] Non-admins cannot access settings page 🔄
+- ✅ Stream URLs work in VLC with valid tokens
+- ✅ Expired tokens are rejected
+- ✅ Tampered tokens are rejected
+- ✅ Stream secret regeneration invalidates existing tokens
+- ✅ Settings page shows secret preview
+- ✅ Non-admins cannot access settings page
 
 ## Dependencies
 
 - **Depends On**: 
-  - Database schema with `users` and `settings` tables 🔄
-  - NextAuth.js v5 library
-  - Bcrypt library
-  - Next.js middleware support
-  - Node.js crypto module (for HMAC and randomBytes) 🔄
-  - Database migration for settings table 🔄
+  - Database schema with `users` and `settings` tables ✅
+  - NextAuth.js v5 library ✅
+  - Bcrypt library ✅
+  - Next.js middleware support ✅
+  - Node.js crypto module (for HMAC and randomBytes) ✅
+  - Database migration for settings table ✅
 
 - **Blocks**: 
-  - All other features (nothing works without auth)
-  - Secure streaming (requires token implementation) 🔄
+  - All other features (nothing works without auth) ✅
+  - Secure streaming (requires token implementation) ✅
 
 - **Related To**: 
   - All protected features rely on this
@@ -438,38 +438,47 @@ This feature is already implemented with the following files:
 6. Redirect to sign in
 7. User signs in and accesses app
 
-**Stream Authentication** (🔄 To Be Implemented - See `stream-auth-plan.md`):
+**Stream Authentication** ✅ (Implemented v1.0.0-alpha.3, 2025-11-18):
 
-**Token Utilities**: `src/lib/stream-token.ts`
+**Token Utilities**: `src/lib/stream-token.ts` ✅
 - `generateStreamToken(tunerId, channelId)` - Creates HMAC-signed token with expiration
 - `verifyStreamToken(token)` - Validates signature and expiration, returns parsed data or null
+- Full test coverage in `src/lib/stream-token.test.ts`
 
-**Stream Endpoint**: `src/app/(protected)/tuners/[id]/channel/[channel_id]/stream/route.tsx` (existing route, now with token auth)
+**Stream Endpoint**: `src/app/(protected)/tuners/[id]/channel/[channel_id]/stream/route.tsx` ✅
 - Validates token from query parameter
 - Checks token signature, expiration, and resource match
 - Proxies video stream if valid, returns 403 if invalid
+- Also validates tuner is_active status
 
-**Token Generation**:
+**Settings Management**: ✅
+- `src/lib/settings.ts` - getStreamSecret(), regenerateStreamSecret()
+- `src/lib/actions/settings.ts` - Admin actions for UI
+- `src/components/stream-secret-manager.tsx` - React component
+- `src/app/(protected)/settings/page.tsx` - Settings page integration
+
+**Token Generation**: ✅
 1. User navigates to channel page (authenticated via layout)
 2. Server generates signed token: `generateStreamToken(tunerId, channelId)`
 3. Token includes: tunerId, channelId, expiresAt timestamp, HMAC-SHA256 signature
 4. Stream URL created: `/tuners/{tunerId}/channel/{channelId}/stream?token={base64url_token}`
 5. URL passed to ChannelStream component for display
 
-**Token Validation**:
+**Token Validation**: ✅
 1. VLC/browser requests `/tuners/{tunerId}/channel/{channelId}/stream?token={token}`
 2. Route extracts and decodes token
-3. Verifies HMAC signature using secret key
+3. Verifies HMAC signature using secret key from database
 4. Checks expiration timestamp
 5. Validates token's tunerId/channelId match requested resource
-6. If valid: fetch channel from DB and proxy stream
-7. If invalid: return 403 Forbidden
+6. Validates tuner is active
+7. If valid: fetch channel from DB and proxy stream
+8. If invalid: return 403 Forbidden with appropriate message
 
-**Configuration**:
+**Configuration**: ✅
 - `HD_HOMEY_STREAM_TOKEN_EXPIRY` - Optional expiry in seconds (default: 43200 = 12 hours)
-- `stream_secret` stored in database settings table (64-char hex, auto-generated)
+- `stream_secret` stored in database settings table (64-char hex, auto-generated in migration)
 
-**Security Features**:
+**Security Features**: ✅
 - HMAC-SHA256 prevents token tampering
 - Timing-safe comparison prevents timing attacks
 - Resource binding prevents token reuse across channels
@@ -478,6 +487,7 @@ This feature is already implemented with the following files:
 - Database-managed secret (not in environment)
 - One DB lookup per operation (fetch stream_secret)
 - No user information in tokens
+- Tuner active status validation
 
 ## Security Considerations
 
@@ -490,7 +500,7 @@ This feature is already implemented with the following files:
 - **Timing Attacks**: Bcrypt comparison is constant-time
 - **Inactive Users**: Cannot sign in even with correct credentials
 - **Authorization**: Double-checked (UI guards + server action guards)
-- **Stream Token Security** (🔄 Planned):
+- **Stream Token Security** ✅ (Implemented):
   - HMAC-SHA256 prevents tampering
   - Timing-safe comparison prevents timing attacks
   - Resource-bound tokens prevent cross-channel reuse
@@ -533,11 +543,11 @@ This feature is already implemented with the following files:
 **Solution**: Remove try/catch around redirect calls  
 **Explanation**: Next.js catches NEXT_REDIRECT internally for navigation
 
-### Challenge 7: Stream Authentication for VLC (🔄 Identified)
+### Challenge 7: Stream Authentication for VLC ✅
 **Problem**: Current stream endpoint requires session authentication, incompatible with VLC  
-**Solution**: Implement HMAC-signed tokens in URL query parameters  
+**Solution**: Implemented HMAC-signed tokens in URL query parameters  
 **Approach**: Stateless token validation using Node.js crypto module  
-**Details**: See `stream-auth-plan.md` for full implementation plan
+**Result**: Completed in v1.0.0-alpha.3 (2025-11-18) with full test coverage
 
 ## References
 
