@@ -2,9 +2,10 @@ import Image from 'next/image';
 import hdHomey from '@public/hd-homey.webp';
 import { Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
+import { getVersion } from '@/lib/version';
 
 export default function AboutPage() {
-    const version = process.env.npm_package_version || '1.0.0-alpha.3';
+    const version = getVersion();
     const spaceTwo = 'var(--space-2)';
     const spaceThree = 'var(--space-3)';
     const spaceFive = 'var(--space-5)';

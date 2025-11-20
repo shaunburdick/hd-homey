@@ -135,3 +135,4 @@ next-env.d.ts
 
 # Application
 data/
+version.json

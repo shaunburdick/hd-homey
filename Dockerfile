@@ -21,9 +21,10 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Create data directory for build (Next.js needs it) and build
+# Generate version.json, create data directory, and build
 # Set SKIP_PREBUILD to skip linting during Docker builds for speed
-RUN mkdir -p ./data/db && \
+RUN node scripts/generate-version.mjs && \
+    mkdir -p ./data/db && \
     SKIP_PREBUILD=true npm run build
 
 # 3. Production image, copy all the files and run next
@@ -41,6 +42,7 @@ RUN addgroup -g 1001 -S nodejs && \
 
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/version.json ./version.json
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
