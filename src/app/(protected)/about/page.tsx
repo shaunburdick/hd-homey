@@ -119,11 +119,6 @@ export default function AboutPage() {
                     </li>
                 </ul>
             </Card>
-
-            <div className="mt-6 text-center text-sm text-tertiary">
-                <p>© 2024 Shaun Burdick</p>
-                <p>Licensed under MIT License</p>
-            </div>
         </PageContainer>
     );
 }

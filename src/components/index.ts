@@ -18,3 +18,5 @@ export type { ToastProps, ToastContainerProps } from './Toast';
 
 export { Skeleton, SkeletonGroup } from './Skeleton';
 export type { SkeletonProps, SkeletonGroupProps } from './Skeleton';
+
+export { Footer } from './Footer';
