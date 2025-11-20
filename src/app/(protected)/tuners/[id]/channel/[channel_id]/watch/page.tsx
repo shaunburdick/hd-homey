@@ -7,7 +7,7 @@ import { generateStreamToken } from '@/lib/stream-token';
 import { getTranscodingSettings } from '@/lib/settings';
 import VideoPlayer from '@/components/video-player';
 import { Card } from '@/components';
-import { PageContainer } from '@/components/layouts';
+import { PageContainer, InfoCard } from '@/components/layouts';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,23 +79,24 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
             />
 
             <details className="mt-4">
-                <summary>Channel Information</summary>
-                <dl>
-                    <dt>Guide Number</dt>
-                    <dd>{channel.guideNumber}</dd>
-
-                    <dt>Name</dt>
-                    <dd>{channel.guideName}</dd>
-
-                    <dt>Video Codec</dt>
-                    <dd>{channel.videoCodec}</dd>
-
-                    <dt>Audio Codec</dt>
-                    <dd>{channel.audioCodec}</dd>
-
-                    <dt>HD</dt>
-                    <dd>{channel.hd ? 'Yes' : 'No'}</dd>
-                </dl>
+                <summary style={{
+                    cursor: 'pointer',
+                    padding: 'var(--space-3)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                }}>
+                    Channel Information
+                </summary>
+                <div style={{ marginTop: 'var(--space-3)' }}>
+                    <InfoCard
+                        items={[
+                            { label: 'Guide Number', value: channel.guideNumber },
+                            { label: 'Name', value: channel.guideName },
+                            { label: 'Video Codec', value: channel.videoCodec },
+                            { label: 'Audio Codec', value: channel.audioCodec },
+                            { label: 'HD', value: channel.hd ? 'Yes' : 'No' },
+                        ]}
+                    />
+                </div>
             </details>
 
             <p className="mt-4">

@@ -8,11 +8,45 @@ import { useActionState, useEffect, useState } from 'react';
 import type { FormState } from '@/lib/actions/transcoding';
 import { updateTranscodingSettingsAction, applyPreset } from '@/lib/actions/transcoding';
 import type { TranscodeSettings, FFmpegInfo } from '@/lib/transcoding/types';
+import { InfoCard } from '@/components/layouts';
 
 interface TranscodingSettingsProps {
     initialSettings: TranscodeSettings;
     ffmpegInfo: FFmpegInfo;
     recommendedMaxSessions: number;
+}
+
+export function FFmpegStatusCard({ ffmpegInfo }: { ffmpegInfo: FFmpegInfo }) {
+    if (!ffmpegInfo.available) {
+        return (
+            <div style={{
+                padding: 'var(--space-4)',
+                backgroundColor: 'var(--color-error-bg)',
+                border: '1px solid var(--color-error)',
+                borderRadius: 'var(--radius-md)',
+            }}>
+                <h3 style={{ marginTop: 0, color: 'var(--color-error)' }}>FFmpeg Not Available</h3>
+                <p style={{ marginBottom: 0, color: 'var(--color-error)' }}>
+                    Transcoding requires FFmpeg to be installed.
+                    Please install FFmpeg and restart the application.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <InfoCard
+            title="FFmpeg Status"
+            items={[
+                { label: 'Version', value: ffmpegInfo.version },
+                { label: 'Available Codecs', value: ffmpegInfo.codecs.join(', ') },
+                {
+                    label: 'Hardware Acceleration',
+                    value: ffmpegInfo.hwAccel.length > 0 ? ffmpegInfo.hwAccel.join(', ') : 'None'
+                },
+            ]}
+        />
+    );
 }
 
 const initialState: FormState = { errors: {} };
@@ -49,23 +83,6 @@ export default function TranscodingSettings({
         }
     }, [state.success]);
 
-    if (!ffmpegInfo.available) {
-        return (
-            <div style={{
-                padding: 'var(--space-4)',
-                backgroundColor: 'var(--color-error-bg)',
-                border: '1px solid var(--color-error)',
-                borderRadius: 'var(--radius-md)',
-            }}>
-                <h3 style={{ marginTop: 0, color: 'var(--color-error)' }}>FFmpeg Not Available</h3>
-                <p style={{ marginBottom: 0, color: 'var(--color-error)' }}>
-                    Transcoding requires FFmpeg to be installed.
-                    Please install FFmpeg and restart the application.
-                </p>
-            </div>
-        );
-    }
-
     return (
         <form action={formAction} style={{
             padding: 'var(--space-4)',
@@ -73,21 +90,7 @@ export default function TranscodingSettings({
             border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-lg)',
         }}>
-            <h3 style={{ marginTop: 0 }}>FFmpeg Status</h3>
-            <dl>
-                <dt>Version</dt>
-                <dd>{ffmpegInfo.version}</dd>
-
-                <dt>Available Codecs</dt>
-                <dd>{ffmpegInfo.codecs.join(', ')}</dd>
-
-                <dt>Hardware Acceleration</dt>
-                <dd>{ffmpegInfo.hwAccel.length > 0 ? ffmpegInfo.hwAccel.join(', ') : 'None'}</dd>
-            </dl>
-
-            <hr />
-
-            <h3>Transcoding Settings</h3>
+            <h3 style={{ marginTop: 0 }}>Transcoding Settings</h3>
 
             {state.errors.auth && (
                 <div style={{ padding: '1rem', backgroundColor: '#fee', border: '1px solid #fcc' }}>

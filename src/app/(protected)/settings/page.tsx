@@ -3,7 +3,7 @@ import RoleGuard from '@/components/RoleGuard';
 import { AuthRoles } from '@/lib/auth-roles';
 import { getStreamSecretInfo, regenerateAppStreamSecret } from '@/lib/actions/settings';
 import StreamSecretManager from '@/components/stream-secret-manager';
-import TranscodingSettings from '@/components/transcoding-settings';
+import TranscodingSettings, { FFmpegStatusCard } from '@/components/transcoding-settings';
 import TranscodingStatus from '@/components/transcoding-status';
 import { getTranscodingSettings } from '@/lib/settings';
 import { detectFFmpeg } from '@/lib/transcoding/ffmpeg';
@@ -56,6 +56,8 @@ export default async function SettingsPage() {
                         </h2>
 
                         <div className="grid gap-4">
+                            <FFmpegStatusCard ffmpegInfo={ffmpegInfo} />
+
                             <div>
                                 <h3 className="mt-0 mb-3 text-lg">
                                     Active Sessions

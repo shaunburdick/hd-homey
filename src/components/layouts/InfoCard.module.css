@@ -1,0 +1,46 @@
+/* ============================================
+   InfoCard Styles - Simple Background Design
+   Optimized for mobile readability
+   ============================================ */
+
+.infoList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.infoRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.infoLabel {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text-secondary);
+    line-height: 1.2;
+}
+
+.infoValue {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+    .infoRow {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    .infoValue {
+        text-align: right;
+    }
+}

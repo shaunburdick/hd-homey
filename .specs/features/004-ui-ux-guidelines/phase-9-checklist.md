@@ -10,6 +10,14 @@ Phase 9 focuses on ensuring excellent mobile experience through real device test
 
 ## 9.1 Real Device Testing
 
+### InfoCard Mobile Redesign
+- [x] **COMPLETED**: InfoCard redesigned with Simple+BG pattern
+- [x] Tested on Pixel 7 - looks great!
+- [x] Removed cramped two-column grid layout
+- [x] Fixed cognitive disconnect with arrows
+- [x] Added clear visual separation between items
+- [ ] Test on iPhone (recommended for final validation)
+
 ### Touch Target Testing
 - [x] Verify all buttons/links are >= 44×44px on mobile (CSS verified: 44px min-height ✓)
 - [ ] Test navigation menu toggle on mobile - **NEEDS DEVICE TESTING**
