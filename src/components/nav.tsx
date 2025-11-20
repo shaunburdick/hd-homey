@@ -39,10 +39,12 @@ export default function Nav() {
         window.location.href = '/users/signin';
     };
 
+    const isAdmin = session?.user?.role === 'admin';
+
     const menuItems = [
         { name: 'Home', href: '/' },
         { name: 'Tuners', href: '/tuners' },
-        { name: 'Settings', href: '/settings' },
+        ...(isAdmin ? [{ name: 'Settings', href: '/settings' }] : []),
         { name: 'About', href: '/about' }
     ];
 
