@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Card } from '@/components';
 import { PageContainer } from '@/components/layouts';
+import { getErrorInfo } from '@/lib/errors';
 
 export default function Error({
     error,
@@ -12,10 +13,12 @@ export default function Error({
     error: Error & { digest?: string };
     reset: () => void;
 }) {
+    const errorInfo = getErrorInfo(error);
+    const colorTextSecondary = 'var(--color-text-secondary)';
+    const fontSizeSm = 'var(--font-size-sm)';
+    const spaceFour = 'var(--space-4)';
+
     useEffect(() => {
-        // Error is already logged by Next.js error boundary
-        // Additional client-side logging could be added here if needed
-        // Error is automatically logged by Next.js
         // In development, log for easier debugging
         if (process.env.NODE_ENV === 'development') {
             // eslint-disable-next-line no-console
@@ -29,23 +32,55 @@ export default function Error({
                 <div style={{ padding: 'var(--space-6)' }}>
                     <div style={{
                         fontSize: 'var(--font-size-4xl)',
-                        marginBottom: 'var(--space-4)',
+                        marginBottom: spaceFour,
                     }}>
                         ⚠️
                     </div>
                     <h1 style={{ marginBottom: 'var(--space-3)' }}>
-                        Something went wrong
+                        {errorInfo.title}
                     </h1>
                     <p style={{
-                        color: 'var(--color-text-secondary)',
-                        marginBottom: 'var(--space-2)',
+                        color: colorTextSecondary,
+                        marginBottom: errorInfo.suggestion ? 'var(--space-2)' : spaceFour,
                     }}>
-                        We encountered an unexpected error. This has been logged and we&apos;ll look into it.
+                        {errorInfo.message}
                     </p>
+                    {errorInfo.suggestion && (
+                        <p style={{
+                            fontSize: fontSizeSm,
+                            color: colorTextSecondary,
+                            marginBottom: spaceFour,
+                        }}>
+                            💡 {errorInfo.suggestion}
+                        </p>
+                    )}
+                    {errorInfo.recovery && errorInfo.recovery.length > 0 && (
+                        <div style={{ marginBottom: spaceFour }}>
+                            <p style={{
+                                fontSize: fontSizeSm,
+                                fontWeight: 'var(--font-weight-semibold)',
+                                marginBottom: 'var(--space-2)',
+                            }}>
+                                What you can do:
+                            </p>
+                            <ul style={{
+                                fontSize: fontSizeSm,
+                                color: colorTextSecondary,
+                                paddingLeft: 'var(--space-5)',
+                                margin: 0,
+                            }}>
+                                {errorInfo.recovery.map((step) => (
+                                    <li key={step} style={{ marginBottom: 'var(--space-1)' }}>
+                                        {step}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     {error.digest && (
                         <p style={{
-                            fontSize: 'var(--font-size-sm)',
-                            color: 'var(--color-text-secondary)',
+                            fontSize: fontSizeSm,
+                            color: 'var(--color-text-tertiary)',
                             fontFamily: 'monospace',
                             marginBottom: 'var(--space-6)',
                         }}>
