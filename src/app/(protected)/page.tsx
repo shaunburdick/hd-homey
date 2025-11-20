@@ -146,8 +146,8 @@ export default async function Home() {
                         gap: 'var(--space-3)',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                     }}>
-                        <Link href="/tuners" className="no-underline cursor-pointer">
-                            <Card className="channel-card">
+                        <Link href="/tuners" className="no-underline" style={{ display: 'block' }}>
+                            <Card className="channel-card" style={{ cursor: 'pointer' }}>
                                 <div className="flex items-center gap-3">
                                     <span className="text-2xl">📡</span>
                                     <div>
@@ -163,8 +163,8 @@ export default async function Home() {
                         </Link>
 
                         {isAdmin && (
-                            <Link href="/settings" className="no-underline cursor-pointer">
-                                <Card className="channel-card">
+                            <Link href="/settings" className="no-underline" style={{ display: 'block' }}>
+                                <Card className="channel-card" style={{ cursor: 'pointer' }}>
                                     <div className="flex items-center gap-3">
                                         <span className="text-2xl">⚙️</span>
                                         <div>
@@ -180,8 +180,8 @@ export default async function Home() {
                             </Link>
                         )}
 
-                        <Link href="/about" className="no-underline cursor-pointer">
-                            <Card className="channel-card">
+                        <Link href="/about" className="no-underline" style={{ display: 'block' }}>
+                            <Card className="channel-card" style={{ cursor: 'pointer' }}>
                                 <div className="flex items-center gap-3">
                                     <span className="text-2xl">ℹ️</span>
                                     <div>

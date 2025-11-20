@@ -37,7 +37,7 @@ export default async function Page() {
                             href={`/users/${user.id}`}
                             className="no-underline"
                         >
-                            <Card className="channel-card transition cursor-pointer p-4">
+                            <Card className="channel-card transition p-4" style={{ cursor: 'pointer' }}>
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex-1">
                                         <div className="font-medium text-primary mb-1 text-lg">

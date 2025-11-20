@@ -40,10 +40,11 @@ export default async function TunersPage() {
                         <Link
                             key={tuner.id}
                             href={`/tuners/${tuner.id}`}
-                            className="no-underline cursor-pointer"
+                            className="no-underline"
                         >
                             <Card className="tuner-card transition" style={{
                                 height: '100%',
+                                cursor: 'pointer',
                                 opacity: tuner.is_active ? 1 : 0.6,
                                 border: tuner.is_active
                                     ? undefined

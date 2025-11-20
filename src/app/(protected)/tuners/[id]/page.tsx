@@ -120,9 +120,9 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                         <Link
                             key={channel.id}
                             href={`/tuners/${tuner.id}/channel/${channel.id}`}
-                            className="no-underline cursor-pointer"
+                            className="no-underline"
                         >
-                            <Card className="channel-card transition p-4">
+                            <Card className="channel-card transition p-4" style={{ cursor: 'pointer' }}>
                                 <div className="flex items-center gap-4">
                                     <div className="rounded font-semibold text-center" style={{
                                         backgroundColor: 'var(--color-bg-primary)',
