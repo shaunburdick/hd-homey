@@ -60,6 +60,9 @@ jobs:
             - name: Install dependencies
               run: npm ci --prefer-offline
 
+            - name: Generate Next.js types
+              run: npx next typegen
+
             - name: Run TypeScript compiler
               run: npx tsc --noEmit
 
