@@ -29,11 +29,13 @@
 Get up and running in minutes with Docker Compose:
 
 ```bash
-# Create a compose.yml file
+# Download compose.yml and .env-example
 curl -O https://raw.githubusercontent.com/shaunburdick/hd-homey/main/compose.yml
+curl -O https://raw.githubusercontent.com/shaunburdick/hd-homey/main/.env-example
 
-# Generate a secure authentication secret
-export AUTH_SECRET=$(openssl rand -base64 32)
+# Create your .env file with a secure authentication secret
+cp .env-example .env
+sed -i "s/some-random-string/$(openssl rand -base64 32)/" .env
 
 # Start the application
 docker compose up -d
