@@ -25,7 +25,7 @@ export default function RootLayout({
     return (
         <html lang="en" style={{ height: '100%' }}>
             <head>
-                <meta name="theme-color" content="#1a1a1a" />
+                <meta name="theme-color" content="var(--color-bg-primary)" />
                 <link rel="apple-touch-icon" href="/icon.png" />
                 <link rel="manifest" href="/manifest.json" />
             </head>

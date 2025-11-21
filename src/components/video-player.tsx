@@ -140,7 +140,7 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
 
     if (!hlsSupported) {
         return (
-            <div style={{ padding: '1rem', backgroundColor: '#fee', border: '1px solid #fcc' }}>
+            <div className="p-4 bg-error">
                 <h3>Playback Error</h3>
                 <p>HLS is not supported in this browser</p>
             </div>
@@ -149,7 +149,7 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
 
     if (error) {
         return (
-            <div style={{ padding: '1rem', backgroundColor: '#fee', border: '1px solid #fcc' }}>
+            <div className="p-4 bg-error">
                 <h3>Playback Error</h3>
                 <p>{error}</p>
                 <p>
@@ -172,7 +172,7 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
                 style={{
                     width: '100%',
                     maxWidth: '1280px',
-                    backgroundColor: '#000',
+                    backgroundColor: 'black',
                 }}
                 playsInline
                 aria-label={`Video player for ${channelName}`}

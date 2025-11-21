@@ -93,7 +93,7 @@ export default function TranscodingSettings({
             <h3 style={{ marginTop: 0 }}>Transcoding Settings</h3>
 
             {state.errors.auth && (
-                <div style={{ padding: '1rem', backgroundColor: '#fee', border: '1px solid #fcc' }}>
+                <div className="p-4 mb-4 bg-error">
                     {state.errors.auth.map((error) => (
                         <p key={error}>{error}</p>
                     ))}
@@ -101,7 +101,7 @@ export default function TranscodingSettings({
             )}
 
             {state.errors.validation && (
-                <div style={{ padding: '1rem', backgroundColor: '#fee', border: '1px solid #fcc' }}>
+                <div className="p-4 mb-4 bg-error">
                     <strong>Validation Errors:</strong>
                     <ul>
                         {state.errors.validation.map((error) => (

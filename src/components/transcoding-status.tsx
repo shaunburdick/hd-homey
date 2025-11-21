@@ -116,10 +116,22 @@ export default function TranscodingStatus() {
 
     const getStatusBadge = (sessionStatus: SessionStats['status']) => {
         const badgeStyles: Record<string, React.CSSProperties> = {
-            starting: { backgroundColor: '#fff3cd', color: '#856404' },
-            running: { backgroundColor: '#d4edda', color: '#155724' },
-            stopping: { backgroundColor: '#f8d7da', color: '#721c24' },
-            error: { backgroundColor: '#f8d7da', color: '#721c24' },
+            starting: {
+                backgroundColor: 'var(--color-warning-bg)',
+                color: 'var(--color-warning)'
+            },
+            running: {
+                backgroundColor: 'var(--color-success-bg)',
+                color: 'var(--color-success)'
+            },
+            stopping: {
+                backgroundColor: 'var(--color-error-bg)',
+                color: 'var(--color-error)'
+            },
+            error: {
+                backgroundColor: 'var(--color-error-bg)',
+                color: 'var(--color-error)'
+            },
         };
 
         return (
@@ -199,7 +211,7 @@ export default function TranscodingStatus() {
                 ))}
             </div>
 
-            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
+            <p className="mt-4 text-sm text-tertiary">
                 Auto-refreshes every 5 seconds
             </p>
         </div>

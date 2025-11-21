@@ -42,6 +42,28 @@ export default [
                         'match': true
                     }
                 }
+            ],
+            // Design system enforcement rules
+            'no-restricted-syntax': [
+                'error',
+                // Prevent hardcoded hex colors
+                {
+                    selector: 'Literal[value=/#[0-9a-fA-F]{3,6}/]',
+                    message: 'Use design system color variables (var(--color-*)) ' +
+                        'instead of hardcoded hex colors'
+                },
+                // Prevent RGB/RGBA colors
+                {
+                    selector: 'Literal[value=/rgba?\\(/]',
+                    message: 'Use design system color variables (var(--color-*)) ' +
+                        'instead of RGB colors'
+                },
+                // Prevent CSS variable redeclaration as constants
+                {
+                    selector: 'VariableDeclarator[init.value=/^var\\(--/]',
+                    message: 'Do not redeclare CSS variables as constants. ' +
+                        'Use them directly in CSS modules or utility classes.'
+                }
             ]
         },
     },
