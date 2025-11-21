@@ -19,7 +19,7 @@ export function Footer() {
                         rel="noopener noreferrer"
                         className={styles.link}
                     >
-                        MIT License
+                        AGPL-3.0
                     </Link>
                     <span className={styles.separator}>•</span>
                     <Link
