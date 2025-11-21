@@ -14,10 +14,6 @@ interface StatusResponse {
     count: number;
 }
 
-// Design system token constants
-const SPACE_4 = 'var(--space-4)';
-const TEXT_PRIMARY = 'var(--color-text-primary)';
-
 export default function TranscodingStatus() {
     const [status, setStatus] = useState<StatusResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -86,23 +82,13 @@ export default function TranscodingStatus() {
         return <p>Loading status...</p>;
     }
 
+    const space4Style = { padding: 'var(--space-4)', marginBottom: 'var(--space-4)' };
+
     if (error) {
         return (
-            <div
-                style={{
-                    padding: SPACE_4,
-                    backgroundColor: 'var(--color-error-bg)',
-                    border: '1px solid var(--color-error)',
-                    marginBottom: SPACE_4,
-                    color: 'var(--color-error)',
-                }}
-            >
+            <div className="bg-error" style={space4Style}>
                 <p>Error loading status: {error}</p>
-                <button
-                    type="button"
-                    onClick={() => void fetchStatus()}
-                    style={{ color: TEXT_PRIMARY }}
-                >
+                <button type="button" onClick={() => void fetchStatus()} className="secondary">
                     Retry
                 </button>
             </div>
@@ -154,32 +140,16 @@ export default function TranscodingStatus() {
     return (
         <div>
             {stoppingSession && (
-                <div
-                    style={{
-                        padding: SPACE_4,
-                        backgroundColor: 'var(--color-warning-bg)',
-                        border: '1px solid var(--color-warning)',
-                        marginBottom: SPACE_4,
-                        color: 'var(--color-warning)',
-                    }}
-                >
+                <div className="bg-warning" style={space4Style}>
                     <p>
                         <strong>Stop session {stoppingSession}?</strong>
                     </p>
                     <p>
-                        <button
-                            type="button"
-                            onClick={() => void confirmStopSession()}
-                            style={{ color: TEXT_PRIMARY }}
-                        >
+                        <button type="button" onClick={() => void confirmStopSession()} className="danger">
                             Yes, Stop Session
                         </button>
                         {' '}
-                        <button
-                            type="button"
-                            onClick={() => setStoppingSession(null)}
-                            style={{ color: TEXT_PRIMARY }}
-                        >
+                        <button type="button" onClick={() => setStoppingSession(null)} className="secondary">
                             Cancel
                         </button>
                     </p>

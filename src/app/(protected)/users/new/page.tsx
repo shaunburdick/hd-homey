@@ -16,10 +16,6 @@ interface ValidationError {
 export default function Page() {
     const [state, formAction, isPending] = useActionState(createUser, null);
 
-    // Style constants to avoid duplication
-    const spaceFour = 'var(--space-4)';
-    const colorError = 'var(--color-error)';
-
     const handleSubmit = async (formData: FormData) => {
         try {
             await formAction(formData);
@@ -55,25 +51,11 @@ export default function Page() {
             <Card>
                 <form action={handleSubmit}>
                     {errors && (
-                        <div
-                            role="alert"
-                            style={{
-                                backgroundColor: 'var(--color-error-bg)',
-                                border: `1px solid ${colorError}`,
-                                borderRadius: 'var(--radius-md)',
-                                padding: spaceFour,
-                                marginBottom: spaceFour,
-                            }}
-                        >
-                            <strong style={{ color: colorError }}>
+                        <div role="alert" className="rounded p-4 mb-4 bg-error">
+                            <strong>
                                 Please fix the following errors:
                             </strong>
-                            <ul style={{
-                                marginTop: 'var(--space-2)',
-                                marginBottom: 0,
-                                paddingLeft: 'var(--space-5)',
-                                color: colorError,
-                            }}>
+                            <ul className="mt-2 m-0" style={{ paddingLeft: 'var(--space-5)' }}>
                                 {Object.entries(errors).map(([field, messages]) =>
                                     messages.map((message) => (
                                         <li key={`${field}-${message}`}>

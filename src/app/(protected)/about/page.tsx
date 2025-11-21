@@ -6,9 +6,6 @@ import { getVersion } from '@/lib/version';
 
 export default function AboutPage() {
     const version = getVersion();
-    const spaceTwo = 'var(--space-2)';
-    const spaceThree = 'var(--space-3)';
-    const spaceFive = 'var(--space-5)';
 
     return (
         <PageContainer maxWidth="lg">
@@ -32,26 +29,21 @@ export default function AboutPage() {
                 <h2 className="mt-0 mb-3">
                     About HD Homey
                 </h2>
-                <p style={{ marginBottom: spaceThree }}>
+                <p className="mb-3">
                     HD Homey is a Next.js-based proxy application for HDHomeRun devices that enables
                     secure remote access to live TV streams over the internet.
                 </p>
-                <p style={{ marginBottom: 0 }}>
+                <p className="m-0">
                     Built with modern web technologies, HD Homey provides a user-friendly interface
                     for managing tuners, discovering channels, and streaming live TV to any device.
                 </p>
             </Card>
 
-            <Card style={{ marginBottom: spaceFive }}>
-                <h2 style={{ marginTop: 0, marginBottom: spaceThree }}>
+            <Card className="mb-5">
+                <h2 className="mt-0 mb-3">
                     Features
                 </h2>
-                <ul style={{
-                    display: 'grid',
-                    gap: spaceTwo,
-                    paddingLeft: spaceFive,
-                    marginBottom: 0,
-                }}>
+                <ul className="grid gap-2 m-0" style={{ paddingLeft: 'var(--space-5)' }}>
                     <li>📡 HDHomeRun tuner management</li>
                     <li>📺 Automatic channel lineup discovery</li>
                     <li>🔐 User authentication with role-based access</li>
@@ -75,27 +67,16 @@ export default function AboutPage() {
             />
 
             <Card>
-                <h2 style={{ marginTop: 0, marginBottom: spaceThree }}>
+                <h2 className="mt-0 mb-3">
                     Links & Resources
                 </h2>
-                <ul style={{
-                    display: 'grid',
-                    gap: spaceTwo,
-                    listStyle: 'none',
-                    paddingLeft: 0,
-                    marginBottom: 0,
-                }}>
+                <ul className="grid gap-2 m-0" style={{ listStyle: 'none', paddingLeft: 0 }}>
                     <li>
                         <a
                             href="https://github.com/shaunburdick/hd-homey"
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: spaceTwo,
-                                textDecoration: 'none',
-                            }}
+                            className="flex items-center gap-2 no-underline"
                         >
                             <span>🔗</span>
                             <span>GitHub Repository</span>
@@ -106,12 +87,7 @@ export default function AboutPage() {
                             href="https://www.silicondust.com/hdhomerun/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--space-2)',
-                                textDecoration: 'none',
-                            }}
+                            className="flex items-center gap-2 no-underline"
                         >
                             <span>🔗</span>
                             <span>HDHomeRun by SiliconDust</span>

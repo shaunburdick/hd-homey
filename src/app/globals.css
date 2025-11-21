@@ -358,6 +358,76 @@ small {
 }
 
 /* ========================================
+   Form Elements & Buttons - new.css Overrides
+   ======================================== */
+
+/* Fix new.css button text color issue */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  color: var(--color-text-primary);
+}
+
+/* Primary button style */
+button:not(.unstyled),
+input[type="submit"],
+input[type="button"]:not(.unstyled) {
+  background-color: var(--color-accent);
+  color: white;
+  border: 1px solid transparent;
+  min-height: var(--button-height);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+button:not(.unstyled):hover,
+input[type="submit"]:hover,
+input[type="button"]:not(.unstyled):hover {
+  background-color: var(--color-accent-hover);
+}
+
+button:not(.unstyled):disabled,
+input[type="submit"]:disabled,
+input[type="button"]:not(.unstyled):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Secondary button variant */
+button.secondary {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+button.secondary:hover {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border-hover);
+}
+
+/* Danger button variant */
+button.danger {
+  background-color: var(--color-error);
+  color: white;
+}
+
+button.danger:hover {
+  background-color: #ff4444;
+}
+
+/* Unstyled button (for special cases) */
+button.unstyled {
+  background: none;
+  border: none;
+  padding: 0;
+  min-height: unset;
+}
+
+/* ========================================
    Component-Specific Styles
    ======================================== */
 
@@ -488,6 +558,8 @@ small {
 /* Grid */
 .grid { display: grid; }
 .grid-cols-auto { grid-template-columns: auto 1fr; }
+.grid-auto-fit { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.grid-auto-fill { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
 
 /* Typography */
 .text-xs { font-size: var(--font-size-xs); }
@@ -513,6 +585,13 @@ small {
 .inline-block { display: inline-block; }
 .inline-flex { display: inline-flex; }
 .hidden { display: none; }
+
+/* Text Size Utilities */
+.text-3xl { font-size: var(--font-size-3xl); }
+.text-4xl { font-size: var(--font-size-4xl); }
+
+/* Opacity */
+.opacity-30 { opacity: 0.3; }
 
 /* Width */
 .w-full { width: 100%; }

@@ -1,0 +1,76 @@
+.container {
+    padding: var(--space-6);
+}
+
+.containerCompact {
+    padding: var(--space-4);
+}
+
+.icon {
+    font-size: var(--font-size-4xl);
+    margin-bottom: var(--space-4);
+}
+
+.title {
+    margin-top: 0;
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-2xl);
+}
+
+.titleCompact {
+    font-size: var(--font-size-lg);
+}
+
+.message {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+.messageWithSuggestion {
+    margin-bottom: var(--space-2);
+}
+
+.suggestion {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+.recoveryContainer {
+    margin-bottom: var(--space-4);
+}
+
+.recoveryTitle {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-2);
+}
+
+.recoveryList {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    padding-left: var(--space-5);
+    margin: 0;
+}
+
+.recoveryItem {
+    margin-bottom: var(--space-1);
+}
+
+.errorId {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    font-family: monospace;
+    margin-bottom: 0;
+}
+
+.errorIdWithActions {
+    margin-bottom: var(--space-4);
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-top: var(--space-4);
+}

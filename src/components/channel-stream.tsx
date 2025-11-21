@@ -42,34 +42,18 @@ export default function ChannelStream({ streamUrl }: ChannelStreamProps) {
                     readOnly
                     style={{
                         width: '100%',
-                        maxWidth: '100%',
-                        boxSizing: 'border-box',
                         fontFamily: 'monospace',
                         fontSize: '0.85em',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                         marginBottom: 'var(--space-3)',
-                        backgroundColor: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-primary)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: 'var(--radius-md)',
-                        padding: 'var(--space-3)',
                     }}
                 />
                 <button
                     onClick={handleCopy}
                     style={{
-                        minHeight: 'var(--button-height)',
-                        padding: 'var(--space-3) var(--space-5)',
-                        borderRadius: 'var(--radius-md)',
-                        fontWeight: 'var(--font-weight-medium)',
-                        fontSize: 'var(--font-size-base)',
-                        cursor: 'pointer',
-                        transition: 'all var(--transition-fast)',
-                        border: '1px solid transparent',
-                        backgroundColor: isCopied ? 'var(--color-success)' : 'var(--color-accent)',
-                        color: 'white',
+                        backgroundColor: isCopied ? 'var(--color-success)' : undefined,
                     }}
                 >
                     {isCopied ? '✓ Copied!' : '📋 Copy to Clipboard'}

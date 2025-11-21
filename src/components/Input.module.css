@@ -1,0 +1,73 @@
+.formField {
+    margin-bottom: var(--space-4);
+}
+
+.label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.required {
+    color: var(--color-error);
+    margin-left: var(--space-1);
+}
+
+.inputWrapper {
+    position: relative;
+}
+
+.input {
+    width: 100%;
+    min-height: var(--input-height);
+    padding: var(--space-3);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+    border-color: var(--color-accent);
+}
+
+.input[aria-invalid="true"] {
+    border-color: var(--color-error);
+}
+
+.toggleButton {
+    position: absolute;
+    right: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: var(--space-2);
+    font-size: var(--font-size-sm);
+    min-height: var(--min-touch-target);
+    min-width: var(--min-touch-target);
+}
+
+.toggleButton:hover {
+    color: var(--color-text-primary);
+}
+
+.helpText {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin-bottom: 0;
+}
+
+.errorText {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--color-error);
+    margin-bottom: 0;
+}

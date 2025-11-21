@@ -57,12 +57,6 @@
 .sessionStopBtn {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
-    color: var(--color-text-primary);
-}
-
-.sessionStopBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 @media (min-width: 768px) {

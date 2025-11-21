@@ -17,37 +17,19 @@ export function Button({
 }: ButtonProps) {
     const isDisabled = disabled || loading;
 
+    const variantClass = variant === 'secondary' ? 'secondary' : variant === 'danger' ? 'danger' : '';
+    const combinedClassName = `${variantClass} ${className}`.trim();
+
     return (
         <button
             type={type}
             disabled={isDisabled}
-            className={className}
+            className={combinedClassName}
             style={{
-                minHeight: 'var(--button-height)',
-                padding: 'var(--space-3) var(--space-5)',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: 'var(--font-weight-medium)',
-                fontSize: 'var(--font-size-base)',
-                cursor: isDisabled ? 'not-allowed' : 'pointer',
-                transition: 'all var(--transition-fast)',
-                border: '1px solid transparent',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 'var(--space-2)',
-                textDecoration: 'none',
-                backgroundColor:
-          variant === 'primary'
-              ? 'var(--color-accent)'
-              : variant === 'danger'
-                  ? 'var(--color-error)'
-                  : 'var(--color-bg-tertiary)',
-                color:
-          variant === 'primary' || variant === 'danger'
-              ? 'white'
-              : 'var(--color-text-primary)',
-                borderColor: variant === 'secondary' ? 'var(--color-border)' : 'transparent',
-                opacity: isDisabled ? 0.6 : 1,
             }}
             {...props}
         >

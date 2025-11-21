@@ -1,4 +1,5 @@
 import { Card } from './Card';
+import styles from './ErrorDisplay.module.css';
 import type { ErrorInfo } from '@/lib/errors';
 
 interface ErrorDisplayProps {
@@ -18,61 +19,33 @@ export function ErrorDisplay({
     actions,
     compact = false
 }: ErrorDisplayProps) {
-    const padding = compact ? 'var(--space-4)' : 'var(--space-6)';
-    const colorTextSecondary = 'var(--color-text-secondary)';
-    const fontSizeSm = 'var(--font-size-sm)';
-    const spaceFour = 'var(--space-4)';
-
     return (
         <Card>
-            <div style={{ padding }}>
+            <div className={compact ? styles.containerCompact : styles.container}>
                 {!compact && (
-                    <div style={{
-                        fontSize: 'var(--font-size-4xl)',
-                        marginBottom: spaceFour,
-                    }}>
+                    <div className={styles.icon}>
                         ⚠️
                     </div>
                 )}
-                <h2 style={{
-                    marginTop: 0,
-                    marginBottom: 'var(--space-3)',
-                    fontSize: compact ? 'var(--font-size-lg)' : 'var(--font-size-2xl)',
-                }}>
+                <h2 className={`${styles.title} ${compact ? styles.titleCompact : ''}`.trim()}>
                     {errorInfo.title}
                 </h2>
-                <p style={{
-                    color: colorTextSecondary,
-                    marginBottom: errorInfo.suggestion ? 'var(--space-2)' : spaceFour,
-                }}>
+                <p className={`${styles.message} ${errorInfo.suggestion ? styles.messageWithSuggestion : ''}`.trim()}>
                     {errorInfo.message}
                 </p>
                 {errorInfo.suggestion && (
-                    <p style={{
-                        fontSize: fontSizeSm,
-                        color: colorTextSecondary,
-                        marginBottom: spaceFour,
-                    }}>
+                    <p className={styles.suggestion}>
                         💡 {errorInfo.suggestion}
                     </p>
                 )}
                 {errorInfo.recovery && errorInfo.recovery.length > 0 && (
-                    <div style={{ marginBottom: spaceFour }}>
-                        <p style={{
-                            fontSize: fontSizeSm,
-                            fontWeight: 'var(--font-weight-semibold)',
-                            marginBottom: 'var(--space-2)',
-                        }}>
+                    <div className={styles.recoveryContainer}>
+                        <p className={styles.recoveryTitle}>
                             What you can do:
                         </p>
-                        <ul style={{
-                            fontSize: fontSizeSm,
-                            color: colorTextSecondary,
-                            paddingLeft: 'var(--space-5)',
-                            margin: 0,
-                        }}>
+                        <ul className={styles.recoveryList}>
                             {errorInfo.recovery.map((step) => (
-                                <li key={step} style={{ marginBottom: 'var(--space-1)' }}>
+                                <li key={step} className={styles.recoveryItem}>
                                     {step}
                                 </li>
                             ))}
@@ -80,22 +53,12 @@ export function ErrorDisplay({
                     </div>
                 )}
                 {errorId && (
-                    <p style={{
-                        fontSize: fontSizeSm,
-                        color: 'var(--color-text-tertiary)',
-                        fontFamily: 'monospace',
-                        marginBottom: actions ? spaceFour : 0,
-                    }}>
+                    <p className={`${styles.errorId} ${actions ? styles.errorIdWithActions : ''}`.trim()}>
                         Error ID: {errorId}
                     </p>
                 )}
                 {actions && (
-                    <div style={{
-                        display: 'flex',
-                        gap: 'var(--space-3)',
-                        flexWrap: 'wrap',
-                        marginTop: spaceFour,
-                    }}>
+                    <div className={styles.actions}>
                         {actions}
                     </div>
                 )}

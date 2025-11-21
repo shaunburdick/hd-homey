@@ -13,10 +13,6 @@ interface ValidationError {
     message: string;
 }
 
-const ERROR_COLOR = 'var(--color-error)';
-const ERROR_BG_COLOR = 'var(--color-error-bg)';
-const TEXT_SECONDARY = 'var(--color-text-secondary)';
-
 export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
     const [state, formAction, isPending] = useActionState(updateTuner, null);
     const [, deleteAction, isDeleting] = useActionState(deleteTuner, null);
@@ -91,24 +87,11 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                     <h2 className="mt-0 mb-4">Tuner Settings</h2>
                     <form action={handleSubmit}>
                         {errors && (
-                            <div
-                                role="alert"
-                                className="rounded p-4 mb-4"
-                                style={{
-                                    backgroundColor: ERROR_BG_COLOR,
-                                    border: `1px solid ${ERROR_COLOR}`,
-                                }}
-                            >
-                                <strong style={{ color: ERROR_COLOR }}>
+                            <div role="alert" className="rounded p-4 mb-4 bg-error">
+                                <strong>
                                     Please fix the following errors:
                                 </strong>
-                                <ul
-                                    className="mt-2 m-0"
-                                    style={{
-                                        paddingLeft: 'var(--space-5)',
-                                        color: ERROR_COLOR,
-                                    }}
-                                >
+                                <ul className="mt-2 m-0" style={{ paddingLeft: 'var(--space-5)' }}>
                                     {Object.entries(errors).map(([field, messages]) =>
                                         messages.map((message) => (
                                             <li key={`${field}-${message}`}>
@@ -161,31 +144,22 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                             </div>
                         )}
 
-                        {!isValidating && validationState && (() => {
-                            const colorVar = validationState.success ? 'var(--color-success)' : 'var(--color-error)';
-                            return (
-                                <div
-                                    role="alert"
-                                    className="rounded p-4 mb-4"
-                                    style={{
-                                        backgroundColor: validationState.success
-                                            ? 'var(--color-success-bg)'
-                                            : ERROR_BG_COLOR,
-                                        border: `1px solid ${colorVar}`,
-                                    }}
-                                >
-                                    <strong style={{ color: colorVar }}>
-                                        {validationState.success ? '✓ ' : '✗ '}
-                                        {validationState.message}
-                                    </strong>
-                                    {validationState.error && (
-                                        <p className="mt-2 mb-0 text-sm" style={{ color: colorVar }}>
-                                            {validationState.error}
-                                        </p>
-                                    )}
-                                </div>
-                            );
-                        })()}
+                        {!isValidating && validationState && (
+                            <div
+                                role="alert"
+                                className={`rounded p-4 mb-4 ${validationState.success ? 'bg-success' : 'bg-error'}`}
+                            >
+                                <strong>
+                                    {validationState.success ? '✓ ' : '✗ '}
+                                    {validationState.message}
+                                </strong>
+                                {validationState.error && (
+                                    <p className="mt-2 mb-0 text-sm">
+                                        {validationState.error}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <div className="form-group">
                             <label className="checkbox-label">
@@ -270,14 +244,11 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                     ]}
                 />
 
-                <Card style={{
-                    borderColor: ERROR_COLOR,
-                    backgroundColor: ERROR_BG_COLOR,
-                }}>
-                    <h2 className="mt-0 mb-3" style={{ color: ERROR_COLOR }}>
+                <Card className="bg-error">
+                    <h2 className="mt-0 mb-3">
                         Danger Zone
                     </h2>
-                    <p className="text-sm mb-4" style={{ color: TEXT_SECONDARY }}>
+                    <p className="text-sm text-secondary mb-4">
                         Deleting a tuner will remove it and all its channels. This action cannot be undone.
                     </p>
 
@@ -292,13 +263,7 @@ export default function EditTunerForm({ tuner }: { tuner: Tuner }) {
                         </Button>
                     ) : (
                         <div>
-                            <p
-                                className="text-sm mb-3"
-                                style={{
-                                    color: ERROR_COLOR,
-                                    fontWeight: 'var(--font-weight-medium)',
-                                }}
-                            >
+                            <p className="text-sm font-medium mb-3">
                                 Are you sure? This will permanently delete &quot;{tuner.name}&quot;
                                 and all its channels.
                             </p>

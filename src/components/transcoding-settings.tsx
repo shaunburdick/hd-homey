@@ -351,19 +351,6 @@ export default function TranscodingSettings({
                 <button
                     type="submit"
                     disabled={isPending || !settings.enabled}
-                    style={{
-                        minHeight: 'var(--button-height)',
-                        padding: 'var(--space-3) var(--space-5)',
-                        borderRadius: 'var(--radius-md)',
-                        fontWeight: 'var(--font-weight-medium)',
-                        fontSize: 'var(--font-size-base)',
-                        cursor: (isPending || !settings.enabled) ? 'not-allowed' : 'pointer',
-                        transition: 'all var(--transition-fast)',
-                        border: 'none',
-                        backgroundColor: 'var(--color-accent)',
-                        color: 'white',
-                        opacity: (isPending || !settings.enabled) ? 0.6 : 1,
-                    }}
                 >
                     {isPending ? 'Saving...' : '💾 Save Settings'}
                 </button>

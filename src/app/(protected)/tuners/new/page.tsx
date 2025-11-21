@@ -12,8 +12,6 @@ interface ValidationError {
     message: string;
 }
 
-const ERROR_COLOR = 'var(--color-error)';
-
 export default function NewTunerPage() {
     const [state, formAction, isPending] = useActionState(createTuner, null);
     const [validationState, validateAction] = useActionState<
@@ -70,17 +68,11 @@ export default function NewTunerPage() {
             <Card>
                 <form action={handleSubmit}>
                     {errors && (
-                        <div role="alert" className="rounded p-4 mb-4" style={{
-                            backgroundColor: 'var(--color-error-bg)',
-                            border: `1px solid ${ERROR_COLOR}`,
-                        }}>
-                            <strong style={{ color: ERROR_COLOR }}>
+                        <div role="alert" className="rounded p-4 mb-4 bg-error">
+                            <strong>
                                 Please fix the following errors:
                             </strong>
-                            <ul className="mt-2 m-0" style={{
-                                paddingLeft: 'var(--space-5)',
-                                color: ERROR_COLOR,
-                            }}>
+                            <ul className="mt-2 m-0" style={{ paddingLeft: 'var(--space-5)' }}>
                                 {Object.entries(errors).map(([field, messages]) =>
                                     messages.map((message) => (
                                         <li key={`${field}-${message}`}>
@@ -133,31 +125,22 @@ export default function NewTunerPage() {
                         </div>
                     )}
 
-                    {!isValidating && validationState && (() => {
-                        const colorVar = validationState.success ? 'var(--color-success)' : 'var(--color-error)';
-                        return (
-                            <div
-                                role="alert"
-                                className="rounded p-4 mb-4"
-                                style={{
-                                    backgroundColor: validationState.success
-                                        ? 'var(--color-success-bg)'
-                                        : 'var(--color-error-bg)',
-                                    border: `1px solid ${colorVar}`,
-                                }}
-                            >
-                                <strong style={{ color: colorVar }}>
-                                    {validationState.success ? '✓ ' : '✗ '}
-                                    {validationState.message}
-                                </strong>
-                                {validationState.error && (
-                                    <p className="mt-2 mb-0 text-sm" style={{ color: colorVar }}>
-                                        {validationState.error}
-                                    </p>
-                                )}
-                            </div>
-                        );
-                    })()}
+                    {!isValidating && validationState && (
+                        <div
+                            role="alert"
+                            className={`rounded p-4 mb-4 ${validationState.success ? 'bg-success' : 'bg-error'}`}
+                        >
+                            <strong>
+                                {validationState.success ? '✓ ' : '✗ '}
+                                {validationState.message}
+                            </strong>
+                            {validationState.error && (
+                                <p className="mt-2 mb-0 text-sm">
+                                    {validationState.error}
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     <div className="mt-6 flex gap-3 flex-wrap">
                         <Button type="submit" loading={isPending} disabled={isPending || isValidating}>
@@ -181,11 +164,8 @@ export default function NewTunerPage() {
                 </form>
             </Card>
 
-            <div className="mt-5 p-4 rounded" style={{
-                backgroundColor: 'var(--color-info-bg)',
-                border: '1px solid var(--color-info)',
-            }}>
-                <h3 className="mt-0 mb-2 text-base" style={{ color: 'var(--color-info)' }}>
+            <div className="mt-5 p-4 rounded bg-info">
+                <h3 className="mt-0 mb-2 text-base">
                     💡 How to find your tuner
                 </h3>
                 <ul className="m-0 text-sm text-secondary">

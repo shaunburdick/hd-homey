@@ -43,10 +43,7 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
                     Channel {channel.guideNumber}: {channel.guideName}
                 </h1>
 
-                <Card className="p-4 mb-4" style={{
-                    backgroundColor: '#fff3cd',
-                    border: '1px solid #ffc107',
-                }}>
+                <Card className="p-4 mb-4 bg-warning">
                     <h3 className="mt-0">Transcoding Not Available</h3>
                     <p>
                         In-browser playback is not available.
@@ -79,14 +76,10 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
             />
 
             <details className="mt-4">
-                <summary style={{
-                    cursor: 'pointer',
-                    padding: 'var(--space-3)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                }}>
+                <summary style={{ cursor: 'pointer' }} className="p-3 font-semibold">
                     Channel Information
                 </summary>
-                <div style={{ marginTop: 'var(--space-3)' }}>
+                <div className="mt-3">
                     <InfoCard
                         items={[
                             { label: 'Guide Number', value: channel.guideNumber },

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import styles from './Input.module.css';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label: string;
@@ -27,53 +28,26 @@ export function Input({
     const isPasswordField = type === 'password';
     const actualType = isPasswordField && showPassword ? 'text' : type;
 
-    // Style constants
-    const colorError = 'var(--color-error)';
-    const spaceThree = 'var(--space-3)';
-    const spaceTwo = 'var(--space-2)';
-    const spaceOne = 'var(--space-1)';
-    const fontSizeSm = 'var(--font-size-sm)';
-
     return (
-        <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>
-            <label
-                htmlFor={inputId}
-                style={{
-                    display: 'block',
-                    fontSize: fontSizeSm,
-                    fontWeight: 'var(--font-weight-medium)',
-                    color: 'var(--color-text-primary)',
-                    marginBottom: spaceTwo,
-                }}
-            >
+        <div className={styles.formField}>
+            <label htmlFor={inputId} className={styles.label}>
                 {label}
                 {props.required && (
-                    <span style={{ color: colorError, marginLeft: spaceOne }} aria-label="required">
+                    <span className={styles.required} aria-label="required">
                         *
                     </span>
                 )}
             </label>
 
-            <div style={{ position: 'relative' }}>
+            <div className={styles.inputWrapper}>
                 <input
                     type={actualType}
                     id={inputId}
-                    className={className}
+                    className={`${styles.input} ${className}`.trim()}
                     aria-invalid={error ? 'true' : 'false'}
                     aria-describedby={
                         error ? errorId : helpText ? helpId : undefined
                     }
-                    style={{
-                        width: '100%',
-                        minHeight: 'var(--input-height)',
-                        padding: spaceThree,
-                        backgroundColor: 'var(--color-bg-secondary)',
-                        color: 'var(--color-text-primary)',
-                        border: `1px solid ${error !== undefined ? colorError : 'var(--color-border)'}`,
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: 'var(--font-size-base)',
-                        transition: 'border-color var(--transition-fast)',
-                    }}
                     {...props}
                 />
 
@@ -83,20 +57,7 @@ export function Input({
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        style={{
-                            position: 'absolute',
-                            right: spaceThree,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--color-text-secondary)',
-                            cursor: 'pointer',
-                            padding: spaceTwo,
-                            fontSize: fontSizeSm,
-                            minHeight: 'var(--min-touch-target)',
-                            minWidth: 'var(--min-touch-target)',
-                        }}
+                        className={`${styles.toggleButton} unstyled`}
                     >
                         {showPassword ? '🙈' : '👁️'}
                     </button>
@@ -104,30 +65,13 @@ export function Input({
             </div>
 
             {helpText && !error && (
-                <p
-                    id={helpId}
-                    style={{
-                        marginTop: spaceOne,
-                        fontSize: 'var(--font-size-xs)',
-                        color: 'var(--color-text-tertiary)',
-                        marginBottom: 0,
-                    }}
-                >
+                <p id={helpId} className={styles.helpText}>
                     {helpText}
                 </p>
             )}
 
             {error && (
-                <p
-                    id={errorId}
-                    role="alert"
-                    style={{
-                        marginTop: spaceOne,
-                        fontSize: fontSizeSm,
-                        color: colorError,
-                        marginBottom: 0,
-                    }}
-                >
+                <p id={errorId} role="alert" className={styles.errorText}>
                     {error}
                 </p>
             )}

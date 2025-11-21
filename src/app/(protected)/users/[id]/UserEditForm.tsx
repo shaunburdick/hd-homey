@@ -25,7 +25,6 @@ interface ValidationError {
 
 export default function UserEditForm({ user }: UserEditFormProps) {
     const [state, formAction, isPending] = useActionState(updateUser, null);
-    const spaceFour = 'var(--space-4)';
 
     const handleSubmit = async (formData: FormData) => {
         try {
@@ -53,25 +52,11 @@ export default function UserEditForm({ user }: UserEditFormProps) {
                 <input type="hidden" name="id" value={user.id} />
 
                 {errors && (
-                    <div
-                        role="alert"
-                        style={{
-                            backgroundColor: 'var(--color-error-bg)',
-                            border: '1px solid var(--color-error)',
-                            borderRadius: 'var(--radius-md)',
-                            padding: spaceFour,
-                            marginBottom: spaceFour,
-                        }}
-                    >
-                        <strong style={{ color: 'var(--color-error)' }}>
+                    <div role="alert" className="rounded p-4 mb-4 bg-error">
+                        <strong>
                             Please fix the following errors:
                         </strong>
-                        <ul style={{
-                            marginTop: 'var(--space-2)',
-                            marginBottom: 0,
-                            paddingLeft: 'var(--space-5)',
-                            color: 'var(--color-error)',
-                        }}>
+                        <ul className="mt-2 m-0" style={{ paddingLeft: 'var(--space-5)' }}>
                             {Object.entries(errors).map(([field, messages]) =>
                                 messages.map((message) => (
                                     <li key={`${field}-${message}`}>

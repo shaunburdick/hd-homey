@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { isNull } from 'drizzle-orm';
+import styles from './page.module.css';
 import hdHomey from '@public/hd-homey.webp';
 import { auth } from '@/auth';
 import { getDb } from '@/lib/database/db';
@@ -19,14 +20,6 @@ export default async function Home() {
     ]);
 
     const isAdmin = session?.user?.isAdmin;
-
-    // Style constants
-    const fontSize3xl = 'var(--font-size-3xl)';
-    const fontSize4xl = 'var(--font-size-4xl)';
-    const fontSizeSm = 'var(--font-size-sm)';
-    const fontWeightBold = 'var(--font-weight-bold)';
-    const colorTextSecondary = 'var(--color-text-secondary)';
-    const spaceBetween = 'space-between';
 
     return (
         <PageContainer maxWidth="xl">
@@ -50,60 +43,34 @@ export default async function Home() {
                     </div>
                 </div>
 
-                <div style={{
-                    display: 'grid',
-                    gap: 'var(--space-4)',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                }}>
+                <div className="grid grid-auto-fit gap-4">
                     <Card>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: spaceBetween,
-                        }}>
+                        <div className={styles.statCard}>
                             <div>
-                                <div style={{
-                                    fontSize: fontSize3xl,
-                                    fontWeight: fontWeightBold,
-                                    color: 'var(--color-accent)',
-                                }}>
+                                <div className={`${styles.statValue} ${styles.statValueAccent}`}>
                                     {tunerCount}
                                 </div>
-                                <div style={{
-                                    color: colorTextSecondary,
-                                    fontSize: fontSizeSm,
-                                }}>
+                                <div className={styles.statLabel}>
                                     {tunerCount === 1 ? 'Tuner' : 'Tuners'}
                                 </div>
                             </div>
-                            <div style={{ fontSize: fontSize4xl, opacity: 0.3 }}>
+                            <div className={styles.statIcon}>
                                 📡
                             </div>
                         </div>
                     </Card>
 
                     <Card>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: spaceBetween,
-                        }}>
+                        <div className={styles.statCard}>
                             <div>
-                                <div style={{
-                                    fontSize: fontSize3xl,
-                                    fontWeight: fontWeightBold,
-                                    color: 'var(--color-success)',
-                                }}>
+                                <div className={`${styles.statValue} ${styles.statValueSuccess}`}>
                                     {channelCount}
                                 </div>
-                                <div style={{
-                                    color: colorTextSecondary,
-                                    fontSize: fontSizeSm,
-                                }}>
+                                <div className={styles.statLabel}>
                                     {channelCount === 1 ? 'Channel' : 'Channels'}
                                 </div>
                             </div>
-                            <div style={{ fontSize: fontSize4xl, opacity: 0.3 }}>
+                            <div className={styles.statIcon}>
                                 📺
                             </div>
                         </div>
@@ -111,27 +78,16 @@ export default async function Home() {
 
                     {isAdmin && (
                         <Card>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: spaceBetween,
-                            }}>
+                            <div className={styles.statCard}>
                                 <div>
-                                    <div style={{
-                                        fontSize: fontSize3xl,
-                                        fontWeight: fontWeightBold,
-                                        color: 'var(--color-info)',
-                                    }}>
+                                    <div className={`${styles.statValue} ${styles.statValueInfo}`}>
                                         {userCount}
                                     </div>
-                                    <div style={{
-                                        color: colorTextSecondary,
-                                        fontSize: fontSizeSm,
-                                    }}>
+                                    <div className={styles.statLabel}>
                                         {userCount === 1 ? 'User' : 'Users'}
                                     </div>
                                 </div>
-                                <div style={{ fontSize: fontSize4xl, opacity: 0.3 }}>
+                                <div className={styles.statIcon}>
                                     👥
                                 </div>
                             </div>
@@ -140,60 +96,50 @@ export default async function Home() {
                 </div>
 
                 <div>
-                    <h2 style={{ marginBottom: 'var(--space-4)' }}>Quick Actions</h2>
-                    <div style={{
-                        display: 'grid',
-                        gap: 'var(--space-3)',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                    }}>
-                        <Link href="/tuners" className="no-underline" style={{ display: 'block' }}>
-                            <Card className="channel-card" style={{ cursor: 'pointer' }}>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-2xl">📡</span>
-                                    <div>
-                                        <div className="font-semibold mb-1">
-                                            Browse Tuners
-                                        </div>
-                                        <div className="text-sm text-secondary">
-                                            View and manage your HDHomeRun devices
-                                        </div>
+                    <h2 className="mb-4">Quick Actions</h2>
+                    <div className="grid grid-auto-fit gap-4">
+                        <Link href="/tuners" className={styles.quickLink}>
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">📡</span>
+                                <div>
+                                    <div className={styles.quickLinkTitle}>
+                                        Browse Tuners
+                                    </div>
+                                    <div className={styles.quickLinkDescription}>
+                                        View and manage your HDHomeRun devices
                                     </div>
                                 </div>
-                            </Card>
+                            </div>
                         </Link>
 
                         {isAdmin && (
-                            <Link href="/settings" className="no-underline" style={{ display: 'block' }}>
-                                <Card className="channel-card" style={{ cursor: 'pointer' }}>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">⚙️</span>
-                                        <div>
-                                            <div className="font-semibold mb-1">
-                                                Settings
-                                            </div>
-                                            <div className="text-sm text-secondary">
-                                                Configure transcoding and manage users
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            </Link>
-                        )}
-
-                        <Link href="/about" className="no-underline" style={{ display: 'block' }}>
-                            <Card className="channel-card" style={{ cursor: 'pointer' }}>
+                            <Link href="/settings" className={styles.quickLink}>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-2xl">ℹ️</span>
+                                    <span className="text-2xl">⚙️</span>
                                     <div>
-                                        <div className="font-semibold mb-1">
-                                            About
+                                        <div className={styles.quickLinkTitle}>
+                                            Settings
                                         </div>
-                                        <div className="text-sm text-secondary">
-                                            Version info and documentation
+                                        <div className={styles.quickLinkDescription}>
+                                            Configure transcoding and manage users
                                         </div>
                                     </div>
                                 </div>
-                            </Card>
+                            </Link>
+                        )}
+
+                        <Link href="/about" className={styles.quickLink}>
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">ℹ️</span>
+                                <div>
+                                    <div className={styles.quickLinkTitle}>
+                                        About
+                                    </div>
+                                    <div className={styles.quickLinkDescription}>
+                                        Version info and documentation
+                                    </div>
+                                </div>
+                            </div>
                         </Link>
                     </div>
                 </div>
