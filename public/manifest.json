@@ -5,7 +5,7 @@
     "description": "UI and Proxy for sharing HD Homerun tuners",
     "theme_color": "#0070F3",
     "background_color": "#111111",
-    "display": "fullscreen",
+    "display": "standalone",
     "orientation": "natural",
     "scope": "/",
     "start_url": "/",
