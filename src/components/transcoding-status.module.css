@@ -1,0 +1,76 @@
+.sessionsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sessionCard {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background-color: var(--color-bg-secondary);
+}
+
+.sessionHeader {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.sessionChannel {
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+
+.sessionDetails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.sessionStat {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.sessionLabel {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.sessionValue {
+    font-weight: bold;
+}
+
+.sessionActions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sessionStopBtn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+}
+
+.sessionStopBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (min-width: 768px) {
+    .sessionHeader {
+        justify-content: space-between;
+    }
+
+    .sessionDetails {
+        gap: 2rem;
+    }
+}

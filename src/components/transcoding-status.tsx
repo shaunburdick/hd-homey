@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import styles from './transcoding-status.module.css';
 import type { SessionStats } from '@/lib/transcoding/types';
 
 interface StatusResponse {
@@ -128,7 +129,7 @@ export default function TranscodingStatus() {
     };
 
     const getStatusBadge = (sessionStatus: SessionStats['status']) => {
-        const styles: Record<string, React.CSSProperties> = {
+        const badgeStyles: Record<string, React.CSSProperties> = {
             starting: { backgroundColor: '#fff3cd', color: '#856404' },
             running: { backgroundColor: '#d4edda', color: '#155724' },
             stopping: { backgroundColor: '#f8d7da', color: '#721c24' },
@@ -142,7 +143,7 @@ export default function TranscodingStatus() {
                     borderRadius: '4px',
                     fontSize: '0.875rem',
                     fontWeight: 'bold',
-                    ...styles[sessionStatus],
+                    ...badgeStyles[sessionStatus],
                 }}
             >
                 {sessionStatus.toUpperCase()}
@@ -192,41 +193,41 @@ export default function TranscodingStatus() {
                 {status.count !== 1 ? 's' : ''}
             </p>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Channel</th>
-                        <th>Viewers</th>
-                        <th>Uptime</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {status.sessions.map((session) => (
-                        <tr key={session.sessionId}>
-                            <td>
-                                <a href={`/tuners/${session.tunerId}/channel/${session.channelId}`}>
-                                    {session.channelName}
-                                </a>
-                            </td>
-                            <td>{session.viewerCount}</td>
-                            <td>{formatUptime(session.uptime)}</td>
-                            <td>{getStatusBadge(session.status)}</td>
-                            <td>
-                                <button
-                                    type="button"
-                                    onClick={() => void stopSession(session.sessionId)}
-                                    disabled={session.status === 'stopping'}
-                                    style={{ fontSize: '0.875rem', color: 'inherit' }}
-                                >
-                                    Stop
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <div className={styles.sessionsContainer}>
+                {status.sessions.map((session) => (
+                    <div key={session.sessionId} className={styles.sessionCard}>
+                        <div className={styles.sessionHeader}>
+                            <a
+                                href={`/tuners/${session.tunerId}/channel/${session.channelId}`}
+                                className={styles.sessionChannel}
+                            >
+                                {session.channelName}
+                            </a>
+                            {getStatusBadge(session.status)}
+                        </div>
+                        <div className={styles.sessionDetails}>
+                            <div className={styles.sessionStat}>
+                                <span className={styles.sessionLabel}>Viewers:</span>
+                                <span className={styles.sessionValue}>{session.viewerCount}</span>
+                            </div>
+                            <div className={styles.sessionStat}>
+                                <span className={styles.sessionLabel}>Uptime:</span>
+                                <span className={styles.sessionValue}>{formatUptime(session.uptime)}</span>
+                            </div>
+                        </div>
+                        <div className={styles.sessionActions}>
+                            <button
+                                type="button"
+                                onClick={() => void stopSession(session.sessionId)}
+                                disabled={session.status === 'stopping'}
+                                className={styles.sessionStopBtn}
+                            >
+                                Stop Session
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
 
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
                 Auto-refreshes every 5 seconds
