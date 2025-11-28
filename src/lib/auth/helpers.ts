@@ -1,8 +1,10 @@
 import { headers } from 'next/headers';
 import { AuthRoles } from '../auth-roles';
 import { auth } from './auth';
+import type { Session, User } from './types';
 
 export { AuthRoles };
+export type { Session, User };
 
 /**
  * Require a specific role for server actions
@@ -11,13 +13,16 @@ export { AuthRoles };
  * @returns The session if authorized
  * @throws Error if unauthorized
  */
-export async function requireRole(role: AuthRoles) {
-    const session = await auth.api.getSession({
+export async function requireRole(role: AuthRoles): Promise<Session> {
+    const rawSession = await auth.api.getSession({
         headers: await headers()
     });
 
+    // Cast to our custom session type (Better-Auth doesn't infer custom fields properly)
+    const session = rawSession as unknown as Session;
+
     // Check for valid session and user
-    if (session?.user === null) {
+    if (!session?.user) {
         throw new Error('Not authenticated');
     }
 
@@ -34,6 +39,6 @@ export async function requireRole(role: AuthRoles) {
  * @returns The session if user is admin
  * @throws Error if not admin
  */
-export async function requireAdmin() {
+export async function requireAdmin(): Promise<Session> {
     return await requireRole(AuthRoles.Admin);
 }

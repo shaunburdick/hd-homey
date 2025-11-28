@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/lib/auth/auth';
+import type { Session } from '@/lib/auth/types';
 import { Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
 import ChangePasswordForm from '@/components/change-password-form';
@@ -8,11 +9,14 @@ import { getDb } from '@/lib/database/db';
 import { user as userTable } from '@/lib/database/schema';
 
 export default async function ProfilePage() {
-    const session = await auth.api.getSession({
+    const rawSession = await auth.api.getSession({
         headers: await headers()
     });
 
-    if (session?.user === null) {
+    // Cast to our type with custom fields
+    const session = rawSession as unknown as Session | null;
+
+    if (!session?.user) {
         return null;
     }
 
