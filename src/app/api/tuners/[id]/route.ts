@@ -39,7 +39,7 @@ export async function POST(
             headers: await headers()
         });
         if (session?.user?.role !== 'admin') {
-            Logger.warn({ user: session?.user?.email }, 'Unauthorized tuner update attempt');
+            Logger.warn({ user: session?.user.email }, 'Unauthorized tuner update attempt');
             return Response.json(
                 { error: 'Forbidden', message: 'Admin access required' },
                 { status: 403 }

@@ -36,6 +36,7 @@ export default function SignIn() {
                 router.refresh();
             }
         } catch (err) {
+            // eslint-disable-next-line no-console
             console.error('Sign in error:', err);
             setError('An error occurred during sign in');
             setIsLoading(false);

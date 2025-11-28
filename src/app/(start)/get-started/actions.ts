@@ -12,15 +12,15 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
     // Validation
     const errors: { path: string; message: string }[] = [];
 
-    if (!username || username.length < 3) {
+    if ((username?.length ?? 0) < 3) {
         errors.push({ path: 'username', message: 'Username must be at least 3 characters' });
     }
 
-    if (!name || name.length < 1) {
+    if ((name?.length ?? 0) < 1) {
         errors.push({ path: 'name', message: 'Name is required' });
     }
 
-    if (!password || password.length < 8) {
+    if ((password?.length ?? 0) < 8) {
         errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
     }
 
@@ -28,14 +28,19 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
         return errors;
     }
 
+    // TypeScript now knows these are defined because validation passed
+    const validUsername = username as string;
+    const validName = name as string;
+    const validPassword = password as string;
+
     try {
         // Create admin user via Better-Auth
         // Note: Better-Auth uses email field for username
         await auth.api.signUpEmail({
             body: {
-                email: username!,
-                password: password!,
-                name: name!,
+                email: validUsername,
+                password: validPassword,
+                name: validName,
                 role: AuthRoles.Admin, // First user is always admin
             },
         });
@@ -43,6 +48,7 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
         // Redirect to signin page after successful creation
         redirect('/users/signin');
     } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error creating first user:', error);
         return [{ path: 'form', message: 'Failed to create user. Please try again.' }];
     }
