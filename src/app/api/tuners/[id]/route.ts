@@ -38,7 +38,7 @@ export async function POST(
         const session = await auth.api.getSession({
             headers: await headers()
         });
-        if (!session?.user || session.user.role !== 'admin') {
+        if (session?.user?.role !== 'admin') {
             Logger.warn({ user: session?.user?.email }, 'Unauthorized tuner update attempt');
             return Response.json(
                 { error: 'Forbidden', message: 'Admin access required' },

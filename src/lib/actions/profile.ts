@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth/auth';
 import { getDb } from '@/lib/database/db';
-import { user, account } from '@/lib/database/schema';
+import { account } from '@/lib/database/schema';
 import { generateHashPassword, verifyPassword } from '@/lib/user';
 
 export interface FormState {
@@ -24,7 +24,7 @@ export async function changePassword(
         headers: await headers()
     });
 
-    if (!session?.user) {
+    if (session?.user == null) {
         return {
             errors: {
                 _form: ['You must be logged in to change your password'],
@@ -77,7 +77,7 @@ export async function changePassword(
             where: eq(account.userId, userId),
         });
 
-        if (!userAccount?.password) {
+        if (userAccount?.password == null) {
             return {
                 errors: {
                     _form: ['User not found or no password set'],

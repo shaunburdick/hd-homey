@@ -18,7 +18,7 @@ export const user = sqliteTable('user', {
     image: text('image'),
     createdAt: integer('createdAt', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
     updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-    
+
     // Custom HD Homey fields
     role: text('role', { enum: [AuthRoles.Admin, AuthRoles.Viewer] }).notNull().default(AuthRoles.Viewer),
     isActive: integer('isActive', { mode: 'boolean' }).notNull().default(true),

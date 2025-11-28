@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
-import { auth } from './auth';
 import { AuthRoles } from '../auth-roles';
+import { auth } from './auth';
 
 export { AuthRoles };
 
@@ -17,7 +17,7 @@ export async function requireRole(role: AuthRoles) {
     });
 
     // Check for valid session and user
-    if (!session?.user) {
+    if (session?.user == null) {
         throw new Error('Not authenticated');
     }
 

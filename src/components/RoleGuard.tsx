@@ -1,7 +1,7 @@
 'use client';
 
-import { authClient } from '@/lib/auth/auth-client';
 import type { ReactNode } from 'react';
+import { authClient } from '@/lib/auth/auth-client';
 import type { AuthRoles } from '@/lib/auth-roles';
 
 interface RoleGuardProps {

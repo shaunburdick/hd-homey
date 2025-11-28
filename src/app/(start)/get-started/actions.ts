@@ -10,16 +10,16 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
     const password = formData.get('password')?.toString();
 
     // Validation
-    const errors: Array<{ path: string; message: string }> = [];
-    
+    const errors: { path: string; message: string }[] = [];
+
     if (!username || username.length < 3) {
         errors.push({ path: 'username', message: 'Username must be at least 3 characters' });
     }
-    
+
     if (!name || name.length < 1) {
         errors.push({ path: 'name', message: 'Name is required' });
     }
-    
+
     if (!password || password.length < 8) {
         errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
     }
