@@ -36,7 +36,7 @@ describe('HDTuner', () => {
             const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
             expect(callArg).toBeDefined();
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
             expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
             expect(lineup).toEqual(mockLineupData);
             expect(lineup).toHaveLength(6);
@@ -92,7 +92,7 @@ describe('HDTuner', () => {
             const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
             expect(callArg).toBeDefined();
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
             expect(callArg?.toString()).toBe('http://192.168.20.25:8080/lineup.json');
         });
     });

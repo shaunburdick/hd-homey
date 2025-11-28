@@ -59,7 +59,7 @@ export async function createUser(prevState: unknown, formData: FormData) {
             },
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
         if (result?.user === undefined) {
             return [{ path: 'form', message: 'Failed to create user' }];
         }
