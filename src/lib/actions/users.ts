@@ -59,6 +59,7 @@ export async function createUser(prevState: unknown, formData: FormData) {
             },
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (result?.user === undefined) {
             return [{ path: 'form', message: 'Failed to create user' }];
         }
@@ -87,7 +88,7 @@ export async function updateUser(prevState: unknown, formData: FormData) {
     const name = formData.get('name')?.toString();
     const password = formData.get('password')?.toString();
 
-    if (!userId) {
+    if (userId === undefined || userId === '') {
         return [{ path: 'id', message: 'Invalid user ID' }];
     }
 
@@ -100,7 +101,7 @@ export async function updateUser(prevState: unknown, formData: FormData) {
         errors.push({ path: 'name', message: 'Name must be at least 3 characters' });
     }
 
-    if (password && password.length < 8) {
+    if (password !== undefined && password.length > 0 && password.length < 8) {
         errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
     }
 
@@ -121,8 +122,9 @@ export async function updateUser(prevState: unknown, formData: FormData) {
             .where(eq(user.id, userId));
 
         // Update password if provided
-        if (password?.trim()) {
-            const hashedPassword = await generateHashPassword(password);
+        const trimmedPassword = password?.trim();
+        if (trimmedPassword !== undefined && trimmedPassword.length > 0) {
+            const hashedPassword = await generateHashPassword(trimmedPassword);
 
             // Find account for this user
             const userAccount = await db.select()
@@ -131,7 +133,7 @@ export async function updateUser(prevState: unknown, formData: FormData) {
                 .limit(1)
                 .get();
 
-            if (userAccount) {
+            if (userAccount !== undefined) {
                 await db.update(account)
                     .set({
                         password: hashedPassword,
