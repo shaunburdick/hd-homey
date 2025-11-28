@@ -3,7 +3,7 @@ import { createUser, updateUser } from './users';
 import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import { AuthRoles } from '@/lib/auth-roles';
 import type { DB } from '@/lib/database/db';
-import * as authModule from '@/lib/auth';
+import * as authModule from '@/lib/auth/helpers';
 
 // Mock Next.js functions
 vi.mock('next/navigation', () => ({

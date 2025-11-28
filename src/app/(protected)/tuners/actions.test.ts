@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { deleteTuner } from './actions';
 
 // Mock dependencies
-vi.mock('@/lib/auth', async (importOriginal) => {
+vi.mock('@/lib/auth/helpers', async (importOriginal) => {
     const actual = await importOriginal();
     return {
         ...actual as object,
@@ -55,7 +55,7 @@ describe('deleteTuner', () => {
         const { getDb } = vi.mocked(await import('@/lib/database/db'));
         getDb.mockResolvedValue(mockDb as never);
 
-        const { requireAdmin } = vi.mocked(await import('@/lib/auth'));
+        const { requireAdmin } = vi.mocked(await import('@/lib/auth/helpers'));
         requireAdmin.mockResolvedValue({} as never);
     });
 
@@ -118,7 +118,7 @@ describe('deleteTuner', () => {
     });
 
     it('should return error when not authorized', async () => {
-        const { requireAdmin } = vi.mocked(await import('@/lib/auth'));
+        const { requireAdmin } = vi.mocked(await import('@/lib/auth/helpers'));
         requireAdmin.mockRejectedValue(new Error('Unauthorized'));
 
         const formData = new FormData();

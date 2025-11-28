@@ -1,8 +1,8 @@
 import { createInsertSchema } from 'drizzle-typebox';
 import { Value } from '@sinclair/typebox/value';
 import { FormatRegistry, Type } from '@sinclair/typebox';
-import { AuthRoles } from '../auth';
-import { tuners, users } from './schema';
+import { AuthRoles } from '../auth-roles';
+import { tuners, user } from './schema';
 
 FormatRegistry.Set('uri', (value) => URL.canParse(value));
 
@@ -14,10 +14,10 @@ export const insertTunerSchema = createInsertSchema(tuners, {
 export const isTunerValid = (data: unknown) => Value.Check(insertTunerSchema, data);
 export const getTunerErrors = (data: unknown) => Value.Errors(insertTunerSchema, data);
 
-export const insertUserSchema = createInsertSchema(users, {
+// Better-Auth user validation
+export const insertUserSchema = createInsertSchema(user, {
     name: Type.String({ minLength: 3 }),
-    username: Type.String({ minLength: 3 }),
-    passHash: Type.String({ minLength: 60, maxLength: 60 }),
+    email: Type.String({ minLength: 3 }), // email field stores username
     role: Type.Enum({ admin: AuthRoles.Admin, viewer: AuthRoles.Viewer })
 });
 export const isUserValid = (data: unknown) => Value.Check(insertUserSchema, data);

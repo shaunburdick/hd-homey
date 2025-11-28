@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '@/lib/database/db';
 import { tuners, channels } from '@/lib/database/schema';
 import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
-import { requireAdmin } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth/helpers';
 import { HDTuner } from '@/lib/hdhr/tuner';
 import Logger from '@/lib/logger';
 
