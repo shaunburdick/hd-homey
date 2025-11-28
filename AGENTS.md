@@ -93,11 +93,17 @@ try {
 }
 ```
 
-#### Authentication
+#### Authentication & Route Protection
+- **Proxy**: `src/proxy.ts` protects all routes requiring authentication
+  - Public routes: `/users/signin`, `/get-started`, `/api/auth/*`
+  - Token-authenticated: `/api/transcode/*` (HMAC tokens validated in handlers)
+  - Session-authenticated: All other routes (checked by proxy)
+  - Works on Edge Runtime because NextAuth v5 uses JWT sessions (no database access needed)
 - Use `auth()` from `@/auth` in Server Components
 - Use `useSession()` from `@/lib/auth` in Client Components
 - Check `session.user.isAdmin` for admin operations
-- Always verify permissions server-side, even if client hides UI
+- **Always verify permissions server-side** in API routes, even if proxy checks session
+- Admin-only operations (tuner modifications) require explicit `isAdmin` check in handler
 
 #### Database
 - All DB code is server-side only (Node.js APIs like `fs`)
@@ -156,6 +162,7 @@ docker compose up -d     # Start with Docker Compose
 4. **Session updates**: Call `router.refresh()` after login/logout to update UI
 5. **Build-time DB**: Dynamic routes export `dynamic = 'force-dynamic'` to avoid DB access during build
 6. **Transactions**: Avoid using db transactions for simple operations - they can fail with "cannot commit"
+7. **Proxy**: Route protection is enforced at the proxy level (`src/proxy.ts`). Token-authenticated routes (transcoding) bypass proxy and validate tokens in handlers. Proxy runs on Edge Runtime but works with NextAuth because v5 uses JWT sessions (no database access needed for session validation).
 
 ## Testing
 

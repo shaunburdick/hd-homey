@@ -1,6 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { notFound } from 'next/navigation';
+import { auth } from '@/auth';
 import { tuners } from '@/lib/database/schema';
 import { getDb } from '@/lib/database/db';
 import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
@@ -32,6 +33,16 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // Require admin authorization for modifying tuners
+        const session = await auth();
+        if (session?.user?.isAdmin !== true) {
+            Logger.warn({ user: session?.user?.username }, 'Unauthorized tuner update attempt');
+            return Response.json(
+                { error: 'Forbidden', message: 'Admin access required' },
+                { status: 403 }
+            );
+        }
+
         const db = await getDb();
         const { id } = await params;
         const formData = await request.formData();

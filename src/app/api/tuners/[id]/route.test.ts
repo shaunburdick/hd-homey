@@ -141,7 +141,7 @@ describe('POST /api/tuners/[id]', () => {
         expect(response.status).toBeGreaterThanOrEqual(200);
 
         // Verify it's a valid HTTP response
-        expect([200, 302, 400, 404, 500]).toContain(response.status);
+        expect([200, 302, 400, 403, 404, 500]).toContain(response.status);
     });
 
     it('should handle non-existent tuner request', async () => {

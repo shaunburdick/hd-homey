@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { and, eq, isNull } from 'drizzle-orm';
+import { auth } from '@/auth';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
 import Logger from '@/lib/logger';
@@ -10,6 +11,16 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // Require authentication (middleware protects this route, but double-check)
+        const session = await auth();
+        if (!session?.user) {
+            Logger.warn('Unauthorized poll request attempt');
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const db = await getDb();
         const { id } = await params;
 
