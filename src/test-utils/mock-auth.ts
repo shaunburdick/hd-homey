@@ -1,3 +1,4 @@
+import type { vi as Vi } from 'vitest';
 import { AuthRoles } from '@/lib/auth-roles';
 
 /**
@@ -142,13 +143,10 @@ export function createMockSession(overrides: Partial<MockSession['user']> = {}):
     };
 }
 
-import type { vi as Vi } from 'vitest';
-
 /**
  * Mock auth.api.getSession() function for server components
  * Note: Import vi from vitest in your test file before using this
  */
-
 export function mockAuthGetSession(vi: typeof Vi, session: MockSession | null = null) {
     return vi.fn(() => Promise.resolve(session));
 }

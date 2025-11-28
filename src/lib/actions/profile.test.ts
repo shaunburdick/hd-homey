@@ -79,7 +79,7 @@ describe('Profile Actions', () => {
             const updatedAccount = testDb.select().from(account).where(eq(account.userId, TEST_USER_ID)).get();
             expect(updatedAccount).toBeDefined();
 
-            if (updatedAccount?.password !== undefined && updatedAccount.password !=== null) {
+            if (updatedAccount?.password !== undefined && updatedAccount.password !== null) {
                 const passwordValid = await verifyPassword(updatedAccount.password, TEST_NEW_PASSWORD);
                 expect(passwordValid).toBe(true);
             }

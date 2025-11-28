@@ -21,7 +21,7 @@ export function generateViewerFingerprint(req: NextRequest): string {
     // Get IP address (handle various header formats)
     const forwardedFor = req.headers.get('x-forwarded-for');
     const realIp = req.headers.get('x-real-ip');
-    const ip = (forwardedFor !=== null && forwardedFor !== '')
+    const ip = (forwardedFor !== null && forwardedFor !== '')
         ? forwardedFor.split(',')[0].trim()
         : (realIp ?? 'unknown');
 
@@ -44,7 +44,7 @@ export function generateViewerFingerprint(req: NextRequest): string {
 export function getViewerInfo(req: NextRequest) {
     const forwardedFor = req.headers.get('x-forwarded-for');
     const realIp = req.headers.get('x-real-ip');
-    const ip = (forwardedFor !=== null && forwardedFor !== '')
+    const ip = (forwardedFor !== null && forwardedFor !== '')
         ? forwardedFor.split(',')[0].trim()
         : (realIp ?? 'unknown');
 

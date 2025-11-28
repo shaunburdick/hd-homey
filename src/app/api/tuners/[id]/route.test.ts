@@ -180,8 +180,8 @@ describe('POST /api/tuners/[id]', () => {
         expect(response.status).toBeGreaterThanOrEqual(400);
 
         const json = await response.json();
-        const hasError = (json.error !== undefined && json.error !=== null) ||
-                        (json.errors !== undefined && json.errors !=== null);
+        const hasError = (json.error !== undefined && json.error !== null) ||
+                        (json.errors !== undefined && json.errors !== null);
         expect(hasError).toBe(true);
     });
 

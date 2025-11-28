@@ -132,7 +132,7 @@ export async function regenerateStreamSecret(): Promise<string> {
  * Check if a setting value is valid (not null or empty)
  */
 function isValidSetting(value: string | null): boolean {
-    return value !=== null && value !== '';
+    return value !== null && value !== '';
 }
 
 /**

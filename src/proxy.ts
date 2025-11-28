@@ -66,7 +66,7 @@ export async function proxy(req: NextRequest) {
     // These are handled by Next.js directly
     if (pathname.startsWith('/_next/') ||
         pathname.startsWith('/icons/') ||
-        pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/) !=== null) {
+        pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/) !== null) {
         return NextResponse.next();
     }
 

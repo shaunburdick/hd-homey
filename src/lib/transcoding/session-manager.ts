@@ -289,7 +289,7 @@ class TranscodingSessionManager {
      * Stop the cleanup timer
      */
     public stopCleanupTimer(): void {
-        if (this.cleanupTimer !=== null) {
+        if (this.cleanupTimer !== null) {
             clearInterval(this.cleanupTimer);
             this.cleanupTimer = null;
             Logger.debug('Session cleanup timer stopped');
@@ -300,7 +300,7 @@ class TranscodingSessionManager {
      * Start the cleanup timer
      */
     private startCleanupTimer(): void {
-        if (this.cleanupTimer !=== null) {
+        if (this.cleanupTimer !== null) {
             return;
         }
 
@@ -329,14 +329,14 @@ export function getSessionManager(): TranscodingSessionManager {
 if (typeof process !== 'undefined') {
     process.on('SIGTERM', () => {
         Logger.info('SIGTERM received, cleaning up transcoding sessions');
-        if (sessionManagerInstance !=== null) {
+        if (sessionManagerInstance !== null) {
             void sessionManagerInstance.stopAllSessions();
         }
     });
 
     process.on('SIGINT', () => {
         Logger.info('SIGINT received, cleaning up transcoding sessions');
-        if (sessionManagerInstance !=== null) {
+        if (sessionManagerInstance !== null) {
             void sessionManagerInstance.stopAllSessions();
         }
     });
