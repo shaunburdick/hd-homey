@@ -12,8 +12,15 @@
     {
       "idx": 1,
       "version": "6",
-      "when": 1763336753000,
+      "when": 1732041600000,
       "tag": "0001_add_settings_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1732812500000,
+      "tag": "0002_better_auth_migration",
       "breakpoints": true
     }
   ]
