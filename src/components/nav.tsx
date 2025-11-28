@@ -6,13 +6,15 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import './nav.css';
 import { authClient } from '@/lib/auth/auth-client';
+import type { Session } from '@/lib/auth/types';
 
 export default function Nav() {
 
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const [lastPathname, setLastPathname] = useState(pathname);
-    const { data: session } = authClient.useSession();
+    const { data: rawSession } = authClient.useSession();
+    const session = rawSession as unknown as Session | null;
 
     // Close menu on route change
     if (pathname !== lastPathname) {

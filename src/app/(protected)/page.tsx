@@ -5,6 +5,7 @@ import { isNull } from 'drizzle-orm';
 import styles from './page.module.css';
 import hdHomey from '@public/hd-homey.webp';
 import { auth } from '@/lib/auth/auth';
+import type { Session } from '@/lib/auth/types';
 import { getDb } from '@/lib/database/db';
 import { tuners, channels, user } from '@/lib/database/schema';
 import { Card } from '@/components';
@@ -12,9 +13,10 @@ import { PageContainer } from '@/components/layouts';
 import { AuthRoles } from '@/lib/auth-roles';
 
 export default async function Home() {
-    const session = await auth.api.getSession({
+    const rawSession = await auth.api.getSession({
         headers: await headers()
     });
+    const session = rawSession as unknown as Session | null;
     const db = await getDb();
 
     const [tunerCount, channelCount, userCount] = await Promise.all([

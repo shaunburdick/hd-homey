@@ -3,6 +3,7 @@
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth/auth';
+import type { Session } from '@/lib/auth/types';
 import { AuthRoles } from '@/lib/auth-roles';
 import { regenerateStreamSecret, getStreamSecret } from '@/lib/settings';
 import Logger from '@/lib/logger';
@@ -22,11 +23,12 @@ export async function regenerateAppStreamSecret(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _formData: FormData
 ): Promise<FormState> {
-    const session = await auth.api.getSession({
+    const rawSession = await auth.api.getSession({
         headers: await headers()
     });
+    const session = rawSession as unknown as Session | null;
 
-    if (session?.user === null || session.user.role !== AuthRoles.Admin) {
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         return { errors: { auth: ['Admin access required'] } };
     }
 
@@ -47,11 +49,12 @@ export async function regenerateAppStreamSecret(
  * Admin only
  */
 export async function getStreamSecretInfo(): Promise<{ preview: string } | null> {
-    const session = await auth.api.getSession({
+    const rawSession = await auth.api.getSession({
         headers: await headers()
     });
+    const session = rawSession as unknown as Session | null;
 
-    if (session?.user === null || session.user.role !== AuthRoles.Admin) {
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         return null;
     }
 

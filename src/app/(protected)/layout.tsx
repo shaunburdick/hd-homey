@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { count } from 'drizzle-orm';
 import Nav from '@/components/nav';
 import { auth } from '@/lib/auth/auth';
+import type { Session } from '@/lib/auth/types';
 import { getDb } from '@/lib/database/db';
 import { user } from '@/lib/database/schema';
 
@@ -23,10 +24,11 @@ export default async function ProtectedLayout({
     }
 
     // Check authentication
-    const session = await auth.api.getSession({
+    const rawSession = await auth.api.getSession({
         headers: await headers()
     });
-    if (session?.user === null) {
+    const session = rawSession as unknown as Session | null;
+    if (!session?.user) {
         redirect('/users/signin');
     }
 
