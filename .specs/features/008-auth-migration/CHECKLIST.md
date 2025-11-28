@@ -58,10 +58,10 @@ Use this as a quick reference while implementing the migration.
 
 ## Client-Side Updates
 
-- [ ] Update sign-in page (`src/app/users/signin/page.tsx`)
-- [ ] Update get-started page (`src/app/(start)/get-started/page.tsx`)
-- [ ] Replace `signIn()` with `authClient.signIn.username()`
-- [ ] Replace `signOut()` with `authClient.signOut()`
+- [x] Update sign-in page (`src/app/users/signin/page.tsx`)
+- [x] Update get-started page (`src/app/(start)/get-started/actions.ts`)
+- [x] Replace `signIn()` with `authClient.signIn.email()`
+- [x] Replace `signOut()` with `authClient.signOut()`
 
 ## Tests & Mocks
 
