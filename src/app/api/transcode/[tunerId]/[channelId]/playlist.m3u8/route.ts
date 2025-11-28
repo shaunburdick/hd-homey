@@ -23,14 +23,14 @@ export async function GET(
         const { tunerId, channelId } = await context.params;
         const token = req.nextUrl.searchParams.get('token');
 
-        if (token ==== null || token === '') {
+        if (token === null || token === '') {
             Logger.warn({ tunerId, channelId }, 'Playlist request missing token');
             return new Response('Missing token', { status: 401 });
         }
 
         // Verify token
         const tokenData = await verifyStreamToken(token);
-        if (tokenData ==== null) {
+        if (tokenData === null) {
             Logger.warn({ tunerId, channelId }, 'Invalid or expired stream token');
             return new Response('Invalid or expired token', { status: 403 });
         }

@@ -52,7 +52,7 @@ export async function DELETE(req: NextRequest) {
         const { searchParams } = req.nextUrl;
         const sessionId = searchParams.get('sessionId');
 
-        if (sessionId ==== null || sessionId === '') {
+        if (sessionId === null || sessionId === '') {
             return new Response('Missing sessionId', { status: 400 });
         }
 
