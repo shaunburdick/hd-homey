@@ -4,9 +4,10 @@
  * Server actions for transcoding settings
  */
 
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
 import { AuthRoles } from '@/lib/auth-roles';
 import { getTranscodingSettings, updateTranscodingSettings } from '@/lib/settings';
 import { validateSettings , detectFFmpeg } from '@/lib/transcoding/ffmpeg';
@@ -22,8 +23,10 @@ export interface FormState {
  * Get current transcoding settings
  */
 export async function getTranscodingSettingsAction(): Promise<TranscodeSettings> {
-    const session = await auth();
-    if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         throw new Error('Unauthorized');
     }
 
@@ -34,8 +37,10 @@ export async function getTranscodingSettingsAction(): Promise<TranscodeSettings>
  * Get FFmpeg info
  */
 export async function getFFmpegInfo() {
-    const session = await auth();
-    if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         throw new Error('Unauthorized');
     }
 
@@ -49,8 +54,10 @@ export async function updateTranscodingSettingsAction(
     state: FormState,
     formData: FormData
 ): Promise<FormState> {
-    const session = await auth();
-    if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         return { errors: { auth: ['Unauthorized'] } };
     }
 

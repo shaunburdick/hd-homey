@@ -1,9 +1,10 @@
 'use server';
 
 import { eq } from 'drizzle-orm';
-import { auth } from '@/auth';
+import { headers } from 'next/headers';
+import { auth } from '@/lib/auth/auth';
 import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { user, account } from '@/lib/database/schema';
 import { generateHashPassword, verifyPassword } from '@/lib/user';
 
 export interface FormState {
@@ -19,9 +20,11 @@ export async function changePassword(
     prevState: FormState,
     formData: FormData
 ): Promise<FormState> {
-    const session = await auth();
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
 
-    if (session?.user === undefined) {
+    if (!session?.user) {
         return {
             errors: {
                 _form: ['You must be logged in to change your password'],
@@ -29,7 +32,7 @@ export async function changePassword(
         };
     }
 
-    const userId = Number(formData.get('userId'));
+    const userId = formData.get('userId') as string; // UUID string now
     const currentPassword = formData.get('currentPassword') as string;
     const newPassword = formData.get('newPassword') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
@@ -69,21 +72,21 @@ export async function changePassword(
     try {
         const db = await getDb();
 
-        // Get user's current password hash
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, userId),
+        // Get user's current password hash from the account table
+        const userAccount = await db.query.account.findFirst({
+            where: eq(account.userId, userId),
         });
 
-        if (user === undefined) {
+        if (!userAccount?.password) {
             return {
                 errors: {
-                    _form: ['User not found'],
+                    _form: ['User not found or no password set'],
                 },
             };
         }
 
         // Verify current password
-        const isValid = await verifyPassword(user.passHash, currentPassword);
+        const isValid = await verifyPassword(userAccount.password, currentPassword);
         if (!isValid) {
             return {
                 errors: {
@@ -95,13 +98,13 @@ export async function changePassword(
         // Hash new password
         const newPassHash = await generateHashPassword(newPassword);
 
-        // Update password
+        // Update password in account table
         await db
-            .update(users)
+            .update(account)
             .set({
-                passHash: newPassHash,
+                password: newPassHash,
             })
-            .where(eq(users.id, userId))
+            .where(eq(account.userId, userId))
             .run();
 
         return {

@@ -6,48 +6,48 @@ Use this as a quick reference while implementing the migration.
 
 - [x] Read `CLEAN-SLATE-SUMMARY.md`
 - [x] Review `spec.md` and `plan.md`
-- [ ] Backup database: `cp ./data/db/hd_homey.db ./data/db/backups/hd_homey_$(date +%Y%m%d_%H%M%S).db`
+- [x] Backup database: `cp ./data/db/hd_homey.db ./data/db/backups/hd_homey_$(date +%Y%m%d_%H%M%S).db`
 - [x] Create feature branch: `git checkout -b 008-auth-migration`
 
 ## Installation
 
-- [ ] Install Better‑Auth: `npm install better-auth`
-- [ ] Set env vars: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
+- [x] Install Better‑Auth: `npm install better-auth`
+- [x] Set env vars: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (reusing existing AUTH_SECRET)
 
 ## Schema Migration
 
-- [ ] Generate Better‑Auth schema: `npx @better-auth/cli generate`
-- [ ] Update `src/lib/database/schema.ts`:
+- [x] Generate Better‑Auth schema: Created manually based on Better-Auth requirements
+- [x] Update `src/lib/database/schema.ts`:
   - Drop `users` table
   - Add `user`, `account`, `verification` tables
   - **NO `session` table** (using JWT/Stateless)
   - Add custom fields to `user` table: `role`, `isActive`, `deletedAt`
-- [ ] Generate migration: `npm run db:generate`
-- [ ] Review migration SQL (should DROP `users` table, create 3 new tables)
-- [ ] Run migration: `npm run db:migrate`
+- [x] Generate migration: Created `0002_better_auth_migration.sql` manually
+- [x] Review migration SQL (should DROP `users` table, create 3 new tables)
+- [x] Run migration: Applied manually via sqlite3
 
 ## Server Setup
 
-- [ ] Create `src/lib/auth/auth.ts`:
-  - Better‑Auth instance with username plugin
+- [x] Create `src/lib/auth/auth.ts`:
+  - Better‑Auth instance with emailAndPassword
   - **JWT/Stateless session config** (same as NextAuth)
   - Cookie cache with 7-day JWT
   - Custom user fields: `role`, `isActive`, `deletedAt`
-- [ ] Create `src/lib/auth/types.ts` (type exports)
-- [ ] Update `src/lib/auth/helpers.ts` (requireRole, requireAdmin)
-- [ ] Update API route handler: `src/app/api/auth/[...all]/route.ts`
+- [x] Create `src/lib/auth/types.ts` (type exports)
+- [x] Create `src/lib/auth/helpers.ts` (requireRole, requireAdmin)
+- [x] Update API route handler: `src/app/api/auth/[...all]/route.ts`
 
 ## Client Setup
 
-- [ ] Create `src/lib/auth/auth-client.ts` (React client)
+- [x] Create `src/lib/auth/auth-client.ts` (React client)
 - [ ] Update `src/components/nav.tsx` (use `authClient.useSession()`)
 - [ ] Update `src/components/RoleGuard.tsx` (use `authClient.useSession()`)
 - [ ] Remove `src/components/SessionProvider.tsx` (not needed)
 
 ## Server-Side Updates
 
-- [ ] Update `src/proxy.ts` (use `auth.api.getSession()`)
-- [ ] Update `src/lib/actions/profile.ts`
+- [x] Update `src/proxy.ts` (use `auth.api.getSession()`)
+- [x] Update `src/lib/actions/profile.ts`
 - [ ] Update `src/app/api/tuners/[id]/route.ts`
 - [ ] Update `src/app/api/tuners/[id]/poll/route.ts`
 - [ ] Find all `auth()` calls: `rg "await auth\(\)" --type ts`
