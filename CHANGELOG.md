@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.2] - 2025-11-28
+
+**Note**: This is a **critical security release** that fixes a vulnerability where API endpoints were completely unprotected. All users should upgrade immediately.
+
+### Security
+
+- **CRITICAL: API Route Authentication**: Fixed vulnerability where API endpoints were accessible without authentication
+  - Added proxy-level authentication for all protected routes (`src/proxy.ts`)
+  - API routes now require valid NextAuth session
+  - Unauthenticated requests to API routes return 401 with JSON error
+  - Unauthenticated requests to pages redirect to sign-in with callback URL
+  - Token-authenticated routes (streaming) properly bypass proxy and validate tokens in handlers
+  - Admin-only operations (tuner modifications) require explicit `isAdmin` check
+  - Defense-in-depth: Both proxy and route handlers verify permissions
+  - Proxy runs on Edge Runtime using NextAuth v5 JWT sessions (no database access needed)
+
+### Added
+
+- **Comprehensive Authentication Tests**: 19 new proxy tests covering all route types
+  - Public routes (signin, get-started, NextAuth API)
+  - Token-authenticated routes (streaming endpoints)
+  - Session-authenticated routes (API and pages)
+  - Admin-only operations
+  - Protected route coverage (tuners, settings, users, profile, about)
+  - Total test count increased from 154 to 200 tests
+
+### Fixed
+
+- **Tuner Poll Endpoint**: Now requires authentication (prevents abuse of resource-intensive channel scans)
+- **Tuner Update Endpoint**: Now requires admin role (prevents unauthorized tuner modifications)
+
 ## [1.0.0-beta.1] - 2025-11-20
 
 **Note**: This is the first beta release! All core features are now complete and tested. Beta releases focus on stability, bug fixes, and user feedback before moving to release candidate status.

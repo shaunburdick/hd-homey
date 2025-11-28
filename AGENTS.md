@@ -184,7 +184,7 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-beta.1** - First beta release! Feature complete with user profile management, password changes for all users, optimized settings operations, and numerous UI/UX improvements. All 154 tests passing.
+**1.0.0-beta.2** - Critical security release! Fixes vulnerability where API endpoints were completely unprotected. Adds comprehensive proxy-level authentication, admin-only checks for sensitive operations, and 19 new proxy tests. All 200 tests passing. **All users should upgrade immediately.**
 
 ### Release Process
 
