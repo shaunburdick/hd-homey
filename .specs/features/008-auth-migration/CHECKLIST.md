@@ -65,12 +65,13 @@ Use this as a quick reference while implementing the migration.
 
 ## Tests & Mocks
 
-- [ ] Update `src/test-utils/mock-auth.ts` (mock Better‑Auth session)
-- [ ] Update `src/proxy.test.ts`
-- [ ] Update `src/lib/actions/profile.test.ts`
-- [ ] Update `src/lib/actions/users.test.ts`
-- [ ] Run tests: `npm test`
-- [ ] Fix failing tests iteratively
+- [x] Update `src/test-utils/mock-auth.ts` (mock Better‑Auth session)
+- [x] Update `src/proxy.test.ts`
+- [x] Update `src/lib/actions/profile.test.ts`
+- [x] Update `src/lib/auth.test.ts`
+- [x] Fix linting errors (import order, nullish coalescing, etc.)
+- [ ] Run full test suite: `npm test`
+- [ ] Fix any remaining test failures
 
 ## Cleanup
 
