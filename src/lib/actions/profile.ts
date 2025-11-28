@@ -77,7 +77,7 @@ export async function changePassword(
             where: eq(account.userId, userId),
         });
 
-        if (userAccount?.password === null) {
+        if (!userAccount?.password) {
             return {
                 errors: {
                     _form: ['User not found or no password set'],

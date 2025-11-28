@@ -8,7 +8,7 @@ import { changePassword, type FormState } from '@/lib/actions/profile';
 const initialState: FormState = { errors: {} };
 
 interface ChangePasswordFormProps {
-    userId: number;
+    userId: string;
 }
 
 export default function ChangePasswordForm({ userId }: ChangePasswordFormProps) {

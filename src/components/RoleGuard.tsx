@@ -31,7 +31,6 @@ export default function RoleGuard({ allowedRoles, children, fallback = null }: R
     }
 
     // Check if user's role is in allowed roles
-    // @ts-expect-error - Better-Auth types don't include custom fields yet
     const hasRole = allowedRoles.includes(session.user.role as AuthRoles);
 
     // Show children if authorized, otherwise show fallback (default: nothing)

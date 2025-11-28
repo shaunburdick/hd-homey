@@ -45,7 +45,7 @@ export default async function Page() {
                                             {user.name}
                                         </div>
                                         <div className="text-sm text-secondary">
-                                            @{user.username}
+                                            @{user.email}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">

@@ -4,15 +4,9 @@ import { useActionState } from 'react';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { Input, Button } from '@/components';
 import { updateUser } from '@/lib/actions/users';
+import type { User } from '@/lib/auth/types';
 import RoleGuard from '@/components/RoleGuard';
 import { AuthRoles } from '@/lib/auth-roles';
-
-interface User {
-    id: number;
-    name: string;
-    username: string;
-    is_active: boolean;
-}
 
 interface UserEditFormProps {
     user: User;
@@ -104,7 +98,7 @@ export default function UserEditForm({ user }: UserEditFormProps) {
                             name="is_active"
                             type="checkbox"
                             value="true"
-                            defaultChecked={user.is_active}
+                            defaultChecked={user.isActive}
                             disabled={isPending}
                             style={{
                                 width: '20px',
