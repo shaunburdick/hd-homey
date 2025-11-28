@@ -75,9 +75,12 @@ Use this as a quick reference while implementing the migration.
 
 ## Cleanup
 
-- [ ] Remove `src/auth.ts` (old NextAuth config)
-- [ ] Uninstall NextAuth: `npm uninstall next-auth`
-- [ ] Search for remaining NextAuth imports: `rg "next-auth" --type ts`
+- [x] Remove `src/auth.ts` (old NextAuth config)
+- [x] Remove `src/lib/auth.ts` (old auth helpers)
+- [x] Remove `src/components/SessionProvider.tsx` (not needed)
+- [x] Update all imports from `@/auth` to `@/lib/auth/auth`
+- [x] Uninstall NextAuth: `npm uninstall next-auth`
+- [x] Search for remaining NextAuth imports: No imports found
 - [ ] Run build: `npm run build`
 - [ ] Run tests: `npm test`
 
