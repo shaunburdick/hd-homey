@@ -77,9 +77,20 @@ export const auth = betterAuth({
 
 /**
  * Type exports for Better-Auth session and user
+ * 
+ * Note: Better-Auth inferred types include our custom fields (role, isActive, deletedAt)
+ * that we defined in the user.additionalFields configuration above.
  */
 export type Session = typeof auth.$Infer.Session.session & {
-    user: typeof auth.$Infer.Session.user;
+    user: typeof auth.$Infer.Session.user & {
+        role: string;
+        isActive: boolean;
+        deletedAt?: Date | null;
+    };
 };
 
-export type BetterAuthUser = typeof auth.$Infer.Session.user;
+export type BetterAuthUser = typeof auth.$Infer.Session.user & {
+    role: string;
+    isActive: boolean;
+    deletedAt?: Date | null;
+};

@@ -48,10 +48,13 @@ Use this as a quick reference while implementing the migration.
 
 - [x] Update `src/proxy.ts` (use `auth.api.getSession()`)
 - [x] Update `src/lib/actions/profile.ts`
-- [ ] Update `src/app/api/tuners/[id]/route.ts`
-- [ ] Update `src/app/api/tuners/[id]/poll/route.ts`
-- [ ] Find all `auth()` calls: `rg "await auth\(\)" --type ts`
-- [ ] Replace with `auth.api.getSession({ headers: await headers() })`
+- [x] Update `src/lib/actions/settings.ts`
+- [x] Update `src/lib/actions/transcoding.ts`
+- [x] Update `src/app/api/tuners/[id]/route.ts`
+- [x] Update `src/app/api/tuners/[id]/poll/route.ts`
+- [x] Update `src/app/api/transcode/status/route.ts`
+- [x] Find all `auth()` calls: `rg "await auth\(\)" --type ts`
+- [x] Replace with `auth.api.getSession({ headers: await headers() })`
 
 ## Client-Side Updates
 

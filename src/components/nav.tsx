@@ -5,14 +5,14 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import './nav.css';
-import { signOut , useSession } from 'next-auth/react';
+import { authClient } from '@/lib/auth/auth-client';
 
 export default function Nav() {
 
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const [lastPathname, setLastPathname] = useState(pathname);
-    const { data: session } = useSession();
+    const { data: session } = authClient.useSession();
 
     // Close menu on route change
     if (pathname !== lastPathname) {
@@ -35,7 +35,7 @@ export default function Nav() {
     const handleSignOut = async (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         setIsOpen(false);
-        await signOut({ redirect: false });
+        await authClient.signOut();
         window.location.href = '/users/signin';
     };
 
