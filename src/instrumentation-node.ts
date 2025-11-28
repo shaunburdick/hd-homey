@@ -2,7 +2,7 @@ import { count } from 'drizzle-orm';
 import Config from '@/lib/config';
 import Logger from '@/lib/logger';
 import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { user } from '@/lib/database/schema';
 import { detectFFmpeg } from '@/lib/transcoding/ffmpeg';
 import { getTranscodingSettings, updateTranscodingSettings } from '@/lib/settings';
 
@@ -10,7 +10,7 @@ export async function run() {
     Logger.info('Starting App with the following config: %o', Config);
 
     const db = await getDb();
-    const userCount = await db.select({ count: count() }).from(users);
+    const userCount = await db.select({ count: count() }).from(user);
 
     Logger.info(`You have ${userCount[0].count} users configured`);
 

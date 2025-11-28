@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import UserEditForm from './UserEditForm';
 import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { user as userTable } from '@/lib/database/schema';
 import { Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
 
@@ -15,10 +15,10 @@ export default async function Page(props: { params: Promise<PageParams> }) {
     const params = await props.params;
     const db = await getDb();
 
-    const user = await db.query.users.findFirst({
+    const user = await db.query.user.findFirst({
         where: and(
-            eq(users.id, parseInt(params.id, 10)),
-            isNull(users.deleted_at)
+            eq(userTable.id, params.id),
+            isNull(userTable.deletedAt)
         )
     });
 

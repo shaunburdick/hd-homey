@@ -1,16 +1,17 @@
 import { isNull } from 'drizzle-orm';
 import Link from 'next/link';
 import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { user as userTable } from '@/lib/database/schema';
+import type { User } from '@/lib/auth/types';
 import { AdminLink } from '@/components/AdminLink';
 import { Card, Button } from '@/components';
 import { PageContainer, PageHeader, EmptyState } from '@/components/layouts';
 
 export default async function Page() {
     const db = await getDb();
-    const userList = await db.query.users.findMany({
-        where: isNull(users.deleted_at)
-    });
+    const userList = await db.query.user.findMany({
+        where: isNull(userTable.deletedAt)
+    }) as User[];
 
     return (
         <PageContainer>
