@@ -177,13 +177,34 @@ describe('HDTuner', () => {
         it('should handle empty lineup gracefully', async () => {
             const mockFetch = createMockFetch([]);
             global.fetch = mockFetch;
+            const { tuners } = await import('@/lib/database/schema');
+            const { eq } = await import('drizzle-orm');
 
             const tunerId = 1;
 
-            // Empty lineup causes insert error - this is a known issue
-            await expect(tuner.updateLineup(testDb, tunerId)).rejects.toThrow(
-                'values() must be called with at least one value'
-            );
+            // First add some channels
+            const mockFetch1 = createMockFetch(createMockLineup(3));
+            global.fetch = mockFetch1;
+            await tuner.updateLineup(testDb, tunerId);
+
+            // Then update with empty lineup
+            const mockFetch2 = createMockFetch([]);
+            global.fetch = mockFetch2;
+            const result = await tuner.updateLineup(testDb, tunerId);
+
+            // Should return empty array
+            expect(result).toEqual([]);
+            expect(result).toHaveLength(0);
+
+            // Should still update last_scanned timestamp
+            const tunerRecord = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
+            expect(tunerRecord?.last_scanned).toBeTruthy();
+
+            // Should deactivate all previous channels
+            const { channels } = await import('@/lib/database/schema');
+            const allChannels = testDb.select().from(channels).where(eq(channels.fk_tuner, tunerId)).all();
+            const activeChannels = allChannels.filter(c => c.is_active);
+            expect(activeChannels).toHaveLength(0);
         });
 
         it('should preserve HD flag correctly', async () => {
