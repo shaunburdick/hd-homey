@@ -17,7 +17,7 @@ export async function requireRole(role: AuthRoles) {
     });
 
     // Check for valid session and user
-    if (session?.user == null) {
+    if (session?.user === null) {
         throw new Error('Not authenticated');
     }
 

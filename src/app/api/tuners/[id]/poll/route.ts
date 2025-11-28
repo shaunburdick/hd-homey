@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
     const session = await auth.api.getSession({
         headers: await headers()
     });
-    if (session?.user == null) {
+    if (session?.user === null) {
         Logger.warn('Unauthorized poll attempt');
         return Response.json(
             { error: 'Unauthorized', message: 'Authentication required' },

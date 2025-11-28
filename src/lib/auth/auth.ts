@@ -72,7 +72,7 @@ export const auth = betterAuth({
     baseURL: (process.env.BETTER_AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000'),
 
     // Trust proxy headers (for Docker/reverse proxy)
-    trustedOrigins: (process.env.BETTER_AUTH_URL != null) ? [process.env.BETTER_AUTH_URL] : [],
+    trustedOrigins: (process.env.BETTER_AUTH_URL !== null) ? [process.env.BETTER_AUTH_URL] : [],
 });
 
 /**

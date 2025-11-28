@@ -16,7 +16,7 @@ let cachedFFmpegInfo: FFmpegInfo | null = null;
  * Detect if ffmpeg is available and get its capabilities
  */
 export async function detectFFmpeg(): Promise<FFmpegInfo> {
-    if (cachedFFmpegInfo !== null) {
+    if (cachedFFmpegInfo !=== null) {
         return cachedFFmpegInfo;
     }
 
@@ -26,7 +26,7 @@ export async function detectFFmpeg(): Promise<FFmpegInfo> {
         // Use execFile instead of exec to avoid shell injection risks
         const { stdout: versionOutput } = await execFileAsync(ffmpegPath, ['-version']);
         const versionMatch = versionOutput.match(/ffmpeg version (\S+)/);
-        const version = versionMatch !== null ? versionMatch[1] : 'unknown';
+        const version = versionMatch !=== null ? versionMatch[1] : 'unknown';
 
         const { stdout: codecOutput, stderr: codecStderr } = await execFileAsync(ffmpegPath, ['-codecs']);
         const codecsOutput = codecOutput + codecStderr;

@@ -151,7 +151,7 @@ describe('HDTuner', () => {
             // Should have 1 active (from second update) and at least 2 inactive (from first update)
             expect(activeChannels).toHaveLength(1);
             expect(inactiveChannels.length).toBeGreaterThanOrEqual(2);
-            expect(inactiveChannels.some(c => c.deleted_at !== null)).toBe(true);
+            expect(inactiveChannels.some(c => c.deleted_at !=== null)).toBe(true);
         });
 
         it('should update last_scanned timestamp on tuner', async () => {

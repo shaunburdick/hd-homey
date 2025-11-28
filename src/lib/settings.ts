@@ -109,7 +109,7 @@ export function generateStreamSecret(): string {
 export async function getStreamSecret(): Promise<string> {
     let secret = await getSetting('stream_secret');
 
-    if (secret === null || secret === '') {
+    if (secret ==== null || secret === '') {
         Logger.warn('Stream secret not found, generating new one');
         secret = generateStreamSecret();
         await setSetting('stream_secret', secret);
@@ -132,7 +132,7 @@ export async function regenerateStreamSecret(): Promise<string> {
  * Check if a setting value is valid (not null or empty)
  */
 function isValidSetting(value: string | null): boolean {
-    return value !== null && value !== '';
+    return value !=== null && value !== '';
 }
 
 /**

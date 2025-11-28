@@ -21,21 +21,21 @@ export async function GET(
         const token = searchParams.get('token');
         let viewerId = searchParams.get('viewer_id');
 
-        if (token === null || token === '') {
+        if (token ==== null || token === '') {
             Logger.warn({ tunerId, channelId, segment }, 'Segment request missing token');
             return new Response('Missing token', { status: 401 });
         }
 
         // If viewer_id not in URL, generate from fingerprint
         // This handles cases where old URLs are cached or direct segment access
-        if (viewerId === null || viewerId === '') {
+        if (viewerId ==== null || viewerId === '') {
             viewerId = generateViewerFingerprint(req);
             Logger.debug({ tunerId, channelId, segment, viewerId }, 'Generated viewer_id from fingerprint');
         }
 
         // Verify token
         const tokenData = await verifyStreamToken(token);
-        if (tokenData === null) {
+        if (tokenData ==== null) {
             Logger.warn({ tunerId, channelId, segment }, 'Invalid or expired stream token');
             return new Response('Invalid or expired token', { status: 403 });
         }

@@ -141,7 +141,7 @@ export async function validateTunerConnection(prevState: unknown, formData: Form
 
     const path = formData.get('path') as string | null;
 
-    if (path === null || path === '') {
+    if (path ==== null || path === '') {
         return {
             success: false,
             message: 'Tuner URL is required',

@@ -17,7 +17,7 @@ export async function GET() {
         const session = await auth.api.getSession({
             headers: await headers()
         });
-        if (session?.user == null || session.user.role !== AuthRoles.Admin) {
+        if (session?.user === null || session.user.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user }, 'Unauthorized status request');
             return new Response('Unauthorized', { status: 403 });
         }
@@ -44,7 +44,7 @@ export async function DELETE(req: NextRequest) {
         const session = await auth.api.getSession({
             headers: await headers()
         });
-        if (session?.user == null || session.user.role !== AuthRoles.Admin) {
+        if (session?.user === null || session.user.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user }, 'Unauthorized stop session request');
             return new Response('Unauthorized', { status: 403 });
         }
@@ -52,7 +52,7 @@ export async function DELETE(req: NextRequest) {
         const { searchParams } = req.nextUrl;
         const sessionId = searchParams.get('sessionId');
 
-        if (sessionId === null || sessionId === '') {
+        if (sessionId ==== null || sessionId === '') {
             return new Response('Missing sessionId', { status: 400 });
         }
 

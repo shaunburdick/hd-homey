@@ -1,6 +1,12 @@
 import { AuthRoles } from '@/lib/auth-roles';
 
 /**
+ * Constants for mock data
+ */
+const MOCK_IP_ADDRESS = '127.0.0.1';
+const MOCK_USER_AGENT = 'test-agent';
+
+/**
  * Mock Better-Auth session type
  * Matches the return type of auth.api.getSession()
  */
@@ -37,8 +43,8 @@ export const mockAdminSession: MockSession = {
         userId: 'test-admin-uuid-1',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         token: 'mock-token-1',
-        ipAddress: '127.0.0.1',
-        userAgent: 'test-agent',
+        ipAddress: MOCK_IP_ADDRESS,
+        userAgent: MOCK_USER_AGENT,
         createdAt: new Date(),
         updatedAt: new Date()
     },
@@ -63,8 +69,8 @@ export const mockViewerSession: MockSession = {
         userId: 'test-viewer-uuid-2',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         token: 'mock-token-2',
-        ipAddress: '127.0.0.1',
-        userAgent: 'test-agent',
+        ipAddress: MOCK_IP_ADDRESS,
+        userAgent: MOCK_USER_AGENT,
         createdAt: new Date(),
         updatedAt: new Date()
     },
@@ -89,8 +95,8 @@ export const mockInactiveSession: MockSession = {
         userId: 'test-inactive-uuid-3',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         token: 'mock-token-3',
-        ipAddress: '127.0.0.1',
-        userAgent: 'test-agent',
+        ipAddress: MOCK_IP_ADDRESS,
+        userAgent: MOCK_USER_AGENT,
         createdAt: new Date(),
         updatedAt: new Date()
     },
@@ -110,15 +116,15 @@ export const mockInactiveSession: MockSession = {
  * Create a custom mock session (Better-Auth format)
  */
 export function createMockSession(overrides: Partial<MockSession['user']> = {}): MockSession {
-    const userId = overrides.id || 'test-user-uuid-99';
+    const userId = overrides.id ?? 'test-user-uuid-99';
     return {
         session: {
             id: 'session-99',
             userId,
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
             token: 'mock-token-99',
-            ipAddress: '127.0.0.1',
-            userAgent: 'test-agent',
+            ipAddress: MOCK_IP_ADDRESS,
+            userAgent: MOCK_USER_AGENT,
             createdAt: new Date(),
             updatedAt: new Date()
         },
@@ -136,11 +142,12 @@ export function createMockSession(overrides: Partial<MockSession['user']> = {}):
     };
 }
 
+import type { vi as Vi } from 'vitest';
+
 /**
  * Mock auth.api.getSession() function for server components
  * Note: Import vi from vitest in your test file before using this
  */
-import type { vi as Vi } from 'vitest';
 
 export function mockAuthGetSession(vi: typeof Vi, session: MockSession | null = null) {
     return vi.fn(() => Promise.resolve(session));

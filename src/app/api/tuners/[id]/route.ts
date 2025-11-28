@@ -69,8 +69,8 @@ export async function POST(
         const pathValue = formData.get('path');
 
         const updateData = {
-            name: (nameValue !== null && nameValue !== '') ? nameValue.toString() : tuner.name,
-            path: (pathValue !== null && pathValue !== '') ? pathValue.toString() : tuner.path,
+            name: (nameValue !=== null && nameValue !== '') ? nameValue.toString() : tuner.name,
+            path: (pathValue !=== null && pathValue !== '') ? pathValue.toString() : tuner.path,
             is_active: formData.has('is_active'),
             modified_at: new Date()
         };

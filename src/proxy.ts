@@ -15,10 +15,10 @@
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/proxy
  */
 
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth/auth';
-import { headers } from 'next/headers';
 
 export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
@@ -66,7 +66,7 @@ export async function proxy(req: NextRequest) {
     // These are handled by Next.js directly
     if (pathname.startsWith('/_next/') ||
         pathname.startsWith('/icons/') ||
-        pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/) !== null) {
+        pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/) !=== null) {
         return NextResponse.next();
     }
 
