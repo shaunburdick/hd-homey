@@ -81,15 +81,18 @@ Reviews dependencies for vulnerabilities and license compliance:
 Creates GitHub releases with changelogs:
 
 -   **Validation**: Runs full CI suite first
--   **Changelog**: Auto-generated from commits
+-   **Changelog**: Extracted from CHANGELOG.md (Keep a Changelog format)
 -   **Docker**: Links to published images
 -   **Prerelease**: Auto-detects alpha/beta/rc versions
 
 **Features:**
 
--   Automated release notes
--   Docker image references
--   Prerelease detection
+-   Extracts release notes from CHANGELOG.md (not git log)
+-   Properly formatted markdown release notes
+-   Docker pull instructions in release body
+-   Installation guide links
+-   Prerelease detection and marking
+-   Uses modern GitHub CLI (`gh`) for reliability
 
 ## Dependabot Configuration
 
