@@ -25,6 +25,7 @@
     "@exampledev/new.css": "^1.1.3",
     "@sinclair/typebox": "^0.34.14",
     "bcrypt": "^6.0.0",
+    "better-auth": "^1.4.3",
     "better-sqlite3": "^12.4.1",
     "drizzle-orm": "^0.44.7",
     "drizzle-typebox": "^0.3.3",

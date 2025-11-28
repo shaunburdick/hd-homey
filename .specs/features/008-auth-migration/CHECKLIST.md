@@ -1,0 +1,193 @@
+# Quick Implementation Checklist
+
+Use this as a quick reference while implementing the migration.
+
+## Pre-Migration
+
+- [x] Read `CLEAN-SLATE-SUMMARY.md`
+- [x] Review `spec.md` and `plan.md`
+- [ ] Backup database: `cp ./data/db/hd_homey.db ./data/db/backups/hd_homey_$(date +%Y%m%d_%H%M%S).db`
+- [x] Create feature branch: `git checkout -b 008-auth-migration`
+
+## Installation
+
+- [ ] Install Better‑Auth: `npm install better-auth`
+- [ ] Set env vars: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
+
+## Schema Migration
+
+- [ ] Generate Better‑Auth schema: `npx @better-auth/cli generate`
+- [ ] Update `src/lib/database/schema.ts`:
+  - Drop `users` table
+  - Add `user`, `account`, `verification` tables
+  - **NO `session` table** (using JWT/Stateless)
+  - Add custom fields to `user` table: `role`, `isActive`, `deletedAt`
+- [ ] Generate migration: `npm run db:generate`
+- [ ] Review migration SQL (should DROP `users` table, create 3 new tables)
+- [ ] Run migration: `npm run db:migrate`
+
+## Server Setup
+
+- [ ] Create `src/lib/auth/auth.ts`:
+  - Better‑Auth instance with username plugin
+  - **JWT/Stateless session config** (same as NextAuth)
+  - Cookie cache with 7-day JWT
+  - Custom user fields: `role`, `isActive`, `deletedAt`
+- [ ] Create `src/lib/auth/types.ts` (type exports)
+- [ ] Update `src/lib/auth/helpers.ts` (requireRole, requireAdmin)
+- [ ] Update API route handler: `src/app/api/auth/[...all]/route.ts`
+
+## Client Setup
+
+- [ ] Create `src/lib/auth/auth-client.ts` (React client)
+- [ ] Update `src/components/nav.tsx` (use `authClient.useSession()`)
+- [ ] Update `src/components/RoleGuard.tsx` (use `authClient.useSession()`)
+- [ ] Remove `src/components/SessionProvider.tsx` (not needed)
+
+## Server-Side Updates
+
+- [ ] Update `src/proxy.ts` (use `auth.api.getSession()`)
+- [ ] Update `src/lib/actions/profile.ts`
+- [ ] Update `src/app/api/tuners/[id]/route.ts`
+- [ ] Update `src/app/api/tuners/[id]/poll/route.ts`
+- [ ] Find all `auth()` calls: `rg "await auth\(\)" --type ts`
+- [ ] Replace with `auth.api.getSession({ headers: await headers() })`
+
+## Client-Side Updates
+
+- [ ] Update sign-in page (`src/app/users/signin/page.tsx`)
+- [ ] Update get-started page (`src/app/(start)/get-started/page.tsx`)
+- [ ] Replace `signIn()` with `authClient.signIn.username()`
+- [ ] Replace `signOut()` with `authClient.signOut()`
+
+## Tests & Mocks
+
+- [ ] Update `src/test-utils/mock-auth.ts` (mock Better‑Auth session)
+- [ ] Update `src/proxy.test.ts`
+- [ ] Update `src/lib/actions/profile.test.ts`
+- [ ] Update `src/lib/actions/users.test.ts`
+- [ ] Run tests: `npm test`
+- [ ] Fix failing tests iteratively
+
+## Cleanup
+
+- [ ] Remove `src/auth.ts` (old NextAuth config)
+- [ ] Uninstall NextAuth: `npm uninstall next-auth`
+- [ ] Search for remaining NextAuth imports: `rg "next-auth" --type ts`
+- [ ] Run build: `npm run build`
+- [ ] Run tests: `npm test`
+
+## Documentation
+
+- [ ] Update `README.md` (replace NextAuth → Better‑Auth)
+- [ ] Update `AGENTS.md` (update auth patterns)
+- [ ] Update `CHANGELOG.md` (add BREAKING CHANGE entry)
+- [ ] Create migration guide (`.specs/features/008-auth-migration/MIGRATION.md`)
+
+## Testing
+
+### Manual QA - Web UI
+- [ ] Get-started flow (create admin)
+- [ ] Sign-in flow (username/password)
+- [ ] Role-based access (admin vs viewer)
+- [ ] Streaming (HMAC tokens unchanged)
+- [ ] Sign-out flow
+- [ ] Session persistence (refresh page)
+
+### Manual QA - API
+- [ ] Unauthenticated API call returns 401
+- [ ] Sign-in via API (`POST /api/auth/sign-in/username`)
+- [ ] Authenticated GET request with cookie
+- [ ] Admin-only endpoint as admin (success)
+- [ ] Admin-only endpoint as viewer (403 Forbidden)
+- [ ] Sign-out via API
+- [ ] Session persists across multiple requests
+
+### Docker
+- [ ] Docker build: `docker build -t hd-homey:test .`
+- [ ] Docker run: `docker run -p 3000:3000 --env-file .env hd-homey:test`
+
+## Pre-Merge
+
+- [ ] All tests pass: `npm test`
+- [ ] Lint passes: `npm run lint`
+- [ ] Build succeeds: `npm run build`
+- [ ] Docker builds: `docker compose build`
+- [ ] Manual QA complete
+- [ ] Documentation updated
+- [ ] Spec status: IMPLEMENTED
+
+## Merge & Release
+
+- [ ] Merge to main: `git merge 008-auth-migration`
+- [ ] Tag release: `git tag v1.0.0-beta.3`
+- [ ] Push: `git push origin main --tags`
+- [ ] Monitor CI: Check GitHub Actions
+- [ ] Verify Docker image: `docker pull ghcr.io/shaunburdick/hd-homey:v1.0.0-beta.3`
+
+## Post-Deployment
+
+- [ ] Monitor logs for auth errors
+- [ ] Test get-started flow in production
+- [ ] Verify streaming still works
+- [ ] Update project status in `.specs/FEATURE-STATUS.md`
+
+---
+
+## Quick Commands Reference
+
+```bash
+# Backup database
+cp ./data/db/hd_homey.db ./data/db/backups/hd_homey_$(date +%Y%m%d_%H%M%S).db
+
+# Install Better-Auth
+npm install better-auth
+
+# Generate schema
+npx @better-auth/cli generate
+
+# Generate migration
+npm run db:generate
+
+# Run migration
+npm run db:migrate
+
+# Find auth() calls
+rg "await auth\(\)" --type ts
+
+# Find NextAuth imports
+rg "next-auth" --type ts
+
+# Run tests
+npm test
+
+# Build
+npm run build
+
+# Docker
+docker compose build
+docker compose up -d
+docker compose logs -f
+```
+
+---
+
+## Rollback (If Needed)
+
+```bash
+# Stop app
+docker compose down
+
+# Restore database
+cp ./data/db/backups/hd_homey_*.db ./data/db/hd_homey.db
+
+# Revert git
+git revert -m 1 <merge-commit-hash>
+
+# Restore env vars
+# NEXTAUTH_URL=...
+# AUTH_SECRET=...
+
+# Restart
+docker compose up -d
+```
