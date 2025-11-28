@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { authClient } from '@/lib/auth/auth-client';
 import { Input, Button, Card } from '@/components';
 import { PageContainer } from '@/components/layouts';
 
@@ -22,20 +22,21 @@ export default function SignIn() {
         const password = formData.get('password') as string;
 
         try {
-            const result = await signIn('credentials', {
-                username,
+            // Better-Auth uses email field for username
+            const { error: authError } = await authClient.signIn.email({
+                email: username,
                 password,
-                redirect: false
             });
 
-            if (result?.error) {
-                setError('Invalid username or password');
+            if (authError) {
+                setError(authError.message || 'Invalid username or password');
                 setIsLoading(false);
-            } else if (result?.ok) {
+            } else {
                 router.push('/');
                 router.refresh();
             }
-        } catch {
+        } catch (err) {
+            console.error('Sign in error:', err);
             setError('An error occurred during sign in');
             setIsLoading(false);
         }

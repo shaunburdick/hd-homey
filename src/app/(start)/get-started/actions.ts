@@ -1,33 +1,49 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
-import { getUserErrors, isUserValid } from '@/lib/database/validate';
-import { generateHashPassword } from '@/lib/user';
+import { auth } from '@/lib/auth/auth';
 import { AuthRoles } from '@/lib/auth-roles';
 
 export async function createFirstUser(prevState: unknown, formData: FormData) {
-    const db = await getDb();
+    const username = formData.get('username')?.toString();
+    const name = formData.get('name')?.toString();
+    const password = formData.get('password')?.toString();
 
-    const password = formData.get('password');
-    const passwordString = password !== null
-        ? password.toString()
-        : '';
+    // Validation
+    const errors: Array<{ path: string; message: string }> = [];
+    
+    if (!username || username.length < 3) {
+        errors.push({ path: 'username', message: 'Username must be at least 3 characters' });
+    }
+    
+    if (!name || name.length < 1) {
+        errors.push({ path: 'name', message: 'Name is required' });
+    }
+    
+    if (!password || password.length < 8) {
+        errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
+    }
 
-    const newUser = {
-        username: formData.get('username'),
-        name: formData.get('name'),
-        passHash: await generateHashPassword(passwordString),
-        role: AuthRoles.Admin // Always create first user as admin
-    };
+    if (errors.length > 0) {
+        return errors;
+    }
 
-    if (isUserValid(newUser)) {
-        await db.insert(users).values(newUser);
+    try {
+        // Create admin user via Better-Auth
+        // Note: Better-Auth uses email field for username
+        await auth.api.signUpEmail({
+            body: {
+                email: username!,
+                password: password!,
+                name: name!,
+                role: AuthRoles.Admin, // First user is always admin
+            },
+        });
+
         // Redirect to signin page after successful creation
         redirect('/users/signin');
-    } else {
-        const errors = getUserErrors(newUser);
-        return [...errors].map(e => ({ path: e.path, message: e.message }));
+    } catch (error) {
+        console.error('Error creating first user:', error);
+        return [{ path: 'form', message: 'Failed to create user. Please try again.' }];
     }
 }

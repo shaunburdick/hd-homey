@@ -40,9 +40,9 @@ Use this as a quick reference while implementing the migration.
 ## Client Setup
 
 - [x] Create `src/lib/auth/auth-client.ts` (React client)
-- [ ] Update `src/components/nav.tsx` (use `authClient.useSession()`)
-- [ ] Update `src/components/RoleGuard.tsx` (use `authClient.useSession()`)
-- [ ] Remove `src/components/SessionProvider.tsx` (not needed)
+- [x] Update `src/components/nav.tsx` (use `authClient.useSession()`)
+- [x] Update `src/components/RoleGuard.tsx` (use `authClient.useSession()`)
+- [x] Remove `src/components/SessionProvider.tsx` (Better-Auth doesn't need provider)
 
 ## Server-Side Updates
 
