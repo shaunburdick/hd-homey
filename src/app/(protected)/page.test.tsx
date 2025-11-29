@@ -30,10 +30,12 @@ vi.mock('@/lib/auth/auth', () => ({
                 user: {
                     id: 'test-viewer-uuid',
                     email: 'viewer@test.com',
+                    username: 'viewer',
                     name: 'Test User',
                     role: AuthRoles.Viewer,
                     emailVerified: false,
                     image: null,
+                    isActive: true,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
