@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { channels, tuners } from '@/lib/database/schema';
 import { getDb } from '@/lib/database/db';
 
+export const dynamic = 'force-dynamic';
+
 interface Params {
     id: string;
 }

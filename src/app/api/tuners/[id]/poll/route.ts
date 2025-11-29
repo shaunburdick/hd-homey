@@ -8,6 +8,8 @@ import { getDb } from '@/lib/database/db';
 import { HDTuner } from '@/lib/hdhr/tuner';
 import Logger from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 interface Params {
     id: string;
 }

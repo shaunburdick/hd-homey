@@ -9,6 +9,8 @@ import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
 import { AuthRoles } from '@/lib/auth-roles';
 import Logger from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 interface Params {
     id: string;
 }

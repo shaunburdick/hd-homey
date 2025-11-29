@@ -7,6 +7,8 @@ import { tuners } from '@/lib/database/schema';
 import Logger from '@/lib/logger';
 import { HDTuner } from '@/lib/hdhr/tuner';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
