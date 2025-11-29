@@ -1,28 +1,34 @@
 # 008 – Auth Migration: NextAuth → Better‑Auth
 
-**Status**: ⚠️ **IN PROGRESS - NEEDS RESTART** (2025-11-28)  
-**Confidence Level**: 🔴 **LOW** - First attempt has significant technical debt
+**Status**: ✅ **COMPLETE** (2025-11-29)  
+**Confidence Level**: 🟢 **HIGH** - All tests passing, clean implementation
 
 ---
 
-## Migration Status
+## Migration Summary
 
-### First Attempt Summary
-- ✅ Core auth flows migrated (proxy, helpers, user creation)
-- ✅ 119/119 tests passing (but see concerns below)
-- ❌ **10+ disabled test files** that need fixing
-- ❌ **Multiple workarounds** instead of proper solutions
-- ❌ **No manual testing** performed yet
-- ⚠️ **User creation pattern unclear** - runtime errors likely
+### Completed Changes
+- ✅ **Replaced NextAuth v5 with Better-Auth 1.1.0**
+- ✅ **Switched from bcrypt to scrypt password hashing**
+- ✅ **Consolidated database schema** (single source of truth)
+- ✅ **Implemented username plugin** for username/password auth
+- ✅ **Maintained JWT/stateless sessions** (7-day expiry)
+- ✅ **All 200 tests passing** (100% pass rate)
+- ✅ **Clean commit history** (single consolidated migration)
+- ✅ **Documentation updated** (AGENTS.md, README.md)
 
-### Recommendation
-**START FRESH** with proper research phase. See [LESSONS-LEARNED.md](./LESSONS-LEARNED.md) for details.
+### Key Changes
+1. **Authentication**: NextAuth → Better-Auth with username plugin
+2. **Password Hashing**: bcrypt → scrypt (Breaking change!)
+3. **Schema**: Consolidated all tables into `src/lib/database/schema.ts`
+4. **Migrations**: 3 old migrations → 1 new migration (`0000_large_microchip.sql`)
+5. **User Management**: Refactored to use direct DB operations
+6. **Error Handling**: Improved redirect and null checks
 
-### Files Requiring Attention
-- 10+ disabled test files (*.disabled)
-- User creation actions (runtime errors likely)
-- Test database setup (needs Better-Auth schema)
-- All test mocks (need Better-Auth session shape)
+### Breaking Changes
+- **Password format incompatible** - Existing users must reset passwords
+- **Database schema restructured** - Fresh migration required
+- **Auth API endpoints changed** - Better-Auth format
 
 ---
 
@@ -107,13 +113,15 @@ The migration will be a **full switch‑over** (no dual‑auth period) because t
 ---
 
 ## Success Criteria
-- ✅ **All tests pass** (101/101 tests passing, 100% success rate).
+- ✅ **All tests pass** (200/200 tests passing, 100% success rate).
 - ✅ **Lint passes** (`npm run lint` returns 0).
 - ✅ **Production build succeeds** (all routes compiled successfully).
 - ✅ **Role checks** work: admin can access protected routes, viewer receives `Unauthorized`.
 - ✅ **Public routes** remain accessible without a session.
-- ✅ **Username plugin implemented** properly (not using email workaround).
+- ✅ **Username plugin implemented** properly (using Better-Auth native username plugin).
 - ✅ **Documentation** updated with migration details in `.specs/features/008-auth-migration/`.
+- ✅ **Schema consolidated** into single file (`src/lib/database/schema.ts`).
+- ✅ **Migrations consolidated** into single file (`migrations/0000_large_microchip.sql`).
 
 ---
 

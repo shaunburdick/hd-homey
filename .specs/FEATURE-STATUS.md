@@ -1,7 +1,7 @@
 # HD Homey Feature Status
 
-**Last Updated**: 2025-11-28  
-**Version**: 1.0.0-beta.2 (Auth Migration Complete)
+**Last Updated**: 2025-11-29  
+**Version**: 1.0.0-beta.3 (Better-Auth Migration Complete)
 
 This document provides a quick overview of all features and their implementation status.
 
@@ -40,14 +40,15 @@ This document provides a quick overview of all features and their implementation
 
 ### SPEC-003: User Authentication & Authorization
 **Status**: ✅ Complete  
-**Completed**: v1.0.0-alpha.3 (Stream auth: 2025-11-18)
+**Completed**: v1.0.0-beta.3 (Better-Auth: 2025-11-29)
 
-**Core Authentication** (v1.0.0-alpha.1):
+**Core Authentication** (v1.0.0-beta.3):
 - Credentials-based authentication (username/password)
-- BCrypt password hashing
-- NextAuth.js v5 integration
+- Scrypt password hashing (Better-Auth native)
+- Better-Auth 1.1.0 with username plugin
+- JWT stateless sessions (7-day expiry)
 - Role-based authorization (Admin/Viewer)
-- Protected routes via layout components
+- Protected routes via proxy layer
 - Initial setup wizard
 - User management CRUD
 - User profiles with password change
@@ -62,7 +63,7 @@ This document provides a quick overview of all features and their implementation
 - Comprehensive test coverage
 
 **Files**: 
-- Auth: `src/auth.ts`, `src/lib/auth.ts`, `src/app/users/**`
+- Auth: `src/lib/auth/**`, `src/proxy.ts`, `src/app/users/**`
 - Tokens: `src/lib/stream-token.ts`, `src/lib/settings.ts`
 - UI: `src/components/stream-secret-manager.tsx`
 
@@ -125,16 +126,20 @@ This document provides a quick overview of all features and their implementation
 
 ### SPEC-008: Auth Migration (NextAuth → Better-Auth)
 **Status**: ✅ Complete  
-**Completed**: 2025-11-28
+**Completed**: 2025-11-29
 
-- Better-Auth integration with username plugin
-- Username-based authentication (replaces email)
-- JWT stateless sessions (no database session table)
+- Better-Auth 1.1.0 integration with username plugin
+- Scrypt password hashing (replaces bcrypt)
+- JWT stateless sessions (7-day expiry)
+- Username-based authentication (no email workaround)
 - Role-based authorization preserved
-- All 101 tests passing
-- Migration guide documented
+- Consolidated schema (single source of truth)
+- Consolidated migrations (single migration file)
+- All 200 tests passing
+- Clean commit history
+- Documentation updated
 
-**Files**: `src/lib/auth/**`, `migrations/0002_better_auth_migration.sql`, `migrations/0003_add_username_column.sql`
+**Files**: `src/lib/auth/**`, `migrations/0000_large_microchip.sql`
 
 ---
 
@@ -168,9 +173,9 @@ This document provides a quick overview of all features and their implementation
 
 ## 📊 Testing Status
 
-**Total Tests**: 101 passing (100%)  
+**Total Tests**: 200 passing (100%)  
 **Test Coverage**: Excellent (core features fully tested)  
-**Execution Time**: ~700ms
+**Execution Time**: ~2.5s
 
 **Coverage by Area**:
 - ✅ HDHomeRun Integration: 20 tests
@@ -220,12 +225,23 @@ These features are explicitly out of scope per the Constitution but may be consi
 
 ## 📈 Version History
 
-### v1.0.0-beta.2 (2025-11-28)
+### v1.0.0-beta.3 (2025-11-29)
 - **BREAKING**: Auth migration from NextAuth to Better-Auth
-- Username-based authentication (no email required)
+- Scrypt password hashing (replaces bcrypt - incompatible)
+- Username-based authentication via Better-Auth username plugin
+- Consolidated database schema (single file)
+- Consolidated migrations (single migration file)
+- Fixed password hashing bug (sign-in now works)
 - Fixed instrumentation hook for missing user table
-- Fixed all test failures (101/101 passing)
-- Improved error handling throughout
+- All 200 tests passing (100% pass rate)
+- Clean commit history
+- Documentation updated
+
+### v1.0.0-beta.2 (2025-11-20)
+- Critical security fixes
+- Proxy-level authentication
+- Admin-only checks for sensitive operations
+- 19 new proxy tests
 
 ### v1.0.0-beta.1 (2025-11-20)
 - First beta release
@@ -265,7 +281,7 @@ These features are explicitly out of scope per the Constitution but may be consi
 
 ### Production Readiness
 
-HD Homey v1.0.0-beta.1 is **production ready** with:
+HD Homey v1.0.0-beta.3 is **production ready** with:
 - ✅ Complete security implementation (auth + stream tokens)
 - ✅ Full feature set for core use cases
 - ✅ Comprehensive test coverage
