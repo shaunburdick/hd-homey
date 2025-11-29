@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Authentication Library Migration**: Migrated from NextAuth.js v5 (beta) to Better-Auth v1.4.3
+  - Replaced NextAuth with Better-Auth for improved stability and TypeScript support
+  - Maintains same security model: JWT/stateless sessions, Edge Runtime compatible
+  - **Breaking Change**: Password hashing changed from bcrypt to scrypt (Better-Auth default)
+  - Users created before this version will need their passwords reset by admin
+  - All 200 tests passing with new authentication system
+- **Database Migrations**: Consolidated all migrations into single initial migration (`0000_large_microchip.sql`)
+  - Simplified migration history for beta release
+  - Clean slate approach for beta users
+  - **Breaking Change**: Assumes fresh install - existing databases should be backed up and recreated
+- **Database Schema**: Consolidated duplicate schema files into single source of truth
+  - Removed redundant `better-auth-schema.ts` (Better-Auth tables now in main `schema.ts`)
+  - Better-Auth adapter and Drizzle migrations now use same schema file
+  - Removed backup schema files from migration process
+
+### Removed
+
+- Removed `bcrypt` and `@types/bcrypt` dependencies (replaced with Better-Auth's built-in scrypt)
+- Removed incremental database migrations (consolidated into single initial migration)
+- Removed `better-auth-schema.ts` (consolidated into `schema.ts`)
+
 ## [1.0.0-beta.2] - 2025-11-28
 
 **Note**: This is a **critical security release** that fixes a vulnerability where API endpoints were completely unprotected. All users should upgrade immediately.

@@ -22,7 +22,7 @@ export async function requireRole(role: AuthRoles): Promise<Session> {
     const session = rawSession as unknown as Session;
 
     // Check for valid session and user
-    if (!session?.user) {
+    if (session?.user === null || session?.user === undefined) {
         throw new Error('Not authenticated');
     }
 

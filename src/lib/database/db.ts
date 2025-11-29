@@ -13,7 +13,16 @@ export function connection() {
         return cachedConnection;
     }
     Logger.info(`Opening SQL DB: ${Config.DB_PATH}...`);
-    cachedConnection = new Database(Config.DB_PATH, { verbose: q => Logger.info(q) });
+    const db = new Database(Config.DB_PATH);
+
+    // For debugging SQL queries, uncomment the verbose option:
+    // const db = new Database(Config.DB_PATH, {
+    //     verbose: (query, ...params) => {
+    //         Logger.info({ query, params }, 'SQL Query');
+    //     },
+    // });
+
+    cachedConnection = db;
     return cachedConnection;
 }
 

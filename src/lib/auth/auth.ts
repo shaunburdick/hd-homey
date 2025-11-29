@@ -1,6 +1,19 @@
+// Better-Auth uses .d.mts type definition files which TypeScript's standalone tsc cannot
+// properly resolve with moduleResolution: "bundler". This is a known TypeScript limitation.
+// Next.js bundler handles these correctly. We use @ts-ignore for compatibility with both.
+// See: https://github.com/microsoft/TypeScript/issues/54102
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
 import { betterAuth } from 'better-auth';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { getDb } from '@/lib/database/db';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
+import { username } from 'better-auth/plugins';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { connection } from '@/lib/database/db';
+import * as schema from '@/lib/database/schema';
 import { AuthRoles } from '@/lib/auth-roles';
 import Config from '@/lib/config';
 
@@ -8,71 +21,86 @@ import Config from '@/lib/config';
  * Better-Auth instance for HD Homey
  *
  * Configured with:
- * - Username/password authentication (via emailAndPassword)
- * - JWT/Stateless sessions (7-day expiry, same as NextAuth)
+ * - Username/password authentication (via username plugin)
+ * - JWT/Stateless sessions (7-day expiry)
  * - Custom user fields: role, isActive, deletedAt
  * - SQLite database via Drizzle adapter
  *
  * Session Strategy: JWT/Stateless
- * - Sessions stored in signed JWT cookies (no session table)
+ * - Sessions stored in signed JWT cookies
  * - Session validation requires only signature check (no DB query)
  * - Edge Runtime compatible
- * - Cannot revoke individual sessions (change version to invalidate all)
+ * - Cannot revoke individual sessions (must change AUTH_SECRET to invalidate all)
+ *
+ * Important: When using drizzleAdapter with a schema, do NOT manually map field names
+ * in the configuration. The adapter reads field mappings directly from the Drizzle schema.
  */
+const db = drizzle(connection());
+
 export const auth = betterAuth({
-    database: async () => {
-        const db = await getDb();
-        return drizzleAdapter(db, {
-            provider: 'sqlite',
-        });
+    database: drizzleAdapter(db, {
+        provider: 'sqlite',
+        schema: {
+            user: schema.user,
+            session: schema.session,
+            account: schema.account,
+            verification: schema.verification,
+        },
+    }),
+
+    // Advanced configuration
+    advanced: {
+        useSecureCookies: process.env.NODE_ENV === 'production',
+        crossSubDomainCookies: {
+            enabled: false,
+        },
     },
 
-    // Username/password authentication
-    emailAndPassword: {
-        enabled: true,
-        requireEmailVerification: false, // No email verification for now
-    },
-
-    // JWT/Stateless sessions (same as NextAuth)
+    // Session configuration
     session: {
         cookieCache: {
             enabled: true,
-            maxAge: 60 * 60 * 24 * 7, // 7 days (JWT cache duration)
+            maxAge: 60 * 60 * 24 * 7, // 7 days
         },
-        // Stateless JWT sessions
         expiresIn: 60 * 60 * 24 * 7, // 7 days
         updateAge: 60 * 60 * 24, // Refresh session every 24 hours
     },
 
-    // Custom user fields for HD Homey
+    // User configuration with custom fields
     user: {
         additionalFields: {
             role: {
                 type: 'string',
                 required: true,
                 defaultValue: AuthRoles.Viewer,
-                input: true, // Allow setting during signup
+                input: false, // Don't allow client to set role
+                fieldName: 'role',
             },
             isActive: {
                 type: 'boolean',
                 required: true,
                 defaultValue: true,
+                fieldName: 'is_active',
             },
             deletedAt: {
                 type: 'date',
                 required: false,
+                fieldName: 'deleted_at',
             },
         },
     },
 
-    // Use AUTH_SECRET from config
+    // Authentication plugins
+    plugins: [
+        username(),
+    ],
+
+    // Security
     secret: Config.AUTH_SECRET,
-
-    // Base URL for auth endpoints
     baseURL: (process.env.BETTER_AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000'),
-
-    // Trust proxy headers (for Docker/reverse proxy)
-    trustedOrigins: (process.env.BETTER_AUTH_URL !== null) ? [process.env.BETTER_AUTH_URL] : [],
+    trustedOrigins: (process.env.BETTER_AUTH_URL !== undefined && process.env.BETTER_AUTH_URL !== '')
+        ? [process.env.BETTER_AUTH_URL]
+        : [process.env.NEXTAUTH_URL ?? 'http://localhost:3000'],
 });
 
 /**

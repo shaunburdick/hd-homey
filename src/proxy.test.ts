@@ -137,14 +137,14 @@ describe('Proxy Route Protection', () => {
     });
 
     describe('Session-Authenticated Routes - Pages', () => {
-        it('should redirect page routes without session to signin', async () => {
+        it('should redirect page routes without session to get-started', async () => {
             vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
             const request = new NextRequest(new URL('http://localhost:3000/tuners'));
             const response = await proxy(request);
 
             expect(response.status).toBe(307); // Temporary redirect
-            expect(response.headers.get('location')).toContain('/users/signin');
+            expect(response.headers.get('location')).toContain('/get-started');
             expect(response.headers.get('location')).toContain('callbackUrl=%2Ftuners');
             expect(auth.api.getSession).toHaveBeenCalled();
         });

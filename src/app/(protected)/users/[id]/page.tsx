@@ -63,45 +63,45 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                         fontSize: 'var(--font-size-sm)',
                         fontWeight: 'var(--font-weight-semibold)',
                     }}>
-                    {user.role === 'admin' ? '👑 Admin' : '👤 Viewer'}
-                </span>
-                {!user.isActive && (
-                    <span style={{
-                        display: 'inline-block',
-                        backgroundColor: 'var(--color-error-bg)',
-                        color: 'var(--color-error)',
-                        padding: 'var(--space-1) var(--space-2)',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: 'var(--font-size-xs)',
-                        fontWeight: 'var(--font-weight-semibold)',
-                    }}>
-                        Inactive
+                        {user.role === 'admin' ? '👑 Admin' : '👤 Viewer'}
                     </span>
-                )}
-            </div>
-        </div>
-
-        <InfoCard
-            title="User Information"
-            className="mb-6"
-            items={[
-                { label: 'Username', value: `@${user.email}` },
-                { label: 'Display Name', value: user.name },
-                { label: 'Role', value: user.role === 'admin' ? 'Administrator' : 'Viewer' },
-                {
-                    label: 'Status',
-                    value: (
+                    {!user.isActive && (
                         <span style={{
-                            color: user.isActive ? 'var(--color-success)' : 'var(--color-error)',
+                            display: 'inline-block',
+                            backgroundColor: 'var(--color-error-bg)',
+                            color: 'var(--color-error)',
+                            padding: 'var(--space-1) var(--space-2)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)',
+                            fontWeight: 'var(--font-weight-semibold)',
                         }}>
-                            {user.isActive ? '✓ Active' : '✗ Inactive'}
+                            Inactive
                         </span>
-                    ),
-                },
-                { label: 'Created', value: user.createdAt.toLocaleString() },
-                { label: 'Last Modified', value: user.updatedAt.toLocaleString() },
-            ]}
-        />
+                    )}
+                </div>
+            </div>
+
+            <InfoCard
+                title="User Information"
+                className="mb-6"
+                items={[
+                    { label: 'Username', value: `@${user.email}` },
+                    { label: 'Display Name', value: user.name },
+                    { label: 'Role', value: user.role === 'admin' ? 'Administrator' : 'Viewer' },
+                    {
+                        label: 'Status',
+                        value: (
+                            <span style={{
+                                color: user.isActive ? 'var(--color-success)' : 'var(--color-error)',
+                            }}>
+                                {user.isActive ? '✓ Active' : '✗ Inactive'}
+                            </span>
+                        ),
+                    },
+                    { label: 'Created', value: user.createdAt.toLocaleString() },
+                    { label: 'Last Modified', value: user.updatedAt.toLocaleString() },
+                ]}
+            />
 
             <Card>
                 <h2 className="mt-0 mb-4">Edit User</h2>

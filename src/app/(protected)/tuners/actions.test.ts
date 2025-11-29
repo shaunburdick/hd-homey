@@ -11,7 +11,8 @@ vi.mock('@/lib/auth/helpers', async (importOriginal) => {
 });
 
 vi.mock('@/lib/database/db', () => ({
-    getDb: vi.fn()
+    getDb: vi.fn(),
+    connection: vi.fn(() => ({}))
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -22,9 +23,19 @@ vi.mock('@/lib/logger', () => ({
     }
 }));
 
+// Mock Next.js functions
+const REDIRECT_ERROR_CODE = 'NEXT_REDIRECT';
 vi.mock('next/navigation', () => ({
-    redirect: vi.fn(() => {
-        throw new Error('NEXT_REDIRECT');
+    redirect: vi.fn((url: string) => {
+        const error = new Error(`${REDIRECT_ERROR_CODE}: ${url}`) as Error & { digest: string };
+        error.digest = REDIRECT_ERROR_CODE;
+        throw error;
+    })
+}));
+
+vi.mock('next/dist/client/components/redirect-error', () => ({
+    isRedirectError: vi.fn((error: unknown) => {
+        return (error as { digest?: string } | null)?.digest === REDIRECT_ERROR_CODE;
     })
 }));
 
@@ -67,7 +78,7 @@ describe('deleteTuner', () => {
             await deleteTuner(null, formData);
         } catch (error) {
             // Expected redirect error
-            expect((error as Error).message).toBe('NEXT_REDIRECT');
+            expect((error as Error).message).toContain('NEXT_REDIRECT');
         }
 
         // Verify tuner was updated (soft deleted)

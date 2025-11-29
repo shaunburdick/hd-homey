@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1726101349025,
-      "tag": "0000_supreme_silver_surfer",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1732041600000,
-      "tag": "0001_add_settings_table",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1732812500000,
-      "tag": "0002_better_auth_migration",
+      "when": 1764392406757,
+      "tag": "0000_large_microchip",
       "breakpoints": true
     }
   ]

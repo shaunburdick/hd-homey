@@ -5,7 +5,7 @@ import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import { AuthRoles } from '@/lib/auth-roles';
 import type { DB } from '@/lib/database/db';
 import { auth } from '@/lib/auth/auth';
-import { generateHashPassword, verifyPassword } from '@/lib/user';
+import { verifyPassword } from '@/lib/user';
 import { createMockSession } from '@/test-utils/mock-auth';
 
 let testDb: DB;
@@ -25,8 +25,8 @@ vi.mock('@/lib/auth/auth', () => ({
 const { refreshDb } = setupTestDatabase();
 
 describe('Profile Actions', () => {
-    const TEST_USER_ID = 'test-user-uuid-1';
-    const TEST_PASSWORD = 'currentPassword123';
+    const TEST_USER_ID = 'test-viewer-uuid'; // Use seeded viewer user
+    const TEST_PASSWORD = 'testpassword123'; // Match seed password
     const TEST_NEW_PASSWORD = 'newPassword456';
 
     beforeEach(async () => {
@@ -43,26 +43,9 @@ describe('Profile Actions', () => {
             });
             vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
-            // Get the user and set a known password in the account table
+            // Account already exists with TEST_PASSWORD from seed data
             const { account } = await import('@/lib/database/schema');
             const { eq } = await import('drizzle-orm');
-            const hashedPassword = await generateHashPassword(TEST_PASSWORD);
-
-            // Insert or update account with password
-            await testDb
-                .insert(account)
-                .values({
-                    id: 'account-1',
-                    userId: TEST_USER_ID,
-                    accountId: TEST_USER_ID,
-                    providerId: 'credential',
-                    password: hashedPassword,
-                })
-                .onConflictDoUpdate({
-                    target: account.id,
-                    set: { password: hashedPassword }
-                })
-                .run();
 
             const formData = new FormData();
             formData.append('userId', TEST_USER_ID);

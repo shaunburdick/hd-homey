@@ -1,15 +1,63 @@
 # Implementation Plan: NextAuth → Better‑Auth Migration
 
 **Feature ID**: `008-auth-migration`  
-**Spec**: [spec.md](./ spec.md)  
+**Spec**: [spec.md](./spec.md)  
 **Date**: 2025-11-28  
-**Branch**: `008-auth-migration`
+**Branch**: `008-auth-migration` (first attempt - not recommended to continue)
+
+---
+
+## ⚠️ IMPORTANT: READ FIRST
+
+**Current Status**: First migration attempt has **low confidence** and significant technical debt.
+
+**Key Issues**:
+1. ❌ **10+ disabled test files** - tests that should be passing are disabled
+2. ❌ **ts-ignore comments** - hiding type errors instead of fixing them
+3. ❌ **Untested user creation** - runtime errors likely during manual testing
+4. ❌ **No manual testing performed** - core flows never verified
+5. ❌ **Schema migration incomplete** - test database doesn't match production
+
+**Two Paths Forward**:
+
+### Option A: Continue with First Attempt (~18 hours)
+- Fix all 10+ disabled test files
+- Remove all ts-ignore workarounds
+- Complete manual testing
+- Fix runtime errors as they're discovered
+- High risk of cascading issues
+
+### Option B: Clean Restart (~14 hours) ✅ RECOMMENDED
+- Phase 0: Deep research (4 hours) - Build proof-of-concept, understand Better-Auth thoroughly
+- Phase 1: Clean migration (8 hours) - No disabled tests, no workarounds, test as you go
+- Phase 2: Documentation (2 hours) - Clean up and document
+
+**Recommendation**: **Start fresh (Option B)**
+- Faster overall (14 vs 18 hours)
+- Higher quality result
+- No technical debt
+- More confidence
+
+**Read**: [LESSONS-LEARNED.md](./LESSONS-LEARNED.md) for complete analysis and detailed restart plan.
+
+---
 
 ## Summary
 
-Complete migration from NextAuth v5 to Better‑Auth using username-based authentication with **JWT/Stateless sessions**. This is a **clean slate migration** that replaces the existing `users` table with Better‑Auth's native schema (minus the session table - sessions remain stateless like NextAuth), targeting the latest Better‑Auth release with 100% test coverage. Since the project is still in beta (no production users), we can safely drop and recreate the auth schema.
+⚠️ **FIRST ATTEMPT STATUS**: Incomplete with significant technical debt. Recommending clean restart.
+
+**Original Goal**: Complete migration from NextAuth v5 to Better‑Auth using username-based authentication with **JWT/Stateless sessions**. This is a **clean slate migration** that replaces the existing `users` table with Better‑Auth's native schema (minus the session table - sessions remain stateless like NextAuth), targeting the latest Better‑Auth release with 100% test coverage.
+
+**Current Reality**: 
+- 119/119 tests passing BUT 10+ test files disabled
+- User creation has runtime errors (untested)
+- Multiple ts-ignore workarounds
+- No manual testing performed
+- Low confidence in implementation
 
 **Session Strategy**: JWT/Stateless (same as current NextAuth) for better API client support and Edge Runtime compatibility.
+
+**See**: [LESSONS-LEARNED.md](./LESSONS-LEARNED.md) for detailed analysis and recommended restart approach.
 
 ## Technical Context
 

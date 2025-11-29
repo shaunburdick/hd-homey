@@ -28,7 +28,7 @@ export async function regenerateAppStreamSecret(
     });
     const session = rawSession as unknown as Session | null;
 
-    if (!session?.user || session.user.role !== AuthRoles.Admin) {
+    if (session?.user === null || session?.user === undefined || session.user.role !== AuthRoles.Admin) {
         return { errors: { auth: ['Admin access required'] } };
     }
 
@@ -54,7 +54,7 @@ export async function getStreamSecretInfo(): Promise<{ preview: string } | null>
     });
     const session = rawSession as unknown as Session | null;
 
-    if (!session?.user || session.user.role !== AuthRoles.Admin) {
+    if (session?.user === null || session?.user === undefined || session.user.role !== AuthRoles.Admin) {
         return null;
     }
 

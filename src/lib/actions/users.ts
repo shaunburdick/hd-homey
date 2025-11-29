@@ -1,13 +1,59 @@
 'use server';
 
+import crypto from 'node:crypto';
 import { redirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { revalidatePath } from 'next/cache';
 import { eq } from 'drizzle-orm';
+import type { DB } from '@/lib/database/db';
 import { getDb } from '@/lib/database/db';
 import { user, account } from '@/lib/database/schema';
 import { requireAdmin } from '@/lib/auth/helpers';
-import { auth } from '@/lib/auth/auth';
 import { generateHashPassword } from '@/lib/user';
+import type { AuthRoles } from '@/lib/auth-roles';
+
+/**
+ * Update user password in account table
+ */
+async function updateUserPassword(db: DB, userId: string, password: string): Promise<void> {
+    const hashedPassword = await generateHashPassword(password);
+
+    // Find account for this user
+    const userAccount = await db.select()
+        .from(account)
+        .where(eq(account.userId, userId))
+        .limit(1)
+        .get();
+
+    if (userAccount !== undefined) {
+        await db.update(account)
+            .set({
+                password: hashedPassword,
+                updatedAt: new Date()
+            })
+            .where(eq(account.id, userAccount.id));
+    }
+}
+
+/**
+ * Validate update user form data
+ */
+function validateUpdateUser(
+    name: string | undefined,
+    password: string | undefined
+): { path: string; message: string }[] {
+    const errors: { path: string; message: string }[] = [];
+
+    if ((name?.length ?? 0) < 3) {
+        errors.push({ path: 'name', message: 'Name must be at least 3 characters' });
+    }
+
+    if (password !== undefined && password.length > 0 && password.length < 8) {
+        errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
+    }
+
+    return errors;
+}
 
 /**
  * Create a new user via Better-Auth API
@@ -49,24 +95,40 @@ export async function createUser(prevState: unknown, formData: FormData) {
     }
 
     try {
-        // Create user via Better-Auth API (uses email field for username)
-        const result = await auth.api.signUpEmail({
-            body: {
-                email: username as string,
-                password: password as string,
-                name: name as string,
-                role: role as string,
-            },
+        const db = await getDb();
+
+        // Generate Better-Auth compatible IDs
+        const userId = crypto.randomUUID();
+        const accountId = crypto.randomUUID();
+
+        // Create user record
+        await db.insert(user).values({
+            id: userId,
+            username: username as string,
+            email: `${username}@local.hdhomey.app`, // Username plugin requires email
+            emailVerified: false,
+            name: name as string,
+            role: role as AuthRoles,
+            isActive: true,
         });
 
-
-        if (result?.user === undefined) {
-            return [{ path: 'form', message: 'Failed to create user' }];
-        }
+        // Create account record with password
+        const hashedPassword = await generateHashPassword(password as string);
+        await db.insert(account).values({
+            id: accountId,
+            userId,
+            accountId: userId,
+            providerId: 'credential',
+            password: hashedPassword,
+        });
 
         revalidatePath('/users');
-        redirect(`/users/${result.user.id}`);
+        redirect(`/users/${userId}`);
     } catch (error) {
+        // Re-throw redirect errors (this is expected behavior)
+        if (error !== null && error !== undefined && isRedirectError(error)) {
+            throw error;
+        }
         return [{ path: 'form', message: error instanceof Error ? error.message : 'Failed to create user' }];
     }
 }
@@ -95,16 +157,7 @@ export async function updateUser(prevState: unknown, formData: FormData) {
     const isActive = formData.get('is_active') === 'true';
 
     // Validation
-    const errors: { path: string; message: string }[] = [];
-
-    if ((name?.length ?? 0) < 3) {
-        errors.push({ path: 'name', message: 'Name must be at least 3 characters' });
-    }
-
-    if (password !== undefined && password.length > 0 && password.length < 8) {
-        errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
-    }
-
+    const errors = validateUpdateUser(name, password);
     if (errors.length > 0) {
         return errors;
     }
@@ -124,29 +177,17 @@ export async function updateUser(prevState: unknown, formData: FormData) {
         // Update password if provided
         const trimmedPassword = password?.trim();
         if (trimmedPassword !== undefined && trimmedPassword.length > 0) {
-            const hashedPassword = await generateHashPassword(trimmedPassword);
-
-            // Find account for this user
-            const userAccount = await db.select()
-                .from(account)
-                .where(eq(account.userId, userId))
-                .limit(1)
-                .get();
-
-            if (userAccount !== undefined) {
-                await db.update(account)
-                    .set({
-                        password: hashedPassword,
-                        updatedAt: new Date()
-                    })
-                    .where(eq(account.id, userAccount.id));
-            }
+            await updateUserPassword(db, userId, trimmedPassword);
         }
 
         revalidatePath('/users');
         revalidatePath(`/users/${userId}`);
         redirect(`/users/${userId}`);
     } catch (error) {
+        // Re-throw redirect errors (this is expected behavior)
+        if (error !== null && error !== undefined && isRedirectError(error)) {
+            throw error;
+        }
         return [{ path: 'form', message: error instanceof Error ? error.message : 'Failed to update user' }];
     }
 }

@@ -7,6 +7,7 @@ let testDb: DB;
 
 vi.mock('@/lib/database/db', () => ({
     getDb: vi.fn(() => Promise.resolve(testDb)),
+    connection: vi.fn(() => ({})), // Required for auth.ts
 }));
 
 const { refreshDb } = setupTestDatabase();

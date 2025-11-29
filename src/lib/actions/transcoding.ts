@@ -28,7 +28,7 @@ export async function getTranscodingSettingsAction(): Promise<TranscodeSettings>
         headers: await headers()
     });
     const session = rawSession as unknown as Session | null;
-    if (!session?.user || session.user.role !== AuthRoles.Admin) {
+    if (session?.user === null || session?.user === undefined || session.user.role !== AuthRoles.Admin) {
         throw new Error('Unauthorized');
     }
 
@@ -43,7 +43,7 @@ export async function getFFmpegInfo() {
         headers: await headers()
     });
     const session = rawSession as unknown as Session | null;
-    if (!session?.user || session.user.role !== AuthRoles.Admin) {
+    if (session?.user === null || session?.user === undefined || session.user.role !== AuthRoles.Admin) {
         throw new Error('Unauthorized');
     }
 
@@ -61,7 +61,7 @@ export async function updateTranscodingSettingsAction(
         headers: await headers()
     });
     const session = rawSession as unknown as Session | null;
-    if (!session?.user || session.user.role !== AuthRoles.Admin) {
+    if (session?.user === null || session?.user === undefined || session.user.role !== AuthRoles.Admin) {
         return { errors: { auth: ['Unauthorized'] } };
     }
 

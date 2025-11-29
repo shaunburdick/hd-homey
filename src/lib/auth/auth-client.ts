@@ -1,5 +1,11 @@
 'use client';
 
+// Better-Auth uses .d.mts type definition files which TypeScript's standalone tsc cannot
+// properly resolve with moduleResolution: "bundler". This is a known TypeScript limitation.
+// Next.js bundler handles these correctly. We use @ts-ignore for compatibility with both.
+// See: https://github.com/microsoft/TypeScript/issues/54102
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
 import { createAuthClient } from 'better-auth/react';
 
 /**

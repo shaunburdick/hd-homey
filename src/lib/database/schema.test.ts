@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { eq } from 'drizzle-orm';
 import type { DB } from './db';
-import { users, tuners, channels } from './schema';
+import { user, tuners, channels } from './schema';
 import { AuthRoles } from '@/lib/auth-roles';
 import { createTestDatabase, cleanupTestDatabase } from '@/test-utils/setup-test-db';
 
@@ -11,8 +11,6 @@ const TEST_TUNER_NAME = 'Test Tuner';
 const TEST_CHANNEL_NAME = 'Test Channel';
 const TEST_TUNER_PATH = 'http://192.168.1.100';
 const TEST_URL = 'http://test.local';
-const TEST_PASSHASH = 'hash123';
-const TEST_HASH = 'hash';
 const TEST_DESCRIBE = 'Database Schema';
 const TEST_DEFAULT_VALUES = 'should apply default values correctly';
 
@@ -31,25 +29,26 @@ describe(TEST_DESCRIBE, () => {
         it('should have unique constraint defined on username', () => {
             const user1 = {
                 username: 'testuser',
+                email: 'testuser@local.hdhomey.app',
+                emailVerified: false,
                 name: 'Test User',
-                passHash: TEST_PASSHASH,
                 role: AuthRoles.Viewer
             };
 
             // Insert first user successfully
-            const firstUser = db.insert(users).values(user1).returning().get();
+            const firstUser = db.insert(user).values(user1).returning().get();
             expect(firstUser.username).toBe('testuser');
 
             // Try to insert duplicate username
             try {
-                db.insert(users).values({
+                db.insert(user).values({
                     ...user1,
                     name: 'Different Name' // Different name, same username
                 }).run();
                 // If we get here, either constraint isn't working or it succeeded
                 // Verify at least one user with this username exists
-                const duplicates = db.select().from(users)
-                    .where(eq(users.username, 'testuser')).all();
+                const duplicates = db.select().from(user)
+                    .where(eq(user.username, 'testuser')).all();
                 expect(duplicates.length).toBeGreaterThanOrEqual(1);
             } catch (error) {
                 // Constraint worked - this is the expected behavior
@@ -58,60 +57,69 @@ describe(TEST_DESCRIBE, () => {
         });
 
         it(TEST_DEFAULT_VALUES, () => {
-            const newUser = db.insert(users).values({
+            const newUser = db.insert(user).values({
                 username: 'newuser',
+                email: 'newuser@local.hdhomey.app',
+                emailVerified: false,
                 name: 'New User',
-                passHash: TEST_PASSHASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
-            expect(newUser.is_active).toBe(true);
-            expect(newUser.created_at).toBeInstanceOf(Date);
-            expect(newUser.modified_at).toBeInstanceOf(Date);
-            expect(newUser.deleted_at).toBeNull();
+            expect(newUser.isActive).toBe(true);
+            expect(newUser.createdAt).toBeInstanceOf(Date);
+            expect(newUser.updatedAt).toBeInstanceOf(Date);
+            expect(newUser.deletedAt).toBeNull();
         });
 
-        it('should auto-increment primary key', () => {
-            const user1 = db.insert(users).values({
+        it('should generate UUID primary keys', () => {
+            const user1 = db.insert(user).values({
                 username: 'user1',
+                email: 'user1@local.hdhomey.app',
+                emailVerified: false,
                 name: 'User 1',
-                passHash: 'hash1',
                 role: AuthRoles.Viewer
             }).returning().get();
 
-            const user2 = db.insert(users).values({
+            const user2 = db.insert(user).values({
                 username: 'user2',
+                email: 'user2@local.hdhomey.app',
+                emailVerified: false,
                 name: 'User 2',
-                passHash: 'hash2',
                 role: AuthRoles.Admin
             }).returning().get();
 
-            expect(user2.id).toBeGreaterThan(user1.id);
+            // UUIDs should be strings and different
+            expect(typeof user1.id).toBe('string');
+            expect(typeof user2.id).toBe('string');
+            expect(user1.id).not.toBe(user2.id);
         });
 
         it('should enforce NOT NULL constraints', () => {
             expect(() => {
-                db.insert(users).values({
-                    username: 'test',
+                db.insert(user).values({
+                    username: 'testuser',
+                    email: 'test@example.com',
+                    emailVerified: false,
                     name: 'Test',
-                    passHash: '',
                     role: null as unknown as typeof AuthRoles.Viewer
                 }).run();
             }).toThrow();
         });
 
         it('should allow valid role enum values', () => {
-            const adminUser = db.insert(users).values({
+            const adminUser = db.insert(user).values({
                 username: 'admin',
+                email: 'admin@local.hdhomey.app',
+                emailVerified: false,
                 name: 'Admin',
-                passHash: TEST_HASH,
                 role: AuthRoles.Admin
             }).returning().get();
 
-            const viewerUser = db.insert(users).values({
+            const viewerUser = db.insert(user).values({
                 username: 'viewer',
+                email: 'viewer@local.hdhomey.app',
+                emailVerified: false,
                 name: 'Viewer',
-                passHash: TEST_HASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
@@ -119,24 +127,25 @@ describe(TEST_DESCRIBE, () => {
             expect(viewerUser.role).toBe(AuthRoles.Viewer);
         });
 
-        it('should support soft delete with deleted_at', () => {
-            const user = db.insert(users).values({
+        it('should support soft delete with deletedAt', () => {
+            const testUser = db.insert(user).values({
                 username: 'softdelete',
+                email: 'softdelete@local.hdhomey.app',
+                emailVerified: false,
                 name: 'Soft Delete Test',
-                passHash: TEST_HASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
             // Soft delete user
             const deletedAt = new Date();
-            db.update(users)
-                .set({ is_active: false, deleted_at: deletedAt })
-                .where(eq(users.id, user.id))
+            db.update(user)
+                .set({ isActive: false, deletedAt })
+                .where(eq(user.id, testUser.id))
                 .run();
 
-            const deletedUser = db.select().from(users).where(eq(users.id, user.id)).get();
-            expect(deletedUser?.is_active).toBe(false);
-            expect(deletedUser?.deleted_at).toBeInstanceOf(Date);
+            const deletedUser = db.select().from(user).where(eq(user.id, testUser.id)).get();
+            expect(deletedUser?.isActive).toBe(false);
+            expect(deletedUser?.deletedAt).toBeInstanceOf(Date);
         });
     });
 
@@ -431,45 +440,47 @@ describe(TEST_DESCRIBE, () => {
 
     describe('Timestamp Behavior', () => {
         it('should set timestamps on insert', () => {
-            const user = db.insert(users).values({
-                username: 'timestamp test',
+            const testUser = db.insert(user).values({
+                username: 'timestamp',
+                email: 'timestamp@local.hdhomey.app',
+                emailVerified: false,
                 name: 'Timestamp Test',
-                passHash: TEST_HASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
             // Timestamps should be set (not null)
-            expect(user.created_at).toBeInstanceOf(Date);
-            expect(user.modified_at).toBeInstanceOf(Date);
+            expect(testUser.createdAt).toBeInstanceOf(Date);
+            expect(testUser.updatedAt).toBeInstanceOf(Date);
             // Timestamps should be recent (within last minute)
             const now = Date.now();
             const oneMinuteAgo = now - 60000;
-            expect(user.created_at.getTime()).toBeGreaterThan(oneMinuteAgo);
-            expect(user.modified_at.getTime()).toBeGreaterThan(oneMinuteAgo);
+            expect(testUser.createdAt.getTime()).toBeGreaterThan(oneMinuteAgo);
+            expect(testUser.updatedAt.getTime()).toBeGreaterThan(oneMinuteAgo);
         });
 
-        it('should allow updating modified_at on update', async () => {
-            const user = db.insert(users).values({
+        it('should allow updating updatedAt on update', async () => {
+            const testUser = db.insert(user).values({
                 username: 'updatetest',
+                email: 'updatetest@local.hdhomey.app',
+                emailVerified: false,
                 name: 'Update Test',
-                passHash: TEST_HASH,
                 role: AuthRoles.Viewer
             }).returning().get();
 
-            const originalModified = user.modified_at;
+            const originalModified = testUser.updatedAt;
 
             // Wait a bit to ensure timestamp difference
             await new Promise(resolve => setTimeout(resolve, 1500));
 
             const newTimestamp = new Date();
-            db.update(users)
-                .set({ name: 'Updated Name', modified_at: newTimestamp })
-                .where(eq(users.id, user.id))
+            db.update(user)
+                .set({ name: 'Updated Name', updatedAt: newTimestamp })
+                .where(eq(user.id, testUser.id))
                 .run();
 
-            const updated = db.select().from(users).where(eq(users.id, user.id)).get();
-            // Verify we can manually update modified_at
-            expect(updated?.modified_at.getTime()).toBeGreaterThan(originalModified.getTime());
+            const updated = db.select().from(user).where(eq(user.id, testUser.id)).get();
+            // Verify we can manually update updatedAt
+            expect(updated?.updatedAt.getTime()).toBeGreaterThan(originalModified.getTime());
             expect(updated?.name).toBe('Updated Name');
         });
     });

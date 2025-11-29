@@ -1,7 +1,7 @@
 # HD Homey Feature Status
 
-**Last Updated**: 2025-11-20  
-**Version**: 1.0.0-beta.1
+**Last Updated**: 2025-11-28  
+**Version**: 1.0.0-beta.2 (Auth Migration Complete)
 
 This document provides a quick overview of all features and their implementation status.
 
@@ -123,6 +123,21 @@ This document provides a quick overview of all features and their implementation
 
 ---
 
+### SPEC-008: Auth Migration (NextAuth → Better-Auth)
+**Status**: ✅ Complete  
+**Completed**: 2025-11-28
+
+- Better-Auth integration with username plugin
+- Username-based authentication (replaces email)
+- JWT stateless sessions (no database session table)
+- Role-based authorization preserved
+- All 101 tests passing
+- Migration guide documented
+
+**Files**: `src/lib/auth/**`, `migrations/0002_better_auth_migration.sql`, `migrations/0003_add_username_column.sql`
+
+---
+
 ## 🔄 In Progress Features
 
 ### SPEC-007: Tuner Autodiscovery
@@ -153,9 +168,9 @@ This document provides a quick overview of all features and their implementation
 
 ## 📊 Testing Status
 
-**Total Tests**: 154 passing  
+**Total Tests**: 101 passing (100%)  
 **Test Coverage**: Excellent (core features fully tested)  
-**Execution Time**: 2.75s
+**Execution Time**: ~700ms
 
 **Coverage by Area**:
 - ✅ HDHomeRun Integration: 20 tests
@@ -204,6 +219,13 @@ These features are explicitly out of scope per the Constitution but may be consi
 ---
 
 ## 📈 Version History
+
+### v1.0.0-beta.2 (2025-11-28)
+- **BREAKING**: Auth migration from NextAuth to Better-Auth
+- Username-based authentication (no email required)
+- Fixed instrumentation hook for missing user table
+- Fixed all test failures (101/101 passing)
+- Improved error handling throughout
 
 ### v1.0.0-beta.1 (2025-11-20)
 - First beta release

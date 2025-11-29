@@ -1,8 +1,13 @@
 'use server';
 
+import crypto from 'node:crypto';
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth/auth';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
+import { getDb } from '@/lib/database/db';
+import { user, account } from '@/lib/database/schema';
+import { generateHashPassword } from '@/lib/user';
 import { AuthRoles } from '@/lib/auth-roles';
+import logger from '@/lib/logger';
 
 export async function createFirstUser(prevState: unknown, formData: FormData) {
     const username = formData.get('username')?.toString();
@@ -34,22 +39,42 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
     const validPassword = password as string;
 
     try {
-        // Create admin user via Better-Auth
-        // Note: Better-Auth uses email field for username
-        await auth.api.signUpEmail({
-            body: {
-                email: validUsername,
-                password: validPassword,
-                name: validName,
-                role: AuthRoles.Admin, // First user is always admin
-            },
+        const db = await getDb();
+
+        // Generate Better-Auth compatible user ID
+        const userId = crypto.randomUUID();
+        const accountId = crypto.randomUUID();
+
+        // Create user record
+        await db.insert(user).values({
+            id: userId,
+            username: validUsername,
+            email: `${validUsername}@local.hdhomey.app`, // Username plugin requires email
+            emailVerified: false,
+            name: validName,
+            role: AuthRoles.Admin, // First user is always admin
+            isActive: true,
+        });
+
+        // Create account record with password
+        const hashedPassword = await generateHashPassword(validPassword);
+        await db.insert(account).values({
+            id: accountId,
+            userId,
+            accountId: userId,
+            providerId: 'credential',
+            password: hashedPassword,
         });
 
         // Redirect to signin page after successful creation
         redirect('/users/signin');
     } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Error creating first user:', error);
+        // Re-throw redirect errors (this is expected behavior)
+        if (isRedirectError(error)) {
+            throw error;
+        }
+
+        logger.error({ error }, 'Error creating first user');
         return [{ path: 'form', message: 'Failed to create user. Please try again.' }];
     }
 }

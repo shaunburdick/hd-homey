@@ -24,7 +24,7 @@ export async function changePassword(
         headers: await headers()
     });
 
-    if (session?.user === null) {
+    if (session?.user === null || session?.user === undefined) {
         return {
             errors: {
                 _form: ['You must be logged in to change your password'],
@@ -77,7 +77,7 @@ export async function changePassword(
             where: eq(account.userId, userId),
         });
 
-        if (!userAccount?.password) {
+        if (userAccount?.password === null || userAccount?.password === undefined || userAccount.password === '') {
             return {
                 errors: {
                     _form: ['User not found or no password set'],

@@ -21,25 +21,50 @@ export function createTestDatabase(): DB {
  * Seed test database with initial data
  */
 export async function seedTestDatabase(db: DB) {
-    const { users, tuners, channels } = schema;
+    const { user, account, tuners, channels } = schema;
     const { AuthRoles } = await import('@/lib/auth-roles');
+    const { generateHashPassword } = await import('@/lib/user');
 
-    // Insert test users
-    const [adminUser] = db.insert(users).values({
+    // Insert test users (Better-Auth format with username)
+    const [adminUser] = db.insert(user).values({
+        id: 'test-admin-uuid',
         username: 'admin',
+        email: 'admin@local.hdhomey.app',
+        emailVerified: false,
         name: 'Admin User',
-        passHash: '$2b$10$testhashedpassword', // bcrypt hash of "password"
         role: AuthRoles.Admin,
-        is_active: true
+        isActive: true
     }).returning().all();
 
-    const [viewerUser] = db.insert(users).values({
+    const [viewerUser] = db.insert(user).values({
+        id: 'test-viewer-uuid',
         username: 'viewer',
+        email: 'viewer@local.hdhomey.app',
+        emailVerified: false,
         name: 'Viewer User',
-        passHash: '$2b$10$testhashedpassword',
         role: AuthRoles.Viewer,
-        is_active: true
+        isActive: true
     }).returning().all();
+
+    // Insert account credentials for test users
+    const testPassword = await generateHashPassword('testpassword123');
+
+    db.insert(account).values([
+        {
+            id: 'test-admin-account',
+            userId: adminUser.id,
+            accountId: adminUser.id,
+            providerId: 'credential',
+            password: testPassword,
+        },
+        {
+            id: 'test-viewer-account',
+            userId: viewerUser.id,
+            accountId: viewerUser.id,
+            providerId: 'credential',
+            password: testPassword,
+        }
+    ]).run();
 
     // Insert test tuner
     const [tuner] = db.insert(tuners).values({
@@ -83,12 +108,14 @@ export async function seedTestDatabase(db: DB) {
  * Clean up test database
  */
 export function cleanupTestDatabase(db: DB) {
-    const { users, tuners, channels } = schema;
+    const { user, account, verification, tuners, channels } = schema;
 
     // Delete in reverse order due to foreign keys
     db.delete(channels).run();
     db.delete(tuners).run();
-    db.delete(users).run();
+    db.delete(account).run(); // Delete accounts before users (foreign key)
+    db.delete(verification).run();
+    db.delete(user).run();
 }
 
 /**

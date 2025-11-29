@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import Logger from '@/lib/logger';
 import { authClient } from '@/lib/auth/auth-client';
 import { Input, Button, Card } from '@/components';
 import { PageContainer } from '@/components/layouts';
@@ -22,9 +23,9 @@ export default function SignIn() {
         const password = formData.get('password') as string;
 
         try {
-            // Better-Auth uses email field for username
-            const { error: authError } = await authClient.signIn.email({
-                email: username,
+            // Better-Auth username plugin for username/password auth
+            const { error: authError } = await authClient.signIn.username({
+                username,
                 password,
             });
 
@@ -36,8 +37,7 @@ export default function SignIn() {
                 router.refresh();
             }
         } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('Sign in error:', err);
+            Logger.error({ err }, 'Sign in error');
             setError('An error occurred during sign in');
             setIsLoading(false);
         }

@@ -93,10 +93,11 @@ export async function proxy(req: NextRequest) {
             );
         }
 
-        // For page routes, redirect to signin with callback
-        const signInUrl = new URL('/users/signin', req.url);
-        signInUrl.searchParams.set('callbackUrl', pathname);
-        return NextResponse.redirect(signInUrl);
+        // For page routes, redirect to get-started (which will redirect to signin if setup is complete)
+        // This allows the initial setup flow to work when there are no users yet
+        const getStartedUrl = new URL('/get-started', req.url);
+        getStartedUrl.searchParams.set('callbackUrl', pathname);
+        return NextResponse.redirect(getStartedUrl);
     }
 
     // User is authenticated, allow request to proceed
