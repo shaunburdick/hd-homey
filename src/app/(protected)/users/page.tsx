@@ -6,6 +6,7 @@ import type { User } from '@/lib/auth/types';
 import { AdminLink } from '@/components/AdminLink';
 import { Card, Button } from '@/components';
 import { PageContainer, PageHeader, EmptyState } from '@/components/layouts';
+import { AuthRoles } from '@/lib/auth-roles';
 
 export default async function Page() {
     const db = await getDb();
@@ -52,16 +53,16 @@ export default async function Page() {
                                         <span
                                             className="inline-block rounded text-sm font-semibold"
                                             style={{
-                                                backgroundColor: user.role === 'admin'
+                                                backgroundColor: user.role === AuthRoles.Admin
                                                     ? 'var(--color-info-bg)'
                                                     : 'var(--color-bg-primary)',
-                                                color: user.role === 'admin'
+                                                color: user.role === AuthRoles.Admin
                                                     ? 'var(--color-info)'
                                                     : 'var(--color-text-secondary)',
                                                 padding: 'var(--space-1) var(--space-3)',
                                             }}
                                         >
-                                            {user.role === 'admin' ? '👑 Admin' : '👤 Viewer'}
+                                            {user.role === AuthRoles.Admin ? '👑 Admin' : '👤 Viewer'}
                                         </span>
                                         <span className="text-sm text-tertiary">
                                             →

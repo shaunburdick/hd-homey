@@ -10,7 +10,7 @@ import { getDb } from '@/lib/database/db';
 import { user, account } from '@/lib/database/schema';
 import { requireAdmin } from '@/lib/auth/helpers';
 import { generateHashPassword } from '@/lib/user';
-import type { AuthRoles } from '@/lib/auth-roles';
+import { AuthRoles } from '@/lib/auth-roles';
 
 /**
  * Update user password in account table
@@ -60,7 +60,7 @@ function validateCreateUser(
         errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
     }
 
-    if (role === undefined || (role !== 'admin' && role !== 'viewer')) {
+    if (role === undefined || (role !== AuthRoles.Admin && role !== AuthRoles.Viewer)) {
         errors.push({ path: 'role', message: 'Invalid role' });
     }
 

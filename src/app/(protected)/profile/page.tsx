@@ -7,6 +7,7 @@ import { PageContainer, InfoCard } from '@/components/layouts';
 import ChangePasswordForm from '@/components/change-password-form';
 import { getDb } from '@/lib/database/db';
 import { user as userTable } from '@/lib/database/schema';
+import { AuthRoles } from '@/lib/auth-roles';
 
 export default async function ProfilePage() {
     const rawSession = await auth.api.getSession({
@@ -45,7 +46,7 @@ export default async function ProfilePage() {
                     items={[
                         { label: 'Username', value: user.email },
                         { label: 'Display Name', value: user.name },
-                        { label: 'Role', value: user.role === 'admin' ? 'Administrator' : 'Viewer' },
+                        { label: 'Role', value: user.role === AuthRoles.Admin ? 'Administrator' : 'Viewer' },
                         { label: 'Account Created', value: user.createdAt.toLocaleString() },
                     ]}
                 />

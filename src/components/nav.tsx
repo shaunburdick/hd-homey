@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import './nav.css';
 import { authClient } from '@/lib/auth/auth-client';
 import type { Session } from '@/lib/auth/types';
+import { AuthRoles } from '@/lib/auth-roles';
 
 export default function Nav() {
 
@@ -41,7 +42,7 @@ export default function Nav() {
         window.location.href = '/users/signin';
     };
 
-    const isAdmin = session?.user?.role === 'admin';
+    const isAdmin = session?.user?.role === AuthRoles.Admin;
 
     const menuItems = [
         { name: 'Home', href: '/' },
