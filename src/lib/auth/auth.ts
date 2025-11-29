@@ -97,10 +97,8 @@ export const auth = betterAuth({
 
     // Security
     secret: Config.AUTH_SECRET,
-    baseURL: (process.env.BETTER_AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000'),
-    trustedOrigins: (process.env.BETTER_AUTH_URL !== undefined && process.env.BETTER_AUTH_URL !== '')
-        ? [process.env.BETTER_AUTH_URL]
-        : [process.env.NEXTAUTH_URL ?? 'http://localhost:3000'],
+    baseURL: Config.AUTH_BASE_URL,
+    trustedOrigins: [Config.AUTH_BASE_URL],
 });
 
 /**

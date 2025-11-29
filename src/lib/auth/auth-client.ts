@@ -17,10 +17,22 @@ import { createAuthClient } from 'better-auth/react';
  * - signOut() - Sign out current session
  * - signUp.email() - Create new user account
  */
+/**
+ * Get the base URL for auth endpoints
+ * - Client-side: Use window.location.origin (works for any domain)
+ * - Server-side: Use environment variable (for SSR/build time)
+ */
+const getAuthBaseURL = (): string => {
+    if (typeof window !== 'undefined') {
+        return window.location.origin;
+    }
+    return process.env.BETTER_AUTH_URL
+        ?? process.env.NEXTAUTH_URL
+        ?? 'http://localhost:3000';
+};
+
 export const authClient = createAuthClient({
-    baseURL: typeof window !== 'undefined'
-        ? window.location.origin
-        : (process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000'),
+    baseURL: getAuthBaseURL(),
 });
 
 /**

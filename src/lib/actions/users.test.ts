@@ -304,4 +304,60 @@ describe('User Actions', () => {
             expect(updatedUser?.isActive).toBe(false);
         });
     });
+
+    describe('deleteUser', () => {
+        it('should soft delete a user successfully', async () => {
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
+
+            const { user } = await import('@/lib/database/schema');
+            const { eq } = await import('drizzle-orm');
+            const { deleteUser } = await import('./users');
+
+            const existingUser = testDb.select().from(user).limit(1).get();
+            if (existingUser === undefined) {
+                throw new Error(TEST_SETUP_ERROR);
+            }
+
+            const formData = new FormData();
+            formData.append('id', existingUser.id);
+
+            // Call deleteUser - redirect mock will throw
+            await expect(deleteUser(null, formData)).rejects.toThrow('NEXT_REDIRECT');
+
+            // Verify user was soft deleted
+            const deletedUser = testDb.select().from(user).where(eq(user.id, existingUser.id)).get();
+            expect(deletedUser?.isActive).toBe(false);
+            expect(deletedUser?.deletedAt).toBeInstanceOf(Date);
+        });
+
+        it('should reject delete when not authenticated as admin', async () => {
+            vi.spyOn(authModule, 'requireAdmin').mockRejectedValue(new Error('Unauthorized'));
+
+            const { deleteUser } = await import('./users');
+
+            const formData = new FormData();
+            formData.append('id', '1');
+
+            const result = await deleteUser(null, formData);
+
+            expect(result).toEqual([
+                { path: 'authorization', message: 'Unauthorized' }
+            ]);
+        });
+
+        it('should return error for invalid user ID', async () => {
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
+
+            const { deleteUser } = await import('./users');
+
+            const formData = new FormData();
+            formData.append('id', '');
+
+            const result = await deleteUser(null, formData);
+
+            expect(result).toEqual([
+                { path: 'id', message: 'Invalid user ID' }
+            ]);
+        });
+    });
 });

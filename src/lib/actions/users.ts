@@ -25,14 +25,16 @@ async function updateUserPassword(db: DB, userId: string, password: string): Pro
         .limit(1)
         .get();
 
-    if (userAccount !== undefined) {
-        await db.update(account)
-            .set({
-                password: hashedPassword,
-                updatedAt: new Date()
-            })
-            .where(eq(account.id, userAccount.id));
+    if (userAccount === undefined) {
+        throw new Error('User account not found - cannot update password');
     }
+
+    await db.update(account)
+        .set({
+            password: hashedPassword,
+            updatedAt: new Date()
+        })
+        .where(eq(account.id, userAccount.id));
 }
 
 /**
@@ -189,6 +191,54 @@ export async function updateUser(prevState: unknown, formData: FormData) {
             throw error;
         }
         return [{ path: 'form', message: error instanceof Error ? error.message : 'Failed to update user' }];
+    }
+}
+
+/**
+ * Soft delete a user (marks as inactive and sets deletedAt timestamp)
+ *
+ * Note: This performs a soft delete by setting isActive=false and deletedAt timestamp.
+ * The user record and associated account remain in the database but the user cannot sign in.
+ * This preserves referential integrity and audit trails.
+ *
+ * @param prevState - Previous form state (unused)
+ * @param formData - Form data containing user ID
+ * @returns Validation errors or redirects to users list
+ */
+export async function deleteUser(prevState: unknown, formData: FormData) {
+    // Check authorization
+    try {
+        await requireAdmin();
+    } catch (error) {
+        return [{ path: 'authorization', message: error instanceof Error ? error.message : 'Unauthorized' }];
+    }
+
+    const userId = formData.get('id')?.toString();
+
+    if (userId === undefined || userId === '') {
+        return [{ path: 'id', message: 'Invalid user ID' }];
+    }
+
+    const db = await getDb();
+
+    try {
+        // Soft delete user (account record persists with foreign key)
+        await db.update(user)
+            .set({
+                isActive: false,
+                deletedAt: new Date(),
+                updatedAt: new Date()
+            })
+            .where(eq(user.id, userId));
+
+        revalidatePath('/users');
+        redirect('/users');
+    } catch (error) {
+        // Re-throw redirect errors (this is expected behavior)
+        if (error !== null && error !== undefined && isRedirectError(error)) {
+            throw error;
+        }
+        return [{ path: 'form', message: error instanceof Error ? error.message : 'Failed to delete user' }];
     }
 }
 
