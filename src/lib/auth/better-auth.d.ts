@@ -56,3 +56,4 @@ declare module 'better-auth' {
         };
     }
 }
+

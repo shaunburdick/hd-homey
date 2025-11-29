@@ -41,6 +41,15 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
     try {
         const db = await getDb();
 
+        // Check if username already exists to prevent race conditions
+        const existingUser = await db.query.user.findFirst({
+            where: eq(user.username, validUsername)
+        });
+
+        if (existingUser !== undefined) {
+            return [{ path: 'username', message: 'Username already exists' }];
+        }
+
         // Generate Better-Auth compatible user ID
         const userId = crypto.randomUUID();
         const accountId = crypto.randomUUID();

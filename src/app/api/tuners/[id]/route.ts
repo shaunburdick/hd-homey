@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth/auth';
 import { tuners } from '@/lib/database/schema';
 import { getDb } from '@/lib/database/db';
 import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
+import { AuthRoles } from '@/lib/auth-roles';
 import Logger from '@/lib/logger';
 
 interface Params {
@@ -38,7 +39,7 @@ export async function POST(
         const session = await auth.api.getSession({
             headers: await headers()
         });
-        if (session?.user?.role !== 'admin') {
+        if (session?.user?.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user.email }, 'Unauthorized tuner update attempt');
             return Response.json(
                 { error: 'Forbidden', message: 'Admin access required' },

@@ -38,6 +38,36 @@ async function updateUserPassword(db: DB, userId: string, password: string): Pro
 }
 
 /**
+ * Validate create user form data
+ */
+function validateCreateUser(
+    username: string | undefined,
+    name: string | undefined,
+    password: string | undefined,
+    role: string | undefined
+): { path: string; message: string }[] {
+    const errors: { path: string; message: string }[] = [];
+
+    if ((username?.length ?? 0) < 3) {
+        errors.push({ path: 'username', message: 'Username must be at least 3 characters' });
+    }
+
+    if ((name?.length ?? 0) < 3) {
+        errors.push({ path: 'name', message: 'Name must be at least 3 characters' });
+    }
+
+    if ((password?.length ?? 0) < 8) {
+        errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
+    }
+
+    if (role === undefined || (role !== 'admin' && role !== 'viewer')) {
+        errors.push({ path: 'role', message: 'Invalid role' });
+    }
+
+    return errors;
+}
+
+/**
  * Validate update user form data
  */
 function validateUpdateUser(
@@ -74,30 +104,22 @@ export async function createUser(prevState: unknown, formData: FormData) {
     const role = formData.get('role')?.toString();
 
     // Validation
-    const errors: { path: string; message: string }[] = [];
-
-    if ((username?.length ?? 0) < 3) {
-        errors.push({ path: 'username', message: 'Username must be at least 3 characters' });
-    }
-
-    if ((name?.length ?? 0) < 3) {
-        errors.push({ path: 'name', message: 'Name must be at least 3 characters' });
-    }
-
-    if ((password?.length ?? 0) < 8) {
-        errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
-    }
-
-    if (role === undefined || (role !== 'admin' && role !== 'viewer')) {
-        errors.push({ path: 'role', message: 'Invalid role' });
-    }
-
+    const errors = validateCreateUser(username, name, password, role);
     if (errors.length > 0) {
         return errors;
     }
 
     try {
         const db = await getDb();
+
+        // Check if username already exists to prevent race conditions
+        const existingUser = await db.query.user.findFirst({
+            where: eq(user.username, username as string)
+        });
+
+        if (existingUser !== undefined) {
+            return [{ path: 'username', message: 'Username already exists' }];
+        }
 
         // Generate Better-Auth compatible IDs
         const userId = crypto.randomUUID();
