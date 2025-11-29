@@ -7,14 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.3] - 2025-11-29
+
 ### Changed
 
-- **Authentication Library Migration**: Migrated from NextAuth.js v5 (beta) to Better-Auth v1.4.3
+- **Authentication Library Migration**: Migrated from NextAuth.js v5 (beta) to Better-Auth v1.1.0
   - Replaced NextAuth with Better-Auth for improved stability and TypeScript support
   - Maintains same security model: JWT/stateless sessions, Edge Runtime compatible
   - **Breaking Change**: Password hashing changed from bcrypt to scrypt (Better-Auth default)
   - Users created before this version will need their passwords reset by admin
-  - All 200 tests passing with new authentication system
+  - All 203 tests passing with new authentication system
 - **Database Migrations**: Consolidated all migrations into single initial migration (`0000_large_microchip.sql`)
   - Simplified migration history for beta release
   - Clean slate approach for beta users
@@ -23,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed redundant `better-auth-schema.ts` (Better-Auth tables now in main `schema.ts`)
   - Better-Auth adapter and Drizzle migrations now use same schema file
   - Removed backup schema files from migration process
+
+### Fixed
+
+- **Build Process**: Fixed Next.js build errors in CI environments without pre-existing database
+  - Database directory is now automatically created if it doesn't exist
+  - Added `dynamic='force-dynamic'` exports to prevent unnecessary page pre-rendering
+  - Fixes: `TypeError: Cannot open database because the directory does not exist`
 
 ### Removed
 

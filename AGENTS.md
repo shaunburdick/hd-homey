@@ -189,7 +189,7 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-beta.2** - Critical security release! Fixes vulnerability where API endpoints were completely unprotected. Adds comprehensive proxy-level authentication, admin-only checks for sensitive operations, and 19 new proxy tests. All 200 tests passing. **All users should upgrade immediately.**
+**1.0.0-beta.3** - Better-Auth migration release! Migrates from NextAuth to Better-Auth for improved security and maintainability. Includes automatic database directory creation to prevent build failures. All 203 tests passing. **Breaking change: Users must migrate authentication setup.**
 
 ### Release Process
 

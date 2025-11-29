@@ -18,6 +18,6 @@ export function getVersion(): string {
         return versionData.version;
     } catch {
         // Fallback version if both fail
-        return '1.0.0-beta.1';
+        return '1.0.0-beta.3';
     }
 }
