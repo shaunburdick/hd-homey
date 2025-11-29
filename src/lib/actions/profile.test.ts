@@ -4,8 +4,9 @@ import type { FormState } from './profile';
 import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import { AuthRoles } from '@/lib/auth-roles';
 import type { DB } from '@/lib/database/db';
-import * as authModule from '@/auth';
-import { generateHashPassword, verifyPassword } from '@/lib/user';
+import { auth } from '@/lib/auth/auth';
+import { verifyPassword } from '@/lib/user';
+import { createMockSession } from '@/test-utils/mock-auth';
 
 let testDb: DB;
 
@@ -13,11 +14,19 @@ vi.mock('@/lib/database/db', () => ({
     getDb: vi.fn(() => Promise.resolve(testDb)),
 }));
 
+vi.mock('@/lib/auth/auth', () => ({
+    auth: {
+        api: {
+            getSession: vi.fn(),
+        }
+    },
+}));
+
 const { refreshDb } = setupTestDatabase();
 
 describe('Profile Actions', () => {
-    const TEST_USER_ID = 1;
-    const TEST_PASSWORD = 'currentPassword123';
+    const TEST_USER_ID = 'test-viewer-uuid'; // Use seeded viewer user
+    const TEST_PASSWORD = 'testpassword123'; // Match seed password
     const TEST_NEW_PASSWORD = 'newPassword456';
 
     beforeEach(async () => {
@@ -28,30 +37,18 @@ describe('Profile Actions', () => {
     describe('changePassword', () => {
         it('should successfully change password with valid inputs', async () => {
             // Mock authenticated session
-            vi.spyOn(authModule, 'auth').mockResolvedValue({
-                user: {
-                    id: TEST_USER_ID,
-                    username: 'testuser',
-                    name: 'Test User',
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            } as never);
+            const mockSession = createMockSession({
+                id: TEST_USER_ID,
+                role: AuthRoles.Viewer,
+            });
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
-            // Get the user and set a known password
-            const { users } = await import('@/lib/database/schema');
+            // Account already exists with TEST_PASSWORD from seed data
+            const { account } = await import('@/lib/database/schema');
             const { eq } = await import('drizzle-orm');
-            const hashedPassword = await generateHashPassword(TEST_PASSWORD);
-
-            await testDb
-                .update(users)
-                .set({ passHash: hashedPassword })
-                .where(eq(users.id, TEST_USER_ID))
-                .run();
 
             const formData = new FormData();
-            formData.append('userId', TEST_USER_ID.toString());
+            formData.append('userId', TEST_USER_ID);
             formData.append('currentPassword', TEST_PASSWORD);
             formData.append('newPassword', TEST_NEW_PASSWORD);
             formData.append('confirmPassword', TEST_NEW_PASSWORD);
@@ -61,30 +58,25 @@ describe('Profile Actions', () => {
             expect(result.success).toBe(true);
             expect(result.errors).toEqual({} as never);
 
-            // Verify password was changed
-            const updatedUser = testDb.select().from(users).where(eq(users.id, TEST_USER_ID)).get();
-            expect(updatedUser).toBeDefined();
+            // Verify password was changed in account table
+            const updatedAccount = testDb.select().from(account).where(eq(account.userId, TEST_USER_ID)).get();
+            expect(updatedAccount).toBeDefined();
 
-            if (updatedUser !== undefined) {
-                const passwordValid = await verifyPassword(updatedUser.passHash, TEST_NEW_PASSWORD);
+            if (updatedAccount?.password !== undefined && updatedAccount.password !== null) {
+                const passwordValid = await verifyPassword(updatedAccount.password, TEST_NEW_PASSWORD);
                 expect(passwordValid).toBe(true);
             }
         });
 
         it('should fail when current password is incorrect', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue({
-                user: {
-                    id: TEST_USER_ID,
-                    username: 'testuser',
-                    name: 'Test User',
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            } as never);
+            const mockSession = createMockSession({
+                id: TEST_USER_ID,
+                role: AuthRoles.Viewer,
+            });
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             const formData = new FormData();
-            formData.append('userId', TEST_USER_ID.toString());
+            formData.append('userId', TEST_USER_ID);
             formData.append('currentPassword', 'wrongPassword');
             formData.append('newPassword', TEST_NEW_PASSWORD);
             formData.append('confirmPassword', TEST_NEW_PASSWORD);
@@ -96,19 +88,14 @@ describe('Profile Actions', () => {
         });
 
         it('should fail when passwords do not match', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue({
-                user: {
-                    id: TEST_USER_ID,
-                    username: 'testuser',
-                    name: 'Test User',
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            } as never);
+            const mockSession = createMockSession({
+                id: TEST_USER_ID,
+                role: AuthRoles.Viewer,
+            });
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             const formData = new FormData();
-            formData.append('userId', TEST_USER_ID.toString());
+            formData.append('userId', TEST_USER_ID);
             formData.append('currentPassword', TEST_PASSWORD);
             formData.append('newPassword', TEST_NEW_PASSWORD);
             formData.append('confirmPassword', 'differentPassword');
@@ -120,19 +107,14 @@ describe('Profile Actions', () => {
         });
 
         it('should fail when new password is too short', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue({
-                user: {
-                    id: TEST_USER_ID,
-                    username: 'testuser',
-                    name: 'Test User',
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            } as never);
+            const mockSession = createMockSession({
+                id: TEST_USER_ID,
+                role: AuthRoles.Viewer,
+            });
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             const formData = new FormData();
-            formData.append('userId', TEST_USER_ID.toString());
+            formData.append('userId', TEST_USER_ID);
             formData.append('currentPassword', TEST_PASSWORD);
             formData.append('newPassword', 'short');
             formData.append('confirmPassword', 'short');
@@ -144,10 +126,10 @@ describe('Profile Actions', () => {
         });
 
         it('should fail when user is not authenticated', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue(null as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
             const formData = new FormData();
-            formData.append('userId', TEST_USER_ID.toString());
+            formData.append('userId', TEST_USER_ID);
             formData.append('currentPassword', TEST_PASSWORD);
             formData.append('newPassword', TEST_NEW_PASSWORD);
             formData.append('confirmPassword', TEST_NEW_PASSWORD);
@@ -159,19 +141,14 @@ describe('Profile Actions', () => {
         });
 
         it('should fail when trying to change another user\'s password', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue({
-                user: {
-                    id: TEST_USER_ID,
-                    username: 'testuser',
-                    name: 'Test User',
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            } as never);
+            const mockSession = createMockSession({
+                id: TEST_USER_ID,
+                role: AuthRoles.Viewer,
+            });
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             const formData = new FormData();
-            formData.append('userId', '999'); // Different user ID
+            formData.append('userId', 'different-user-id'); // Different user ID
             formData.append('currentPassword', TEST_PASSWORD);
             formData.append('newPassword', TEST_NEW_PASSWORD);
             formData.append('confirmPassword', TEST_NEW_PASSWORD);
@@ -183,19 +160,14 @@ describe('Profile Actions', () => {
         });
 
         it('should fail when required fields are empty', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue({
-                user: {
-                    id: TEST_USER_ID,
-                    username: 'testuser',
-                    name: 'Test User',
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            } as never);
+            const mockSession = createMockSession({
+                id: TEST_USER_ID,
+                role: AuthRoles.Viewer,
+            });
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             const formData = new FormData();
-            formData.append('userId', TEST_USER_ID.toString());
+            formData.append('userId', TEST_USER_ID);
             formData.append('currentPassword', '');
             formData.append('newPassword', '');
             formData.append('confirmPassword', '');

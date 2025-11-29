@@ -55,12 +55,12 @@ HD Homey acts as a secure proxy between your HDHomeRun devices and remote viewer
 - **Multi-Device Support**: Manage multiple HDHomeRun tuners from a single interface
 - **User Management**: Control who can access your streams with admin and viewer roles
 
-**Built with**: Next.js 16, React 19, TypeScript, SQLite, NextAuth.js v5, and Docker
+**Built with**: Next.js 16, React 19, TypeScript, SQLite, Better-Auth, and Docker
 
 ## Features
 
 ### Core Functionality
-- **Secure Authentication** - Session-based auth with bcrypt password hashing
+- **Secure Authentication** - JWT session-based auth with scrypt password hashing (Better-Auth)
 - **User Management** - Create and manage users with admin/viewer role permissions
 - **Tuner Management** - Add and configure multiple HDHomeRun devices
 - **Channel Discovery** - Automatic channel lineup scanning and updates
@@ -189,7 +189,7 @@ Configure HD Homey using environment variables:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `AUTH_SECRET` | Encryption key for session tokens (32+ chars) | Generate: `openssl rand -base64 32` |
+| `AUTH_SECRET` | Encryption key for Better-Auth sessions (32+ chars) | Generate: `openssl rand -base64 32` |
 
 ### Optional
 
@@ -200,7 +200,8 @@ Configure HD Homey using environment variables:
 | `HD_HOMEY_TRANSCODE_DIR` | Transcoding output directory | `./data/transcoding` | `/data/transcoding` |
 | `HD_HOMEY_STREAM_TOKEN_EXPIRY` | Stream token validity in seconds | `43200` (12 hours) | `86400` (24 hours) |
 | `FFMPEG_PATH` | Path to ffmpeg binary | `ffmpeg` (in PATH) | `/usr/bin/ffmpeg` |
-| `NEXTAUTH_URL` | Base URL for auth callbacks | Auto-detected | `https://tuner.example.com` |
+| `BETTER_AUTH_URL` | Base URL for Better-Auth endpoints | Auto-detected | `https://tuner.example.com` |
+| `NEXTAUTH_URL` | Fallback for `BETTER_AUTH_URL` | Auto-detected | `https://tuner.example.com` |
 | `NODE_ENV` | Runtime environment | `development` | `production` |
 
 ### Notes
@@ -367,7 +368,7 @@ Contributions are welcome! Please:
 - **UI Library**: React 19
 - **Language**: TypeScript 5
 - **Database**: SQLite + Drizzle ORM
-- **Authentication**: NextAuth.js v5
+- **Authentication**: Better-Auth 1.1.0 (username plugin)
 - **Video**: FFmpeg + HLS.js
 - **Testing**: Vitest + React Testing Library
 - **Styling**: new.css
@@ -405,7 +406,7 @@ AGPL-3.0-only - See [LICENSE](LICENSE) file for details
 ## Acknowledgments
 
 - Built for [HDHomeRun](https://www.silicondust.com/hdhomerun/) devices by SiliconDust
-- Powered by [Next.js](https://nextjs.org/) and [NextAuth.js](https://authjs.dev/)
+- Powered by [Next.js](https://nextjs.org/) and [Better-Auth](https://www.better-auth.com/)
 
 ---
 

@@ -1,25 +1,31 @@
+import { headers } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { isNull } from 'drizzle-orm';
 import styles from './page.module.css';
 import hdHomey from '@public/hd-homey.webp';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
+import type { Session } from '@/lib/auth/types';
 import { getDb } from '@/lib/database/db';
-import { tuners, channels, users } from '@/lib/database/schema';
+import { tuners, channels, user } from '@/lib/database/schema';
 import { Card } from '@/components';
 import { PageContainer } from '@/components/layouts';
+import { AuthRoles } from '@/lib/auth-roles';
 
 export default async function Home() {
-    const session = await auth();
+    const rawSession = await auth.api.getSession({
+        headers: await headers()
+    });
+    const session = rawSession as unknown as Session | null;
     const db = await getDb();
 
     const [tunerCount, channelCount, userCount] = await Promise.all([
         db.select().from(tuners).where(isNull(tuners.deleted_at)).then(r => r.length),
         db.select().from(channels).where(isNull(channels.deleted_at)).then(r => r.length),
-        db.select().from(users).where(isNull(users.deleted_at)).then(r => r.length),
+        db.select().from(user).where(isNull(user.deletedAt)).then(r => r.length),
     ]);
 
-    const isAdmin = session?.user?.isAdmin;
+    const isAdmin = session?.user?.role === AuthRoles.Admin;
 
     return (
         <PageContainer maxWidth="xl">

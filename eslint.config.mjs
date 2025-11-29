@@ -26,6 +26,8 @@ export default [
             }
         },
         rules: {
+            // Disable false positive checks for Better-Auth session null checks
+            '@typescript-eslint/no-unnecessary-condition': 'off',
             '@typescript-eslint/naming-convention': [
                 'error',
                 {

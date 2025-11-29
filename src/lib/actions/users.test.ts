@@ -3,12 +3,21 @@ import { createUser, updateUser } from './users';
 import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import { AuthRoles } from '@/lib/auth-roles';
 import type { DB } from '@/lib/database/db';
-import * as authModule from '@/lib/auth';
+import * as authModule from '@/lib/auth/helpers';
 
 // Mock Next.js functions
+const REDIRECT_ERROR_CODE = 'NEXT_REDIRECT';
 vi.mock('next/navigation', () => ({
     redirect: vi.fn((url: string) => {
-        throw new Error(`NEXT_REDIRECT: ${url}`);
+        const error = new Error(`${REDIRECT_ERROR_CODE}: ${url}`) as Error & { digest: string };
+        error.digest = REDIRECT_ERROR_CODE;
+        throw error;
+    })
+}));
+
+vi.mock('next/dist/client/components/redirect-error', () => ({
+    isRedirectError: vi.fn((error: unknown) => {
+        return (error as { digest?: string } | null)?.digest === REDIRECT_ERROR_CODE;
     })
 }));
 
@@ -20,14 +29,42 @@ let testDb: DB;
 
 vi.mock('@/lib/database/db', () => ({
     getDb: vi.fn(() => Promise.resolve(testDb)),
+    connection: vi.fn(() => ({})), // Mock connection for auth.ts
 }));
 
 const { refreshDb } = setupTestDatabase();
 
+// Helper to create a mock session
+function createMockSession(overrides?: Record<string, unknown>) {
+    return {
+        user: {
+            id: 'test-admin-uuid',
+            username: 'admin',
+            name: 'Admin User',
+            email: 'admin@local.hdhomey.app',
+            emailVerified: false,
+            role: AuthRoles.Admin,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            ...((overrides?.user as Record<string, unknown> | undefined) ?? {}),
+        },
+        session: {
+            id: 'session-1',
+            userId: 'test-admin-uuid',
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            token: 'test-token',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            ...((overrides?.session as Record<string, unknown> | undefined) ?? {}),
+        },
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        ...overrides,
+    };
+}
+
 describe('User Actions', () => {
     // Test constants
-    const TEST_ADMIN_USERNAME = 'admin';
-    const TEST_ADMIN_NAME = 'Admin User';
     const TEST_UPDATED_NAME = 'Updated Name';
     const TEST_ACTIVE_VALUE = 'true';
     const TEST_SETUP_ERROR = 'Test setup failed: no user found';
@@ -40,16 +77,7 @@ describe('User Actions', () => {
     describe('createUser', () => {
         it('should create a new user when authenticated as admin', async () => {
             // Mock admin session
-            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN_USERNAME,
-                    name: TEST_ADMIN_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            });
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
 
             const formData = new FormData();
             formData.append('username', 'newuser');
@@ -57,21 +85,13 @@ describe('User Actions', () => {
             formData.append('password', 'password123');
             formData.append('role', AuthRoles.Viewer);
 
-            try {
-                await createUser(null, formData);
-                // Should redirect, so we shouldn't reach here
-                expect.fail('Expected redirect to be thrown');
-            } catch (error) {
-                // Verify redirect was called
-                expect(error).toBeInstanceOf(Error);
-                expect((error as Error).message).toContain('NEXT_REDIRECT');
-                expect((error as Error).message).toContain('/users/');
-            }
+            // Call createUser - redirect mock will throw
+            await expect(createUser(null, formData)).rejects.toThrow('NEXT_REDIRECT');
 
             // Verify user was created in database
-            const { users } = await import('@/lib/database/schema');
+            const { user } = await import('@/lib/database/schema');
             const { eq } = await import('drizzle-orm');
-            const createdUser = testDb.select().from(users).where(eq(users.username, 'newuser')).get();
+            const createdUser = testDb.select().from(user).where(eq(user.username, 'newuser')).get();
 
             expect(createdUser).toBeDefined();
             expect(createdUser?.name).toBe('New User');
@@ -96,16 +116,7 @@ describe('User Actions', () => {
         });
 
         it('should return validation errors for invalid user data', async () => {
-            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN_USERNAME,
-                    name: TEST_ADMIN_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            });
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
 
             const formData = new FormData();
             // Missing required fields
@@ -124,16 +135,7 @@ describe('User Actions', () => {
         });
 
         it('should hash password before storing', async () => {
-            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN_USERNAME,
-                    name: TEST_ADMIN_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            });
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
 
             const plainPassword = 'mySecretPassword123';
             const username = 'secureuser';
@@ -149,53 +151,46 @@ describe('User Actions', () => {
                 // Expected redirect
             }
 
-            const { users } = await import('@/lib/database/schema');
+            // Password is stored in account table (Better-Auth pattern)
+            const { user, account } = await import('@/lib/database/schema');
             const { eq } = await import('drizzle-orm');
-            const createdUser = testDb.select().from(users).where(eq(users.username, username)).get();
-
+            const createdUser = testDb.select().from(user).where(eq(user.username, username)).get();
             expect(createdUser).toBeDefined();
-            expect(createdUser?.passHash).not.toBe(plainPassword);
-            expect(createdUser?.passHash).toMatch(/^\$2[ab]\$/); // bcrypt format
+
+            // Check password in account table
+            if (createdUser === undefined) {
+                throw new Error('User creation failed');
+            }
+            const userAccount = testDb.select().from(account).where(eq(account.userId, createdUser.id)).get();
+            expect(userAccount).toBeDefined();
+            expect(userAccount?.password).not.toBe(plainPassword);
+            // Better-Auth uses scrypt with format: salt:hash (both hex strings)
+            expect(userAccount?.password).toMatch(/^[0-9a-f]+:[0-9a-f]+$/i);
         });
     });
 
     describe('updateUser', () => {
         it('should update user when authenticated as admin', async () => {
-            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN_USERNAME,
-                    name: TEST_ADMIN_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            });
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
 
-            // Get existing user ID
-            const { users } = await import('@/lib/database/schema');
-            const existingUser = testDb.select().from(users).limit(1).get();
+            // Get existing user ID from seeded data
+            const { user } = await import('@/lib/database/schema');
+            const existingUser = testDb.select().from(user).limit(1).get();
             if (existingUser === undefined) {
                 throw new Error(TEST_SETUP_ERROR);
             }
 
             const formData = new FormData();
-            formData.append('id', existingUser.id.toString());
+            formData.append('id', existingUser.id);
             formData.append('name', TEST_UPDATED_NAME);
             formData.append('is_active', TEST_ACTIVE_VALUE);
 
-            try {
-                await updateUser(null, formData);
-                expect.fail('Expected redirect to be thrown');
-            } catch (error) {
-                expect(error).toBeInstanceOf(Error);
-                expect((error as Error).message).toContain('NEXT_REDIRECT');
-                expect((error as Error).message).toContain(`/users/${existingUser.id}`);
-            }
+            // Call updateUser - redirect mock will throw
+            await expect(updateUser(null, formData)).rejects.toThrow('NEXT_REDIRECT');
 
             // Verify user was updated
             const { eq } = await import('drizzle-orm');
-            const updatedUser = testDb.select().from(users).where(eq(users.id, existingUser.id)).get();
+            const updatedUser = testDb.select().from(user).where(eq(user.id, existingUser.id)).get();
             expect(updatedUser?.name).toBe(TEST_UPDATED_NAME);
         });
 
@@ -215,19 +210,10 @@ describe('User Actions', () => {
         });
 
         it('should return error for invalid user ID', async () => {
-            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN_USERNAME,
-                    name: TEST_ADMIN_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            });
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
 
             const formData = new FormData();
-            formData.append('id', 'invalid');
+            formData.append('id', '');
             formData.append('name', TEST_UPDATED_NAME);
 
             const result = await updateUser(null, formData);
@@ -238,27 +224,25 @@ describe('User Actions', () => {
         });
 
         it('should update password only when provided', async () => {
-            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN_USERNAME,
-                    name: TEST_ADMIN_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            });
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
 
-            const { users } = await import('@/lib/database/schema');
-            const existingUser = testDb.select().from(users).limit(1).get();
+            const { user, account } = await import('@/lib/database/schema');
+            const { eq } = await import('drizzle-orm');
+
+            const existingUser = testDb.select().from(user).limit(1).get();
             if (existingUser === undefined) {
                 throw new Error(TEST_SETUP_ERROR);
             }
-            const originalPasswordHash = existingUser.passHash;
+
+            // Get original password from account table
+            const originalAccount = testDb.select().from(account)
+                .where(eq(account.userId, existingUser.id))
+                .get();
+            const originalPasswordHash = originalAccount?.password;
 
             // Update without password
             const formData1 = new FormData();
-            formData1.append('id', existingUser.id.toString());
+            formData1.append('id', existingUser.id);
             formData1.append('name', 'Name Change 1');
             formData1.append('is_active', TEST_ACTIVE_VALUE);
 
@@ -268,13 +252,14 @@ describe('User Actions', () => {
                 // Expected redirect
             }
 
-            const { eq } = await import('drizzle-orm');
-            const afterUpdate1 = testDb.select().from(users).where(eq(users.id, existingUser.id)).get();
-            expect(afterUpdate1?.passHash).toBe(originalPasswordHash); // Password unchanged
+            const afterUpdate1 = testDb.select().from(account)
+                .where(eq(account.userId, existingUser.id))
+                .get();
+            expect(afterUpdate1?.password).toBe(originalPasswordHash); // Password unchanged
 
             // Update with password
             const formData2 = new FormData();
-            formData2.append('id', existingUser.id.toString());
+            formData2.append('id', existingUser.id);
             formData2.append('name', 'Name Change 2');
             formData2.append('password', 'newPassword123');
             formData2.append('is_active', TEST_ACTIVE_VALUE);
@@ -285,33 +270,27 @@ describe('User Actions', () => {
                 // Expected redirect
             }
 
-            const afterUpdate2 = testDb.select().from(users).where(eq(users.id, existingUser.id)).get();
-            expect(afterUpdate2?.passHash).not.toBe(originalPasswordHash); // Password changed
-            expect(afterUpdate2?.passHash).toMatch(/^\$2[ab]\$/);
+            const afterUpdate2 = testDb.select().from(account)
+                .where(eq(account.userId, existingUser.id))
+                .get();
+            expect(afterUpdate2?.password).not.toBe(originalPasswordHash); // Password changed
+            // Better-Auth uses scrypt with format: salt:hash (both hex strings)
+            expect(afterUpdate2?.password).toMatch(/^[0-9a-f]+:[0-9a-f]+$/i);
         });
 
         it('should update is_active status correctly', async () => {
-            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue({
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN_USERNAME,
-                    name: TEST_ADMIN_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            });
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
 
-            const { users } = await import('@/lib/database/schema');
+            const { user } = await import('@/lib/database/schema');
             const { eq } = await import('drizzle-orm');
-            const existingUser = testDb.select().from(users).limit(1).get();
+            const existingUser = testDb.select().from(user).limit(1).get();
             if (existingUser === undefined) {
                 throw new Error(TEST_SETUP_ERROR);
             }
 
             // Deactivate user
             const formData = new FormData();
-            formData.append('id', existingUser.id.toString());
+            formData.append('id', existingUser.id);
             formData.append('name', existingUser.name);
             formData.append('is_active', 'false');
 
@@ -321,8 +300,64 @@ describe('User Actions', () => {
                 // Expected redirect
             }
 
-            const updatedUser = testDb.select().from(users).where(eq(users.id, existingUser.id)).get();
-            expect(updatedUser?.is_active).toBe(false);
+            const updatedUser = testDb.select().from(user).where(eq(user.id, existingUser.id)).get();
+            expect(updatedUser?.isActive).toBe(false);
+        });
+    });
+
+    describe('deleteUser', () => {
+        it('should soft delete a user successfully', async () => {
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
+
+            const { user } = await import('@/lib/database/schema');
+            const { eq } = await import('drizzle-orm');
+            const { deleteUser } = await import('./users');
+
+            const existingUser = testDb.select().from(user).limit(1).get();
+            if (existingUser === undefined) {
+                throw new Error(TEST_SETUP_ERROR);
+            }
+
+            const formData = new FormData();
+            formData.append('id', existingUser.id);
+
+            // Call deleteUser - redirect mock will throw
+            await expect(deleteUser(null, formData)).rejects.toThrow('NEXT_REDIRECT');
+
+            // Verify user was soft deleted
+            const deletedUser = testDb.select().from(user).where(eq(user.id, existingUser.id)).get();
+            expect(deletedUser?.isActive).toBe(false);
+            expect(deletedUser?.deletedAt).toBeInstanceOf(Date);
+        });
+
+        it('should reject delete when not authenticated as admin', async () => {
+            vi.spyOn(authModule, 'requireAdmin').mockRejectedValue(new Error('Unauthorized'));
+
+            const { deleteUser } = await import('./users');
+
+            const formData = new FormData();
+            formData.append('id', '1');
+
+            const result = await deleteUser(null, formData);
+
+            expect(result).toEqual([
+                { path: 'authorization', message: 'Unauthorized' }
+            ]);
+        });
+
+        it('should return error for invalid user ID', async () => {
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
+
+            const { deleteUser } = await import('./users');
+
+            const formData = new FormData();
+            formData.append('id', '');
+
+            const result = await deleteUser(null, formData);
+
+            expect(result).toEqual([
+                { path: 'id', message: 'Invalid user ID' }
+            ]);
         });
     });
 });

@@ -6,18 +6,19 @@
  *
  * 1. Public routes - No authentication required (signin, get-started, etc.)
  * 2. Token-authenticated routes - Use HMAC stream tokens (streaming endpoints)
- * 3. Session-authenticated routes - Require NextAuth session (everything else)
+ * 3. Session-authenticated routes - Require Better-Auth session (everything else)
  *
- * Note: NextAuth v5 uses JWT sessions (not database sessions), so auth()
+ * Note: Better-Auth uses JWT sessions (not database sessions), so getSession()
  * only needs to verify the JWT signature using crypto APIs. This works
  * on Edge Runtime without database access.
  *
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/proxy
  */
 
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
 
 export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
@@ -28,7 +29,7 @@ export async function proxy(req: NextRequest) {
     const publicRoutes = [
         '/users/signin',      // Login page
         '/get-started',       // Initial setup wizard
-        '/api/auth',          // NextAuth API routes
+        '/api/auth',          // Better-Auth API routes
     ];
 
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
@@ -72,11 +73,13 @@ export async function proxy(req: NextRequest) {
     // ==========================================
     // SESSION-AUTHENTICATED ROUTES
     // ==========================================
-    // All other routes require a valid NextAuth session
+    // All other routes require a valid Better-Auth session
 
-    // Note: auth() works on Edge Runtime because NextAuth v5 uses JWT sessions.
+    // Note: getSession() works on Edge Runtime because Better-Auth uses JWT sessions.
     // It only needs to verify the JWT signature (crypto API), no database access.
-    const session = await auth();
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
 
     if (session?.user === undefined) {
         // For API routes, return 401 JSON
@@ -90,10 +93,11 @@ export async function proxy(req: NextRequest) {
             );
         }
 
-        // For page routes, redirect to signin with callback
-        const signInUrl = new URL('/users/signin', req.url);
-        signInUrl.searchParams.set('callbackUrl', pathname);
-        return NextResponse.redirect(signInUrl);
+        // For page routes, redirect to get-started (which will redirect to signin if setup is complete)
+        // This allows the initial setup flow to work when there are no users yet
+        const getStartedUrl = new URL('/get-started', req.url);
+        getStartedUrl.searchParams.set('callbackUrl', pathname);
+        return NextResponse.redirect(getStartedUrl);
     }
 
     // User is authenticated, allow request to proceed

@@ -17,6 +17,16 @@ export default {
     AUTH_SECRET: process.env.AUTH_SECRET ?? '',
 
     /**
+     * Base URL for Better-Auth endpoints
+     * Fallback to NEXTAUTH_URL for backward compatibility during migration
+     */
+    get AUTH_BASE_URL(): string {
+        return process.env.BETTER_AUTH_URL
+            ?? process.env.NEXTAUTH_URL
+            ?? 'http://localhost:3000';
+    },
+
+    /**
      * Stream token expiration in seconds (default: 12 hours)
      */
     get streamTokenExpiry(): number {

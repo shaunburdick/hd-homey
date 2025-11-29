@@ -10,6 +10,7 @@ let testDb: DB;
 
 vi.mock('@/lib/database/db', () => ({
     getDb: vi.fn(() => Promise.resolve(testDb)),
+    connection: vi.fn(() => ({})), // Required for auth.ts
 }));
 
 const { refreshDb } = setupTestDatabase();
@@ -36,7 +37,7 @@ describe('HDTuner', () => {
             const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
             expect(callArg).toBeDefined();
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
             expect(callArg?.toString()).toBe('http://192.168.20.25/lineup.json');
             expect(lineup).toEqual(mockLineupData);
             expect(lineup).toHaveLength(6);
@@ -92,7 +93,7 @@ describe('HDTuner', () => {
             const { calls } = vi.mocked(mockFetch).mock;
             const callArg = calls[0]?.[0];
             expect(callArg).toBeDefined();
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
             expect(callArg?.toString()).toBe('http://192.168.20.25:8080/lineup.json');
         });
     });
@@ -145,13 +146,13 @@ describe('HDTuner', () => {
 
             // Check that 2 channels from the first update were deactivated
             const allChannels = testDb.select().from(channels).where(eq(channels.fk_tuner, tunerId)).all();
-            const activeChannels = allChannels.filter(c => c.is_active);
-            const inactiveChannels = allChannels.filter(c => !c.is_active);
+            const activeChannels = allChannels.filter((c): c is typeof c => c.is_active === true);
+            const inactiveChannels = allChannels.filter((c): c is typeof c => c.is_active === false);
 
             // Should have 1 active (from second update) and at least 2 inactive (from first update)
             expect(activeChannels).toHaveLength(1);
             expect(inactiveChannels.length).toBeGreaterThanOrEqual(2);
-            expect(inactiveChannels.some(c => c.deleted_at !== null)).toBe(true);
+            expect(inactiveChannels.some(c => c.deleted_at !== null && c.deleted_at !== undefined)).toBe(true);
         });
 
         it('should update last_scanned timestamp on tuner', async () => {
@@ -171,7 +172,7 @@ describe('HDTuner', () => {
 
             const afterScan = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
             expect(afterScan?.last_scanned).not.toBe(originalLastScanned);
-            expect(afterScan?.last_scanned).toBeTruthy();
+            expect(afterScan?.last_scanned).not.toBeNull();
         });
 
         it('should handle empty lineup gracefully', async () => {
@@ -198,12 +199,12 @@ describe('HDTuner', () => {
 
             // Should still update last_scanned timestamp
             const tunerRecord = testDb.select().from(tuners).where(eq(tuners.id, tunerId)).get();
-            expect(tunerRecord?.last_scanned).toBeTruthy();
+            expect(tunerRecord?.last_scanned).not.toBeNull();
 
             // Should deactivate all previous channels
             const { channels } = await import('@/lib/database/schema');
             const allChannels = testDb.select().from(channels).where(eq(channels.fk_tuner, tunerId)).all();
-            const activeChannels = allChannels.filter(c => c.is_active);
+            const activeChannels = allChannels.filter((c): c is typeof c => c.is_active === true);
             expect(activeChannels).toHaveLength(0);
         });
 

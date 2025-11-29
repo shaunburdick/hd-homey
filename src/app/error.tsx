@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Logger from '@/lib/logger';
 import { Button, ErrorDisplay } from '@/components';
 import { PageContainer } from '@/components/layouts';
 import { getErrorInfo } from '@/lib/errors';
@@ -18,8 +19,7 @@ export default function Error({
     useEffect(() => {
         // In development, log for easier debugging
         if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.error('Client error:', error);
+            Logger.error({ error }, 'Client error');
         }
     }, [error]);
 

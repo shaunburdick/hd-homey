@@ -1,11 +1,14 @@
 import { and, eq, isNull } from 'drizzle-orm';
+import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { notFound } from 'next/navigation';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
 import { tuners } from '@/lib/database/schema';
 import { getDb } from '@/lib/database/db';
 import { HDTuner } from '@/lib/hdhr/tuner';
 import Logger from '@/lib/logger';
+
+export const dynamic = 'force-dynamic';
 
 interface Params {
     id: string;
@@ -13,8 +16,10 @@ interface Params {
 
 export async function GET(request: NextRequest, context: { params: Promise<Params> }) {
     // Require authentication for polling (channel scans can be resource intensive)
-    const session = await auth();
-    if (session?.user === undefined) {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+    if (session?.user === null) {
         Logger.warn('Unauthorized poll attempt');
         return Response.json(
             { error: 'Unauthorized', message: 'Authentication required' },

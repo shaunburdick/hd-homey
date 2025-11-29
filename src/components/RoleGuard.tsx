@@ -1,7 +1,7 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
+import { authClient } from '@/lib/auth/auth-client';
 import type { AuthRoles } from '@/lib/auth-roles';
 
 interface RoleGuardProps {
@@ -18,10 +18,10 @@ interface RoleGuardProps {
  * @param fallback - Optional content to show if user doesn't have required role (default: hide content)
  */
 export default function RoleGuard({ allowedRoles, children, fallback = null }: RoleGuardProps) {
-    const { data: session, status } = useSession();
+    const { data: session, isPending } = authClient.useSession();
 
     // Show nothing while loading
-    if (status === 'loading') {
+    if (isPending) {
         return null;
     }
 

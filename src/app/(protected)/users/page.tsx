@@ -1,16 +1,18 @@
 import { isNull } from 'drizzle-orm';
 import Link from 'next/link';
 import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { user as userTable } from '@/lib/database/schema';
+import type { User } from '@/lib/auth/types';
 import { AdminLink } from '@/components/AdminLink';
 import { Card, Button } from '@/components';
 import { PageContainer, PageHeader, EmptyState } from '@/components/layouts';
+import { AuthRoles } from '@/lib/auth-roles';
 
 export default async function Page() {
     const db = await getDb();
-    const userList = await db.query.users.findMany({
-        where: isNull(users.deleted_at)
-    });
+    const userList = await db.query.user.findMany({
+        where: isNull(userTable.deletedAt)
+    }) as User[];
 
     return (
         <PageContainer>
@@ -44,23 +46,23 @@ export default async function Page() {
                                             {user.name}
                                         </div>
                                         <div className="text-sm text-secondary">
-                                            @{user.username}
+                                            @{user.email}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <span
                                             className="inline-block rounded text-sm font-semibold"
                                             style={{
-                                                backgroundColor: user.role === 'admin'
+                                                backgroundColor: user.role === AuthRoles.Admin
                                                     ? 'var(--color-info-bg)'
                                                     : 'var(--color-bg-primary)',
-                                                color: user.role === 'admin'
+                                                color: user.role === AuthRoles.Admin
                                                     ? 'var(--color-info)'
                                                     : 'var(--color-text-secondary)',
                                                 padding: 'var(--space-1) var(--space-3)',
                                             }}
                                         >
-                                            {user.role === 'admin' ? '👑 Admin' : '👤 Viewer'}
+                                            {user.role === AuthRoles.Admin ? '👑 Admin' : '👤 Viewer'}
                                         </span>
                                         <span className="text-sm text-tertiary">
                                             →

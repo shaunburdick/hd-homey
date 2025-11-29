@@ -11,7 +11,7 @@ This document provides AI agents with essential context to quickly understand an
 - **UI Library**: React 19.2.0
 - **Language**: TypeScript 5
 - **Database**: SQLite via better-sqlite3 + Drizzle ORM
-- **Authentication**: NextAuth.js v5 (beta)
+- **Authentication**: Better-Auth 1.1.0 (username plugin)
 - **UI**: new.css for styling
 - **Testing**: Vitest + React Testing Library
 - **Deployment**: Docker + Docker Compose
@@ -27,11 +27,14 @@ src/
 │   └── users/        # Public auth routes (signin, get-started)
 ├── components/       # React components
 ├── lib/              # Utilities and core logic
-│   ├── auth.ts       # Auth helpers
+│   ├── auth/         # Better-Auth configuration and helpers
+│   │   ├── auth.ts   # Better-Auth instance
+│   │   ├── auth-client.ts  # Client-side auth hooks
+│   │   └── helpers.ts # Role checking (requireAdmin, etc.)
 │   ├── database/     # Database schema and operations
+│   │   └── schema.ts # Unified schema (includes Better-Auth tables)
 │   └── logger.ts     # Pino logging
-├── middleware.ts     # NextAuth middleware for route protection
-└── auth.ts           # NextAuth configuration
+└── proxy.ts          # Route protection proxy
 
 .specs/               # Spec-driven development documentation
 migrations/           # Database migrations
@@ -98,12 +101,12 @@ try {
   - Public routes: `/users/signin`, `/get-started`, `/api/auth/*`
   - Token-authenticated: `/api/transcode/*` (HMAC tokens validated in handlers)
   - Session-authenticated: All other routes (checked by proxy)
-  - Works on Edge Runtime because NextAuth v5 uses JWT sessions (no database access needed)
-- Use `auth()` from `@/auth` in Server Components
-- Use `useSession()` from `@/lib/auth` in Client Components
-- Check `session.user.isAdmin` for admin operations
+  - Works on Edge Runtime because Better-Auth uses JWT sessions (no database access needed)
+- Use `auth.api.getSession()` from `@/lib/auth/auth` in Server Components
+- Use `useSession()` from `@/lib/auth/auth-client` in Client Components
+- Check `session.user.role` for role-based operations (use `requireAdmin()` helper)
 - **Always verify permissions server-side** in API routes, even if proxy checks session
-- Admin-only operations (tuner modifications) require explicit `isAdmin` check in handler
+- Admin-only operations (tuner modifications) require explicit role check in handler
 
 #### Database
 - All DB code is server-side only (Node.js APIs like `fs`)
@@ -118,14 +121,15 @@ try {
 ```bash
 HD_HOMEY_PROXY_HOST=https://tuner.myawesomesite.com  # External URL for stream proxying
 HD_HOMEY_DB_PATH=./data/db                           # Database directory
-AUTH_SECRET=<generate-with-openssl-rand-base64-32>   # NextAuth encryption key
-NEXTAUTH_URL=http://localhost:3000                   # Auth callback URL
+AUTH_SECRET=<generate-with-openssl-rand-base64-32>   # Better-Auth encryption key
+BETTER_AUTH_URL=http://localhost:3000                # Auth base URL (fallback to NEXTAUTH_URL)
 ```
 
 ### Database
 - SQLite database at `${HD_HOMEY_DB_PATH}/hd_homey.db`
 - Migrations run automatically on startup
-- Tables: `tuners`, `channels`, `users`
+- Tables: `user`, `session`, `account`, `verification`, `tuners`, `channels`, `settings`
+- Schema uses snake_case for DB columns, camelCase for TypeScript properties
 
 ## Common Tasks
 
@@ -162,7 +166,8 @@ docker compose up -d     # Start with Docker Compose
 4. **Session updates**: Call `router.refresh()` after login/logout to update UI
 5. **Build-time DB**: Dynamic routes export `dynamic = 'force-dynamic'` to avoid DB access during build
 6. **Transactions**: Avoid using db transactions for simple operations - they can fail with "cannot commit"
-7. **Proxy**: Route protection is enforced at the proxy level (`src/proxy.ts`). Token-authenticated routes (transcoding) bypass proxy and validate tokens in handlers. Proxy runs on Edge Runtime but works with NextAuth because v5 uses JWT sessions (no database access needed for session validation).
+7. **Proxy**: Route protection is enforced at the proxy level (`src/proxy.ts`). Token-authenticated routes (transcoding) bypass proxy and validate tokens in handlers. Proxy runs on Edge Runtime but works with Better-Auth because it uses JWT sessions (no database access needed for session validation).
+8. **Password Hashing**: Better-Auth uses scrypt (not bcrypt) with format `salt:hash`. Do not use bcrypt functions for password operations.
 
 ## Testing
 
@@ -229,17 +234,18 @@ gh workflow run release.yml -f version=v1.0.0-alpha.2
 
 ## Security Considerations
 
-- All passwords hashed with BCrypt (10 rounds)
-- NextAuth handles session tokens
-- Middleware protects routes in `/(protected)/`
+- All passwords hashed with scrypt (Better-Auth native)
+- Better-Auth handles session tokens via JWT
+- Proxy protects routes at Edge Runtime level
 - Always verify admin status server-side
 - No sensitive data in client components
+- Stream URLs protected with HMAC-SHA256 tokens
 
 ## Resources
 
 - [Next.js 16 Docs](https://nextjs.org/docs)
 - [React 19 Docs](https://react.dev/)
-- [NextAuth.js v5 Docs](https://authjs.dev/)
+- [Better-Auth Docs](https://www.better-auth.com/)
 - [Drizzle ORM Docs](https://orm.drizzle.team/)
 - [HDHomeRun API](https://www.silicondust.com/hdhomerun/developers/)
 

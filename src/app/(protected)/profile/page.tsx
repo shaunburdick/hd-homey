@@ -1,13 +1,21 @@
+import { headers } from 'next/headers';
 import { eq } from 'drizzle-orm';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
+import type { Session } from '@/lib/auth/types';
 import { Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
 import ChangePasswordForm from '@/components/change-password-form';
 import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { user as userTable } from '@/lib/database/schema';
+import { AuthRoles } from '@/lib/auth-roles';
 
 export default async function ProfilePage() {
-    const session = await auth();
+    const rawSession = await auth.api.getSession({
+        headers: await headers()
+    });
+
+    // Cast to our type with custom fields
+    const session = rawSession as unknown as Session | null;
 
     if (!session?.user) {
         return null;
@@ -15,11 +23,11 @@ export default async function ProfilePage() {
 
     // Fetch full user record to get timestamps
     const db = await getDb();
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, session.user.id),
+    const user = await db.query.user.findFirst({
+        where: eq(userTable.id, session.user.id),
     });
 
-    if (!user) {
+    if (user === undefined) {
         return null;
     }
 
@@ -36,10 +44,10 @@ export default async function ProfilePage() {
                 <InfoCard
                     title="Account Information"
                     items={[
-                        { label: 'Username', value: user.username },
+                        { label: 'Username', value: user.email },
                         { label: 'Display Name', value: user.name },
-                        { label: 'Role', value: user.role === 'admin' ? 'Administrator' : 'Viewer' },
-                        { label: 'Account Created', value: user.created_at.toLocaleString() },
+                        { label: 'Role', value: user.role === AuthRoles.Admin ? 'Administrator' : 'Viewer' },
+                        { label: 'Account Created', value: user.createdAt.toLocaleString() },
                     ]}
                 />
 

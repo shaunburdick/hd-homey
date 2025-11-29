@@ -17,6 +17,18 @@ vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
 
+vi.mock('next/headers', () => ({
+    headers: vi.fn(() => Promise.resolve(new Map([
+        ['user-agent', 'test-agent'],
+        ['cookie', 'test-cookie'],
+    ]))),
+    cookies: vi.fn(() => Promise.resolve({
+        get: vi.fn(),
+        set: vi.fn(),
+        delete: vi.fn(),
+    })),
+}));
+
 vi.mock('@/auth', () => ({
     auth: () => Promise.resolve({
         user: {

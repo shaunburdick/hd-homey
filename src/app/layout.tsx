@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Fira_Code } from 'next/font/google';
 import './globals.css';
-import { SessionProvider } from '@/components/SessionProvider';
 import { Footer } from '@/components/Footer';
 
 const fira = Fira_Code({ subsets: ['latin'] });
@@ -30,13 +29,11 @@ export default function RootLayout({
                 <link rel="manifest" href="/manifest.json" />
             </head>
             <body className={fira.className}>
-                <SessionProvider>
-                    <a href="#main-content" className="sr-only">Skip to main content</a>
-                    <main id="main-content">
-                        {children}
-                    </main>
-                    <Footer />
-                </SessionProvider>
+                <a href="#main-content" className="sr-only">Skip to main content</a>
+                <main id="main-content">
+                    {children}
+                </main>
+                <Footer />
             </body>
         </html>
     );

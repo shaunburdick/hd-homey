@@ -3,9 +3,10 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import UserEditForm from './UserEditForm';
 import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { user as userTable } from '@/lib/database/schema';
 import { Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
+import { AuthRoles } from '@/lib/auth-roles';
 
 interface PageParams {
     id: string
@@ -15,10 +16,10 @@ export default async function Page(props: { params: Promise<PageParams> }) {
     const params = await props.params;
     const db = await getDb();
 
-    const user = await db.query.users.findFirst({
+    const user = await db.query.user.findFirst({
         where: and(
-            eq(users.id, parseInt(params.id, 10)),
-            isNull(users.deleted_at)
+            eq(userTable.id, params.id),
+            isNull(userTable.deletedAt)
         )
     });
 
@@ -52,10 +53,10 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                     <h1 style={{ marginBottom: 0 }}>{user.name}</h1>
                     <span style={{
                         display: 'inline-block',
-                        backgroundColor: user.role === 'admin'
+                        backgroundColor: user.role === AuthRoles.Admin
                             ? 'var(--color-info-bg)'
                             : 'var(--color-bg-tertiary)',
-                        color: user.role === 'admin'
+                        color: user.role === AuthRoles.Admin
                             ? 'var(--color-info)'
                             : 'var(--color-text-secondary)',
                         padding: 'var(--space-1) var(--space-3)',
@@ -63,9 +64,9 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                         fontSize: 'var(--font-size-sm)',
                         fontWeight: 'var(--font-weight-semibold)',
                     }}>
-                        {user.role === 'admin' ? '👑 Admin' : '👤 Viewer'}
+                        {user.role === AuthRoles.Admin ? '👑 Admin' : '👤 Viewer'}
                     </span>
-                    {!user.is_active && (
+                    {!user.isActive && (
                         <span style={{
                             display: 'inline-block',
                             backgroundColor: 'var(--color-error-bg)',
@@ -85,21 +86,21 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                 title="User Information"
                 className="mb-6"
                 items={[
-                    { label: 'Username', value: `@${user.username}` },
+                    { label: 'Username', value: `@${user.email}` },
                     { label: 'Display Name', value: user.name },
-                    { label: 'Role', value: user.role === 'admin' ? 'Administrator' : 'Viewer' },
+                    { label: 'Role', value: user.role === AuthRoles.Admin ? 'Administrator' : 'Viewer' },
                     {
                         label: 'Status',
                         value: (
                             <span style={{
-                                color: user.is_active ? 'var(--color-success)' : 'var(--color-error)',
+                                color: user.isActive ? 'var(--color-success)' : 'var(--color-error)',
                             }}>
-                                {user.is_active ? '✓ Active' : '✗ Inactive'}
+                                {user.isActive ? '✓ Active' : '✗ Inactive'}
                             </span>
                         ),
                     },
-                    { label: 'Created', value: user.created_at.toLocaleString() },
-                    { label: 'Last Modified', value: user.modified_at.toLocaleString() },
+                    { label: 'Created', value: user.createdAt.toLocaleString() },
+                    { label: 'Last Modified', value: user.updatedAt.toLocaleString() },
                 ]}
             />
 

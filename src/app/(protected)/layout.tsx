@@ -1,9 +1,11 @@
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { count } from 'drizzle-orm';
 import Nav from '@/components/nav';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
+import type { Session } from '@/lib/auth/types';
 import { getDb } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { user } from '@/lib/database/schema';
 
 // Force dynamic rendering - don't pre-render at build time
 export const dynamic = 'force-dynamic';
@@ -15,14 +17,17 @@ export default async function ProtectedLayout({
 }>) {
     // Check if any users exist - if not, redirect to initial setup
     const db = await getDb();
-    const userCount = await db.select({ count: count() }).from(users);
+    const userCount = await db.select({ count: count() }).from(user);
 
     if (userCount[0].count === 0) {
         redirect('/get-started');
     }
 
     // Check authentication
-    const session = await auth();
+    const rawSession = await auth.api.getSession({
+        headers: await headers()
+    });
+    const session = rawSession as unknown as Session | null;
     if (!session?.user) {
         redirect('/users/signin');
     }

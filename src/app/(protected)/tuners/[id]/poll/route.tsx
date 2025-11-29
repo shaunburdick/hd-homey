@@ -1,10 +1,13 @@
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { and, eq, isNull } from 'drizzle-orm';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
 import Logger from '@/lib/logger';
 import { HDTuner } from '@/lib/hdhr/tuner';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(
     request: Request,
@@ -12,8 +15,10 @@ export async function POST(
 ) {
     try {
         // Require authentication (middleware protects this route, but double-check)
-        const session = await auth();
-        if (!session?.user) {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+        if (session?.user === null) {
             Logger.warn('Unauthorized poll request attempt');
             return NextResponse.json(
                 { error: 'Unauthorized' },

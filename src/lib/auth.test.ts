@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Session } from 'next-auth';
-import { requireAdmin, requireRole, AuthRoles } from './auth';
-import * as authModule from '@/auth';
+import { requireAdmin, requireRole, AuthRoles } from './auth/helpers';
+import { auth } from './auth/auth';
+import { createMockSession } from '@/test-utils/mock-auth';
 
 // Test constants
-const TEST_ADMIN = 'admin';
-const TEST_VIEWER_ROLE = 'viewer';
-const ADMIN_USER_NAME = 'Admin User';
-const VIEWER_USER_NAME = 'Viewer User';
 const NOT_AUTHENTICATED_ERROR = 'Not authenticated';
 
 // Mock the auth module
-vi.mock('@/auth', () => ({
-    auth: vi.fn()
+vi.mock('./auth/auth', () => ({
+    auth: {
+        api: {
+            getSession: vi.fn()
+        }
+    },
 }));
 
 describe('Authorization Helpers', () => {
@@ -22,143 +22,94 @@ describe('Authorization Helpers', () => {
 
     describe('requireRole', () => {
         it('should return session when user has required role', async () => {
-            const mockSession: Session = {
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN,
-                    name: ADMIN_USER_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            };
+            const mockSession = createMockSession({
+                role: AuthRoles.Admin,
+            });
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(mockSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             const result = await requireRole(AuthRoles.Admin);
             expect(result).toEqual(mockSession);
         });
 
         it('should throw error when user is not authenticated', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue(null as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
             await expect(requireRole(AuthRoles.Admin)).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
         });
 
         it('should throw error when user does not have required role', async () => {
-            const mockSession: Session = {
-                user: {
-                    id: '1',
-                    username: TEST_VIEWER_ROLE,
-                    name: VIEWER_USER_NAME,
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            };
+            const mockSession = createMockSession({
+                role: AuthRoles.Viewer,
+            });
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(mockSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             await expect(requireRole(AuthRoles.Admin)).rejects.toThrow('Unauthorized: requires admin role');
         });
 
         it('should allow viewer role when viewer is required', async () => {
-            const mockSession: Session = {
-                user: {
-                    id: '2',
-                    username: TEST_VIEWER_ROLE,
-                    name: VIEWER_USER_NAME,
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            };
+            const mockSession = createMockSession({
+                role: AuthRoles.Viewer,
+            });
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(mockSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             const result = await requireRole(AuthRoles.Viewer);
             expect(result).toEqual(mockSession);
         });
 
         it('should throw error with specific role name in message', async () => {
-            const mockSession: Session = {
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN,
-                    name: ADMIN_USER_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            };
+            const mockSession = createMockSession({
+                role: AuthRoles.Admin,
+            });
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(mockSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             try {
                 await requireRole(AuthRoles.Viewer);
                 expect.fail('Should have thrown error');
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
-                expect((error as Error).message).toContain(TEST_VIEWER_ROLE);
+                expect((error as Error).message).toContain('viewer');
             }
         });
     });
 
     describe('requireAdmin', () => {
         it('should return session when user is admin', async () => {
-            const mockSession: Session = {
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN,
-                    name: ADMIN_USER_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            };
+            const mockSession = createMockSession({
+                role: AuthRoles.Admin,
+            });
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(mockSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             const result = await requireAdmin();
             expect(result).toEqual(mockSession);
         });
 
         it('should throw error when user is not admin', async () => {
-            const mockSession: Session = {
-                user: {
-                    id: '2',
-                    username: TEST_VIEWER_ROLE,
-                    name: VIEWER_USER_NAME,
-                    role: AuthRoles.Viewer,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            };
+            const mockSession = createMockSession({
+                role: AuthRoles.Viewer,
+            });
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(mockSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             await expect(requireAdmin()).rejects.toThrow('Unauthorized: requires admin role');
         });
 
         it('should throw error when user is not authenticated', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue(null as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
             await expect(requireAdmin()).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
         });
 
         it('should be alias for requireRole(AuthRoles.Admin)', async () => {
-            const adminSession: Session = {
-                user: {
-                    id: '1',
-                    username: TEST_ADMIN,
-                    name: ADMIN_USER_NAME,
-                    role: AuthRoles.Admin,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            };
+            const adminSession = createMockSession({
+                role: AuthRoles.Admin,
+            });
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(adminSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(adminSession);
 
             const requireAdminResult = await requireAdmin();
             const requireRoleResult = await requireRole(AuthRoles.Admin);
@@ -169,35 +120,35 @@ describe('Authorization Helpers', () => {
 
     describe('Authorization Security', () => {
         it('should not accept session without user object', async () => {
-            const invalidSession: Partial<Session> = {
+            const invalidSession = {
+                session: {
+                    id: 'session-1',
+                    userId: 'user-1',
+                    expiresAt: new Date(),
+                    token: 'token',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
                 user: null,
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
             };
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(invalidSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(invalidSession as never);
 
             await expect(requireAdmin()).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
         });
 
         it('should validate role matches exactly', async () => {
-            const mockSession: Session = {
-                user: {
-                    id: '1',
-                    username: 'user',
-                    name: 'User',
-                    role: 'invalid-role' as AuthRoles,
-                    is_active: true
-                },
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            };
+            const mockSession = createMockSession({
+                role: 'invalid-role' as AuthRoles,
+            });
 
-            vi.spyOn(authModule, 'auth').mockResolvedValue(mockSession as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockSession);
 
             await expect(requireRole(AuthRoles.Admin)).rejects.toThrow();
         });
 
         it('should handle expired or missing session', async () => {
-            vi.spyOn(authModule, 'auth').mockResolvedValue(undefined as never);
+            vi.mocked(auth.api.getSession).mockResolvedValue(undefined as never);
 
             await expect(requireAdmin()).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
         });

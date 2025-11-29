@@ -2,8 +2,9 @@
  * Transcoding status endpoint - returns active sessions
  */
 
+import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
 import { AuthRoles } from '@/lib/auth-roles';
 import { getSessionManager } from '@/lib/transcoding/session-manager';
 import Logger from '@/lib/logger';
@@ -13,8 +14,10 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         // Check admin auth
-        const session = await auth();
-        if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+        if (session?.user === null || session.user.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user }, 'Unauthorized status request');
             return new Response('Unauthorized', { status: 403 });
         }
@@ -38,8 +41,10 @@ export async function GET() {
 export async function DELETE(req: NextRequest) {
     try {
         // Check admin auth
-        const session = await auth();
-        if (session?.user === undefined || session.user.role !== AuthRoles.Admin) {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+        if (session?.user === null || session.user.role !== AuthRoles.Admin) {
             Logger.warn({ user: session?.user }, 'Unauthorized stop session request');
             return new Response('Unauthorized', { status: 403 });
         }

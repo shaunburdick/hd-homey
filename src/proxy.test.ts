@@ -8,13 +8,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { proxy } from './proxy';
+import { mockViewerSession } from './test-utils/mock-auth';
 
 // Mock the auth module
-vi.mock('@/auth', () => ({
-    auth: vi.fn(),
+vi.mock('@/lib/auth/auth', () => ({
+    auth: {
+        api: {
+            getSession: vi.fn(),
+        }
+    },
 }));
 
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth/auth';
 
 describe('Proxy Route Protection', () => {
     beforeEach(() => {
@@ -27,7 +32,7 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(200);
-            expect(auth).not.toHaveBeenCalled();
+            expect(auth.api.getSession).not.toHaveBeenCalled();
         });
 
         it('should allow access to get-started page without auth', async () => {
@@ -35,15 +40,15 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(200);
-            expect(auth).not.toHaveBeenCalled();
+            expect(auth.api.getSession).not.toHaveBeenCalled();
         });
 
-        it('should allow access to NextAuth API routes without auth', async () => {
+        it('should allow access to Better-Auth API routes without auth', async () => {
             const request = new NextRequest(new URL('http://localhost:3000/api/auth/signin'));
             const response = await proxy(request);
 
             expect(response.status).toBe(200);
-            expect(auth).not.toHaveBeenCalled();
+            expect(auth.api.getSession).not.toHaveBeenCalled();
         });
     });
 
@@ -56,7 +61,7 @@ describe('Proxy Route Protection', () => {
 
             // Middleware lets it through, handler validates token
             expect(response.status).toBe(200);
-            expect(auth).not.toHaveBeenCalled();
+            expect(auth.api.getSession).not.toHaveBeenCalled();
         });
 
         it('should allow stream routes through (validated in handler)', async () => {
@@ -67,7 +72,7 @@ describe('Proxy Route Protection', () => {
 
             // Middleware lets it through, handler validates token
             expect(response.status).toBe(200);
-            expect(auth).not.toHaveBeenCalled();
+            expect(auth.api.getSession).not.toHaveBeenCalled();
         });
     });
 
@@ -77,7 +82,7 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(200);
-            expect(auth).not.toHaveBeenCalled();
+            expect(auth.api.getSession).not.toHaveBeenCalled();
         });
 
         it('should allow icon files without auth', async () => {
@@ -85,7 +90,7 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(200);
-            expect(auth).not.toHaveBeenCalled();
+            expect(auth.api.getSession).not.toHaveBeenCalled();
         });
 
         it('should allow image files without auth', async () => {
@@ -93,13 +98,13 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(200);
-            expect(auth).not.toHaveBeenCalled();
+            expect(auth.api.getSession).not.toHaveBeenCalled();
         });
     });
 
     describe('Session-Authenticated Routes - API', () => {
         it('should block API routes without session', async () => {
-            vi.mocked(auth).mockResolvedValue(null as unknown as Awaited<ReturnType<typeof auth>>);
+            vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
             const request = new NextRequest(new URL('http://localhost:3000/api/tuners'));
             const response = await proxy(request);
@@ -107,74 +112,68 @@ describe('Proxy Route Protection', () => {
             expect(response.status).toBe(401);
             const json = await response.json();
             expect(json).toHaveProperty('error', 'Unauthorized');
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
 
         it('should allow API routes with valid session', async () => {
-            vi.mocked(auth).mockResolvedValue({
-                user: { id: 1, username: 'testuser', isAdmin: false, role: 'viewer' },
-                expires: new Date(Date.now() + 86400000).toISOString(),
-            } as unknown as Awaited<ReturnType<typeof auth>>);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockViewerSession);
 
             const request = new NextRequest(new URL('http://localhost:3000/api/tuners'));
             const response = await proxy(request);
 
             expect(response.status).toBe(200);
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
 
         it('should protect tuner modification endpoints', async () => {
-            vi.mocked(auth).mockResolvedValue(null as unknown as Awaited<ReturnType<typeof auth>>);
+            vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
             const request = new NextRequest(new URL('http://localhost:3000/api/tuners/1/poll'));
             const response = await proxy(request);
 
             expect(response.status).toBe(401);
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
     });
 
     describe('Session-Authenticated Routes - Pages', () => {
-        it('should redirect page routes without session to signin', async () => {
-            vi.mocked(auth).mockResolvedValue(null as unknown as Awaited<ReturnType<typeof auth>>);
+        it('should redirect page routes without session to get-started', async () => {
+            vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
             const request = new NextRequest(new URL('http://localhost:3000/tuners'));
             const response = await proxy(request);
 
             expect(response.status).toBe(307); // Temporary redirect
-            expect(response.headers.get('location')).toContain('/users/signin');
+            expect(response.headers.get('location')).toContain('/get-started');
             expect(response.headers.get('location')).toContain('callbackUrl=%2Ftuners');
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
 
         it('should allow page routes with valid session', async () => {
-            vi.mocked(auth).mockResolvedValue({
-                user: { id: 1, username: 'testuser', isAdmin: false, role: 'viewer' },
-                expires: new Date(Date.now() + 86400000).toISOString(),
-            } as unknown as Awaited<ReturnType<typeof auth>>);
+            vi.mocked(auth.api.getSession).mockResolvedValue(mockViewerSession);
 
             const request = new NextRequest(new URL('http://localhost:3000/tuners'));
             const response = await proxy(request);
 
             expect(response.status).toBe(200);
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
 
         it('should include callback URL when redirecting to signin', async () => {
-            vi.mocked(auth).mockResolvedValue(null as unknown as Awaited<ReturnType<typeof auth>>);
+            vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
             const request = new NextRequest(new URL('http://localhost:3000/settings'));
             const response = await proxy(request);
 
             const location = response.headers.get('location');
             expect(location).toContain('callbackUrl=%2Fsettings');
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
     });
 
     describe('Protected Routes Coverage', () => {
         beforeEach(() => {
-            vi.mocked(auth).mockResolvedValue(null as unknown as Awaited<ReturnType<typeof auth>>);
+            vi.mocked(auth.api.getSession).mockResolvedValue(null);
         });
 
         it('should protect /tuners routes', async () => {
@@ -182,7 +181,7 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(307);
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
 
         it('should protect /settings route', async () => {
@@ -190,7 +189,7 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(307);
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
 
         it('should protect /users management routes', async () => {
@@ -198,7 +197,7 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(307);
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
 
         it('should protect /profile route', async () => {
@@ -206,7 +205,7 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(307);
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
 
         it('should protect /about route', async () => {
@@ -214,7 +213,7 @@ describe('Proxy Route Protection', () => {
             const response = await proxy(request);
 
             expect(response.status).toBe(307);
-            expect(auth).toHaveBeenCalled();
+            expect(auth.api.getSession).toHaveBeenCalled();
         });
     });
 });
