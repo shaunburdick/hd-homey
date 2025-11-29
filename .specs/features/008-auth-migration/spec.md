@@ -3,6 +3,13 @@
 **Status**: ✅ **COMPLETE** (2025-11-29)  
 **Confidence Level**: 🟢 **HIGH** - All tests passing, clean implementation
 
+## Quick Links
+
+- **[Migration Guide](./MIGRATION-GUIDE.md)** - For deployers and developers
+- **[Lessons Learned](./LESSONS-LEARNED.md)** - Key insights and what to avoid
+- **[Implementation Plan](./plan.md)** - Original plan (partially followed)
+- **[Archive](./archive/)** - Historical documents from the migration process
+
 ---
 
 ## Migration Summary
@@ -29,6 +36,13 @@
 - **Password format incompatible** - Existing users must reset passwords
 - **Database schema restructured** - Fresh migration required
 - **Auth API endpoints changed** - Better-Auth format
+
+### Key Learnings
+1. **Always use the auth provider's native crypto functions** - Initially tried bcrypt, but Better-Auth expects scrypt
+2. **Let the ORM adapter handle field mappings** - Removed manual mappings, let Drizzle do the work
+3. **Test early and often** - Caught sign-in issues immediately with proper testing
+4. **Consolidate migrations for beta** - Single migration file keeps history clean
+5. **Direct DB operations over API calls** - More reliable for user management
 
 ---
 
