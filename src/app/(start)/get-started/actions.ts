@@ -3,6 +3,7 @@
 import crypto from 'node:crypto';
 import { redirect } from 'next/navigation';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
+import { eq } from 'drizzle-orm';
 import { getDb } from '@/lib/database/db';
 import { user, account } from '@/lib/database/schema';
 import { generateHashPassword } from '@/lib/user';
