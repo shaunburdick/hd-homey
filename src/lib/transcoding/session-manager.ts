@@ -5,7 +5,13 @@
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import type { TranscodeSettings, SessionStats, ViewerSession } from './types';
-import { startTranscode, stopTranscode, waitForPlaylist, cleanupTranscodeFiles } from './transcode';
+import type { TranscodeProcess } from './transcode';
+import {
+    startTranscode,
+    stopTranscode,
+    waitForPlaylist,
+    cleanupTranscodeFiles,
+} from './transcode';
 import Logger from '@/lib/logger';
 
 interface TranscodingSession {
@@ -14,6 +20,7 @@ interface TranscodingSession {
     channelId: number;
     channelName: string;
     viewers: Map<string, ViewerSession>;
+    transcodeProcess: TranscodeProcess;
     process: ChildProcess;
     pid: number;
     outputDir: string;
@@ -45,7 +52,8 @@ class TranscodingSessionManager {
         channelId: number,
         channelName: string,
         sourceUrl: string,
-        settings: TranscodeSettings
+        settings: TranscodeSettings,
+        codecs?: { videoCodec: string; audioCodec: string }
     ): Promise<TranscodingSession> {
         const sessionId = `${tunerId}:${channelId}`;
 
@@ -82,6 +90,7 @@ class TranscodingSessionManager {
             channelId,
             channelName,
             viewers: new Map<string, ViewerSession>(),
+            transcodeProcess: null as unknown as TranscodeProcess, // Will be set below
             process: null as unknown as ChildProcess, // Will be set below
             pid: 0,
             outputDir,
@@ -93,25 +102,35 @@ class TranscodingSessionManager {
 
         try {
             // Start the transcode process
-            const process = await startTranscode(sourceUrl, outputDir, settings);
+            const transcodeProcess = await startTranscode(sourceUrl, outputDir, settings, codecs);
+            session.transcodeProcess = transcodeProcess;
+            const { process } = transcodeProcess;
             session.process = process;
-            session.pid = (process.pid !== undefined && !isNaN(process.pid) && process.pid !== 0) ? process.pid : 0;
+            const { pid } = process;
+            session.pid = (pid !== undefined && !isNaN(pid) && pid !== 0) ? pid : 0;
 
-            // Wait for playlist to be created
-            const playlistReady = await waitForPlaylist(playlistPath, 10000);
+            // Wait for playlist to be created (longer timeout for HEVC+AC4)
+            const playlistReady = await waitForPlaylist(playlistPath, 30000);
             if (!playlistReady) {
-                throw new Error('Playlist file not created within timeout');
+                // Get stderr output for better error reporting
+                const stderr = transcodeProcess.getStderr();
+                const errorMsg = stderr.length > 0
+                    ? stderr.slice(-500)
+                    : 'Unknown error - check FFmpeg logs';
+                const msg = `Playlist not created within timeout. FFmpeg: ${errorMsg}`;
+                throw new Error(msg);
             }
 
             session.status = 'running';
             this.sessions.set(sessionId, session);
 
             // Handle process exit
-            process.on('exit', (code) => {
+            transcodeProcess.process.on('exit', (code: number | null) => {
                 Logger.info({ sessionId, code }, 'Transcode process exited');
                 session.status = code === 0 ? 'stopping' : 'error';
                 if (code !== 0) {
-                    session.error = `Process exited with code ${code}`;
+                    const stderr = transcodeProcess.getStderr();
+                    session.error = `Process exited with code ${code}. Last error: ${stderr.slice(-200)}`;
                 }
             });
 

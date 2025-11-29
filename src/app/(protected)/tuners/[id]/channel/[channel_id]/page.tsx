@@ -14,6 +14,14 @@ interface PageParams {
     channel_id: string;
 }
 
+/**
+ * Check if audio codec is AC4
+ */
+function isAC4Audio(audioCodec: string): boolean {
+    const codec = audioCodec.toLowerCase();
+    return codec.includes('ac4') || codec.includes('ac-4');
+}
+
 export default async function Page({ params }: { params: Promise<PageParams> }) {
     const { id, channel_id } = await params;
     const db = await getDb();
@@ -76,6 +84,30 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
                 </div>
             </div>
 
+            {isAC4Audio(channel.audioCodec) && (
+                <div
+                    className="p-4 rounded-md mb-5"
+                    style={{
+                        backgroundColor: 'var(--color-warning-bg)',
+                        border: '1px solid var(--color-warning)',
+                    }}
+                >
+                    <div className="flex items-start gap-3">
+                        <span style={{ fontSize: '1.5rem', lineHeight: '1' }}>⚠️</span>
+                        <div>
+                            <h3 className="mt-0 mb-2" style={{ color: 'var(--color-warning)' }}>
+                                AC4 Audio Not Supported
+                            </h3>
+                            <p className="m-0 text-sm">
+                                This channel uses AC4 audio codec which is not yet supported by most media players.
+                                <strong> Video will play but audio will be silent</strong> when transcoding is enabled.
+                                Try using the direct stream URL in a compatible player, or wait for broader AC4 support.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="grid gap-5">
                 <InfoCard
                     title="Channel Information"
@@ -83,7 +115,12 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
                         { label: 'Guide Number', value: channel.guideNumber },
                         { label: 'Name', value: channel.guideName },
                         { label: 'Video Codec', value: channel.videoCodec },
-                        { label: 'Audio Codec', value: channel.audioCodec },
+                        {
+                            label: 'Audio Codec',
+                            value: isAC4Audio(channel.audioCodec)
+                                ? `${channel.audioCodec} ⚠️ (Not supported - silent audio)`
+                                : channel.audioCodec
+                        },
                         { label: 'HD Quality', value: channel.hd ? 'Yes' : 'No' },
                     ]}
                 />

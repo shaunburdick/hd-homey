@@ -34,7 +34,10 @@ describe('TranscodingSessionManager', () => {
         mockProcess = new MockChildProcess();
 
         // Setup default mocks
-        vi.mocked(transcode.startTranscode).mockResolvedValue(mockProcess as never);
+        vi.mocked(transcode.startTranscode).mockResolvedValue({
+            process: mockProcess as never,
+            getStderr: () => '',
+        });
         vi.mocked(transcode.waitForPlaylist).mockResolvedValue(true);
         vi.mocked(transcode.stopTranscode).mockResolvedValue(undefined);
         vi.mocked(transcode.cleanupTranscodeFiles).mockResolvedValue(undefined);
@@ -127,7 +130,7 @@ describe('TranscodingSessionManager', () => {
                     TEST_SOURCE_URL,
                     DEFAULT_SETTINGS
                 )
-            ).rejects.toThrow('Playlist file not created');
+            ).rejects.toThrow('Playlist not created within timeout');
         });
     });
 

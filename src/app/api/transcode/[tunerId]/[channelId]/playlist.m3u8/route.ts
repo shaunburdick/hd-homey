@@ -88,7 +88,11 @@ export async function GET(
             tokenData.channelId,
             channel.guideName,
             sourceUrl,
-            settings
+            settings,
+            {
+                videoCodec: channel.videoCodec,
+                audioCodec: channel.audioCodec,
+            }
         );
 
         // Generate viewer fingerprint from IP + User-Agent

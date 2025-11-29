@@ -13,6 +13,34 @@ interface PageParams {
     id: string
 }
 
+/**
+ * Check if audio codec is AC4
+ */
+function isAC4Audio(audioCodec: string): boolean {
+    const codec = audioCodec.toLowerCase();
+    return codec.includes('ac4') || codec.includes('ac-4');
+}
+
+// Component-scoped warning styles - shared base for warning elements
+const warningColor = { color: 'var(--color-warning)' as const };
+const styles = {
+    warningBadge: {
+        padding: 'var(--space-2) var(--space-3)',
+        backgroundColor: 'var(--color-warning-bg)',
+        ...warningColor,
+        borderRadius: 'var(--radius-md)',
+        fontWeight: 'var(--font-weight-medium)',
+    },
+    warningText: warningColor,
+    ac4Badge: {
+        padding: '2px 6px',
+        backgroundColor: 'var(--color-warning-bg)',
+        ...warningColor,
+        borderRadius: 'var(--radius-sm)',
+        fontWeight: 'var(--font-weight-medium)',
+    },
+};
+
 export default async function Page(props: { params: Promise<PageParams> }) {
     const params = await props.params;
     const db = await getDb();
@@ -54,16 +82,7 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                         <div className="flex items-center gap-3 mb-2">
                             <h1 className="m-0">{tuner.name}</h1>
                             {!tuner.is_active && (
-                                <span
-                                    className="text-sm"
-                                    style={{
-                                        padding: 'var(--space-2) var(--space-3)',
-                                        backgroundColor: 'var(--color-warning-bg)',
-                                        color: 'var(--color-warning)',
-                                        borderRadius: 'var(--radius-md)',
-                                        fontWeight: 'var(--font-weight-medium)',
-                                    }}
-                                >
+                                <span className="text-sm" style={styles.warningBadge}>
                                     ⚠️ Inactive
                                 </span>
                             )}
@@ -72,12 +91,7 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                             {tuner.path}
                         </p>
                         {!tuner.is_active && (
-                            <p
-                                className="text-sm mt-2 mb-0"
-                                style={{
-                                    color: 'var(--color-warning)',
-                                }}
-                            >
+                            <p className="text-sm mt-2 mb-0" style={styles.warningText}>
                                 This tuner is inactive and unavailable for streaming
                             </p>
                         )}
@@ -133,8 +147,19 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                                         {channel.guideNumber}
                                     </div>
                                     <div className="flex-1">
-                                        <div className="font-medium text-primary mb-1">
-                                            {channel.guideName}
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-medium text-primary">
+                                                {channel.guideName}
+                                            </span>
+                                            {isAC4Audio(channel.audioCodec) && (
+                                                <span
+                                                    className="text-xs"
+                                                    style={styles.ac4Badge}
+                                                    title="AC4 audio not supported - silent audio"
+                                                >
+                                                    ⚠️ AC4
+                                                </span>
+                                            )}
                                         </div>
                                         {channel.url && (
                                             <div className="text-xs text-tertiary" style={{ wordBreak: 'break-all' }}>

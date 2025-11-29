@@ -10,18 +10,27 @@ import { buildFFmpegCommand } from './ffmpeg';
 import Logger from '@/lib/logger';
 
 /**
+ * Transcoding process with error tracking
+ */
+export interface TranscodeProcess {
+    process: ChildProcess;
+    getStderr: () => string;
+}
+
+/**
  * Start a transcoding process
  */
 export async function startTranscode(
     sourceUrl: string,
     outputDir: string,
-    settings: TranscodeSettings
-): Promise<ChildProcess> {
+    settings: TranscodeSettings,
+    codecs?: { videoCodec: string; audioCodec: string }
+): Promise<TranscodeProcess> {
     // Ensure output directory exists
     await fs.mkdir(outputDir, { recursive: true });
 
     const ffmpegPath = process.env.FFMPEG_PATH ?? 'ffmpeg';
-    const args = buildFFmpegCommand(sourceUrl, outputDir, settings);
+    const args = buildFFmpegCommand(sourceUrl, outputDir, settings, codecs);
 
     Logger.info(
         {
@@ -37,27 +46,69 @@ export async function startTranscode(
         stdio: ['ignore', 'pipe', 'pipe'],
     });
 
+    // Capture FFmpeg stderr output for error reporting
+    let stderrBuffer = '';
+    const MAX_STDERR_BUFFER = 10000; // Keep last 10KB
+
     // Log ffmpeg output
     ffmpeg.stdout.on('data', (data) => {
         Logger.debug({ output: data.toString() }, 'FFmpeg stdout');
     });
 
     ffmpeg.stderr.on('data', (data) => {
-        Logger.debug({ output: data.toString() }, 'FFmpeg stderr');
+        const output = data.toString();
+
+        // Accumulate stderr for error reporting
+        stderrBuffer += output;
+        if (stderrBuffer.length > MAX_STDERR_BUFFER) {
+            stderrBuffer = stderrBuffer.slice(-MAX_STDERR_BUFFER);
+        }
+
+        // FFmpeg writes ALL output to stderr, including progress
+        // Log errors/warnings at appropriate level
+        const hasError =
+            output.includes('error') === true ||
+            output.includes('Error') === true ||
+            output.includes('ERROR') === true;
+        const hasWarning =
+            output.includes('warning') === true ||
+            output.includes('Warning') === true ||
+            output.includes('WARNING') === true;
+
+        if (hasError) {
+            Logger.error({ output }, 'FFmpeg error');
+        } else if (hasWarning) {
+            Logger.warn({ output }, 'FFmpeg warning');
+        } else {
+            Logger.debug({ output }, 'FFmpeg stderr');
+        }
     });
 
     ffmpeg.on('error', (error) => {
-        Logger.error({ error, sourceUrl }, 'FFmpeg process error');
-    });
-
-    ffmpeg.on('exit', (code, signal) => {
-        Logger.info(
-            { code, signal, sourceUrl, outputDir },
-            'FFmpeg process exited'
+        Logger.error(
+            { error, sourceUrl, stderr: stderrBuffer },
+            'FFmpeg process error'
         );
     });
 
-    return ffmpeg;
+    ffmpeg.on('exit', (code, signal) => {
+        if (code !== 0 && code !== null) {
+            Logger.error(
+                { code, signal, sourceUrl, outputDir, stderr: stderrBuffer },
+                'FFmpeg process exited with error'
+            );
+        } else {
+            Logger.info(
+                { code, signal, sourceUrl, outputDir },
+                'FFmpeg process exited'
+            );
+        }
+    });
+
+    return {
+        process: ffmpeg,
+        getStderr: () => stderrBuffer,
+    };
 }
 
 /**
