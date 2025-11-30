@@ -11,7 +11,7 @@ interface InvitationDisplay extends Invitation {
 
 interface InvitationCardProps {
     invitation: InvitationDisplay;
-    onRevoke: (token: string) => Promise<void>;
+    onRevoke: (id: number) => Promise<void>;
 }
 
 export default function InvitationCard({ invitation, onRevoke }: InvitationCardProps) {
@@ -41,7 +41,7 @@ export default function InvitationCard({ invitation, onRevoke }: InvitationCardP
         // For now, using browser confirm as interim solution
         // eslint-disable-next-line no-alert
         if (window.confirm('Are you sure you want to revoke this invitation?')) {
-            await onRevoke(invitation.token);
+            await onRevoke(invitation.id);
         }
     };
 
