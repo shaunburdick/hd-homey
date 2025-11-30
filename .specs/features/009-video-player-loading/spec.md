@@ -2,7 +2,7 @@
 
 **Feature ID**: `009-video-player-loading`
 **Created**: 2025-11-29
-**Status**: 📝 Draft
+**Status**: ✅ Complete
 **Owner**: HD Homey Core Team
 **Version**: 1.0
 
