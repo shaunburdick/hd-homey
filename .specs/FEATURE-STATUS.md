@@ -159,7 +159,24 @@ This document provides a quick overview of all features and their implementation
 
 ## 📝 Planned Features
 
-_No features currently in planning phase._
+### SPEC-010: User Invitations
+**Status**: 📝 Planned (Spec Complete)  
+**Created**: 2025-11-29  
+**Priority**: P2 (Quality of life improvement)
+
+One-time-use invitation links for user onboarding:
+- Admin generates secure invitation links
+- Cryptographically secure tokens (32+ bytes)
+- Role specification (Admin/Viewer)
+- 30-day expiration
+- Invitation management UI
+- Public signup page via invitation link
+- One-time redemption enforcement
+
+**Estimated Time**: ~12 hours  
+**Impact**: Better onboarding UX, eliminates need for admins to manually create accounts
+
+**Files**: TBD (not yet implemented)
 
 ---
 
