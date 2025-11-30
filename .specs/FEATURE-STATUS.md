@@ -143,6 +143,33 @@ This document provides a quick overview of all features and their implementation
 
 ---
 
+## 📝 Planned Features
+
+### SPEC-009: Enhanced Video Player Loading Experience
+**Status**: 📝 Draft  
+**Created**: 2025-11-29  
+**Priority**: P2 (UX Enhancement)
+
+**Summary**: Replace the static "Loading stream..." text with an animated loading indicator to improve perceived performance and provide visual feedback during stream initialization.
+
+**Proposed Solution**: CSS-animated HD Homey logo with pulse effect (zero network overhead, respects `prefers-reduced-motion`)
+
+**Estimated Effort**: ~3-4 hours
+- 1 hour: Implementation (CSS + component updates)
+- 1 hour: Accessibility testing
+- 1 hour: Cross-browser/device testing
+- 0.5 hour: Documentation
+
+**Benefits**:
+- Improved perceived performance during 2-10s load times
+- More polished, professional feel
+- Better user feedback during stream initialization
+- Zero performance impact (CSS-only animation)
+
+**Files**: `.specs/features/009-video-player-loading/spec.md`
+
+---
+
 ## 🔄 In Progress Features
 
 ### SPEC-007: Tuner Autodiscovery
