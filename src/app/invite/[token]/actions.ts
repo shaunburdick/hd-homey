@@ -26,6 +26,28 @@ export interface RedeemFormState {
 }
 
 /**
+ * Validate display name format and length
+ *
+ * @param name - Display name to validate
+ * @returns Validation error or null if valid
+ */
+function validateName(name: string | undefined): string | null {
+    if (name === undefined || name.length === 0) {
+        return 'Display name is required';
+    }
+
+    if (name.length < 2) {
+        return 'Display name must be at least 2 characters';
+    }
+
+    if (name.length > 100) {
+        return 'Display name must be 100 characters or less';
+    }
+
+    return null;
+}
+
+/**
  * Validate username format and length
  *
  * @param username - Username to validate
@@ -135,25 +157,26 @@ function getInvitationErrorMessage(error: InvitationValidationError): string {
 }
 
 /**
- * Redeem an invitation to create a new user account
- * Public action - no authentication required
+ * Validate all form inputs for invitation redemption
  *
- * @param token - Invitation token from URL
- * @param prevState - Previous form state (unused but required by useActionState)
- * @param formData - Form data containing username and password
- * @returns Form state with success status or errors
+ * @param name - Display name
+ * @param username - Username
+ * @param password - Password
+ * @param passwordConfirm - Password confirmation
+ * @returns Validation errors (empty if all valid)
  */
-export async function redeemInvitation(
-    token: string,
-    _prevState: RedeemFormState,
-    formData: FormData
-): Promise<RedeemFormState> {
-    const username = formData.get('username')?.toString();
-    const password = formData.get('password')?.toString();
-    const passwordConfirm = formData.get('passwordConfirm')?.toString();
-
-    // 1. Validate form inputs
+function validateFormInputs(
+    name: string | undefined,
+    username: string | undefined,
+    password: string | undefined,
+    passwordConfirm: string | undefined
+): Record<string, string[]> {
     const errors: Record<string, string[]> = {};
+
+    const nameError = validateName(name);
+    if (nameError !== null) {
+        errors.name = [nameError];
+    }
 
     const usernameError = validateUsername(username);
     if (usernameError !== null) {
@@ -170,6 +193,30 @@ export async function redeemInvitation(
         errors.passwordConfirm = [passwordConfirmError];
     }
 
+    return errors;
+}
+
+/**
+ * Redeem an invitation to create a new user account
+ * Public action - no authentication required
+ *
+ * @param token - Invitation token from URL
+ * @param prevState - Previous form state (unused but required by useActionState)
+ * @param formData - Form data containing username and password
+ * @returns Form state with success status or errors
+ */
+export async function redeemInvitation(
+    token: string,
+    _prevState: RedeemFormState,
+    formData: FormData
+): Promise<RedeemFormState> {
+    const name = formData.get('name')?.toString();
+    const username = formData.get('username')?.toString();
+    const password = formData.get('password')?.toString();
+    const passwordConfirm = formData.get('passwordConfirm')?.toString();
+
+    // 1. Validate form inputs
+    const errors = validateFormInputs(name, username, password, passwordConfirm);
     if (Object.keys(errors).length > 0) {
         return { errors, success: false };
     }
@@ -229,7 +276,7 @@ export async function redeemInvitation(
             username: username as string,
             email: `${username}@local.hdhomey.app`, // Username plugin requires email
             emailVerified: false,
-            name: username as string, // Default name to username
+            name: name as string,
             role: invitation.role,
             isActive: true,
         });

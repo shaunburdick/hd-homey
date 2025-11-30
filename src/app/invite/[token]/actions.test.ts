@@ -79,6 +79,7 @@ describe('redeemInvitation()', () => {
         }).returning();
 
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -96,6 +97,7 @@ describe('redeemInvitation()', () => {
 
         expect(createdUser).toBeDefined();
         expect(createdUser?.username).toBe('newuser');
+        expect(createdUser?.name).toBe('New User');
         expect(createdUser?.role).toBe('viewer');
         expect(createdUser?.isActive).toBe(true);
 
@@ -118,8 +120,50 @@ describe('redeemInvitation()', () => {
         );
     });
 
+    it('should validate name is required', async () => {
+        const formData = new FormData();
+        formData.set('username', 'newuser');
+        formData.set('password', VALID_PASSWORD);
+        formData.set('passwordConfirm', VALID_PASSWORD);
+
+        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+
+        expect(result.success).toBe(false);
+        expect(result.errors.name).toBeDefined();
+        expect(result.errors.name[0]).toContain('required');
+    });
+
+    it('should validate name minimum length', async () => {
+        const formData = new FormData();
+        formData.set('name', 'A'); // Too short
+        formData.set('username', 'newuser');
+        formData.set('password', VALID_PASSWORD);
+        formData.set('passwordConfirm', VALID_PASSWORD);
+
+        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+
+        expect(result.success).toBe(false);
+        expect(result.errors.name).toBeDefined();
+        expect(result.errors.name[0]).toContain('at least 2 characters');
+    });
+
+    it('should validate name maximum length', async () => {
+        const formData = new FormData();
+        formData.set('name', 'a'.repeat(101)); // Too long
+        formData.set('username', 'newuser');
+        formData.set('password', VALID_PASSWORD);
+        formData.set('passwordConfirm', VALID_PASSWORD);
+
+        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+
+        expect(result.success).toBe(false);
+        expect(result.errors.name).toBeDefined();
+        expect(result.errors.name[0]).toContain('100 characters');
+    });
+
     it('should validate username is required', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
@@ -132,6 +176,7 @@ describe('redeemInvitation()', () => {
 
     it('should validate username minimum length', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'ab'); // Too short
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -145,6 +190,7 @@ describe('redeemInvitation()', () => {
 
     it('should validate username maximum length', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'a'.repeat(51)); // Too long
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -158,6 +204,7 @@ describe('redeemInvitation()', () => {
 
     it('should validate username format', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'user@invalid'); // Invalid characters
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -171,6 +218,7 @@ describe('redeemInvitation()', () => {
 
     it('should validate password is required', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('passwordConfirm', VALID_PASSWORD);
 
@@ -183,6 +231,7 @@ describe('redeemInvitation()', () => {
 
     it('should validate password minimum length', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', 'short'); // Too short
         formData.set('passwordConfirm', 'short');
@@ -197,6 +246,7 @@ describe('redeemInvitation()', () => {
     it('should validate password maximum length', async () => {
         const longPassword = 'a'.repeat(101);
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', longPassword);
         formData.set('passwordConfirm', longPassword);
@@ -210,6 +260,7 @@ describe('redeemInvitation()', () => {
 
     it('should validate password confirmation is required', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', VALID_PASSWORD);
         // No passwordConfirm
@@ -223,6 +274,7 @@ describe('redeemInvitation()', () => {
 
     it('should validate passwords match', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', 'different-password');
@@ -236,6 +288,7 @@ describe('redeemInvitation()', () => {
 
     it('should reject invalid invitation token', async () => {
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -259,6 +312,7 @@ describe('redeemInvitation()', () => {
         }).returning();
 
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -284,6 +338,7 @@ describe('redeemInvitation()', () => {
         }).returning();
 
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -309,6 +364,7 @@ describe('redeemInvitation()', () => {
         }).returning();
 
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'newuser');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -332,6 +388,7 @@ describe('redeemInvitation()', () => {
         }).returning();
 
         const formData = new FormData();
+        formData.set('name', 'New User');
         formData.set('username', 'admin'); // Already exists in seeded data
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -355,6 +412,7 @@ describe('redeemInvitation()', () => {
         }).returning();
 
         const formData = new FormData();
+        formData.set('name', 'New Admin');
         formData.set('username', 'newadmin');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
@@ -384,6 +442,7 @@ describe('redeemInvitation()', () => {
         }).returning();
 
         const formData = new FormData();
+        formData.set('name', 'Password User');
         formData.set('username', 'passworduser');
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);

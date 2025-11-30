@@ -71,6 +71,18 @@ export default function RedemptionForm({ token }: RedemptionFormProps) {
 
             <form action={formAction}>
                 <Input
+                    label="Display Name"
+                    name="name"
+                    type="text"
+                    required
+                    autoComplete="name"
+                    placeholder="Enter your display name"
+                    error={state.errors.name?.[0]}
+                    disabled={isPending}
+                    helpText="Your name as it will appear in the app"
+                />
+
+                <Input
                     label="Username"
                     name="username"
                     type="text"
