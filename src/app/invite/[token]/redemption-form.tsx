@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { redeemInvitation, type RedeemFormState } from './actions';
 import { Input, Button, FormErrors } from '@/components';
-import { authClient } from '@/lib/auth/auth-client';
 
 const initialState: RedeemFormState = { errors: {} };
 
@@ -35,34 +34,13 @@ export default function RedemptionForm({ token }: RedemptionFormProps) {
         initialState
     );
 
-    // Handle auto-sign-in when account is created successfully
+    // Redirect to sign-in page when account is created successfully
     useEffect(() => {
-        if (state.success && state.credentials !== undefined) {
-            const { username, password } = state.credentials;
-            const signIn = async () => {
-                try {
-                    const { error } = await authClient.signIn.username({
-                        username,
-                        password,
-                    });
-
-                    if (error) {
-                        // If sign-in fails, redirect to sign-in page
-                        router.push('/users/signin');
-                    } else {
-                        // Success! Redirect to home
-                        router.push('/');
-                        router.refresh();
-                    }
-                } catch {
-                    // On error, redirect to sign-in page
-                    router.push('/users/signin');
-                }
-            };
-
-            signIn();
+        if (state.success) {
+            // Account created - redirect to sign-in page
+            router.push('/users/signin?created=true');
         }
-    }, [state.success, state.credentials, router]);
+    }, [state.success, router]);
 
     return (
         <div>

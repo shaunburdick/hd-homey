@@ -47,13 +47,11 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        // Should return success with credentials
+        // Should return success (no credentials for security)
         const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
 
         expect(result.success).toBe(true);
-        expect(result.credentials).toBeDefined();
-        expect(result.credentials?.username).toBe('newuser');
-        expect(result.credentials?.password).toBe(VALID_PASSWORD);
+        expect(Object.keys(result.errors)).toHaveLength(0);
 
         // Verify user was created
         const { user } = await import('@/lib/database/schema');

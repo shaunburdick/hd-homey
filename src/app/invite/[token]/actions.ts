@@ -19,10 +19,6 @@ import { InvitationValidationError } from '@/lib/invitations/types';
 export interface RedeemFormState {
     errors: Record<string, string[]>;
     success?: boolean;
-    credentials?: {
-        username: string;
-        password: string;
-    };
     values?: {
         name?: string;
         username?: string;
@@ -322,16 +318,10 @@ export async function redeemInvitation(
             })
             .where(eq(invitations.token, token));
 
-        // 6. Return success with credentials for client-side sign-in
-        // Note: Server actions can't set cookies properly, so we return credentials
-        // for the client component to handle sign-in
+        // 6. Return success - user will be redirected to sign-in page
         return {
             errors: {},
             success: true,
-            credentials: {
-                username: username as string,
-                password: password as string,
-            }
         };
     } catch (error: unknown) {
         // No redirect errors in this flow anymore
