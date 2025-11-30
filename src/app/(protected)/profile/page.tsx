@@ -44,7 +44,7 @@ export default async function ProfilePage() {
                 <InfoCard
                     title="Account Information"
                     items={[
-                        { label: 'Username', value: user.email },
+                        { label: 'Username', value: user.username ?? user.email },
                         { label: 'Display Name', value: user.name },
                         { label: 'Role', value: user.role === AuthRoles.Admin ? 'Administrator' : 'Viewer' },
                         { label: 'Account Created', value: user.createdAt.toLocaleString() },
