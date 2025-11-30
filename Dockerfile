@@ -29,6 +29,7 @@ RUN node scripts/generate-version.mjs && \
 
 # 3. Production image, copy all the files and run next
 FROM base AS runner
+LABEL org.opencontainers.image.description="HD Homey - A Next.js proxy for HDHomeRun devices enabling secure remote access to live TV streams. Visit https://github.com/shaunburdick/hd-homey for more information."
 WORKDIR /app
 
 ENV NODE_ENV=production
