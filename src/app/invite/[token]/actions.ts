@@ -23,6 +23,10 @@ export interface RedeemFormState {
         username: string;
         password: string;
     };
+    values?: {
+        name?: string;
+        username?: string;
+    };
 }
 
 /**
@@ -218,7 +222,14 @@ export async function redeemInvitation(
     // 1. Validate form inputs
     const errors = validateFormInputs(name, username, password, passwordConfirm);
     if (Object.keys(errors).length > 0) {
-        return { errors, success: false };
+        return {
+            errors,
+            success: false,
+            values: {
+                name: name ?? undefined,
+                username: username ?? undefined,
+            }
+        };
     }
 
     // 2. Validate invitation
@@ -236,7 +247,11 @@ export async function redeemInvitation(
                 errors: {
                     invitation: [errorMessage]
                 },
-                success: false
+                success: false,
+                values: {
+                    name: name ?? undefined,
+                    username: username ?? undefined,
+                }
             };
         }
 
@@ -245,7 +260,11 @@ export async function redeemInvitation(
                 errors: {
                     invitation: ['Invitation not found.']
                 },
-                success: false
+                success: false,
+                values: {
+                    name: name ?? undefined,
+                    username: username ?? undefined,
+                }
             };
         }
 
@@ -261,7 +280,11 @@ export async function redeemInvitation(
                 errors: {
                     username: ['Username already exists. Please choose a different username.']
                 },
-                success: false
+                success: false,
+                values: {
+                    name: name ?? undefined,
+                    username: username ?? undefined,
+                }
             };
         }
 
@@ -318,7 +341,11 @@ export async function redeemInvitation(
             errors: {
                 form: [error instanceof Error ? error.message : 'Failed to create account. Please try again.']
             },
-            success: false
+            success: false,
+            values: {
+                name: name ?? undefined,
+                username: username ?? undefined,
+            }
         };
     }
 }

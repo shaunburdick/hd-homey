@@ -112,6 +112,7 @@ export default function RedemptionForm({ token }: RedemptionFormProps) {
                     error={state.errors.name?.[0]}
                     disabled={isPending}
                     helpText="Your name as it will appear in the app"
+                    defaultValue={state.values?.name}
                 />
 
                 <Input
@@ -124,6 +125,7 @@ export default function RedemptionForm({ token }: RedemptionFormProps) {
                     error={state.errors.username?.[0]}
                     disabled={isPending}
                     helpText="Choose a unique username for your account"
+                    defaultValue={state.values?.username}
                 />
 
                 <Input
