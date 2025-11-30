@@ -1,0 +1,279 @@
+/**
+ * Server Actions for Invitation Redemption (SPEC-010)
+ * Public operations: redeem invitation and create user account
+ */
+
+'use server';
+
+import crypto from 'node:crypto';
+import { redirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
+import { eq } from 'drizzle-orm';
+import { headers } from 'next/headers';
+import { getDb } from '@/lib/database/db';
+import { user, account, invitations } from '@/lib/database/schema';
+import { generateHashPassword } from '@/lib/user';
+import { validateInvitation } from '@/lib/invitations/invitations';
+import { InvitationValidationError } from '@/lib/invitations/types';
+import { auth } from '@/lib/auth/auth';
+
+/**
+ * Form state for invitation redemption
+ */
+export interface RedeemFormState {
+    errors: Record<string, string[]>;
+    success?: boolean;
+}
+
+/**
+ * Validate username format and length
+ *
+ * @param username - Username to validate
+ * @returns Validation error or null if valid
+ */
+function validateUsername(username: string | undefined): string | null {
+    if (username === undefined || username.length === 0) {
+        return 'Username is required';
+    }
+
+    if (username.length < 3) {
+        return 'Username must be at least 3 characters';
+    }
+
+    if (username.length > 50) {
+        return 'Username must be 50 characters or less';
+    }
+
+    // Username should only contain alphanumeric, underscore, and hyphen
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+        return 'Username can only contain letters, numbers, underscores, and hyphens';
+    }
+
+    return null;
+}
+
+/**
+ * Validate password strength
+ *
+ * @param password - Password to validate
+ * @returns Validation error or null if valid
+ */
+function validatePassword(password: string | undefined): string | null {
+    if (password === undefined || password.length === 0) {
+        return 'Password is required';
+    }
+
+    if (password.length < 8) {
+        return 'Password must be at least 8 characters';
+    }
+
+    if (password.length > 100) {
+        return 'Password must be 100 characters or less';
+    }
+
+    return null;
+}
+
+// Error messages
+const PASSWORD_MISMATCH_ERROR = 'Passwords do not match';
+
+/**
+ * Validate password confirmation matches
+ *
+ * @param password - Original password
+ * @param passwordConfirm - Confirmation password
+ * @returns Validation error or null if valid
+ */
+function validatePasswordConfirmation(
+    password: string | undefined,
+    passwordConfirm: string | undefined
+): string | null {
+    if (passwordConfirm === undefined || passwordConfirm.length === 0) {
+        return 'Password confirmation is required';
+    }
+
+    // Use constant-time comparison to prevent timing attacks
+    // Both values must be defined and same length for timingSafeEqual
+    if (password === undefined || passwordConfirm === undefined) {
+        return PASSWORD_MISMATCH_ERROR;
+    }
+
+    // timingSafeEqual requires equal length buffers
+    if (password.length !== passwordConfirm.length) {
+        return PASSWORD_MISMATCH_ERROR;
+    }
+
+    if (crypto.timingSafeEqual(
+        Buffer.from(password),
+        Buffer.from(passwordConfirm)
+    ) === false) {
+        return PASSWORD_MISMATCH_ERROR;
+    }
+
+    return null;
+}
+
+/**
+ * Get user-friendly error message for invitation validation errors
+ *
+ * @param error - Invitation validation error
+ * @returns User-friendly error message
+ */
+function getInvitationErrorMessage(error: InvitationValidationError): string {
+    switch (error) {
+        case InvitationValidationError.NOT_FOUND:
+            return 'Invalid invitation link. Please check the URL and try again.';
+        case InvitationValidationError.EXPIRED:
+            return 'This invitation has expired. Please contact an administrator for a new invitation.';
+        case InvitationValidationError.ALREADY_USED:
+            return 'This invitation has already been used.';
+        case InvitationValidationError.REVOKED:
+            return 'This invitation has been revoked. Please contact an administrator.';
+        default:
+            return 'Invalid invitation. Please contact an administrator.';
+    }
+}
+
+/**
+ * Redeem an invitation to create a new user account
+ * Public action - no authentication required
+ *
+ * @param token - Invitation token from URL
+ * @param prevState - Previous form state (unused but required by useActionState)
+ * @param formData - Form data containing username and password
+ * @returns Form state with success status or errors
+ */
+export async function redeemInvitation(
+    token: string,
+    _prevState: RedeemFormState,
+    formData: FormData
+): Promise<RedeemFormState> {
+    const username = formData.get('username')?.toString();
+    const password = formData.get('password')?.toString();
+    const passwordConfirm = formData.get('passwordConfirm')?.toString();
+
+    // 1. Validate form inputs
+    const errors: Record<string, string[]> = {};
+
+    const usernameError = validateUsername(username);
+    if (usernameError !== null) {
+        errors.username = [usernameError];
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError !== null) {
+        errors.password = [passwordError];
+    }
+
+    const passwordConfirmError = validatePasswordConfirmation(password, passwordConfirm);
+    if (passwordConfirmError !== null) {
+        errors.passwordConfirm = [passwordConfirmError];
+    }
+
+    if (Object.keys(errors).length > 0) {
+        return { errors, success: false };
+    }
+
+    // 2. Validate invitation
+    try {
+        const db = await getDb();
+
+        const validationResult = await validateInvitation(db, token);
+
+        if (!validationResult.valid) {
+            const errorMessage = validationResult.error !== undefined
+                ? getInvitationErrorMessage(validationResult.error)
+                : 'Invalid invitation. Please contact an administrator.';
+
+            return {
+                errors: {
+                    invitation: [errorMessage]
+                },
+                success: false
+            };
+        }
+
+        if (validationResult.invitation === undefined) {
+            return {
+                errors: {
+                    invitation: ['Invitation not found.']
+                },
+                success: false
+            };
+        }
+
+        const { invitation } = validationResult;
+
+        // 3. Check username uniqueness
+        const existingUser = await db.query.user.findFirst({
+            where: eq(user.username, username as string)
+        });
+
+        if (existingUser !== undefined) {
+            return {
+                errors: {
+                    username: ['Username already exists. Please choose a different username.']
+                },
+                success: false
+            };
+        }
+
+        // 4. Create user account
+        // Generate Better-Auth compatible IDs
+        const userId = crypto.randomUUID();
+        const accountId = crypto.randomUUID();
+
+        // Create user record with role from invitation
+        await db.insert(user).values({
+            id: userId,
+            username: username as string,
+            email: `${username}@local.hdhomey.app`, // Username plugin requires email
+            emailVerified: false,
+            name: username as string, // Default name to username
+            role: invitation.role,
+            isActive: true,
+        });
+
+        // Create account record with hashed password
+        const hashedPassword = await generateHashPassword(password as string);
+        await db.insert(account).values({
+            id: accountId,
+            userId,
+            accountId: userId,
+            providerId: 'credential',
+            password: hashedPassword,
+        });
+
+        // 5. Mark invitation as used
+        await db.update(invitations)
+            .set({
+                usedAt: new Date(),
+                usedBy: userId
+            })
+            .where(eq(invitations.token, token));
+
+        // 6. Sign in the new user
+        await auth.api.signInUsername({
+            body: {
+                username: username as string,
+                password: password as string,
+            },
+            headers: await headers(),
+        });
+
+        // 7. Redirect to home page
+        redirect('/');
+    } catch (error) {
+        // Re-throw redirect errors (this is expected behavior)
+        if (error !== null && error !== undefined && isRedirectError(error)) {
+            throw error;
+        }
+
+        return {
+            errors: {
+                form: [error instanceof Error ? error.message : 'Failed to create account. Please try again.']
+            },
+            success: false
+        };
+    }
+}
