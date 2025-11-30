@@ -3,7 +3,15 @@
 ## Test Date
 November 30, 2025
 
-## Bug Description
+## Security Improvement & Bug Fix
+
+### Security Change (Bug #6 Revision)
+**Original Bug #6**: Auto-login after account creation wasn't working.
+**Original Fix**: Return plain-text credentials from server action, sign in client-side.
+**Security Issue**: Returning plain-text passwords in server action responses is a security risk.
+**Final Fix**: Remove auto-login feature entirely. Redirect to sign-in page with success message.
+
+### Bug #7: Form Value Preservation
 When validation errors occur during invitation redemption, the form should preserve the user's input so they don't have to re-enter everything.
 
 ## Implementation Changes
@@ -17,6 +25,12 @@ When validation errors occur during invitation redemption, the form should prese
 2. **`src/app/invite/[token]/redemption-form.tsx`**
    - Added `defaultValue` props to name and username Input components
    - Values sourced from `state.values` when available
+   - Removed auto-login (security fix)
+   - Redirect to `/users/signin?created=true` on success
+
+3. **`src/app/users/signin/page.tsx`**
+   - Added success message display when `?created=true` query param present
+   - Message: "Account created successfully! Please sign in with your new credentials."
 
 ### Test Invitation
 Created test invitation:
@@ -110,6 +124,22 @@ Created test invitation:
 - Username field retains: "ab"
 - Password fields are empty (security)
 
+### Scenario 6: Successful Account Creation
+**Test Steps:**
+1. Navigate to invitation URL
+2. Enter:
+   - Display Name: "Test User"
+   - Username: "testuser123"
+   - Password: "testpass123"
+   - Confirm Password: "testpass123"
+3. Click "Create Account"
+
+**Expected Result:**
+- Redirected to `/users/signin?created=true`
+- Success message displayed: "Account created successfully! Please sign in with your new credentials."
+- Can sign in with the new credentials
+- After sign-in, redirected to home page as viewer role
+
 ## Technical Verification
 
 ### Automated Tests
@@ -128,12 +158,19 @@ Created test invitation:
 
 ## Security Considerations
 
-**Why passwords are NOT preserved:**
+**Why passwords are NOT preserved in forms:**
 - Security best practice: never pre-fill password fields
 - Prevents password exposure in browser dev tools
 - Prevents password caching in browser history
 - Forces user to consciously re-enter credentials
 - Aligns with OWASP recommendations
+
+**Why we don't return credentials from server actions:**
+- Plain-text passwords should never be in API/action responses
+- Even in memory briefly, it's an unnecessary security risk
+- Server actions run on the server but responses go over the network
+- Better to require one extra sign-in than risk credential exposure
+- No auto-login is better than insecure auto-login
 
 ## Status
 
@@ -143,6 +180,6 @@ Created test invitation:
 
 ## Next Steps
 
-1. Manually verify form behavior in browser (scenarios 1-5 above)
+1. Manually verify form behavior in browser (scenarios 1-6 above)
 2. If verified, proceed to Phase 8 (documentation)
 3. Create PR and merge (Phase 9)
