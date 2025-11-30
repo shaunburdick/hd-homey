@@ -5,7 +5,8 @@
 **Status**: 📝 Planned  
 **Priority**: P2 (Quality of Life - External Documentation)  
 **Owner**: HD Homey Core Team  
-**Version**: 1.0  
+**Version**: 1.1  
+**Last Updated**: 2025-11-30  
 
 ---
 
@@ -237,6 +238,7 @@ Currently, HD Homey documentation exists in scattered locations:
 │   ├── tuner-management.md
 │   ├── channel-streaming.md
 │   ├── user-management.md
+│   ├── user-invitations.md # NEW: Invitation system guide
 │   ├── authentication.md
 │   └── video-transcoding.md
 ├── configuration/
@@ -398,6 +400,7 @@ Never commit AUTH_SECRET to version control!
 - **Related To**:
   - All existing features (documenting them)
   - SPEC-004 (design system provides styling foundation)
+  - SPEC-010 (user invitations feature - needs documentation)
 
 ---
 
@@ -465,7 +468,9 @@ This specification does NOT include:
    - In-browser playback
    - External player setup
 4. **User Management** guide
-   - Creating users
+   - Creating users via invitations (primary method)
+   - Managing invitation links
+   - Direct user creation (admin only)
    - Role differences (Admin vs Viewer)
    - Profile management
 5. **Video Transcoding** guide
@@ -801,6 +806,25 @@ Visit `http://localhost:3000` and create your first admin account.
 | `HD_HOMEY_TRANSCODE_DIR` | Transcoding output directory | `./data/transcoding` | `/data/transcoding` |
 | `HD_HOMEY_STREAM_TOKEN_EXPIRY` | Stream token validity (seconds) | `43200` (12 hours) | `86400` (24 hours) |
 ```
+
+---
+
+## Clarifications Applied
+
+### User Invitations Feature (v1.1 - 2025-11-30)
+**Context**: SPEC-010 (User Invitations) was completed after this spec was written. The documentation site needs to include comprehensive coverage of the invitation system.
+
+**Added**:
+- User Invitations guide in Features section (`features/user-invitations.md`)
+- Documentation requirements for invitation system:
+  - How admins generate invitation links
+  - How new users redeem invitations
+  - Managing invitation lifecycle (pending, used, expired, revoked)
+  - Security considerations (one-time use, expiration, token format)
+  - Troubleshooting invitation issues
+- Updated Phase 3 deliverables to include user invitations guide
+
+**Rationale**: User invitations are now the primary method for adding new users to HD Homey. This feature needs clear documentation for both administrators (generating invitations) and new users (accepting invitations).
 
 ---
 
