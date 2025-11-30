@@ -33,15 +33,16 @@ This guide provides comprehensive test cases for the User Invitations feature (S
    - **Expected**: Invitation appears in the list with "Pending" status
    - Copy the invitation URL
 
-4. **Redeem the Invitation** (use incognito/different browser)
-   - Navigate to the copied invitation URL
-   - **Expected**: See "Create Your Account" page
-   - **Expected**: Invitation details show (role: Viewer, note: "Test invitation for QA")
-   - Fill in username: "testuser"
-   - Fill in password: "testpass123"
-   - Fill in password confirmation: "testpass123"
-   - Click "Create Account"
-   - **Expected**: Auto-signed in and redirected to home page
+ 4. **Redeem the Invitation** (use incognito/different browser)
+    - Navigate to the copied invitation URL
+    - **Expected**: See "Create Your Account" page
+    - **Expected**: Invitation details show (role: Viewer, note: "Test invitation for QA")
+    - Fill in display name: "Test User"
+    - Fill in username: "testuser"
+    - Fill in password: "testpass123"
+    - Fill in password confirmation: "testpass123"
+    - Click "Create Account"
+    - **Expected**: Auto-signed in and redirected to home page
 
 5. **Verify Invitation Status**
    - Sign out and sign back in as admin
@@ -118,19 +119,26 @@ This guide provides comprehensive test cases for the User Invitations feature (S
 
 ---
 
-### 6. Form Validation - Username
+### 6. Form Validation - Display Name & Username
 
-**Objective**: Verify username field validation works correctly.
+**Objective**: Verify display name and username field validation works correctly.
 
 **Steps**:
 1. Create an invitation and navigate to redemption page
-2. Leave username field empty
-3. Fill in password fields
+2. Leave display name field empty
+3. Fill in other fields
 4. Submit form
-5. **Expected**: Error message appears for username field
-6. Fill in username with existing username from database
+5. **Expected**: Error message appears for display name field
+6. Fill in display name: "A" (too short)
 7. Submit form
-8. **Expected**: Error message: "Username already exists" or similar
+8. **Expected**: Error message: "Display name must be at least 2 characters"
+9. Fill in valid display name: "Test User"
+10. Leave username field empty
+11. Submit form
+12. **Expected**: Error message appears for username field
+13. Fill in username with existing username from database
+14. Submit form
+15. **Expected**: Error message: "Username already exists" or similar
 
 **Result**: ✅ PASS / ❌ FAIL
 
@@ -200,7 +208,7 @@ This guide provides comprehensive test cases for the User Invitations feature (S
 1. As admin, create invitation with role: "Admin"
 2. Copy invitation URL
 3. Redeem invitation (incognito/different browser)
-4. Create account: username "newadmin", password "adminpass123"
+4. Create account: display name "New Admin", username "newadmin", password "adminpass123"
 5. After auto-sign-in, navigate to `/settings`
 6. **Expected**: Settings page loads successfully (confirms admin access)
 7. **Expected**: Can see "User Invitations" link
@@ -217,7 +225,7 @@ This guide provides comprehensive test cases for the User Invitations feature (S
 1. As admin, create invitation with role: "Viewer"
 2. Copy invitation URL
 3. Redeem invitation (incognito/different browser)
-4. Create account: username "newviewer", password "viewerpass123"
+4. Create account: display name "New Viewer", username "newviewer", password "viewerpass123"
 5. After auto-sign-in, try to navigate directly to `/settings`
 6. **Expected**: Redirected to `/forbidden` or similar
 7. Try to navigate to `/settings/invitations`
@@ -292,16 +300,17 @@ This guide provides comprehensive test cases for the User Invitations feature (S
 
 ## Automation Test Coverage
 
-The following scenarios are covered by automated tests (69 tests total):
+The following scenarios are covered by automated tests (72 tests total):
 
 ✅ Token generation (crypto-secure, URL-safe)
 ✅ Invitation validation logic
 ✅ Status determination (pending/used/expired/revoked)
 ✅ Database queries and relations
 ✅ Admin authorization checks
-✅ Form data validation
+✅ Form data validation (display name, username, password)
 ✅ Password hashing and account creation
 ✅ Auto-sign-in after redemption
+✅ Display name validation (min 2, max 100 characters)
 
 ---
 
