@@ -200,11 +200,6 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
             <video
                 ref={videoRef}
                 controls
-                style={{
-                    width: '100%',
-                    maxWidth: '1280px',
-                    backgroundColor: 'black',
-                }}
                 playsInline
                 aria-label={`Video player for ${channelName}`}
             >

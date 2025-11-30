@@ -8,6 +8,9 @@
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
+  /* Aspect ratio 16:9 to match typical video */
+  aspect-ratio: 16 / 9;
+  background-color: black;
 }
 
 /**
@@ -24,9 +27,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--color-bg-primary);
+  background-color: #000000;
   z-index: 10;
-  min-height: 400px; /* Ensure minimum height for visibility */
 }
 
 /**
@@ -101,10 +103,6 @@
   .loadingMessage {
     font-size: var(--font-size-base);
   }
-  
-  .loadingOverlay {
-    min-height: 250px;
-  }
 }
 
 /**
@@ -115,4 +113,17 @@
     width: 100px;
     height: 100px;
   }
+}
+
+/**
+ * Video element styling
+ * Position absolutely within container to overlay properly
+ */
+.videoContainer video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
