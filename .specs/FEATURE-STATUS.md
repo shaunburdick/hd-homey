@@ -250,14 +250,7 @@ Comprehensive documentation website hosted on GitHub Pages:
 
 ## 🐛 Known Issues
 
-### Minor Bugs
-
-1. **Empty Lineup Crash**
-   - Issue: `HDTuner.updateLineup()` crashes on empty lineup
-   - Location: `src/lib/hdhr/tuner.ts`
-   - Priority: Low (rare edge case)
-   - Status: Documented in tests
-   - Impact: Only affects tuners with no channels
+No known issues at this time! 🎉
 
 ---
 
