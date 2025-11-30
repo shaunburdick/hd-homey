@@ -41,7 +41,7 @@ const mockRedirect = vi.fn(() => {
 });
 
 vi.mock('next/navigation', () => ({
-    redirect: (...args: unknown[]) => mockRedirect(...args),
+    redirect: () => mockRedirect(),
 }));
 
 vi.mock('next/dist/client/components/redirect-error', () => ({

@@ -66,6 +66,18 @@ export default [
                     message: 'Do not redeclare CSS variables as constants. ' +
                         'Use them directly in CSS modules or utility classes.'
                 }
+            ],
+            // Allow CSS variable duplication - they should be used inline
+            'sonarjs/no-duplicate-string': [
+                'error',
+                {
+                    threshold: 3,
+                    // Common CSS variables that are reused throughout components
+                    ignoreStrings: 'var(--space-1),var(--space-2),var(--space-3),var(--space-4),var(--space-5),' +
+                        'var(--color-primary),var(--color-secondary),var(--color-error),var(--color-success),' +
+                        'var(--color-text-primary),var(--color-text-secondary),var(--color-border),' +
+                        'var(--radius-sm),var(--radius-md),var(--radius-lg)'
+                }
             ]
         },
     },
