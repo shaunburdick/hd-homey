@@ -120,20 +120,39 @@ export async function stopTranscode(process: ChildProcess): Promise<void> {
         return;
     }
 
+    // Check if process is already dead
+    if (process.exitCode !== null || process.killed) {
+        Logger.debug({ pid: process.pid, exitCode: process.exitCode }, 'Process already exited');
+        return;
+    }
+
     Logger.info({ pid: process.pid }, 'Stopping transcode process');
 
     return await new Promise((resolve) => {
         const timeout = setTimeout(() => {
             Logger.warn({ pid: process.pid }, 'Process did not exit gracefully, sending SIGKILL');
             process.kill('SIGKILL');
+            // Don't resolve here - wait for the exit event
         }, 5000);
 
-        process.on('exit', () => {
+        // Remove any existing listeners to prevent duplicate event handling
+        process.removeAllListeners('exit');
+
+        process.once('exit', () => {
             clearTimeout(timeout);
+            Logger.debug({ pid: process.pid }, 'Process exit confirmed');
             resolve();
         });
 
-        process.kill('SIGTERM');
+        // Send SIGTERM to gracefully stop FFmpeg
+        try {
+            process.kill('SIGTERM');
+        } catch (error) {
+            // Process might have already exited
+            Logger.debug({ error, pid: process.pid }, 'Error sending SIGTERM (process may have already exited)');
+            clearTimeout(timeout);
+            resolve();
+        }
     });
 }
 
@@ -166,7 +185,14 @@ export async function waitForPlaylist(
 export async function cleanupTranscodeFiles(outputDir: string): Promise<void> {
     try {
         Logger.debug({ outputDir }, 'Cleaning up transcode files');
+
+        // Small delay to ensure FFmpeg has fully released all file handles
+        // This prevents "No such file or directory" errors when FFmpeg
+        // is still writing segments during shutdown
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         await fs.rm(outputDir, { recursive: true, force: true });
+        Logger.debug({ outputDir }, 'Transcode files cleaned up successfully');
     } catch (error) {
         Logger.error({ error, outputDir }, 'Failed to cleanup transcode files');
     }
