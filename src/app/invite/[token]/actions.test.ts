@@ -2,7 +2,7 @@
  * Unit tests for invitation redemption server action (SPEC-010)
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import type { RedeemFormState } from './actions';
 import { redeemInvitation } from './actions';
@@ -18,37 +18,6 @@ vi.mock('@/lib/database/db', () => ({
 
 const { refreshDb } = setupTestDatabase();
 
-// Mock auth signIn
-const mockSignInUsername = vi.fn();
-vi.mock('@/lib/auth/auth', () => ({
-    auth: {
-        api: {
-            signInUsername: (...args: unknown[]) => mockSignInUsername(...args),
-        },
-    },
-}));
-
-// Mock headers
-vi.mock('next/headers', () => ({
-    headers: vi.fn(() => Promise.resolve(new Headers())),
-}));
-
-// Mock redirect and isRedirectError
-const mockRedirect = vi.fn(() => {
-    const error = new Error('NEXT_REDIRECT');
-    (error as Error & { digest?: string }).digest = 'NEXT_REDIRECT';
-    throw error;
-});
-
-vi.mock('next/navigation', () => ({
-    redirect: () => mockRedirect(),
-}));
-
-vi.mock('next/dist/client/components/redirect-error', () => ({
-    isRedirectError: (error: unknown) =>
-        error instanceof Error &&
-        ((error as Error & { digest?: string }).digest === 'NEXT_REDIRECT' || error.message === 'NEXT_REDIRECT'),
-}));
 
 // Test constants
 const TEST_ADMIN_ID = 'test-admin-uuid';
@@ -59,12 +28,6 @@ const FUTURE_EXPIRY = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 describe('redeemInvitation()', () => {
     beforeEach(async () => {
         testDb = await refreshDb({ seed: true });
-        vi.clearAllMocks();
-        mockSignInUsername.mockResolvedValue({ data: {}, error: null });
-    });
-
-    afterEach(() => {
-        vi.clearAllMocks();
     });
 
     it('should successfully redeem valid invitation', async () => {
@@ -84,10 +47,13 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        // Should redirect on success
-        await expect(
-            redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData)
-        ).rejects.toThrow('NEXT_REDIRECT');
+        // Should return success with credentials
+        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+
+        expect(result.success).toBe(true);
+        expect(result.credentials).toBeDefined();
+        expect(result.credentials?.username).toBe('newuser');
+        expect(result.credentials?.password).toBe(VALID_PASSWORD);
 
         // Verify user was created
         const { user } = await import('@/lib/database/schema');
@@ -108,16 +74,6 @@ describe('redeemInvitation()', () => {
 
         expect(updatedInvitation?.usedAt).toBeDefined();
         expect(updatedInvitation?.usedBy).toBe(createdUser?.id);
-
-        // Verify sign in was called
-        expect(mockSignInUsername).toHaveBeenCalledWith(
-            expect.objectContaining({
-                body: {
-                    username: 'newuser',
-                    password: VALID_PASSWORD,
-                }
-            })
-        );
     });
 
     it('should validate name is required', async () => {
@@ -417,9 +373,9 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        await expect(
-            redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData)
-        ).rejects.toThrow('NEXT_REDIRECT');
+        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+
+        expect(result.success).toBe(true);
 
         // Verify user has admin role
         const { user } = await import('@/lib/database/schema');
@@ -447,9 +403,9 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        await expect(
-            redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData)
-        ).rejects.toThrow('NEXT_REDIRECT');
+        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+
+        expect(result.success).toBe(true);
 
         // Verify account record exists with hashed password
         const { user, account } = await import('@/lib/database/schema');

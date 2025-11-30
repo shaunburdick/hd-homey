@@ -6,16 +6,12 @@
 'use server';
 
 import crypto from 'node:crypto';
-import { redirect } from 'next/navigation';
-import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { eq } from 'drizzle-orm';
-import { headers } from 'next/headers';
 import { getDb } from '@/lib/database/db';
 import { user, account, invitations } from '@/lib/database/schema';
 import { generateHashPassword } from '@/lib/user';
 import { validateInvitation } from '@/lib/invitations/invitations';
 import { InvitationValidationError } from '@/lib/invitations/types';
-import { auth } from '@/lib/auth/auth';
 
 /**
  * Form state for invitation redemption
@@ -23,6 +19,10 @@ import { auth } from '@/lib/auth/auth';
 export interface RedeemFormState {
     errors: Record<string, string[]>;
     success?: boolean;
+    credentials?: {
+        username: string;
+        password: string;
+    };
 }
 
 /**
@@ -299,22 +299,20 @@ export async function redeemInvitation(
             })
             .where(eq(invitations.token, token));
 
-        // 6. Sign in the new user
-        await auth.api.signInUsername({
-            body: {
+        // 6. Return success with credentials for client-side sign-in
+        // Note: Server actions can't set cookies properly, so we return credentials
+        // for the client component to handle sign-in
+        return {
+            errors: {},
+            success: true,
+            credentials: {
                 username: username as string,
                 password: password as string,
-            },
-            headers: await headers(),
-        });
-
-        // 7. Redirect to home page
-        redirect('/');
-    } catch (error) {
-        // Re-throw redirect errors (this is expected behavior)
-        if (error !== null && error !== undefined && isRedirectError(error)) {
-            throw error;
-        }
+            }
+        };
+    } catch (error: unknown) {
+        // No redirect errors in this flow anymore
+        // Return generic error
 
         return {
             errors: {

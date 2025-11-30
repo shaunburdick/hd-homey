@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { redeemInvitation, type RedeemFormState } from './actions';
 import { Input, Button, FormErrors } from '@/components';
+import { authClient } from '@/lib/auth/auth-client';
 
 const initialState: RedeemFormState = { errors: {} };
 
@@ -13,6 +15,7 @@ interface RedemptionFormProps {
 }
 
 export default function RedemptionForm({ token }: RedemptionFormProps) {
+    const router = useRouter();
     const [state, formAction, isPending] = useActionState(
         async (prevState: RedeemFormState, formData: FormData) => {
             try {
@@ -31,6 +34,35 @@ export default function RedemptionForm({ token }: RedemptionFormProps) {
         },
         initialState
     );
+
+    // Handle auto-sign-in when account is created successfully
+    useEffect(() => {
+        if (state.success && state.credentials !== undefined) {
+            const { username, password } = state.credentials;
+            const signIn = async () => {
+                try {
+                    const { error } = await authClient.signIn.username({
+                        username,
+                        password,
+                    });
+
+                    if (error) {
+                        // If sign-in fails, redirect to sign-in page
+                        router.push('/users/signin');
+                    } else {
+                        // Success! Redirect to home
+                        router.push('/');
+                        router.refresh();
+                    }
+                } catch {
+                    // On error, redirect to sign-in page
+                    router.push('/users/signin');
+                }
+            };
+
+            signIn();
+        }
+    }, [state.success, state.credentials, router]);
 
     return (
         <div>
