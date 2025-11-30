@@ -29,6 +29,7 @@ export async function proxy(req: NextRequest) {
     const publicRoutes = [
         '/users/signin',      // Login page
         '/get-started',       // Initial setup wizard
+        '/invite/',           // Invitation redemption pages
         '/api/auth',          // Better-Auth API routes
         '/api/health',        // Health check endpoint (for Docker/monitoring)
     ];
