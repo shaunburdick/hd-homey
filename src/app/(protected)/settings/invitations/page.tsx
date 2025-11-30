@@ -52,24 +52,20 @@ export default async function InvitationsPage() {
                 Manage user invitations to allow new people to create accounts.
             </p>
 
+            {/* Create invitation form */}
             <div
                 style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 2fr',
-                    gap: 'var(--space-4)',
                     marginBottom: 'var(--space-4)',
+                    maxWidth: '600px',
                 }}
             >
-                {/* Create invitation form */}
-                <div>
-                    <InvitationForm />
-                </div>
+                <InvitationForm />
+            </div>
 
-                {/* List of invitations */}
-                <div>
-                    <h2>All Invitations</h2>
-                    <InvitationList invitations={invitations} />
-                </div>
+            {/* List of invitations */}
+            <div>
+                <h2>All Invitations</h2>
+                <InvitationList invitations={invitations} />
             </div>
         </div>
     );
