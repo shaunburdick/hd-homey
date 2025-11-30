@@ -34,11 +34,24 @@ header > nav > ul {
 .logo a {
     display: flex;
     align-items: center;
+    gap: var(--space-2);
     text-decoration: none;
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-lg);
+}
+
+.logo a:hover {
+    color: var(--color-accent);
 }
 
 .logo img {
     border-radius: var(--radius-sm);
+}
+
+.app-name {
+    /* Always visible on mobile */
+    display: inline;
 }
 
 /* Desktop menu items - hidden on mobile */
@@ -169,8 +182,13 @@ header > nav > ul {
         display: block;
     }
     
-    .desktop-menu-item.logo {
+    .logo {
         margin-right: var(--space-2);
+    }
+
+    .app-name {
+        /* Hide app name on desktop to save space */
+        display: none;
     }
 
     .desktop-menu-item a {

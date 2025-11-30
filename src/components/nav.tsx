@@ -63,9 +63,10 @@ export default function Nav() {
         <>
             <nav aria-label="Main navigation">
                 <ul>
-                    <li className='desktop-menu-item logo'>
+                    <li className='logo'>
                         <Link href="/" aria-label="HD Homey Home">
                             <Image src='/icon.png' alt='' width={32} height={32}/>
+                            <span className="app-name">HD Homey</span>
                         </Link>
                     </li>
                     {menuItems.map((item) => (
