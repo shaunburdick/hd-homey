@@ -6,7 +6,9 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Hls from 'hls.js';
+import styles from './video-player.module.css';
 
 interface VideoPlayerProps {
     playlistUrl: string;
@@ -18,7 +20,8 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [showLoading, setShowLoading] = useState(true);
+    const loadingStartTimeRef = useRef<number>(0);
 
     // Check HLS support early (before effect)
     const hlsSupported = typeof window !== 'undefined' && (
@@ -27,25 +30,43 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
     );
 
     useEffect(() => {
+        // Initialize loading start time when component mounts
+        loadingStartTimeRef.current = Date.now();
         const video = videoRef.current;
         if (!video) {
             return;
         }
 
+        /**
+         * Handle the completion of loading with a minimum display time
+         * to avoid flashing on fast loads
+         */
+        const handleLoadingComplete = () => {
+            const loadingDuration = Date.now() - loadingStartTimeRef.current;
+            const minimumDisplayTime = 300; // ms
+
+            if (loadingDuration < minimumDisplayTime) {
+                // Wait for the remaining time to meet minimum display time
+                setTimeout(() => {
+                    setShowLoading(false);
+                }, minimumDisplayTime - loadingDuration);
+            } else {
+                setShowLoading(false);
+            }
+
+            if (autoplay) {
+                video.play().catch(() => {
+                    // Autoplay might fail due to browser policies
+                });
+            }
+        };
+
         // Check if browser supports HLS natively (Safari)
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = playlistUrl;
-            const handleLoaded = () => {
-                setLoading(false);
-                if (autoplay) {
-                    video.play().catch(() => {
-                        // Autoplay might fail due to browser policies
-                    });
-                }
-            };
-            video.addEventListener('loadedmetadata', handleLoaded);
+            video.addEventListener('loadedmetadata', handleLoadingComplete);
             return () => {
-                video.removeEventListener('loadedmetadata', handleLoaded);
+                video.removeEventListener('loadedmetadata', handleLoadingComplete);
                 video.src = '';
             };
         }
@@ -104,16 +125,9 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
             hls.loadSource(playlistUrl);
             hls.attachMedia(video);
 
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                setLoading(false);
-                if (autoplay) {
-                    video.play().catch(() => {
-                        // Autoplay might fail due to browser policies
-                    });
-                }
-            });
+            hls.on(Hls.Events.MANIFEST_PARSED, handleLoadingComplete);
 
-            hls.on(Hls.Events.ERROR, (event, data) => {
+            hls.on(Hls.Events.ERROR, (_event, data) => {
                 if (data.fatal) {
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
@@ -126,6 +140,7 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
                             break;
                         default:
                             setError(`Playback error: ${data.details || 'Unknown error'}`);
+                            setShowLoading(false);
                             hls.destroy();
                             break;
                     }
@@ -162,18 +177,29 @@ export default function VideoPlayer({ playlistUrl, channelName, autoplay = true 
     }
 
     return (
-        <div>
-            {loading && (
-                <p>Loading stream...</p>
+        <div className={styles.videoContainer}>
+            {showLoading && (
+                <div
+                    className={styles.loadingOverlay}
+                    role="status"
+                    aria-live="polite"
+                    aria-label="Loading video stream"
+                >
+                    <Image
+                        src="/hd-homey.webp"
+                        alt=""
+                        width={120}
+                        height={120}
+                        className={styles.loadingLogo}
+                        aria-hidden="true"
+                        priority
+                    />
+                    <p className={styles.loadingMessage}>Loading stream...</p>
+                </div>
             )}
             <video
                 ref={videoRef}
                 controls
-                style={{
-                    width: '100%',
-                    maxWidth: '1280px',
-                    backgroundColor: 'black',
-                }}
                 playsInline
                 aria-label={`Video player for ${channelName}`}
             >
