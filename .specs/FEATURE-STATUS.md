@@ -180,6 +180,26 @@ One-time-use invitation links for user onboarding:
 
 ---
 
+### SPEC-011: GitHub Pages Documentation Site
+**Status**: 📝 Planned (Spec Complete)  
+**Created**: 2025-11-30  
+**Priority**: P2 (External documentation)
+
+Comprehensive documentation website hosted on GitHub Pages:
+- VitePress-based static site with built-in search
+- Dark theme matching application design
+- Complete guides: Getting Started, Features, Configuration, Troubleshooting, API, Contributing
+- Automatic deployment via GitHub Actions
+- Mobile-responsive with excellent accessibility
+- SEO optimized with proper meta tags
+
+**Estimated Time**: ~25 hours (7 implementation phases)  
+**Impact**: Significantly improves user onboarding and reduces support burden. Professional documentation experience for public project.
+
+**Files**: TBD (not yet implemented, will live in `/docs` directory)
+
+---
+
 ## 🔄 In Progress Features
 
 ### SPEC-007: Tuner Autodiscovery
