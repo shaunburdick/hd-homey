@@ -35,19 +35,34 @@ export default async function SettingsPage() {
                         <h2 className="mt-0 mb-3 text-xl">
                             User Management
                         </h2>
-                        <Link
-                            href="/users"
-                            className="settings-link inline-flex items-center gap-2 p-4
-                                rounded no-underline text-primary transition"
-                            style={{
-                                backgroundColor: 'var(--color-bg-secondary)',
-                                border: '1px solid var(--color-border)',
-                            }}
-                        >
-                            <span>👥</span>
-                            <span>Manage Users</span>
-                            <span className="text-tertiary" style={{ marginLeft: 'auto' }}>→</span>
-                        </Link>
+                        <div className="grid gap-3">
+                            <Link
+                                href="/users"
+                                className="settings-link inline-flex items-center gap-2 p-4
+                                    rounded no-underline text-primary transition"
+                                style={{
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    border: '1px solid var(--color-border)',
+                                }}
+                            >
+                                <span>👥</span>
+                                <span>Manage Users</span>
+                                <span className="text-tertiary" style={{ marginLeft: 'auto' }}>→</span>
+                            </Link>
+                            <Link
+                                href="/settings/invitations"
+                                className="settings-link inline-flex items-center gap-2 p-4
+                                    rounded no-underline text-primary transition"
+                                style={{
+                                    backgroundColor: 'var(--color-bg-secondary)',
+                                    border: '1px solid var(--color-border)',
+                                }}
+                            >
+                                <span>✉️</span>
+                                <span>User Invitations</span>
+                                <span className="text-tertiary" style={{ marginLeft: 'auto' }}>→</span>
+                            </Link>
+                        </div>
                     </section>
 
                     <section>

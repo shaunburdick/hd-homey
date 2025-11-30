@@ -2,9 +2,10 @@
 
 **Feature ID**: `010-user-invitations`  
 **Created**: 2025-11-29  
-**Status**: Draft  
+**Status**: ✅ Completed  
 **Owner**: HD Homey Team  
-**Version**: 1.2
+**Version**: 1.3  
+**Completed**: 2025-11-30
 
 ## Overview
 
@@ -41,7 +42,7 @@ The User Invitations feature allows administrators to generate secure, one-time-
 - **Given** I have a valid invitation link, **When** I visit it, **Then** I see a signup form
 - **Given** I am on the signup form, **When** I enter a username and password, **Then** my account is created with the role specified in the invitation
 - **Given** I submit valid credentials, **When** my account is created, **Then** the invitation is marked as used and can never be used again
-- **Given** I submit valid credentials, **When** my account is created, **Then** I am automatically signed in and redirected to the home page
+- **Given** I submit valid credentials, **When** my account is created, **Then** I am redirected to the sign-in page with a success message
 - **Given** the invitation has been used, **When** someone tries to use the same link, **Then** they see an error message "This invitation has already been used"
 
 ---
@@ -99,8 +100,8 @@ The User Invitations feature allows administrators to generate secure, one-time-
 - **FR-011**: System MUST display all invitations to any admin, showing status (Pending, Used, Expired, Revoked), note, and creator
 - **FR-011a**: System MUST show which admin created each invitation in the invitations list
 - **FR-012**: System MUST create new user accounts with the role specified in the invitation
-- **FR-013**: System MUST automatically sign in the new user after successful account creation via invitation
-- **FR-014**: System MUST redirect newly created users to the home page after signup
+- **FR-013**: System MUST redirect users to the sign-in page after successful account creation via invitation
+- **FR-014**: System MUST display a success message on the sign-in page indicating the account was created successfully
 - **FR-015**: System MUST provide clear error messages for invalid, expired, used, or revoked invitations
 
 ### Non-Functional Requirements
@@ -429,4 +430,40 @@ CREATE INDEX idx_invitations_status ON invitations(used_at, expires_at, revoked_
 - Updated DELETE /api/invitations/[id] to clarify any admin can revoke
 - Updated edge cases to clarify admin-to-admin visibility and revocation permissions
 
-*This specification should be reviewed and approved before creating an implementation plan.*
+---
+
+## Implementation Notes
+
+### Security Decision: No Auto-Login (v1.3)
+**Date**: 2025-11-30  
+**Rationale**: During implementation, we initially attempted to auto-sign-in users after account creation. However, this required returning plain-text credentials from the server action, which posed a security risk:
+- Plain-text passwords in server action responses
+- Potential credential exposure in network traffic, logs, or monitoring
+- Violates security best practices
+
+**Decision**: Remove auto-login feature. Instead:
+- Redirect users to `/users/signin?created=true` after successful account creation
+- Display success message: "Account created successfully! Please sign in with your new credentials."
+- Require one manual sign-in (acceptable UX trade-off for better security)
+
+**Requirements Updated**:
+- FR-013: Changed from "automatically sign in" to "redirect to sign-in page"
+- FR-014: Changed from "redirect to home page" to "display success message on sign-in page"
+- User Story 2 acceptance criteria updated to reflect redirect behavior
+
+### Display Name Field Added (v1.3)
+**Implementation Detail**: Added `name` field to invitation redemption form:
+- Allows users to set their display name during account creation
+- Validation: 2-100 characters
+- Stored in `user.name` field
+- Improves user experience (no need to set name later)
+
+### Form Value Preservation (v1.3)
+**Implementation Detail**: When validation errors occur, form preserves entered values:
+- Name and username fields retain their values
+- Passwords are never preserved (security best practice)
+- Reduces user frustration from re-entering data
+
+---
+
+*Feature completed and tested 2025-11-30. All acceptance criteria met.*

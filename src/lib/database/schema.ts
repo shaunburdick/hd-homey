@@ -193,3 +193,58 @@ export const settings = sqliteTable('settings', {
 });
 
 export type Setting = typeof settings.$inferSelect;
+
+// ===================================
+// Invitations Table (SPEC-010)
+// ===================================
+
+/**
+ * Invitations table for user invitation system
+ * Allows admins to generate secure one-time-use invitation links
+ */
+export const invitations = sqliteTable(
+    'invitations',
+    {
+        id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+        token: text('token', { length: 64 }).notNull().unique(), // URL-safe base64 encoded (32 bytes)
+        role: text('role', { length: 20 }).notNull(), // 'admin' or 'viewer'
+        note: text('note', { length: 200 }), // Optional admin label
+        createdBy: text('created_by')
+            .notNull()
+            .references(() => user.id, { onDelete: 'restrict' }),
+        createdAt: integer('created_at', { mode: 'timestamp_ms' })
+            .notNull()
+            .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`),
+        expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+        usedAt: integer('used_at', { mode: 'timestamp_ms' }),
+        usedBy: text('used_by').references(() => user.id, { onDelete: 'restrict' }),
+        revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+        revokedBy: text('revoked_by').references(() => user.id, { onDelete: 'restrict' }),
+    },
+    (table) => [
+        index('idx_invitations_token').on(table.token),
+        index('idx_invitations_created_by').on(table.createdBy),
+        index('idx_invitations_status').on(table.usedAt, table.expiresAt, table.revokedAt),
+    ]
+);
+
+export type Invitation = typeof invitations.$inferSelect;
+
+// Invitation Relations
+export const invitationRelations = relations(invitations, ({ one }) => ({
+    creator: one(user, {
+        fields: [invitations.createdBy],
+        references: [user.id],
+        relationName: 'invitationCreator',
+    }),
+    redeemer: one(user, {
+        fields: [invitations.usedBy],
+        references: [user.id],
+        relationName: 'invitationRedeemer',
+    }),
+    revoker: one(user, {
+        fields: [invitations.revokedBy],
+        references: [user.id],
+        relationName: 'invitationRevoker',
+    }),
+}));

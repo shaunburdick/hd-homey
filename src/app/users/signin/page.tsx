@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Logger from '@/lib/logger';
 import { authClient } from '@/lib/auth/auth-client';
 import { Input, Button, Card } from '@/components';
@@ -12,6 +12,12 @@ export default function SignIn() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Check if user was redirected after account creation
+    const successMessage = searchParams.get('created') === 'true'
+        ? 'Account created successfully! Please sign in with your new credentials.'
+        : null;
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -64,6 +70,16 @@ export default function SignIn() {
 
                 <Card>
                     <form onSubmit={handleSubmit}>
+                        {successMessage && (
+                            <div role="alert" className="rounded p-4 mb-4" style={{
+                                backgroundColor: 'var(--color-success-bg)',
+                                border: '1px solid var(--color-success)',
+                                color: 'var(--color-success)',
+                            }}>
+                                {successMessage}
+                            </div>
+                        )}
+
                         {error && (
                             <div role="alert" className="rounded p-4 mb-4" style={{
                                 backgroundColor: 'var(--color-error-bg)',

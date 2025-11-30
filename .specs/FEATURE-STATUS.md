@@ -1,7 +1,7 @@
 # HD Homey Feature Status
 
-**Last Updated**: 2025-11-29  
-**Version**: 1.0.0-beta.3 (Better-Auth Migration Complete)
+**Last Updated**: 2025-11-30  
+**Version**: 1.0.0-beta.3 (Better-Auth Migration Complete, User Invitations Complete)
 
 This document provides a quick overview of all features and their implementation status.
 
@@ -157,26 +157,33 @@ This document provides a quick overview of all features and their implementation
 
 ---
 
-## 📝 Planned Features
-
 ### SPEC-010: User Invitations
-**Status**: 📝 Planned (Spec Complete)  
-**Created**: 2025-11-29  
-**Priority**: P2 (Quality of life improvement)
+**Status**: ✅ Complete  
+**Completed**: 2025-11-30
 
-One-time-use invitation links for user onboarding:
-- Admin generates secure invitation links
-- Cryptographically secure tokens (32+ bytes)
-- Role specification (Admin/Viewer)
-- 30-day expiration
-- Invitation management UI
-- Public signup page via invitation link
+One-time-use invitation links for secure user onboarding:
+- Admin creates invitation links with role specification (Admin/Viewer)
+- Cryptographically secure tokens (32 bytes, URL-safe base64)
+- Optional notes/labels for tracking (max 200 chars)
+- 30-day automatic expiration
+- Comprehensive invitation management UI
+- Public signup page accessible via invitation token
+- Display name collection during signup
+- Form value preservation on validation errors
+- Secure redirect to sign-in (no auto-login)
 - One-time redemption enforcement
+- Revocation capability for unused invitations
+- Smart sorting (unused first, then used/revoked)
 
-**Estimated Time**: ~12 hours  
-**Impact**: Better onboarding UX, eliminates need for admins to manually create accounts
+**Files**: 
+- Core: `src/lib/invitations/**`, `src/lib/actions/invitations.ts`
+- Admin UI: `src/app/(protected)/settings/invitations/**`, `src/components/invitation-*.tsx`
+- Public: `src/app/invite/[token]/**`
+- Database: `invitations` table in schema
 
-**Files**: TBD (not yet implemented)
+---
+
+## 📝 Planned Features
 
 ---
 
@@ -230,7 +237,7 @@ Comprehensive documentation website hosted on GitHub Pages:
 
 ## 📊 Testing Status
 
-**Total Tests**: 200 passing (100%)  
+**Total Tests**: 295 passing (100%)  
 **Test Coverage**: Excellent (core features fully tested)  
 **Execution Time**: ~2.5s
 
@@ -240,6 +247,7 @@ Comprehensive documentation website hosted on GitHub Pages:
 - ✅ Database Schema: 21 tests
 - ✅ API Endpoints: 16 tests
 - ✅ Authorization: 15 tests
+- ✅ Invitations: 76 tests (invitation logic, actions, redemption)
 - ✅ Stream Tokens: Full coverage
 - ✅ Transcoding: Full coverage
 - ✅ Settings: Full coverage
