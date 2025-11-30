@@ -7,6 +7,12 @@ import type { TranscodeSettings } from './transcoding/types';
 import { DEFAULT_SETTINGS } from './transcoding/types';
 
 /**
+ * In-memory cache for stream secret
+ * Reduces database queries from ~350/min to <1/min for token validation
+ */
+let streamSecretCache: string | null = null;
+
+/**
  * Get a setting value from database
  */
 export async function getSetting(key: string): Promise<string | null> {
@@ -105,8 +111,15 @@ export function generateStreamSecret(): string {
 
 /**
  * Get the current stream secret (generates one if missing)
+ * Cached in memory to avoid repeated database queries during token validation
  */
 export async function getStreamSecret(): Promise<string> {
+    // Return cached value if available
+    if (streamSecretCache !== null) {
+        return streamSecretCache;
+    }
+
+    // Fetch from database
     let secret = await getSetting('stream_secret');
 
     if (secret === null || secret === '') {
@@ -115,6 +128,8 @@ export async function getStreamSecret(): Promise<string> {
         await setSetting('stream_secret', secret);
     }
 
+    // Cache the secret for future requests
+    streamSecretCache = secret;
     return secret;
 }
 
@@ -124,6 +139,10 @@ export async function getStreamSecret(): Promise<string> {
 export async function regenerateStreamSecret(): Promise<string> {
     const newSecret = generateStreamSecret();
     await setSetting('stream_secret', newSecret);
+
+    // Update cache with new secret
+    streamSecretCache = newSecret;
+
     Logger.info('Stream secret regenerated');
     return newSecret;
 }

@@ -30,6 +30,7 @@ export async function proxy(req: NextRequest) {
         '/users/signin',      // Login page
         '/get-started',       // Initial setup wizard
         '/api/auth',          // Better-Auth API routes
+        '/api/health',        // Health check endpoint (for Docker/monitoring)
     ];
 
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));

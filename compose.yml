@@ -4,15 +4,52 @@ services:
             context: .
             dockerfile: ./Dockerfile
         image: ghcr.io/shaunburdick/hd-homey
+        container_name: hd-homey
+        restart: unless-stopped
+        
+        # Resource limits for Docker VMs (adjust based on your VM capacity)
+        deploy:
+            resources:
+                limits:
+                    cpus: '4.0'           # Max 4 vCPUs
+                    memory: 2G            # 2GB max memory
+                reservations:
+                    cpus: '1.0'           # Guarantee 1 vCPU
+                    memory: 512M          # Guarantee 512MB
+        
         ports:
             - "3000:3000"
+        
         volumes:
-            - data:/app/data
+            - data:/app/data                        # Persistent database storage
+            - transcode-tmp:/tmp/transcoding        # tmpfs for transcoding segments
+        
         environment:
             - NODE_ENV=production
             - AUTH_TRUST_HOST=true
             - AUTH_SECRET=${AUTH_SECRET:-please-change-this-secret-in-production}
             - HD_HOMEY_DB_PATH=${HD_HOMEY_DB_PATH:-./data/db/hd_homey.db}
+            
+            # Transcoding optimization
+            - HD_HOMEY_TRANSCODE_DIR=/tmp/transcoding
+            - FFMPEG_THREADS=${FFMPEG_THREADS:-2}
+            
+            # Logging level
+            - LOG_LEVEL=${LOG_LEVEL:-info}
+        
+        # Health check for Docker orchestration
+        healthcheck:
+            test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
 
 volumes:
     data:
+    transcode-tmp:
+        driver: local
+        driver_opts:
+            type: tmpfs
+            device: tmpfs
+            o: size=1g,uid=1001,gid=1001  # 1GB tmpfs in RAM, owned by nextjs user
