@@ -3,6 +3,7 @@ import { InvitationForm } from '@/components';
 import InvitationList from '@/components/invitation-list';
 import { listInvitations } from '@/lib/actions/invitations';
 import { auth } from '@/lib/auth/auth';
+import { AuthRoles } from '@/lib/auth-roles';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export default async function InvitationsPage() {
     // Verify admin access (proxy already checked authentication)
     const session = await auth.api.getSession({ headers: await import('next/headers').then(m => m.headers()) });
 
-    if (!session?.user?.isAdmin) {
+    if (!session?.user || session.user.role !== AuthRoles.Admin) {
         redirect('/forbidden');
     }
 
