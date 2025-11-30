@@ -29,6 +29,12 @@ This plan outlines the implementation of a comprehensive documentation website f
   "devDependencies": {
     "vitepress": "^1.6.4",
     "vue": "^3.5.13"
+  },
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview",
+    "lint": "eslint '.vitepress/**/*.{ts,vue}'"
   }
 }
 ```
@@ -36,7 +42,8 @@ This plan outlines the implementation of a comprehensive documentation website f
 **Rationale**:
 - VitePress 1.6.4 is the latest stable version with excellent performance and built-in search
 - Vue 3.5.13 is a peer dependency required by VitePress
-- No additional dependencies needed for basic documentation site
+- No additional dependencies needed (ESLint inherited from root project)
+- Linting script only covers TypeScript/Vue files in `.vitepress/` (not Markdown content)
 - Minimal bundle size (<500KB for search index per NFR-004)
 
 ### Platform & Constraints
@@ -64,8 +71,9 @@ This plan outlines the implementation of a comprehensive documentation website f
 - Built-in search for quick information access
 
 ✅ **3. Code Quality**
-- TypeScript for VitePress config
-- ESLint disabled for docs (content-focused, not code)
+- TypeScript for VitePress config and theme customization
+- ESLint enabled for TypeScript files (using same rules as main app for consistency)
+- Markdown content not linted (content-focused, not code)
 - Version controlled with main project
 - Clear directory structure
 
@@ -291,7 +299,44 @@ export default {
 
 ---
 
-### 6. Content Sync Strategy
+### 6. Linting and Code Quality Strategy
+
+**Decision**: Extend existing ESLint configuration to cover VitePress TypeScript files
+
+**What Gets Linted**:
+- ✅ TypeScript configuration: `docs/.vitepress/config.ts`
+- ✅ Theme customization: `docs/.vitepress/theme/*.ts`
+- ✅ Vue components: `docs/.vitepress/theme/*.vue` (if added)
+- ❌ Markdown content: `docs/**/*.md` (NOT linted)
+
+**Implementation**:
+```javascript
+// eslint.config.mjs (root project)
+export default [
+  // ... existing config
+  {
+    files: ['docs/.vitepress/**/*.{ts,vue}'],
+    // Inherits all rules from main app config
+  }
+]
+```
+
+**Rationale**:
+- **Consistency**: Same code style across entire project
+- **Type Safety**: Catch errors in TypeScript config before runtime
+- **Developer Experience**: Editor hints and auto-completion work properly
+- **CI/CD Integration**: Fail builds on linting errors
+- **No Overhead**: Markdown content is NOT linted (content-focused, not code)
+
+**Benefits**:
+- VitePress config is TypeScript code that benefits from linting
+- Theme customization follows same patterns as main app
+- Catches common errors (unused variables, type issues, etc.)
+- Ensures quality without adding complexity
+
+---
+
+### 7. Content Sync Strategy
 
 **Decision**: Manual content sync with periodic reviews
 
@@ -441,6 +486,9 @@ jobs:
       - name: Install dependencies
         run: cd docs && npm ci
       
+      - name: Lint TypeScript files
+        run: cd docs && npm run lint
+      
       - name: Build documentation
         run: cd docs && npm run docs:build
       
@@ -473,6 +521,9 @@ cd docs
 
 # Install dependencies
 npm ci
+
+# Lint TypeScript configuration files
+npm run lint
 
 # Start development server
 npm run docs:dev
@@ -697,17 +748,21 @@ git commit -m "chore(docs): update vitepress to vX.Y.Z"
 **Tasks**:
 1. [ ] Create `/docs` directory structure
 2. [ ] Initialize npm and install VitePress
-3. [ ] Create `docs/package.json` with scripts
-4. [ ] Create VitePress config (`docs/.vitepress/config.ts`)
-5. [ ] Extract design tokens to `docs/.vitepress/theme/style.css`
-6. [ ] Copy logo/assets to `docs/.vitepress/public/`
-7. [ ] Create basic home page (`docs/index.md`)
-8. [ ] Set up navigation and sidebar structure
-9. [ ] Test local dev server (`npm run docs:dev`)
-10. [ ] Verify design consistency with main app
+3. [ ] Create `docs/package.json` with scripts (dev, build, preview, lint)
+4. [ ] Update root `eslint.config.mjs` to include `docs/.vitepress/**/*.ts`
+5. [ ] Create VitePress config (`docs/.vitepress/config.ts`)
+6. [ ] Extract design tokens to `docs/.vitepress/theme/style.css`
+7. [ ] Create custom theme entry (`docs/.vitepress/theme/index.ts`)
+8. [ ] Copy logo/assets to `docs/.vitepress/public/`
+9. [ ] Create basic home page (`docs/index.md`)
+10. [ ] Set up navigation and sidebar structure
+11. [ ] Run linting to verify config (`cd docs && npm run lint`)
+12. [ ] Test local dev server (`npm run docs:dev`)
+13. [ ] Verify design consistency with main app
 
 **Deliverables**:
 - [ ] `/docs` directory initialized
+- [ ] ESLint configured to lint TypeScript files in docs
 - [ ] VitePress running locally
 - [ ] Custom dark theme matching HD Homey design
 - [ ] Basic navigation sidebar
@@ -716,6 +771,7 @@ git commit -m "chore(docs): update vitepress to vX.Y.Z"
 **Verification**:
 ```bash
 cd docs
+npm run lint      # Should pass with no errors
 npm run docs:dev  # Should start on http://localhost:5173
 ```
 
@@ -878,7 +934,7 @@ npm run docs:dev  # Should start on http://localhost:5173
 **Tasks**:
 1. [ ] Create `.github/workflows/docs.yml`
 2. [ ] Configure workflow triggers (push to main, manual dispatch)
-3. [ ] Set up build job (install, build, upload artifact)
+3. [ ] Set up build job (lint TypeScript, build docs, upload artifact)
 4. [ ] Set up deploy job (deploy to GitHub Pages)
 5. [ ] Enable GitHub Pages in repository settings
    - Source: GitHub Actions
@@ -888,6 +944,8 @@ npm run docs:dev  # Should start on http://localhost:5173
 8. [ ] Add "Edit this page on GitHub" links
 9. [ ] Update README.md with documentation link
 10. [ ] Create docs badge for README
+
+**Note**: Workflow should lint TypeScript config files but NOT markdown content.
 
 **Deliverables**:
 - [ ] GitHub Actions workflow for automatic deployment
@@ -1050,6 +1108,55 @@ open https://shaunburdick.github.io/hd-homey/
 ### Q4: Do we need i18n/translation support?
 **Answer**: No - English only per spec.  
 **Rationale**: Additional complexity, small user base doesn't justify yet.
+
+### Q5: Screenshots/Images Strategy
+**Question**: Should we include screenshots of the HD Homey UI in the documentation?  
+**Answer**: Start without screenshots, add incrementally based on user feedback (Option C).  
+**Rationale**: UI is still changing frequently. Focus on clear text instructions first, then add screenshots for areas where users report confusion. This reduces maintenance burden during active development.
+
+### Q6: Example Configuration Values
+**Question**: Should we use real/example IP addresses and hostnames in docs?  
+**Answer**: Mix of both - use real-looking examples with clear "replace with your values" callouts (Option C).  
+**Rationale**: Examples like `192.168.1.100` and `tuner.example.com` are more relatable than generic placeholders, but clear callouts prevent copy-paste errors.
+
+### Q7: Code of Conduct
+**Question**: Should we add a Code of Conduct in the Contributing section?  
+**Answer**: Link to Contributor Covenant 2.1 (Option A).  
+**Rationale**: Industry-standard, well-tested, widely recognized. No need to reinvent the wheel.
+
+### Q8: Documentation Feedback Mechanism
+**Question**: How should users provide feedback on documentation?  
+**Answer**: GitHub issues only (Option A).  
+**Rationale**: Simple, low maintenance, already familiar to users. "Edit this page" link enables direct contributions.
+
+### Q9: Search Scope
+**Question**: Should search index all pages or exclude some?  
+**Answer**: Index everything - user docs and developer docs (Option A).  
+**Rationale**: Developers searching for "architecture" should find it. No performance penalty with VitePress's efficient indexing.
+
+### Q10: First Release Timing
+**Question**: When should we deploy the docs site?  
+**Answer**: Wait until all 7 phases complete, then PR all at once (Option B).  
+**Rationale**: Comprehensive launch with complete documentation. Single PR for easier review and atomic deployment.
+
+### Q11: Linting Strategy for Documentation
+**Question**: Should we lint the VitePress TypeScript files?  
+**Answer**: Yes - use same ESLint rules as main app for consistency.  
+**Rationale**: 
+- VitePress config is TypeScript code that benefits from linting
+- Theme customization files (TypeScript) should follow same patterns
+- Markdown content is NOT linted (content-focused, not code)
+- Ensures consistency across entire project
+- Catches errors in config before runtime
+- Better developer experience with editor hints
+
+**What Gets Linted**:
+- ✅ `docs/.vitepress/config.ts` (TypeScript configuration)
+- ✅ `docs/.vitepress/theme/*.ts` (Theme customization)
+- ✅ `docs/.vitepress/theme/*.vue` (Vue components if added)
+- ❌ `docs/**/*.md` (Markdown content - NO linting)
+
+**Implementation**: Extend existing `eslint.config.mjs` to include `docs/.vitepress/**/*.ts`
 
 ---
 
