@@ -53,7 +53,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
                             'This invitation has been revoked by an administrator.'}
                     </p>
                 </div>
-                <Link href="/" style={{ color: 'var(--color-primary)' }}>
+                <Link href="/" style={{ color: 'var(--color-accent)' }}>
                     Return to Home
                 </Link>
             </div>

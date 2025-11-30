@@ -133,7 +133,7 @@ export default function RedemptionForm({ token }: RedemptionFormProps) {
                 Already have an account?{' '}
                 <Link
                     href="/users/signin"
-                    style={{ color: 'var(--color-primary)' }}
+                    style={{ color: 'var(--color-accent)' }}
                 >
                     Sign in
                 </Link>

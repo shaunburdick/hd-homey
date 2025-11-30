@@ -30,7 +30,7 @@ export default function InvitationCard({ invitation, onRevoke }: InvitationCardP
         if (isExpired) {
             return { color: 'var(--color-warning)', text: 'Expired' };
         }
-        return { color: 'var(--color-primary)', text: 'Pending' };
+        return { color: 'var(--color-info)', text: 'Pending' };
     };
 
     const status = getStatusDisplay();
