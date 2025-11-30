@@ -4,7 +4,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import {
     InvitationStatus,
     InvitationValidationError
@@ -203,10 +203,11 @@ export async function getAllInvitationsWithCreators(db: DB) {
         })
         .from(invitations)
         .leftJoin(user, eq(invitations.createdBy, user.id))
+        .orderBy(desc(invitations.createdAt))
         .all();
 
     // Transform to InvitationWithCreator format and add status
-    return results.map((row) => ({
+    const invitationsWithStatus = results.map((row) => ({
         id: row.id,
         token: row.token,
         role: row.role,
@@ -225,6 +226,25 @@ export async function getAllInvitationsWithCreators(db: DB) {
         },
         status: getInvitationStatus(row as Invitation),
     }));
+
+    // Sort: unused invitations first (pending/expired), then used/revoked
+    // Within each group, already sorted by createdAt DESC from query
+    return invitationsWithStatus.sort((a, b) => {
+        const aIsUnused = a.status === InvitationStatus.PENDING || a.status === InvitationStatus.EXPIRED;
+        const bIsUnused = b.status === InvitationStatus.PENDING || b.status === InvitationStatus.EXPIRED;
+
+        // If one is unused and the other isn't, unused comes first
+        if (aIsUnused && !bIsUnused) {
+            return -1;
+        }
+        if (!aIsUnused && bIsUnused) {
+            return 1;
+        }
+
+        // Both are same type (both unused or both used/revoked)
+        // Already sorted by createdAt DESC from query, maintain that order
+        return 0;
+    });
 }
 
 /**

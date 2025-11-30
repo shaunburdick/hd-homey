@@ -425,4 +425,89 @@ describe('Invitation Business Logic', () => {
             }
         });
     });
+
+    describe('getAllInvitationsWithCreators() sorting', () => {
+        it('should sort unused invitations before used/revoked, newest first', async () => {
+            const { getAllInvitationsWithCreators } = await import('./invitations');
+            const { invitations } = await import('@/lib/database/schema');
+
+            // Create invitations with different statuses and dates
+            await testDb.insert(invitations).values([
+                {
+                    token: 'old-used',
+                    role: 'viewer',
+                    createdBy: TEST_ADMIN_ID,
+                    createdAt: new Date('2025-01-01'),
+                    expiresAt: new Date('2026-01-01'),
+                    usedAt: new Date('2025-01-02'),
+                    usedBy: TEST_USER_ID,
+                },
+                {
+                    token: 'recent-pending',
+                    role: 'viewer',
+                    createdBy: TEST_ADMIN_ID,
+                    createdAt: new Date('2025-03-01'),
+                    expiresAt: new Date('2026-03-01'),
+                },
+                {
+                    token: 'old-pending',
+                    role: 'viewer',
+                    createdBy: TEST_ADMIN_ID,
+                    createdAt: new Date('2025-02-01'),
+                    expiresAt: new Date('2026-02-01'),
+                },
+                {
+                    token: 'recent-revoked',
+                    role: 'viewer',
+                    createdBy: TEST_ADMIN_ID,
+                    createdAt: new Date('2025-04-01'),
+                    expiresAt: new Date('2026-04-01'),
+                    revokedAt: new Date('2025-04-02'),
+                    revokedBy: TEST_ADMIN_ID,
+                },
+                {
+                    token: 'expired-pending',
+                    role: 'viewer',
+                    createdBy: TEST_ADMIN_ID,
+                    createdAt: new Date('2025-01-15'),
+                    expiresAt: new Date('2020-01-01'), // Expired
+                },
+            ]);
+
+            const result = await getAllInvitationsWithCreators(testDb);
+
+            // Extract tokens to check order
+            const tokens = result.map(inv => inv.token);
+
+            // Expected order:
+            // 1. Unused (pending/expired) newest first:
+            //    - recent-pending (2025-03-01)
+            //    - old-pending (2025-02-01)
+            //    - expired-pending (2025-01-15) - expired but not used
+            // 2. Used/Revoked newest first:
+            //    - recent-revoked (2025-04-01)
+            //    - old-used (2025-01-01)
+
+            const unusedIndex1 = tokens.indexOf('recent-pending');
+            const unusedIndex2 = tokens.indexOf('old-pending');
+            const unusedIndex3 = tokens.indexOf('expired-pending');
+            const usedIndex1 = tokens.indexOf('recent-revoked');
+            const usedIndex2 = tokens.indexOf('old-used');
+
+            // All unused should come before all used/revoked
+            expect(unusedIndex1).toBeLessThan(usedIndex1);
+            expect(unusedIndex1).toBeLessThan(usedIndex2);
+            expect(unusedIndex2).toBeLessThan(usedIndex1);
+            expect(unusedIndex2).toBeLessThan(usedIndex2);
+            expect(unusedIndex3).toBeLessThan(usedIndex1);
+            expect(unusedIndex3).toBeLessThan(usedIndex2);
+
+            // Within unused group, newest first
+            expect(unusedIndex1).toBeLessThan(unusedIndex2); // recent before old
+            expect(unusedIndex2).toBeLessThan(unusedIndex3); // old-pending before expired
+
+            // Within used/revoked group, newest first
+            expect(usedIndex1).toBeLessThan(usedIndex2); // recent-revoked before old-used
+        });
+    });
 });
