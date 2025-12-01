@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.4] - 2025-11-30
+
+### Added
+
+- **Documentation Site**: Comprehensive VitePress-based documentation site deployed to GitHub Pages
+  - Full installation and configuration guides
+  - Feature documentation for all major capabilities
+  - API reference and troubleshooting guides
+  - Deployed at https://shaunburdick.github.io/hd-homey/
+- **User Invitations (SPEC-010)**: Admins can now invite users via secure invitation links
+  - Generate time-limited invitation tokens with configurable expiry
+  - Support for admin and viewer role invitations
+  - Invitation management UI in settings
+  - Automatic cleanup of expired invitations
+- **Enhanced Video Player**: Improved loading states and error handling
+  - Smooth skeleton loading animation
+  - Better error messages and recovery
+  - Visual feedback during stream initialization
+- **AC4 Audio Codec Support**: Added support for AC4 audio transcoding
+  - Better audio compatibility across devices
+  - Improved error reporting for unsupported codecs
+- **Mobile UI Enhancements**: Added logo and app name to mobile navigation bar
+  - Improved branding on smaller screens
+  - Better visual consistency across devices
+
+### Changed
+
+- **Documentation Links**: App footer and About page now link to comprehensive documentation site instead of GitHub
+  - Footer shows "Docs" link to documentation site
+  - About page prioritizes Documentation link over GitHub
+- **Environment Variables**: Updated all documentation to reflect optional configuration with auto-detection
+  - `HD_HOMEY_PROXY_HOST` now optional (auto-detects from request headers)
+  - `HD_HOMEY_DB_PATH` now accepts full file path instead of directory
+  - Added `HD_HOMEY_TRANSCODE_DIR`, `FFMPEG_PATH`, and `BETTER_AUTH_URL` with auto-detection
+- **Profile Page**: Display username instead of email for better UX
+
+### Fixed
+
+- **Transcoding Cleanup**: Prevent FFmpeg race condition during session cleanup
+  - Fixed process termination timing issues
+  - More reliable cleanup of transcoding resources
+- **Stream Secret Caching**: Optimized Docker deployment with proper secret caching
+  - Reduced database queries for stream token validation
+  - Improved streaming performance
+
+### Documentation
+
+- Updated AGENTS.md with VitePress config version update instructions
+- Updated all environment variable documentation to match current .env-example
+- Added auto-detection guidance for configuration
+- Added troubleshooting for common setup issues
+
 ## [1.0.0-beta.3] - 2025-11-29
 
 ### Changed

@@ -38,6 +38,6 @@ describe('getVersion', () => {
 
         const { getVersion } = await import('./version');
 
-        expect(getVersion()).toBe('1.0.0-beta.3');
+        expect(getVersion()).toBe('1.0.0-beta.4');
     });
 });

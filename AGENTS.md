@@ -359,7 +359,7 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-beta.3** - Better-Auth migration release! Migrates from NextAuth to Better-Auth for improved security and maintainability. Includes automatic database directory creation to prevent build failures. All 203 tests passing. **Breaking change: Users must migrate authentication setup.**
+**1.0.0-beta.4** - Documentation and invitations release! Comprehensive VitePress documentation site, user invitation system (SPEC-010), enhanced video player loading states, and improved environment variable configuration with auto-detection. All 295 tests passing.
 
 ### Release Process
 

@@ -16,7 +16,7 @@ export default defineConfig({
             { text: 'API', link: '/api/' },
             { text: 'Contributing', link: '/contributing/' },
             {
-                text: 'v1.0.0-beta.3',
+                text: 'v1.0.0-beta.4',
                 items: [
                     { text: 'Changelog', link: 'https://github.com/shaunburdick/hd-homey/blob/main/CHANGELOG.md' },
                     { text: 'GitHub', link: 'https://github.com/shaunburdick/hd-homey' }

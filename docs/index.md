@@ -82,7 +82,7 @@ Visit `http://localhost:3000` and create your admin account!
 
 ## Project Status
 
-**Current Version**: v1.0.0-beta.3
+**Current Version**: v1.0.0-beta.4
 
 HD Homey is in active development and ready for production use. All core features are complete with comprehensive test coverage and security hardening.
 
