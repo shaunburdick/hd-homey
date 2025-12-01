@@ -283,16 +283,22 @@ try {
 
 ### Environment Variables
 ```bash
-HD_HOMEY_PROXY_HOST=https://tuner.myawesomesite.com  # External URL for stream proxying
-HD_HOMEY_DB_PATH=./data/db                           # Database directory
+# Required
 AUTH_SECRET=<generate-with-openssl-rand-base64-32>   # Better-Auth encryption key
-BETTER_AUTH_URL=http://localhost:3000                # Auth base URL (fallback to NEXTAUTH_URL)
+
+# Optional (with auto-detection/defaults)
+HD_HOMEY_PROXY_HOST=                                 # External URL (auto-detects from request if blank)
+HD_HOMEY_DB_PATH=./data/db/hd_homey.db               # Full database file path (not just directory)
+HD_HOMEY_TRANSCODE_DIR=./data/transcoding            # Transcoding temp dir (defaults to ${HD_HOMEY_DB_PATH}/transcoding)
+FFMPEG_PATH=ffmpeg                                   # FFmpeg binary (auto-detected from PATH)
+BETTER_AUTH_URL=http://localhost:3000                # Auth base URL (auto-detected from request)
 ```
 
 ### Database
-- SQLite database at `${HD_HOMEY_DB_PATH}/hd_homey.db`
+- SQLite database at path specified by `HD_HOMEY_DB_PATH` (full file path, not directory)
+- Default location: `./data/db/hd_homey.db`
 - Migrations run automatically on startup
-- Tables: `user`, `session`, `account`, `verification`, `tuners`, `channels`, `settings`
+- Tables: `user`, `session`, `account`, `verification`, `invitation`, `tuners`, `channels`, `settings`
 - Schema uses snake_case for DB columns, camelCase for TypeScript properties
 
 ## Common Tasks

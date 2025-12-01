@@ -21,12 +21,13 @@ Example `.env` file:
 # Required
 AUTH_SECRET=your-secret-key-here
 
-# Optional
-HD_HOMEY_PROXY_HOST=https://tuner.example.com
-HD_HOMEY_DB_PATH=./data/db
-HD_HOMEY_TRANSCODE_DIR=/tmp/transcoding
-HD_HOMEY_STREAM_TOKEN_EXPIRY=43200
-FFMPEG_PATH=ffmpeg
+# Optional - Auto-detection and defaults
+HD_HOMEY_PROXY_HOST=                              # Auto-detects from request if blank
+HD_HOMEY_DB_PATH=./data/db/hd_homey.db            # Full path to database file
+HD_HOMEY_TRANSCODE_DIR=./data/transcoding         # Defaults to ${HD_HOMEY_DB_PATH}/transcoding
+HD_HOMEY_STREAM_TOKEN_EXPIRY=43200                # 12 hours
+FFMPEG_PATH=ffmpeg                                # Auto-detected from PATH
+BETTER_AUTH_URL=http://localhost:3000             # Auto-detected if not set
 LOG_LEVEL=info
 NODE_ENV=production
 ```
@@ -101,65 +102,104 @@ openssl rand -base64 32
 
 **Format**: Full URL including protocol (http:// or https://)
 
-**Default**: Auto-detected from incoming requests
+**Default**: Auto-detected from incoming request headers (Host, X-Forwarded-Host, etc.)
+
+**Required**: No - leave blank for auto-detection
 
 **Example**:
 ```bash
+# Auto-detect (recommended for most setups)
+HD_HOMEY_PROXY_HOST=
+
+# Explicit URL (for complex proxy configurations)
 HD_HOMEY_PROXY_HOST=https://tuner.example.com
 ```
 
-**When to set**:
-- Running behind a reverse proxy (nginx, Caddy, Traefik)
-- Accessing from remote networks
-- Auto-detection returns incorrect URLs (e.g., internal IPs)
+**When to set explicitly**:
+- Running behind a reverse proxy with complex routing
+- Auto-detection returns incorrect URLs (e.g., internal IPs instead of external domain)
+- Need consistent URLs regardless of how users access HD Homey
 
-**When not needed**:
+**When to leave blank (auto-detect)**:
 - Local network access only
-- Auto-detection works correctly
+- Simple reverse proxy setups where headers are forwarded correctly
+- Single access point (one domain/IP)
+
+::: tip Auto-Detection Behavior
+HD Homey automatically detects your external URL from:
+1. `X-Forwarded-Host` header (if `AUTH_TRUST_HOST=true`)
+2. `Host` header from the request
+3. Request protocol (http/https)
+
+This works for most configurations including simple reverse proxies. Only set `HD_HOMEY_PROXY_HOST` if you experience issues with stream URLs.
+:::
 
 ::: tip Reverse Proxy Setup
 When using a reverse proxy:
-1. Set `HD_HOMEY_PROXY_HOST` to your external URL
-2. Configure proxy to forward requests to HD Homey (port 3000)
-3. Ensure WebSocket support for future features
-4. Use HTTPS with valid SSL certificates for security
+1. Leave `HD_HOMEY_PROXY_HOST` blank to use auto-detection
+2. Set `AUTH_TRUST_HOST=true` to trust proxy headers
+3. Configure proxy to forward `Host` and `X-Forwarded-Host` headers
+4. Ensure WebSocket support for future features
+5. Use HTTPS with valid SSL certificates for security
 :::
 
 ### HD_HOMEY_DB_PATH
 
-**Purpose**: Directory path for SQLite database storage.
+**Purpose**: Full path to the SQLite database file.
 
-**Format**: Filesystem path (relative or absolute)
+**Format**: Filesystem path to database file (relative or absolute)
 
-**Default**: `./data/db`
+**Default**: `./data/db/hd_homey.db`
 
 **Example**:
 ```bash
-HD_HOMEY_DB_PATH=./data/db
-# Or absolute path
-HD_HOMEY_DB_PATH=/app/data/db
+# Relative path (default)
+HD_HOMEY_DB_PATH=./data/db/hd_homey.db
+
+# Absolute path
+HD_HOMEY_DB_PATH=/app/data/db/hd_homey.db
+
+# Custom location
+HD_HOMEY_DB_PATH=/var/lib/hd-homey/database.db
 ```
 
-**Database file**: HD Homey creates `hd_homey.db` inside this directory.
+**Database directory**: The parent directory will be created automatically if it doesn't exist.
 
 **Important**:
-- Directory must exist or be creatable by the application
-- Must have read/write permissions
+- Must specify the full path including filename (not just directory)
+- Parent directory must be writable by the application
+- Database file will be created on first run
 - Should be backed up regularly
 - Use Docker volumes for persistence in containers
+
+::: warning Path Change in v1.0.0-beta.3+
+Prior versions used `HD_HOMEY_DB_PATH` as a directory path. Starting in v1.0.0-beta.3, this variable must include the full database filename (e.g., `/path/to/hd_homey.db`).
+:::
 
 ### HD_HOMEY_TRANSCODE_DIR
 
 **Purpose**: Directory for temporary transcoding output (HLS segments).
 
-**Format**: Filesystem path
+**Format**: Filesystem path (relative or absolute)
 
-**Default**: `./data/transcoding`
+**Default**: `${HD_HOMEY_DB_PATH}/transcoding` (parent directory of database + `/transcoding`)
+
+**Required**: No - uses default if not specified
 
 **Example**:
 ```bash
+# Custom location
 HD_HOMEY_TRANSCODE_DIR=/tmp/transcoding
+
+# Will default to:
+# If HD_HOMEY_DB_PATH=./data/db/hd_homey.db
+# Then HD_HOMEY_TRANSCODE_DIR=./data/db/transcoding
 ```
+
+**Automatic Cleanup**:
+- Segments are automatically deleted when transcoding session ends
+- No manual cleanup required
+- Directory is created automatically if it doesn't exist
 
 **Performance Optimization**:
 For best performance, use a RAM-based filesystem (tmpfs):
@@ -176,6 +216,11 @@ volumes:
       type: tmpfs
       device: tmpfs
       o: size=1g,uid=1001,gid=1001
+```
+
+```bash
+# Then set in .env
+HD_HOMEY_TRANSCODE_DIR=/tmp/transcoding
 ```
 
 **Benefits of tmpfs**:
@@ -218,19 +263,32 @@ Users can generate new tokens anytime by visiting the channel details page.
 
 **Format**: Filesystem path to executable
 
-**Default**: `ffmpeg` (assumes ffmpeg is in PATH)
+**Default**: `ffmpeg` (auto-detected from system PATH)
+
+**Required**: No - FFmpeg is automatically detected if available in PATH
 
 **Example**:
 ```bash
-# Default (ffmpeg in PATH)
-FFMPEG_PATH=ffmpeg
+# Auto-detect (default - leave unset)
+# FFMPEG_PATH=
 
-# Custom path
+# Explicit path if needed
 FFMPEG_PATH=/usr/local/bin/ffmpeg
 
 # Specific version
 FFMPEG_PATH=/opt/ffmpeg-6.1/bin/ffmpeg
 ```
+
+**Auto-Detection**:
+HD Homey automatically searches for FFmpeg in:
+1. System PATH environment variable
+2. Common installation locations (`/usr/bin/ffmpeg`, `/usr/local/bin/ffmpeg`)
+3. Docker images include FFmpeg pre-installed
+
+**When to set explicitly**:
+- FFmpeg installed in non-standard location
+- Multiple FFmpeg versions installed (need specific one)
+- Auto-detection fails
 
 **Requirements**:
 - FFmpeg version 4.0+ (5.0+ recommended)
@@ -239,6 +297,7 @@ FFMPEG_PATH=/opt/ffmpeg-6.1/bin/ffmpeg
 
 **Verification**:
 ```bash
+# Check if FFmpeg is detected
 # Docker
 docker exec hd-homey ffmpeg -version
 
@@ -259,27 +318,49 @@ brew install ffmpeg
 
 **From source**:
 See [FFmpeg Compilation Guide](https://trac.ffmpeg.org/wiki/CompilationGuide)
+
+**Docker users**: FFmpeg is pre-installed in HD Homey Docker images - no action needed.
 :::
 
 ### BETTER_AUTH_URL
 
-**Purpose**: Base URL for Better-Auth endpoints.
+**Purpose**: Base URL for Better-Auth endpoints and authentication redirects.
 
 **Format**: Full URL including protocol
 
-**Default**: Auto-detected (same as `NEXTAUTH_URL` or from request headers)
+**Default**: Auto-detected from request headers or falls back to `NEXTAUTH_URL`
+
+**Required**: No - auto-detection works for most configurations
 
 **Example**:
 ```bash
+# Auto-detect (recommended - leave blank)
+# BETTER_AUTH_URL=
+
+# Explicit URL if auto-detection fails
 BETTER_AUTH_URL=https://tuner.example.com
 ```
 
-**When to set**:
-- Better-Auth endpoints return incorrect URLs
-- Running behind a reverse proxy with complex routing
-- Authentication redirects fail
+**Auto-Detection Order**:
+1. `BETTER_AUTH_URL` environment variable (if set)
+2. `NEXTAUTH_URL` environment variable (if set)
+3. Auto-detect from request headers (Host, X-Forwarded-Host)
+4. Fallback to `http://localhost:3000`
 
-**Usually not needed** if `HD_HOMEY_PROXY_HOST` is set correctly.
+**When to set explicitly**:
+- Running behind a reverse proxy with complex routing
+- Better-Auth authentication redirects fail
+- Need explicit control over authentication URLs
+- Multiple domains pointing to same instance
+
+**When to leave blank (auto-detect)**:
+- Simple reverse proxy configurations
+- Single access point (one domain)
+- `HD_HOMEY_PROXY_HOST` is sufficient for most cases
+
+::: tip Relationship to HD_HOMEY_PROXY_HOST
+In most configurations, you don't need to set `BETTER_AUTH_URL` if `HD_HOMEY_PROXY_HOST` is configured correctly. Auto-detection will use the same URL as your stream proxy host.
+:::
 
 ### NEXTAUTH_URL
 
@@ -395,7 +476,12 @@ FFMPEG_THREADS=1
 ```bash
 # .env
 AUTH_SECRET=xK8fN2mP9vQ7wR5tY3uI6oL1nM4bV0cZ
-# HD_HOMEY_PROXY_HOST not set (auto-detect is fine)
+
+# Optional - Use defaults and auto-detection
+# HD_HOMEY_PROXY_HOST=          # Auto-detect from request
+# HD_HOMEY_DB_PATH=./data/db/hd_homey.db  # Default location
+# BETTER_AUTH_URL=              # Auto-detect
+
 LOG_LEVEL=info
 ```
 
@@ -404,8 +490,13 @@ LOG_LEVEL=info
 ```bash
 # .env
 AUTH_SECRET=xK8fN2mP9vQ7wR5tY3uI6oL1nM4bV0cZ
+
+# Explicit external URL (or leave blank to auto-detect)
 HD_HOMEY_PROXY_HOST=https://tuner.example.com
+
+# Trust proxy headers for auto-detection
 AUTH_TRUST_HOST=true
+
 LOG_LEVEL=info
 NODE_ENV=production
 ```
@@ -415,8 +506,11 @@ NODE_ENV=production
 ```bash
 # .env
 AUTH_SECRET=dev-secret-not-for-production
-HD_HOMEY_DB_PATH=./dev-data/db
+
+# Custom paths for development
+HD_HOMEY_DB_PATH=./dev-data/db/hd_homey.db
 HD_HOMEY_TRANSCODE_DIR=./dev-data/transcoding
+
 LOG_LEVEL=debug
 NODE_ENV=development
 ```
@@ -426,8 +520,13 @@ NODE_ENV=development
 ```bash
 # .env
 AUTH_SECRET=xK8fN2mP9vQ7wR5tY3uI6oL1nM4bV0cZ
-HD_HOMEY_TRANSCODE_DIR=/tmp/transcoding  # tmpfs mount
+
+# Use tmpfs for transcoding (configure in docker-compose)
+HD_HOMEY_TRANSCODE_DIR=/tmp/transcoding
+
+# Increase transcode threads for faster encoding
 FFMPEG_THREADS=4
+
 LOG_LEVEL=warn
 NODE_ENV=production
 ```
@@ -490,9 +589,11 @@ npm run dev
 **Problem**: Stream URLs contain internal IP instead of external domain
 
 **Solution**:
-1. Set `HD_HOMEY_PROXY_HOST` to your external URL
-2. Set `AUTH_TRUST_HOST=true` if behind a reverse proxy
-3. Restart HD Homey
+1. **Try auto-detection first**: Leave `HD_HOMEY_PROXY_HOST` blank and ensure:
+   - `AUTH_TRUST_HOST=true` if behind a reverse proxy
+   - Proxy forwards `Host` or `X-Forwarded-Host` headers correctly
+2. **If auto-detection fails**: Set `HD_HOMEY_PROXY_HOST` explicitly to your external URL
+3. Restart HD Homey and verify stream URLs
 
 ## Security Best Practices
 

@@ -73,6 +73,17 @@ export default function AboutPage() {
                 <ul className="grid gap-2 m-0" style={{ listStyle: 'none', paddingLeft: 0 }}>
                     <li>
                         <a
+                            href="https://shaunburdick.github.io/hd-homey/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 no-underline"
+                        >
+                            <span>📖</span>
+                            <span>Documentation</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a
                             href="https://github.com/shaunburdick/hd-homey"
                             target="_blank"
                             rel="noopener noreferrer"

@@ -26,12 +26,13 @@ HD Homey chose SQLite for several key advantages:
 
 ### Default Path
 
-The database file is stored at:
-```
-${HD_HOMEY_DB_PATH}/hd_homey.db
-```
+The database file path is specified by `HD_HOMEY_DB_PATH`:
 
 **Default value**: `./data/db/hd_homey.db`
+
+::: warning Path Change in v1.0.0-beta.3+
+Starting in v1.0.0-beta.3, `HD_HOMEY_DB_PATH` specifies the full path to the database file (including filename), not just the directory. The parent directory is created automatically if it doesn't exist.
+:::
 
 ### Docker Volumes
 
@@ -53,14 +54,16 @@ Set a custom database location via environment variable:
 
 ```bash
 # .env
-HD_HOMEY_DB_PATH=/custom/path/to/db
+HD_HOMEY_DB_PATH=/custom/path/to/db/hd_homey.db
 ```
 
-::: warning Directory Permissions
-The database directory must be:
-- Writable by the HD Homey process
-- Persistent across restarts (use Docker volumes)
-- Backed up regularly
+::: warning File Path Requirements
+The database configuration requires:
+- Full path including filename (e.g., `/path/to/hd_homey.db`)
+- Parent directory must be writable by the HD Homey process
+- Parent directory created automatically if it doesn't exist
+- File persistent across restarts (use Docker volumes)
+- Regular backups recommended
 :::
 
 ## Database Schema
@@ -471,7 +474,7 @@ Database corruption can result in data loss. Always maintain regular backups.
 **Error**: `no such table: user` or file not found
 
 **Solutions**:
-1. Verify `HD_HOMEY_DB_PATH` is correct
+1. Verify `HD_HOMEY_DB_PATH` is correct (full file path including filename)
 2. Ensure database directory exists and is writable
 3. Check Docker volume is mounted
 4. Allow HD Homey to create database on first run

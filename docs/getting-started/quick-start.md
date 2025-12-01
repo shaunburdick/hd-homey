@@ -101,9 +101,22 @@ The navigation bar displays your username and role in the top-right corner:
 - **Admin** users see: `username (admin)`
 - **Viewer** users see: `username (viewer)`
 
-## Step 4: Set External URL (Optional)
+## Step 4: Configure Remote Access (Optional)
 
 If you plan to access HD Homey from outside your local network:
+
+### Option 1: Use Auto-Detection (Recommended)
+
+HD Homey automatically detects your external URL from incoming requests. For most setups, **no configuration is needed**!
+
+**Requirements for auto-detection**:
+- Simple reverse proxy that forwards headers correctly
+- Set `AUTH_TRUST_HOST=true` if behind a reverse proxy
+- Access HD Homey through a consistent URL (same domain)
+
+### Option 2: Set Explicit External URL
+
+Only needed if auto-detection doesn't work or you have complex proxy routing:
 
 1. **Determine your external URL**: This could be a domain name or public IP address
    - Example: `https://tuner.example.com` or `https://203.0.113.42:3000`
@@ -118,6 +131,7 @@ If you plan to access HD Homey from outside your local network:
    
    # Add or update:
    HD_HOMEY_PROXY_HOST=https://tuner.example.com
+   AUTH_TRUST_HOST=true  # If behind reverse proxy
    
    # Restart container
    docker compose restart
@@ -135,6 +149,7 @@ If you plan to access HD Homey from outside your local network:
      -v hd-homey-data:/app/data \
      -e AUTH_SECRET=your-existing-secret \
      -e HD_HOMEY_PROXY_HOST=https://tuner.example.com \
+     -e AUTH_TRUST_HOST=true \
      ghcr.io/shaunburdick/hd-homey:latest
    ```
 
@@ -144,6 +159,7 @@ If you plan to access HD Homey from outside your local network:
    
    # Add or update:
    HD_HOMEY_PROXY_HOST=https://tuner.example.com
+   AUTH_TRUST_HOST=true  # If behind reverse proxy
    
    # Restart dev server
    npm run dev
@@ -155,6 +171,13 @@ If you plan to access HD Homey from outside your local network:
    - Set up port forwarding on your router (external port → internal 3000)
    - Configure firewall rules to allow inbound traffic
    - Consider using a reverse proxy (nginx, Caddy) for HTTPS
+
+::: tip Auto-Detection vs Explicit URL
+**Try auto-detection first** by leaving `HD_HOMEY_PROXY_HOST` blank. Only set it explicitly if:
+- Stream URLs contain internal IPs instead of your domain
+- You have multiple access points (different domains/IPs)
+- Complex proxy configuration with non-standard routing
+:::
 
 ::: warning Security Consideration
 If exposing HD Homey to the internet:

@@ -47,10 +47,12 @@ sed -i "s/some-random-string/$(openssl rand -base64 32)/" .env
 **Required Variables:**
 - `AUTH_SECRET` - Encryption key for session authentication (32+ characters)
 
-**Optional Variables:**
-- `HD_HOMEY_PROXY_HOST` - Your external URL (e.g., `https://tuner.example.com`)
-- `HD_HOMEY_DB_PATH` - Database path (default: `./data/db/hd_homey.db`)
-- `HD_HOMEY_TRANSCODE_DIR` - Transcoding directory (default: `/tmp/transcoding`)
+**Optional Variables (with auto-detection/defaults):**
+- `HD_HOMEY_PROXY_HOST` - Your external URL (default: auto-detected from request)
+- `HD_HOMEY_DB_PATH` - Database file path (default: `./data/db/hd_homey.db`)
+- `HD_HOMEY_TRANSCODE_DIR` - Transcoding directory (default: `${HD_HOMEY_DB_PATH}/transcoding`)
+- `FFMPEG_PATH` - FFmpeg binary path (default: auto-detected from PATH)
+- `BETTER_AUTH_URL` - Auth base URL (default: auto-detected)
 
 See [Environment Variables](/config/environment-variables) for complete configuration options.
 
@@ -93,8 +95,10 @@ docker run -d \
   -p 3000:3000 \
   -v hd-homey-data:/app/data \
   -e AUTH_SECRET=$(openssl rand -base64 32) \
-  -e HD_HOMEY_PROXY_HOST=https://tuner.example.com \
   ghcr.io/shaunburdick/hd-homey:latest
+
+# For remote access, optionally add:
+# -e HD_HOMEY_PROXY_HOST=https://tuner.example.com
 
 # View logs
 docker logs -f hd-homey

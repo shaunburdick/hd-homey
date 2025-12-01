@@ -98,7 +98,7 @@ Typical usage per 1080p stream:
 ### Storage Location
 
 Transcoded segments stored temporarily:
-- Default: `./data/transcoding`
+- Default: `${HD_HOMEY_DB_PATH}/transcoding` (parent directory of database)
 - Configurable via `HD_HOMEY_TRANSCODE_DIR`
 - Recommended: tmpfs (RAM disk) for best performance
 
@@ -165,11 +165,11 @@ Files are automatically removed:
 Control transcoding behavior:
 
 ```bash
-# Transcoding output directory
+# Transcoding output directory (optional - defaults to ${HD_HOMEY_DB_PATH}/transcoding)
 HD_HOMEY_TRANSCODE_DIR=/tmp/transcoding
 
-# FFmpeg binary path (if not in PATH)
-FFMPEG_PATH=/usr/bin/ffmpeg
+# FFmpeg binary path (optional - auto-detected from PATH)
+# FFMPEG_PATH=/usr/bin/ffmpeg
 
 # Number of threads per transcode (default: 2)
 FFMPEG_THREADS=2

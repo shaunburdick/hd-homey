@@ -41,7 +41,7 @@ Before diving into specific issues, check these basics:
 **Solutions**:
 1. Verify `AUTH_SECRET` is set and consistent across restarts
 2. Clear browser cookies for the site
-3. Check that `BETTER_AUTH_URL` matches your access URL
+3. Check that `BETTER_AUTH_URL` matches your access URL (or leave blank for auto-detection)
 4. Ensure system time is correct (JWT tokens are time-sensitive)
 
 ```bash
@@ -85,7 +85,7 @@ openssl rand -base64 32
 4. **Check stream tokens**:
    - Tokens are time-limited (default 24 hours)
    - Regenerate stream URL if expired
-   - Check `HD_HOMEY_PROXY_HOST` is set correctly
+   - Check `HD_HOMEY_PROXY_HOST` is set correctly (or verify auto-detection works)
 
 #### Transcoding fails
 **Symptoms**: HLS streams won't start, transcoding errors in logs
@@ -151,7 +151,7 @@ openssl rand -base64 32
 
 3. **Database issues**:
    - Check database file permissions
-   - Verify `HD_HOMEY_DB_PATH` is writable
+   - Verify `HD_HOMEY_DB_PATH` parent directory is writable
    - Review logs for database errors
 
 ### Database Problems
@@ -162,23 +162,24 @@ openssl rand -base64 32
 **Solutions**:
 1. **Check file permissions**:
    ```bash
-   ls -la /path/to/HD_HOMEY_DB_PATH
+   # Check parent directory of HD_HOMEY_DB_PATH
+   ls -la $(dirname /path/to/hd_homey.db)
    # Should be writable by HD Homey process user
    ```
 
-2. **Verify directory exists**:
+2. **Verify parent directory exists** (HD Homey creates it automatically, but check permissions):
    ```bash
-   mkdir -p /path/to/HD_HOMEY_DB_PATH
+   mkdir -p $(dirname /path/to/hd_homey.db)
    ```
 
 3. **Check disk space**:
    ```bash
-   df -h /path/to/HD_HOMEY_DB_PATH
+   df -h /path/to
    ```
 
 4. **Restore from backup** if database is corrupted:
    ```bash
-   cp /path/to/backup/hd_homey.db /path/to/HD_HOMEY_DB_PATH/
+   cp /path/to/backup/hd_homey.db /path/to/hd_homey.db
    ```
 
 #### Migration failures
@@ -211,8 +212,9 @@ openssl rand -base64 32
 Quick checklist:
 1. Port forwarding configured (port 3000)
 2. Firewall allows incoming connections
-3. `HD_HOMEY_PROXY_HOST` set to external URL
-4. HTTPS recommended for security
+3. `HD_HOMEY_PROXY_HOST` set to external URL (or verify auto-detection works)
+4. `AUTH_TRUST_HOST=true` if behind reverse proxy (for auto-detection)
+5. HTTPS recommended for security
 
 ### Performance Issues
 

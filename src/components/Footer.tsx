@@ -23,12 +23,12 @@ export function Footer() {
                     </Link>
                     <span className={styles.separator}>•</span>
                     <Link
-                        href="https://github.com/shaunburdick/hd-homey"
+                        href="https://shaunburdick.github.io/hd-homey/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.link}
                     >
-                        GitHub
+                        Docs
                     </Link>
                     <span className={styles.separator}>•</span>
                     <span className={styles.version}>
