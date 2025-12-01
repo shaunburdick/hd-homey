@@ -376,6 +376,7 @@ docker compose up -d     # Start with Docker Compose
 4. **Update version references** in all files:
    - `README.md`: Update version badge (search for "badge/version")
    - `AGENTS.md`: Update "Current Version" section (this file)
+   - `docs/.vitepress/config.ts`: Update version in nav dropdown (line 19)
    - Search entire project for previous version number to catch any other references
 
 5. **Commit and tag**:
