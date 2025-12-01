@@ -55,6 +55,170 @@ migrations/           # Database migrations
 - Update spec status as implementation progresses
 - Specs drive implementation, not vice versa
 
+### Documentation Maintenance
+
+**CRITICAL**: HD Homey uses a dual-documentation approach that MUST be kept in sync:
+
+#### Documentation Structure
+1. **README.md** (root) - Quick pitch and getting started (83 lines)
+   - Project description and badges
+   - Minimal quick start guide
+   - Feature highlights with links to docs
+   - Links to comprehensive documentation
+   
+2. **docs/** (VitePress site) - Comprehensive documentation (~4,400 lines)
+   - Deployed to: https://shaunburdick.github.io/hd-homey/
+   - Full installation guides
+   - Detailed feature documentation
+   - Configuration reference
+   - Troubleshooting guides
+   - API reference
+   - Contributing guide
+
+#### When to Update Documentation
+
+**Always update documentation when you**:
+- ✅ Add a new feature or capability
+- ✅ Change existing behavior or configuration
+- ✅ Add/modify environment variables
+- ✅ Update dependencies that affect usage
+- ✅ Fix bugs that were documented as workarounds
+- ✅ Change API endpoints or contracts
+- ✅ Add new troubleshooting solutions
+
+#### Documentation Update Checklist
+
+When making changes, update BOTH locations as needed:
+
+**1. README.md Updates Required When**:
+- [ ] Changing the quick start process
+- [ ] Adding high-level features to the feature list
+- [ ] Updating tech stack versions (major versions only)
+- [ ] Changing project status or version
+
+**2. docs/ Updates Required When**:
+- [ ] Adding new features → Update `docs/features/`
+- [ ] Changing configuration → Update `docs/config/`
+- [ ] Adding installation methods → Update `docs/getting-started/installation.md`
+- [ ] Fixing common issues → Update `docs/troubleshooting/`
+- [ ] Changing APIs → Update `docs/api/`
+- [ ] Modifying workflows → Update `docs/contributing/`
+
+**3. Specific Files to Check**:
+```
+Feature changes:
+  → docs/features/[feature-name].md
+  → docs/features/index.md (overview)
+  → README.md (feature list if major)
+
+Configuration changes:
+  → docs/config/environment-variables.md
+  → docs/config/database.md
+  → docs/getting-started/installation.md (if affects setup)
+
+New capabilities:
+  → docs/getting-started/quick-start.md
+  → docs/getting-started/first-stream.md (if user-facing)
+  → README.md (quick start if critical)
+```
+
+#### Documentation Development Workflow
+
+```bash
+# 1. Make your code changes
+# 2. Update relevant docs/ files
+cd docs && npm run docs:dev  # Preview at http://localhost:5173/hd-homey/
+
+# 3. Verify all internal links work
+npm run docs:build            # Checks for dead links
+
+# 4. Update README.md if needed (rarely)
+
+# 5. Lint docs
+npm run lint                  # Lints docs with eslint-config-shaunburdick
+
+# 6. Commit docs WITH your code changes (same commit or same PR)
+git add src/ docs/ README.md
+git commit -m "feat: add new feature
+
+- Implement feature X
+- Update docs/features/feature-x.md
+- Update README feature list"
+```
+
+#### Documentation Style Guidelines
+
+**docs/ (VitePress)**:
+- Use clear, descriptive headings (H2 for major sections, H3 for subsections)
+- Include code examples with syntax highlighting
+- Add callouts for warnings, tips, and notes using VitePress containers
+- Link to related pages using relative paths
+- Keep each page focused on a single topic
+- Use emoji sparingly (only in feature highlights)
+
+**README.md**:
+- Keep it brief and scannable
+- Link to docs/ for details (use full URLs with base path)
+- Use emoji for feature highlights only
+- Focus on "why" and "what", link to docs for "how"
+
+#### Example: Adding a New Feature
+
+```bash
+# 1. Create spec (if new feature)
+.specs/features/012-new-feature/spec.md
+
+# 2. Implement feature
+src/app/(protected)/new-feature/page.tsx
+
+# 3. Add comprehensive docs
+docs/features/new-feature.md     # New file
+docs/features/index.md           # Add to feature list
+docs/config/environment-variables.md  # If adds env vars
+
+# 4. Update README feature list (optional, if major)
+README.md                        # Add one-line feature highlight
+
+# 5. Test docs build
+cd docs && npm run docs:build    # Verify no errors
+
+# 6. Commit everything together
+git add .specs/ src/ docs/ README.md
+git commit -m "feat: add new feature X
+
+Implements new feature X that allows users to...
+
+Documentation:
+- Add docs/features/new-feature.md
+- Update feature index
+- Add environment variable docs"
+```
+
+#### Common Documentation Pitfalls to Avoid
+
+❌ **Don't**: Update code without updating docs  
+✅ **Do**: Update docs in the same commit/PR as the code
+
+❌ **Don't**: Copy-paste large sections from README to docs  
+✅ **Do**: Keep README minimal, comprehensive details in docs/
+
+❌ **Don't**: Use absolute URLs for internal doc links  
+✅ **Do**: Use relative paths in docs/ for internal navigation
+
+❌ **Don't**: Forget to run `docs:build` before committing  
+✅ **Do**: Verify build succeeds and links work
+
+❌ **Don't**: Update only the code and tell users "see docs"  
+✅ **Do**: Make docs updates part of your definition of done
+
+#### Documentation Deployment
+
+- **Automatic**: Docs deploy on merge to `main` via GitHub Actions
+- **URL**: https://shaunburdick.github.io/hd-homey/
+- **Workflow**: `.github/workflows/docs.yml`
+- **Build time**: ~2-3 seconds
+- **Preview**: Run `cd docs && npm run docs:dev` locally before pushing
+
 ### Code Patterns
 
 #### Server Actions
