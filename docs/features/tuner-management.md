@@ -480,4 +480,4 @@ If channels disappeared due to reception issues and later return, simply refresh
 
 - [HDHomeRun HTTP API Documentation](https://www.silicondust.com/hdhomerun/hdhomerun_http_development.pdf)
 - [HDHomeRun Support](https://support.silicondust.com/)
-- [Feature Specification: Tuner Management](/.specs/features/001-tuner-management/spec.md)
+- [Feature Specification: Tuner Management](https://github.com/shaunburdick/hd-homey/tree/main/.specs/features/001-tuner-management.md)

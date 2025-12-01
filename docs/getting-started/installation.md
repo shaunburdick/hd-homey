@@ -73,7 +73,7 @@ docker compose logs -f
 # Look for: "✓ Ready in XXms"
 ```
 
-Access HD Homey at **http://localhost:3000** and create your first admin account.
+Access HD Homey at `http://localhost:3000` (or your configured hostname) and create your first admin account.
 
 ::: tip
 The first user created automatically becomes an administrator.
@@ -133,7 +133,7 @@ cp .env-example .env
 npm run dev
 ```
 
-The application will be available at **http://localhost:3000**.
+The application will be available at `http://localhost:3000`.
 
 ::: warning FFmpeg Required
 Source installations require [FFmpeg](https://ffmpeg.org/download.html) to be installed and available in your PATH with H.264 and AAC codec support for video transcoding.

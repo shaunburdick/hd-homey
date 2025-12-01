@@ -260,15 +260,15 @@ Congratulations! You've successfully:
 
 ### Advanced Topics
 
-- **[API Access](/api/lineup-api)** - Integrate with Plex, Emby, or other DVR software
+- **[API Access](/api/)** - Integrate with Plex, Emby, or other DVR software
 - **[Security](/features/stream-security)** - Manage stream authentication and tokens
-- **[Remote Access](/troubleshooting/remote-access)** - Expose HD Homey to the internet securely
+- **[Remote Access](/troubleshooting/)** - Expose HD Homey to the internet securely
 
 ## Getting Help
 
 If you encounter issues not covered here:
 
-- **[Troubleshooting Guide](/troubleshooting/common-issues)** - Comprehensive troubleshooting steps
+- **[Troubleshooting Guide](/troubleshooting/)** - Comprehensive troubleshooting steps
 - **[GitHub Issues](https://github.com/shaunburdick/hd-homey/issues)** - Report bugs or request features
 - **[GitHub Discussions](https://github.com/shaunburdick/hd-homey/discussions)** - Ask questions and get community help
 

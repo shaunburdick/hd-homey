@@ -206,4 +206,4 @@ HD Homey uses FFmpeg with these key parameters:
 
 - **[Channel Management](/features/channel-management)** - Accessing channels
 - **[Environment Variables](/config/environment-variables)** - Transcoding configuration
-- **[Troubleshooting](/troubleshooting/common-issues)** - General troubleshooting
+- **[Troubleshooting](/troubleshooting/)** - General troubleshooting

@@ -30,7 +30,7 @@ Thank you for your interest in contributing to HD Homey! This guide will help yo
 ### Development Setup
 Set up your local development environment.
 
-[View Development Setup Guide →](/contributing/development-setup)
+[View Development Setup Guide →](/contributing/)
 
 Quick start:
 ```bash
@@ -46,7 +46,7 @@ npm run dev
 
 HD Homey follows a **spec-driven development** process:
 
-[Learn About Spec-Driven Development →](/contributing/spec-process)
+[Learn About Spec-Driven Development →](/contributing/)
 
 ### The Workflow
 
@@ -86,7 +86,7 @@ This saves everyone time and prevents duplicate work!
 - Tests should be clear and maintainable
 - Use React Testing Library for components
 
-[View Testing Guide →](/contributing/testing)
+[View Testing Guide →](/contributing/)
 
 ### Commits
 - Clear, descriptive commit messages
@@ -100,7 +100,7 @@ This saves everyone time and prevents duplicate work!
 
 Understanding the codebase structure helps with navigation and contributions.
 
-[View Architecture Guide →](/contributing/architecture)
+[View Architecture Guide →](/contributing/)
 
 ### Key Directories
 ```
@@ -245,10 +245,10 @@ docker compose up
 - [Troubleshooting](/troubleshooting/)
 
 ### Development Guides
-- [Development Setup](/contributing/development-setup)
-- [Spec Process](/contributing/spec-process)
-- [Architecture](/contributing/architecture)
-- [Testing](/contributing/testing)
+- [Development Setup](/contributing/)
+- [Spec Process](/contributing/)
+- [Architecture](/contributing/)
+- [Testing](/contributing/)
 
 ### External Resources
 - [Next.js Docs](https://nextjs.org/docs)

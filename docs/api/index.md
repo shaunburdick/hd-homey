@@ -15,7 +15,7 @@ HD Homey implements HDHomeRun-compatible APIs plus custom endpoints for stream s
 ### HDHomeRun Lineup API
 HDHomeRun-compatible endpoint for channel discovery and device integration.
 
-[View Lineup API Documentation →](/api/lineup-endpoint)
+[View Lineup API Documentation →](/api/)
 
 **Use cases:**
 - Plex DVR integration
@@ -28,7 +28,7 @@ HDHomeRun-compatible endpoint for channel discovery and device integration.
 ### Stream Authentication API
 Custom API for generating secure stream access tokens.
 
-[View Stream Authentication Documentation →](/api/stream-authentication)
+[View Stream Authentication Documentation →](/api/)
 
 **Use cases:**
 - External player authentication
@@ -192,8 +192,8 @@ Community contributions welcome for:
 
 Detailed documentation for each API:
 
-- [Lineup Endpoint](/api/lineup-endpoint) - HDHomeRun compatibility
-- [Stream Authentication](/api/stream-authentication) - Token generation and validation
+- [Lineup Endpoint](/api/) - HDHomeRun compatibility
+- [Stream Authentication](/api/) - Token generation and validation
 
 ## Need Help?
 

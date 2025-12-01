@@ -505,7 +505,7 @@ SQLite is ideal for HD Homey's use case, but has some limits:
 
 - **[Environment Variables](/config/environment-variables)** - Configure database path
 - **[Installation Guide](/getting-started/installation)** - Setup HD Homey with persistent data
-- **[Troubleshooting](/troubleshooting/common-issues)** - Solve database-related issues
+- **[Troubleshooting](/troubleshooting/)** - Solve database-related issues
 
 ## Additional Resources
 

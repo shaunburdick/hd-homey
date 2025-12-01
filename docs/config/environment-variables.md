@@ -526,4 +526,4 @@ npm run dev
 
 - **[Database Configuration](/config/database)** - Learn about database management and backups
 - **[Installation Guide](/getting-started/installation)** - Return to installation instructions
-- **[Troubleshooting](/troubleshooting/common-issues)** - Solve common configuration issues
+- **[Troubleshooting](/troubleshooting/)** - Solve common configuration issues

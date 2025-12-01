@@ -122,7 +122,5 @@ export default defineConfig({
         ['meta', { property: 'og:image', content: '/hd-homey/hd-homey.png' }]
     ],
 
-    lastUpdated: true,
-    
-    ignoreDeadLinks: true // Temporary: disable while building initial docs
+    lastUpdated: true
 });

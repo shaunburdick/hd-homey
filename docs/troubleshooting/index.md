@@ -206,7 +206,7 @@ openssl rand -base64 32
 **Symptoms**: Works on local network, not from internet
 
 **Solutions**:
-[See detailed guide →](/troubleshooting/remote-access)
+[See detailed guide →](/troubleshooting/)
 
 Quick checklist:
 1. Port forwarding configured (port 3000)

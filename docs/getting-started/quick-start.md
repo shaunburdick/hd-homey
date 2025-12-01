@@ -218,6 +218,6 @@ docker logs hd-homey
 ### More Help
 
 For additional troubleshooting assistance, see:
-- [Troubleshooting Guide](/troubleshooting/common-issues)
+- [Troubleshooting Guide](/troubleshooting/)
 - [GitHub Issues](https://github.com/shaunburdick/hd-homey/issues)
 - [GitHub Discussions](https://github.com/shaunburdick/hd-homey/discussions)
