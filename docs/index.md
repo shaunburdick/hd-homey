@@ -6,7 +6,7 @@ hero:
   text: "HDHomeRun Proxy for Remote Streaming"
   tagline: Stream live TV from your HDHomeRun devices anywhere with secure authentication and video transcoding
   image:
-    src: /hd-homey/hd-homey.png
+    src: /hd-homey.png
     alt: HD Homey Logo
   actions:
     - theme: brand
