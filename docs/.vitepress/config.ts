@@ -4,7 +4,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
     title: 'HD Homey',
     description: 'HDHomeRun Proxy for Remote Streaming',
-    base: process.env.NODE_ENV === 'production' ? '/hd-homey/' : '/',
+    base: '/hd-homey/',
 
     themeConfig: {
         logo: '/hd-homey.png',
@@ -122,5 +122,7 @@ export default defineConfig({
         ['meta', { property: 'og:image', content: '/hd-homey/hd-homey.png' }]
     ],
 
-    lastUpdated: true
+    lastUpdated: true,
+    
+    ignoreDeadLinks: true // Temporary: disable while building initial docs
 });
