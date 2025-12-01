@@ -31,8 +31,8 @@ export default defineConfig({
                     items: [
                         { text: 'Overview', link: '/getting-started/' },
                         { text: 'Quick Start', link: '/getting-started/quick-start' },
-                        { text: 'Full Installation', link: '/getting-started/full-installation' },
-                        { text: 'First Steps', link: '/getting-started/first-steps' }
+                        { text: 'Installation', link: '/getting-started/installation' },
+                        { text: 'Your First Stream', link: '/getting-started/first-stream' }
                     ]
                 }
             ],
@@ -42,21 +42,21 @@ export default defineConfig({
                     items: [
                         { text: 'Overview', link: '/features/' },
                         { text: 'Tuner Management', link: '/features/tuner-management' },
-                        { text: 'Channel Streaming', link: '/features/channel-streaming' },
+                        { text: 'Channel Management', link: '/features/channel-management' },
                         { text: 'User Management', link: '/features/user-management' },
                         { text: 'User Invitations', link: '/features/user-invitations' },
-                        { text: 'Authentication', link: '/features/authentication' },
+                        { text: 'Stream Security', link: '/features/stream-security' },
                         { text: 'Video Transcoding', link: '/features/video-transcoding' }
                     ]
                 }
             ],
-            '/configuration/': [
+            '/config/': [
                 {
                     text: 'Configuration',
                     items: [
-                        { text: 'Overview', link: '/configuration/' },
-                        { text: 'Environment Variables', link: '/configuration/environment-variables' },
-                        { text: 'Advanced Settings', link: '/configuration/advanced-settings' }
+                        { text: 'Overview', link: '/config/' },
+                        { text: 'Environment Variables', link: '/config/environment-variables' },
+                        { text: 'Database', link: '/config/database' }
                     ]
                 }
             ],
@@ -64,10 +64,7 @@ export default defineConfig({
                 {
                     text: 'Troubleshooting',
                     items: [
-                        { text: 'Overview', link: '/troubleshooting/' },
-                        { text: 'Installation', link: '/troubleshooting/installation' },
-                        { text: 'Streaming', link: '/troubleshooting/streaming' },
-                        { text: 'Common Errors', link: '/troubleshooting/common-errors' }
+                        { text: 'Overview', link: '/troubleshooting/' }
                     ]
                 }
             ],
@@ -75,9 +72,7 @@ export default defineConfig({
                 {
                     text: 'API Reference',
                     items: [
-                        { text: 'Overview', link: '/api/' },
-                        { text: 'Lineup Endpoint', link: '/api/lineup-endpoint' },
-                        { text: 'Stream Authentication', link: '/api/stream-authentication' }
+                        { text: 'Overview', link: '/api/' }
                     ]
                 }
             ],
@@ -85,11 +80,7 @@ export default defineConfig({
                 {
                     text: 'Contributing',
                     items: [
-                        { text: 'Overview', link: '/contributing/' },
-                        { text: 'Development Setup', link: '/contributing/development-setup' },
-                        { text: 'Spec Process', link: '/contributing/spec-process' },
-                        { text: 'Architecture', link: '/contributing/architecture' },
-                        { text: 'Testing', link: '/contributing/testing' }
+                        { text: 'Overview', link: '/contributing/' }
                     ]
                 }
             ]
