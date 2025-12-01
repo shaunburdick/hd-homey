@@ -25,7 +25,7 @@ features:
   - icon: 🎬
     title: Live Streaming
     details: Stream channels in your browser or external players with secure token-based authentication.
-    link: /features/channel-streaming
+    link: /features/channel-management
   
   - icon: 🔄
     title: Video Transcoding
@@ -40,12 +40,12 @@ features:
   - icon: 🔐
     title: Secure Authentication
     details: Better-Auth powered authentication with scrypt password hashing and JWT sessions.
-    link: /features/authentication
+    link: /features/stream-security
   
   - icon: ⚙️
     title: Easy Configuration
     details: Simple environment variable configuration with Docker Compose support for quick deployment.
-    link: /configuration/
+    link: /config/
 
 ---
 
@@ -104,4 +104,4 @@ HD Homey is in active development and ready for production use. All core feature
 
 ## License
 
-HD Homey is open source software released under the [GNU Affero General Public License v3.0 (AGPL-3.0)](https://github.com/shaunburdick/hd-homey/blob/main/LICENSE).
+HD Homey is open source software released under the [GNU Affero General Public License v3.0 only (AGPL-3.0-only)](https://github.com/shaunburdick/hd-homey/blob/main/LICENSE).

@@ -244,13 +244,6 @@ docker compose up
 - [API Reference](/api/)
 - [Troubleshooting](/troubleshooting/)
 
-### Development Guides
-- [Development Setup](/contributing/)
-- [Spec Process](/contributing/)
-- [Architecture](/contributing/)
-- [Testing](/contributing/)
-
-### External Resources
 - [Next.js Docs](https://nextjs.org/docs)
 - [Drizzle ORM Docs](https://orm.drizzle.team/)
 - [Better-Auth Docs](https://www.better-auth.com/)

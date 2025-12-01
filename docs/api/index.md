@@ -1,5 +1,9 @@
 # API Reference
 
+::: warning Documentation In Progress
+Detailed API endpoint documentation is being written. For now, refer to the source code in `src/app/api/` for implementation details.
+:::
+
 HD Homey provides APIs for programmatic access to channel lineups and stream authentication. These APIs enable integration with external applications and media players.
 
 ## Overview
@@ -15,20 +19,25 @@ HD Homey implements HDHomeRun-compatible APIs plus custom endpoints for stream s
 ### HDHomeRun Lineup API
 HDHomeRun-compatible endpoint for channel discovery and device integration.
 
-[View Lineup API Documentation →](/api/)
-
 **Use cases:**
 - Plex DVR integration
 - Channels DVR setup
 - Custom client applications
 - Third-party media servers
 
-**Endpoint**: `GET /api/lineup`
+**Endpoint**: `GET /api/lineup.json` or `GET /api/lineup`
+
+**Response Format**: XML (HDHomeRun-compatible)
 
 ### Stream Authentication API
 Custom API for generating secure stream access tokens.
 
-[View Stream Authentication Documentation →](/api/)
+**Use cases:**
+- External player authentication
+- Custom client development
+- Secure URL generation
+
+**Authentication**: Session-based (cookies)
 
 **Use cases:**
 - External player authentication
