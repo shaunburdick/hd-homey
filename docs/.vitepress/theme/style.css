@@ -1,0 +1,195 @@
+/**
+ * HD Homey Documentation Theme
+ * Custom styles matching the main application design system
+ * Based on src/app/globals.css
+ */
+
+/**
+ * Colors
+ * ===========================
+ * HD Homey dark theme with WCAG 2.2 AA compliance
+ */
+:root {
+  /* Brand colors */
+  --vp-c-brand-1: #2563eb;
+  --vp-c-brand-2: #1d4ed8;
+  --vp-c-brand-3: #1e40af;
+  --vp-c-brand-soft: rgba(37, 99, 235, 0.14);
+  
+  /* Background colors - matching HD Homey */
+  --vp-c-bg: #1a1a1a;
+  --vp-c-bg-alt: #1a1a1a;
+  --vp-c-bg-elv: #2a2a2a;
+  --vp-c-bg-soft: #2a2a2a;
+  --vp-c-bg-mute: #3a3a3a;
+  
+  /* Text colors - WCAG 2.2 AA compliant */
+  --vp-c-text-1: #f0f0f0;
+  --vp-c-text-2: #b0b0b0;
+  --vp-c-text-3: #909090;
+  
+  /* Border colors */
+  --vp-c-divider: #404040;
+  --vp-c-border: #404040;
+  
+  /* Component-specific colors */
+  --vp-c-gutter: #1a1a1a;
+  
+  /* Code block colors */
+  --vp-code-block-bg: #2a2a2a;
+  --vp-code-tab-divider: #404040;
+  --vp-code-copy-code-bg: #3a3a3a;
+  --vp-code-copy-code-hover-bg: #404040;
+  
+  /* Typography */
+  --vp-font-family-base: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --vp-font-family-mono: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  
+  /* Sidebar */
+  --vp-sidebar-bg-color: #1a1a1a;
+  
+  /* Home hero */
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  
+  /* Buttons */
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-bg: #2563eb;
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: #1d4ed8;
+  --vp-button-brand-active-border: transparent;
+  --vp-button-brand-active-text: #ffffff;
+  --vp-button-brand-active-bg: #1e40af;
+}
+
+/**
+ * Component Overrides
+ * ===========================
+ */
+
+/* Global font family application */
+.vp-doc {
+  font-family: var(--vp-font-family-base);
+}
+
+/* Code blocks */
+.vp-code-group .tabs {
+  background-color: var(--vp-code-block-bg);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+/* Navigation */
+.VPNav {
+  background-color: var(--vp-c-bg);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+/* Sidebar */
+.VPSidebar {
+  background-color: var(--vp-sidebar-bg-color);
+}
+
+.VPSidebarItem.level-0.is-active > .item .link {
+  color: var(--vp-c-brand-1);
+}
+
+/* Search */
+.VPLocalSearchBox {
+  background-color: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+}
+
+/* Ensure proper contrast for links */
+.vp-doc a {
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.vp-doc a:hover {
+  color: var(--vp-c-brand-2);
+  text-decoration: underline;
+}
+
+/**
+ * Custom Components
+ * ===========================
+ */
+
+/* Feature grid for home page */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.feature-card {
+  padding: 1.5rem;
+  background-color: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+  background-color: var(--vp-c-bg-mute);
+  border-color: var(--vp-c-brand-1);
+}
+
+.feature-card h3 {
+  margin-top: 0;
+  color: var(--vp-c-brand-1);
+}
+
+/* Callouts */
+.custom-block.tip {
+  border-color: var(--vp-c-brand-1);
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+.custom-block.warning {
+  border-color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.custom-block.danger {
+  border-color: #ff5555;
+  background-color: rgba(255, 85, 85, 0.1);
+}
+
+/**
+ * Accessibility
+ * ===========================
+ */
+
+/* Focus indicators */
+*:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/**
+ * Mobile Responsive
+ * ===========================
+ */
+@media (max-width: 768px) {
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}

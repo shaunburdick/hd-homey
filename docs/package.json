@@ -1,0 +1,17 @@
+{
+  "name": "hd-homey-docs",
+  "version": "1.0.0",
+  "description": "Documentation site for HD Homey",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview",
+    "lint": "eslint '.vitepress/**/*.{ts,vue}'"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.13"
+  },
+  "private": true
+}
