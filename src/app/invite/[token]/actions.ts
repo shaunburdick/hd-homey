@@ -114,17 +114,17 @@ function validatePasswordConfirmation(
         return 'Password confirmation is required';
     }
 
-    // Use constant-time comparison to prevent timing attacks
-    // Both values must be defined and same length for timingSafeEqual
-    if (password === undefined || passwordConfirm === undefined) {
-        return PASSWORD_MISMATCH_ERROR;
+    // Password must be defined to compare
+    if (password === undefined || password.length === 0) {
+        return 'Password confirmation is required';
     }
 
-    // timingSafeEqual requires equal length buffers
     if (password.length !== passwordConfirm.length) {
         return PASSWORD_MISMATCH_ERROR;
     }
 
+    // Use constant-time comparison to prevent timing attacks
+    // timingSafeEqual requires equal length buffers
     if (crypto.timingSafeEqual(
         Buffer.from(password),
         Buffer.from(passwordConfirm)
