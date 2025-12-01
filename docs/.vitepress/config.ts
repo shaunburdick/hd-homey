@@ -6,6 +6,9 @@ export default defineConfig({
     description: 'HDHomeRun Proxy for Remote Streaming',
     base: '/hd-homey/',
 
+    // Disable theme switcher - always use dark theme
+    appearance: false,
+
     themeConfig: {
         logo: '/hd-homey.png',
         siteTitle: 'HD Homey Docs',
@@ -101,7 +104,7 @@ export default defineConfig({
 
         footer: {
             message: 'Released under the AGPL-3.0 License.',
-            copyright: 'Copyright © 2025 Shaun Burdick'
+            copyright: 'Made by Shaun Burdick'
         }
     },
 
