@@ -6,7 +6,7 @@ hero:
   text: "HDHomeRun Proxy for Remote Streaming"
   tagline: Stream live TV from your HDHomeRun devices anywhere with secure authentication and video transcoding
   image:
-    src: /hd-homey.png
+    src: /hd-homey/hd-homey.png
     alt: HD Homey Logo
   actions:
     - theme: brand
@@ -104,4 +104,4 @@ HD Homey is in active development and ready for production use. All core feature
 
 ## License
 
-HD Homey is open source software released under the [ISC License](https://github.com/shaunburdick/hd-homey/blob/main/LICENSE).
+HD Homey is open source software released under the [GNU Affero General Public License v3.0 (AGPL-3.0)](https://github.com/shaunburdick/hd-homey/blob/main/LICENSE).
