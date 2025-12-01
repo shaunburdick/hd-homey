@@ -6,8 +6,8 @@ export default defineConfig({
     description: 'HDHomeRun Proxy for Remote Streaming',
     base: '/hd-homey/',
 
-    // Disable theme switcher - always use dark theme
-    appearance: false,
+    // Force dark theme without switcher
+    appearance: 'force-dark',
 
     themeConfig: {
         logo: '/hd-homey.png',
