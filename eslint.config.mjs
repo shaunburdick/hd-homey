@@ -82,29 +82,12 @@ export default [
         },
     },
     {
-        // VitePress documentation TypeScript files
-        name: 'vitepress-docs',
-        files: ['docs/.vitepress/**/*.ts', 'docs/.vitepress/**/*.vue'],
-        rules: {
-            // Relax some rules for documentation config/theme files
-            'import/no-default-export': 'off', // VitePress config uses default export
-        }
-    },
-    {
-        name: 'vitepress-docs',
-        files: ['docs/.vitepress/**/*.ts', 'docs/.vitepress/**/*.vue'],
-        rules: {
-            'import/no-default-export': 'off',
-        }
-    },
-    {
         ignores: [
             '.next/**/*',
             'data/**/*',
             'next-env.d.ts',
-            'docs/.vitepress/cache/**/*',
-            'docs/.vitepress/dist/**/*',
-            'docs/node_modules/**/*'
+            // Docs directory has its own ESLint config
+            'docs/**/*'
         ]
     }
 ];
