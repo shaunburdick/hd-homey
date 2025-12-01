@@ -15,6 +15,7 @@ import type { InvitationValidationResult, InvitationWithStatus } from './types';
 import type { DB } from '@/lib/database/db';
 import { invitations, user  } from '@/lib/database/schema';
 import type { Invitation } from '@/lib/database/schema';
+import Logger from '@/lib/logger';
 
 /**
  * Generate a cryptographically secure invitation token
@@ -66,8 +67,7 @@ export async function generateUniqueToken(db: DB, maxRetries = 3): Promise<strin
         }
 
         // Token collision detected (astronomically rare), retry
-        // eslint-disable-next-line no-console
-        console.warn(`Invitation token collision detected on attempt ${attempt + 1}, retrying...`);
+        Logger.warn(`Invitation token collision detected on attempt ${attempt + 1}, retrying...`);
     }
 
     throw new Error(`Failed to generate unique invitation token after ${maxRetries} attempts`);
