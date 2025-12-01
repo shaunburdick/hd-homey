@@ -10,7 +10,9 @@ on:
             - ".specs/**"
             - "LICENSE"
             - ".vscode/**"
+            - "docs/**"
             - ".github/workflows/test.yml"
+            - ".github/workflows/docs.yml"
             - ".github/workflows/codeql.yml"
             - ".github/workflows/dependency-review.yml"
     pull_request:
@@ -20,7 +22,9 @@ on:
             - ".specs/**"
             - "LICENSE"
             - ".vscode/**"
+            - "docs/**"
             - ".github/workflows/test.yml"
+            - ".github/workflows/docs.yml"
             - ".github/workflows/codeql.yml"
             - ".github/workflows/dependency-review.yml"
     workflow_dispatch:
