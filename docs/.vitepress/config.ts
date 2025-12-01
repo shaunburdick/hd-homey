@@ -110,7 +110,23 @@ export default defineConfig({
         ['meta', { property: 'og:type', content: 'website' }],
         ['meta', { property: 'og:title', content: 'HD Homey Documentation' }],
         ['meta', { property: 'og:description', content: 'HDHomeRun Proxy for Remote Streaming' }],
-        ['meta', { property: 'og:image', content: '/hd-homey/hd-homey.png' }]
+        ['meta', { property: 'og:image', content: '/hd-homey/hd-homey.png' }],
+        // Plausible Analytics
+        [
+            'script',
+            {
+                defer: '',
+                'data-domain': 'shaunburdick.github.io',
+                src: 'https://analytics.public.burdick.dev/js/script.hash.pageview-props.tagged-events.js'
+            }
+        ],
+        [
+            'script',
+            {},
+            'window.plausible = window.plausible || function() { ' +
+            '(window.plausible.q = window.plausible.q || []).push(arguments) ' +
+            '}'
+        ]
     ],
 
     lastUpdated: true
