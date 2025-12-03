@@ -97,6 +97,7 @@ export async function ChannelOrganizer({ tunerId, userId }: ChannelOrganizerProp
                 channels={hidden}
                 tunerId={tunerId}
                 emptyMessage="No hidden channels. Hide channels you don't want to see in the main list."
+                defaultExpanded={false}
             />
         </section>
     );

@@ -15,6 +15,7 @@ interface ChannelSectionProps {
     channels: ChannelWithPreference[];
     tunerId: number;
     emptyMessage?: string;
+    defaultExpanded?: boolean;
 }
 
 interface OptimisticUpdate {
@@ -45,14 +46,16 @@ function isAC4Audio(audioCodec: string | null): boolean {
  * @param channels - Array of channels to display
  * @param tunerId - The tuner ID for building channel URLs
  * @param emptyMessage - Message to display when section is empty
+ * @param defaultExpanded - Whether the section should start expanded (default: true)
  */
 export function ChannelSection({
     title,
     channels,
     tunerId,
     emptyMessage = 'No channels in this section.',
+    defaultExpanded = true,
 }: ChannelSectionProps) {
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -233,7 +236,7 @@ export function ChannelSection({
                     }}
                     aria-label={isExpanded ? `Collapse ${title}` : `Expand ${title}`}
                 >
-                    {isExpanded ? '▼' : '▶'}
+                    {isExpanded ? '▼' : '▶︎'}
                 </button>
             </div>
 

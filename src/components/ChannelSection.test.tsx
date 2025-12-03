@@ -29,6 +29,7 @@ describe('ChannelSection', () => {
     // Constants to avoid duplicate strings
     const CHANNEL_URL_BASE = 'http://tuner/channel/';
     const H264_CODEC = 'h264';
+    const ARIA_EXPANDED = 'aria-expanded';
 
     afterEach(() => {
         cleanup();
@@ -133,14 +134,58 @@ describe('ChannelSection', () => {
         it('should show empty message when no channels', () => {
             render(
                 <ChannelSection
-                    title="Hidden"
+                    title="Channels"
                     channels={[]}
                     tunerId={1}
-                    emptyMessage="No hidden channels"
+                    emptyMessage="No channels available"
                 />
             );
 
-            expect(screen.getByText('No hidden channels')).toBeDefined();
+            expect(screen.getByText('No channels available')).toBeDefined();
+        });
+
+        it('should start collapsed when defaultExpanded is false', () => {
+            render(
+                <ChannelSection
+                    title="Hidden"
+                    channels={mockChannels}
+                    tunerId={1}
+                    defaultExpanded={false}
+                />
+            );
+
+            const collapseButton = screen.getByLabelText('Expand Hidden');
+            expect(collapseButton).toBeDefined();
+            expect(collapseButton.getAttribute(ARIA_EXPANDED)).toBe('false');
+        });
+
+        it('should start expanded when defaultExpanded is true', () => {
+            render(
+                <ChannelSection
+                    title="Favorites"
+                    channels={mockChannels}
+                    tunerId={1}
+                    defaultExpanded={true}
+                />
+            );
+
+            const collapseButton = screen.getByLabelText('Collapse Favorites');
+            expect(collapseButton).toBeDefined();
+            expect(collapseButton.getAttribute(ARIA_EXPANDED)).toBe('true');
+        });
+
+        it('should default to expanded when defaultExpanded prop is omitted', () => {
+            render(
+                <ChannelSection
+                    title="Channels"
+                    channels={mockChannels}
+                    tunerId={1}
+                />
+            );
+
+            const collapseButton = screen.getByLabelText('Collapse Channels');
+            expect(collapseButton).toBeDefined();
+            expect(collapseButton.getAttribute(ARIA_EXPANDED)).toBe('true');
         });
     });
 
