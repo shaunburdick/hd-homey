@@ -276,8 +276,8 @@ export function ChannelSection({
                                     <div
                                         style={{
                                             position: 'absolute',
-                                            top: 'var(--space-2)',
-                                            right: 'var(--space-2)',
+                                            top: 'var(--space-3)',
+                                            right: 'var(--space-3)',
                                             display: 'flex',
                                             gap: 'var(--space-2)',
                                             zIndex: 10,
@@ -294,8 +294,8 @@ export function ChannelSection({
                                             disabled={isPending}
                                             aria-label={
                                                 channel.isFavorite
-                                                    ? 'Remove from favorites'
-                                                    : 'Add to favorites'
+                                                    ? `Remove from favorites: ${channel.guideName}`
+                                                    : `Add to favorites: ${channel.guideName}`
                                             }
                                             style={{
                                                 ...getButtonBaseStyles(
@@ -303,6 +303,8 @@ export function ChannelSection({
                                                     'var(--color-warning)'
                                                 ),
                                                 fontSize: '20px',
+                                                minWidth: '44px',
+                                                minHeight: '44px',
                                             }}
                                             onMouseEnter={handleButtonMouseEnter}
                                             onMouseLeave={handleButtonMouseLeave}
@@ -321,8 +323,8 @@ export function ChannelSection({
                                             disabled={isPending}
                                             aria-label={
                                                 channel.isHidden
-                                                    ? 'Unhide channel'
-                                                    : 'Hide channel'
+                                                    ? `Unhide channel: ${channel.guideName}`
+                                                    : `Hide channel: ${channel.guideName}`
                                             }
                                             style={{
                                                 ...getButtonBaseStyles(
@@ -331,6 +333,8 @@ export function ChannelSection({
                                                 ),
                                                 fontSize: '18px',
                                                 fontWeight: 'var(--font-weight-bold)',
+                                                minWidth: '44px',
+                                                minHeight: '44px',
                                             }}
                                             onMouseEnter={handleButtonMouseEnter}
                                             onMouseLeave={handleButtonMouseLeave}
@@ -358,13 +362,10 @@ export function ChannelSection({
                                             onMouseEnter={(e) => {
                                                 const target = e.currentTarget as HTMLElement;
                                                 target.style.boxShadow = 'var(--shadow-md)';
-                                                target.style.borderColor =
-                                                    'var(--color-border-hover)';
                                             }}
                                             onMouseLeave={(e) => {
                                                 const target = e.currentTarget as HTMLElement;
                                                 target.style.boxShadow = 'var(--shadow-sm)';
-                                                target.style.borderColor = 'var(--color-border)';
                                             }}
                                         >
                                             <div
@@ -374,29 +375,47 @@ export function ChannelSection({
                                                     gap: 'var(--space-3)',
                                                 }}
                                             >
-                                                {/* Guide Number Badge */}
+                                                {/* Guide Number Badge with Play Icon */}
                                                 <div
                                                     style={{
                                                         backgroundColor: 'var(--color-bg-primary)',
-                                                        padding: 'var(--space-2) var(--space-3)',
+                                                        padding: 'var(--space-2)',
                                                         color: 'var(--color-accent)',
-                                                        minWidth: '60px',
+                                                        width: '80px',
+                                                        flexShrink: 0,
                                                         borderRadius: 'var(--radius-md)',
                                                         fontWeight: 'var(--font-weight-semibold)',
                                                         textAlign: 'center',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: 'var(--space-1)',
                                                     }}
                                                 >
-                                                    {channel.guideNumber}
+                                                    <span
+                                                        style={{
+                                                            fontSize: 'var(--font-size-xs)',
+                                                        }}
+                                                        aria-hidden="true"
+                                                    >
+                                                        ▶
+                                                    </span>
+                                                    <span>{channel.guideNumber}</span>
                                                 </div>
 
                                                 {/* Channel Info */}
-                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div
+                                                    style={{
+                                                        flex: 1,
+                                                        minWidth: 0,
+                                                        paddingRight: '60px',
+                                                    }}
+                                                >
                                                     <div
                                                         style={{
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             gap: 'var(--space-2)',
-                                                            marginBottom: 'var(--space-1)',
                                                         }}
                                                     >
                                                         <span
@@ -431,30 +450,6 @@ export function ChannelSection({
                                                             </span>
                                                         )}
                                                     </div>
-                                                    {channel.url && (
-                                                        <div
-                                                            style={{
-                                                                fontSize: 'var(--font-size-xs)',
-                                                                color: 'var(--color-text-tertiary)',
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis',
-                                                                whiteSpace: 'nowrap',
-                                                            }}
-                                                        >
-                                                            {channel.url}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Arrow Icon */}
-                                                <div
-                                                    style={{
-                                                        fontSize: 'var(--font-size-sm)',
-                                                        color: 'var(--color-text-tertiary)',
-                                                    }}
-                                                    aria-hidden="true"
-                                                >
-                                                    ▶️
                                                 </div>
                                             </div>
                                         </Card>
