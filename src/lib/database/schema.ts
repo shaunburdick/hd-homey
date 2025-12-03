@@ -274,9 +274,12 @@ export const userChannelPreferences = sqliteTable(
             .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`),
     },
     (table) => ({
-        userChannelUnique: unique('user_channel_preferences_user_id_channel_id_unique').on(table.userId, table.channelId),
+        userChannelUnique: unique(
+            'user_channel_preferences_user_id_channel_id_unique'
+        ).on(table.userId, table.channelId),
         userIdx: index('idx_user_channel_prefs_user').on(table.userId),
-        userChannelIdx: index('idx_user_channel_prefs_user_channel').on(table.userId, table.channelId),
+        userChannelIdx: index('idx_user_channel_prefs_user_channel')
+            .on(table.userId, table.channelId),
     })
 );
 
@@ -294,3 +297,21 @@ export const userChannelPreferenceRelations = relations(userChannelPreferences, 
         references: [channels.id],
     }),
 }));
+
+/**
+ * Channel with user preference data joined
+ * Used by ChannelOrganizer to display channels with their preference state
+ * Note: isFavorite and isHidden are booleans because the schema uses mode: 'boolean'
+ */
+export interface ChannelWithPreference {
+    id: number;
+    guideNumber: string;
+    guideName: string;
+    url: string | null;
+    hd: number;
+    videoCodec: string | null;
+    audioCodec: string | null;
+    fk_tuner: number;
+    isFavorite: boolean | null;
+    isHidden: boolean | null;
+}
