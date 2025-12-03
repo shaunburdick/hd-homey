@@ -248,3 +248,49 @@ export const invitationRelations = relations(invitations, ({ one }) => ({
         relationName: 'invitationRevoker',
     }),
 }));
+
+// ===================================
+// User Channel Preferences Table (SPEC-012)
+// ===================================
+
+/**
+ * User channel preferences table for favorites and hidden channels
+ * Stores per-user preferences for organizing channels
+ */
+export const userChannelPreferences = sqliteTable(
+    'user_channel_preferences',
+    {
+        id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+        userId: text('user_id')
+            .notNull()
+            .references(() => user.id, { onDelete: 'cascade' }),
+        channelId: integer('channel_id', { mode: 'number' })
+            .notNull()
+            .references(() => channels.id, { onDelete: 'cascade' }),
+        isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
+        isHidden: integer('is_hidden', { mode: 'boolean' }).notNull().default(false),
+        updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+            .notNull()
+            .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`),
+    },
+    (table) => ({
+        userChannelUnique: unique('user_channel_preferences_user_id_channel_id_unique').on(table.userId, table.channelId),
+        userIdx: index('idx_user_channel_prefs_user').on(table.userId),
+        userChannelIdx: index('idx_user_channel_prefs_user_channel').on(table.userId, table.channelId),
+    })
+);
+
+export type UserChannelPreference = typeof userChannelPreferences.$inferSelect;
+export type UserChannelPreferenceInsert = typeof userChannelPreferences.$inferInsert;
+
+// User Channel Preferences Relations
+export const userChannelPreferenceRelations = relations(userChannelPreferences, ({ one }) => ({
+    user: one(user, {
+        fields: [userChannelPreferences.userId],
+        references: [user.id],
+    }),
+    channel: one(channels, {
+        fields: [userChannelPreferences.channelId],
+        references: [channels.id],
+    }),
+}));
