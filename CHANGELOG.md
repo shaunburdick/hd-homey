@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Channel Favorites (SPEC-012)**: Users can now favorite and hide channels for personalized channel organization
+  - Favorite button (★) to mark frequently watched channels
+  - Hide button (✕) to remove unwanted channels from view
+  - Channels automatically organized into Favorites/Channels/Hidden sections
+  - Intelligent state management: favoriting auto-unhides, hiding auto-unfavorites
+  - Per-user preferences stored in database
+  - Optimistic UI updates for instant feedback
+  - Full accessibility support with ARIA labels
+  - All channels sorted numerically by guide number
+
 ## [1.0.0-beta.4] - 2025-11-30
 
 ### Added
