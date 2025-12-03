@@ -59,12 +59,15 @@ export async function ChannelOrganizer({ tunerId, userId }: ChannelOrganizerProp
         .orderBy(asc(channels.guideNumber))
         .all();
 
+    // Sort channels numerically by guide number
+    const sortedChannels = channelsWithPrefs.sort((a, b) => parseFloat(a.guideNumber) - parseFloat(b.guideNumber));
+
     // Group channels by preference state
     const favorites: ChannelWithPreference[] = [];
     const hidden: ChannelWithPreference[] = [];
     const regular: ChannelWithPreference[] = [];
 
-    for (const channel of channelsWithPrefs) {
+    for (const channel of sortedChannels) {
         if (channel.isFavorite === true) {
             favorites.push(channel);
         } else if (channel.isHidden === true) {

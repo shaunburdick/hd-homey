@@ -260,9 +260,9 @@ export function ChannelSection({
                     ) : (
                         <div
                             style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                                gap: 'var(--space-4)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 'var(--space-3)',
                             }}
                         >
                             {optimisticChannels.map((channel) => (
@@ -329,12 +329,13 @@ export function ChannelSection({
                                                     channel.isHidden ?? false,
                                                     'var(--color-error)'
                                                 ),
-                                                fontSize: '16px',
+                                                fontSize: '18px',
+                                                fontWeight: 'var(--font-weight-bold)',
                                             }}
                                             onMouseEnter={handleButtonMouseEnter}
                                             onMouseLeave={handleButtonMouseLeave}
                                         >
-                                            {channel.isHidden ? '🚫' : '👁️'}
+                                            ✕
                                         </button>
                                     </div>
 
