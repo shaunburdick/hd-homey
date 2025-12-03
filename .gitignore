@@ -140,3 +140,6 @@ next-env.d.ts
 # Application
 data/
 version.json
+
+# Spec-kit agent folders (may contain credentials/tokens)
+.opencode/

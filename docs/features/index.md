@@ -26,6 +26,17 @@ Browse and stream live TV channels through your web browser or external media pl
 - HLS transcoded streams for compatibility
 - External player support (VLC, mpv, etc.)
 
+### ⭐ Channel Favorites
+Personalize your viewing experience by organizing channels with favorites and hiding unwanted content.
+
+[Learn More →](/features/channel-favorites)
+
+**Key capabilities:**
+- Mark frequently watched channels as favorites
+- Hide unwanted channels from view
+- Auto-organized into Favorites/Channels/Hidden sections
+- Per-user preferences with instant updates
+
 ### 🔄 Video Transcoding
 Real-time conversion of MPEG-2 streams to H.264/HLS for broader device compatibility and bandwidth optimization.
 
@@ -108,6 +119,7 @@ All core features are complete and tested:
 |---------|--------|---------------|
 | Tuner Management | ✅ Complete | ✅ 100% |
 | Channel Streaming | ✅ Complete | ✅ 100% |
+| Channel Favorites | ✅ Complete | ✅ 100% |
 | Video Transcoding | ✅ Complete | ✅ 100% |
 | User Management | ✅ Complete | ✅ 100% |
 | User Invitations | ✅ Complete | ✅ 100% |
@@ -123,7 +135,6 @@ All core features are complete and tested:
 Future features under consideration:
 - EPG (Electronic Program Guide) integration
 - Recording/DVR functionality
-- Channel grouping and favorites
 - Multi-language support
 - Mobile apps (iOS/Android)
 

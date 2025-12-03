@@ -26,3 +26,7 @@ export { ErrorDisplay } from './ErrorDisplay';
 export { default as InvitationForm } from './invitation-form';
 export { default as InvitationCard } from './invitation-card';
 export { default as InvitationList } from './invitation-list';
+
+// Note: ChannelOrganizer is a server component and should be imported directly
+// export { ChannelOrganizer } from './ChannelOrganizer';
+export { ChannelSection } from './ChannelSection';

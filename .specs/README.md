@@ -1,6 +1,20 @@
-# HD Homey Specifications
+# .specs/ Directory - ARCHIVED
 
-This directory contains specification-driven development documentation for HD Homey, compatible with various spec-driven tools like GitHub Spec Kit, Cursor, Claude Code, and other AI coding assistants.
+**Date Archived**: 2025-12-02  
+**Status**: Deprecated - Use `.specify/` instead
+
+## ⚠️ This Directory is Deprecated
+
+HD Homey has migrated to use **GitHub's spec-kit** for specification-driven development.
+
+**New Location**: `.specify/`  
+**Migration Summary**: See `.specify/MIGRATION-SUMMARY.md`
+
+---
+
+## Original Documentation (For Reference)
+
+This directory previously contained specification-driven development documentation for HD Homey, compatible with various spec-driven tools like GitHub Spec Kit, Cursor, Claude Code, and other AI coding assistants.
 
 ## Directory Structure
 
