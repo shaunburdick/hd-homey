@@ -1,6 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { getDb } from '@/lib/database/db';
 import { tuners, channels } from '@/lib/database/schema';
 import { AdminLink } from '@/components/AdminLink';
@@ -8,17 +9,12 @@ import RoleGuard from '@/components/RoleGuard';
 import { AuthRoles } from '@/lib/auth-roles';
 import { Card, Button } from '@/components';
 import { PageContainer, EmptyState } from '@/components/layouts';
+import { ChannelOrganizer } from '@/components/ChannelOrganizer';
+import { auth } from '@/lib/auth/auth';
+import type { Session } from '@/lib/auth/types';
 
 interface PageParams {
     id: string
-}
-
-/**
- * Check if audio codec is AC4
- */
-function isAC4Audio(audioCodec: string): boolean {
-    const codec = audioCodec.toLowerCase();
-    return codec.includes('ac4') || codec.includes('ac-4');
 }
 
 // Component-scoped warning styles - shared base for warning elements
@@ -32,18 +28,21 @@ const styles = {
         fontWeight: 'var(--font-weight-medium)',
     },
     warningText: warningColor,
-    ac4Badge: {
-        padding: '2px 6px',
-        backgroundColor: 'var(--color-warning-bg)',
-        ...warningColor,
-        borderRadius: 'var(--radius-sm)',
-        fontWeight: 'var(--font-weight-medium)',
-    },
 };
 
 export default async function Page(props: { params: Promise<PageParams> }) {
     const params = await props.params;
     const db = await getDb();
+
+    // Get session for user preferences
+    const rawSession = await auth.api.getSession({
+        headers: await headers()
+    });
+    const session = rawSession as unknown as Session | null;
+
+    if (!session?.user) {
+        notFound();
+    }
 
     const tuner = await db.query.tuners.findFirst({
         where: and(
@@ -66,6 +65,8 @@ export default async function Page(props: { params: Promise<PageParams> }) {
 
     const sortedChannels = tuner.channels
         .sort((a, b) => parseFloat(a.guideNumber) - parseFloat(b.guideNumber));
+
+    const totalChannels = sortedChannels.length;
 
     return (
         <PageContainer>
@@ -109,7 +110,7 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                             Channels
                         </h2>
                         <p className="text-secondary text-sm m-0">
-                            {sortedChannels.length} channel{sortedChannels.length !== 1 ? 's' : ''} available
+                            {totalChannels} channel{totalChannels !== 1 ? 's' : ''} available
                         </p>
                     </div>
                     <RoleGuard allowedRoles={[AuthRoles.Admin]}>
@@ -122,59 +123,17 @@ export default async function Page(props: { params: Promise<PageParams> }) {
                 </div>
             </Card>
 
-            {sortedChannels.length === 0 ? (
+            {totalChannels === 0 ? (
                 <EmptyState
                     icon="📺"
                     title="No channels found"
                     description='Click "Refresh Channels" to scan for available channels'
                 />
             ) : (
-                <div className="grid gap-3">
-                    {sortedChannels.map(channel => (
-                        <Link
-                            key={channel.id}
-                            href={`/tuners/${tuner.id}/channel/${channel.id}`}
-                            className="no-underline"
-                        >
-                            <Card className="channel-card transition p-4" style={{ cursor: 'pointer' }}>
-                                <div className="flex items-center gap-4">
-                                    <div className="rounded font-semibold text-center" style={{
-                                        backgroundColor: 'var(--color-bg-primary)',
-                                        padding: 'var(--space-2) var(--space-3)',
-                                        color: 'var(--color-accent)',
-                                        minWidth: '60px',
-                                    }}>
-                                        {channel.guideNumber}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-medium text-primary">
-                                                {channel.guideName}
-                                            </span>
-                                            {isAC4Audio(channel.audioCodec) && (
-                                                <span
-                                                    className="text-xs"
-                                                    style={styles.ac4Badge}
-                                                    title="AC4 audio not supported - silent audio"
-                                                >
-                                                    ⚠️ AC4
-                                                </span>
-                                            )}
-                                        </div>
-                                        {channel.url && (
-                                            <div className="text-xs text-tertiary" style={{ wordBreak: 'break-all' }}>
-                                                {channel.url}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="text-sm text-tertiary">
-                                        ▶️
-                                    </div>
-                                </div>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
+                <ChannelOrganizer
+                    tunerId={tuner.id}
+                    userId={session.user.id}
+                />
             )}
         </PageContainer>
     );
