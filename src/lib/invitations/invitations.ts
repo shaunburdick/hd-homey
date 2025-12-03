@@ -5,15 +5,14 @@
 
 import { randomBytes } from 'node:crypto';
 import { eq, desc } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/sqlite-core';
 import {
     InvitationStatus,
     InvitationValidationError
-
-
 } from './types';
 import type { InvitationValidationResult, InvitationWithStatus } from './types';
 import type { DB } from '@/lib/database/db';
-import { invitations, user  } from '@/lib/database/schema';
+import { invitations, user } from '@/lib/database/schema';
 import type { Invitation } from '@/lib/database/schema';
 import Logger from '@/lib/logger';
 
@@ -175,13 +174,17 @@ export async function validateInvitation(
 }
 
 /**
- * Get all invitations with creator information
+ * Get all invitations with creator and redeemer information
  * Used for admin UI display
  *
  * @param db Database connection
- * @returns Array of invitations with creator details and status
+ * @returns Array of invitations with creator/redeemer details and status
  */
 export async function getAllInvitationsWithCreators(db: DB) {
+    // Create aliases for the user table to join twice (creator and redeemer)
+    const creator = alias(user, 'creator');
+    const redeemer = alias(user, 'redeemer');
+
     const results = await db
         .select({
             // Invitation fields
@@ -197,12 +200,18 @@ export async function getAllInvitationsWithCreators(db: DB) {
             revokedAt: invitations.revokedAt,
             revokedBy: invitations.revokedBy,
             // Creator info
-            creatorId: user.id,
-            creatorUsername: user.username,
-            creatorName: user.name,
+            creatorId: creator.id,
+            creatorUsername: creator.username,
+            creatorName: creator.name,
+            creatorDisplayUsername: creator.displayUsername,
+            // Redeemer info (who used the invitation)
+            redeemerUsername: redeemer.username,
+            redeemerName: redeemer.name,
+            redeemerDisplayUsername: redeemer.displayUsername,
         })
         .from(invitations)
-        .leftJoin(user, eq(invitations.createdBy, user.id))
+        .leftJoin(creator, eq(invitations.createdBy, creator.id))
+        .leftJoin(redeemer, eq(invitations.usedBy, redeemer.id))
         .orderBy(desc(invitations.createdAt))
         .all();
 
@@ -219,6 +228,11 @@ export async function getAllInvitationsWithCreators(db: DB) {
         usedBy: row.usedBy,
         revokedAt: row.revokedAt,
         revokedBy: row.revokedBy,
+        // Include usernames and display names for display
+        creatorUsername: row.creatorUsername,
+        creatorName: row.creatorName,
+        usedByUsername: row.redeemerUsername,
+        usedByName: row.redeemerName,
         creator: {
             id: row.creatorId ?? row.createdBy,
             username: row.creatorUsername,

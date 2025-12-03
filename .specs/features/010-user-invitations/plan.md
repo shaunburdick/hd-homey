@@ -572,4 +572,25 @@ If issues arise after deployment:
 
 ---
 
-*This plan has been reviewed against the constitution and spec. Ready for implementation. Update this document as implementation progresses.*
+## Implementation Updates
+
+### Enhancement: Display Names with Usernames (2025-12-02)
+
+**Change**: Updated invitation list display to show user display names alongside usernames for better identification.
+
+**Modified Components**:
+- `src/lib/invitations/invitations.ts`: Enhanced `getAllInvitationsWithCreators()` to fetch both `name` and `username` fields for creators and redeemers using table aliases
+- `src/components/invitation-card.tsx`: Updated to display "Display Name (username)" format
+- `src/components/invitation-list.tsx`: Updated TypeScript interface to include display name fields
+
+**Display Format**:
+- Creator: `Created: [date] by [Display Name] ([username])`
+- Redeemer: `Used: [date] by [Display Name] ([username])`
+
+**Testing**: Added test coverage for display name fields in invitation queries.
+
+**Impact**: Improves admin experience by showing friendly names first, with technical usernames as reference. No breaking changes.
+
+---
+
+*This plan has been reviewed against the constitution and spec. Feature completed 2025-11-30, enhanced 2025-12-02.*

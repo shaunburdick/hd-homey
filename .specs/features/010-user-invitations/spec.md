@@ -4,8 +4,9 @@
 **Created**: 2025-11-29  
 **Status**: ✅ Completed  
 **Owner**: HD Homey Team  
-**Version**: 1.3  
-**Completed**: 2025-11-30
+**Version**: 1.4  
+**Completed**: 2025-11-30  
+**Enhanced**: 2025-12-02
 
 ## Overview
 
@@ -98,7 +99,8 @@ The User Invitations feature allows administrators to generate secure, one-time-
 - **FR-009**: System MUST allow any admin to revoke any unused invitation (not restricted to creator)
 - **FR-010**: System MUST NOT allow revoking already-used invitations
 - **FR-011**: System MUST display all invitations to any admin, showing status (Pending, Used, Expired, Revoked), note, and creator
-- **FR-011a**: System MUST show which admin created each invitation in the invitations list
+- **FR-011a**: System MUST show which admin created each invitation in the invitations list, displaying their name and username
+- **FR-011b**: System MUST show which user redeemed each used invitation, displaying their name and username
 - **FR-012**: System MUST create new user accounts with the role specified in the invitation
 - **FR-013**: System MUST redirect users to the sign-in page after successful account creation via invitation
 - **FR-014**: System MUST display a success message on the sign-in page indicating the account was created successfully
@@ -240,13 +242,17 @@ Explicitly list what this feature does NOT include:
 │                                                  │
 │  All Invitations (showing 3)                    │
 │  ┌────────────────────────────────────────────┐ │
-│  │ Status Note       Role  By     Created Exp │ │
+│  │ Status Note       Role  Created           │ │
 │  ├────────────────────────────────────────────┤ │
-│  │ 🟢 For John... Viewer admin1 11/29  12/29 │ │
+│  │ 🟢 For John... Viewer 11/29/25 3:30 PM   │ │
+│  │    Created by: Admin User (admin1)        │ │
+│  │    Expires: 12/29/25                      │ │
 │  │    [Copy Link] [Revoke]                    │ │
 │  ├────────────────────────────────────────────┤ │
-│  │ ✅ Sarah's inv Admin admin2 11/20  12/20  │ │
-│  │    Used by: john123 on 2025-11-22         │ │
+│  │ ✅ Sarah's inv Admin  11/20/25 10:15 AM  │ │
+│  │    Created by: Super Admin (admin2)       │ │
+│  │    Used by: John Doe (john123)            │ │
+│  │    Used on: 11/22/25 2:45 PM              │ │
 │  ├────────────────────────────────────────────┤ │
 │  │ ⏰ Marketing   Viewer admin1 10/15  11/14 │ │
 │  └────────────────────────────────────────────┘ │
@@ -397,6 +403,7 @@ CREATE INDEX idx_invitations_status ON invitations(used_at, expires_at, revoked_
 - v1.0 (2025-11-29): Initial specification
 - v1.1 (2025-11-29): Added optional note/label field for invitations (FR-003a)
 - v1.2 (2025-11-29): Changed invitation visibility - any admin can view and manage all invitations (not filtered by creator)
+- v1.4 (2025-12-02): Enhanced display to show creator and redeemer display names with usernames
 
 ## Clarifications Applied
 
@@ -464,6 +471,28 @@ CREATE INDEX idx_invitations_status ON invitations(used_at, expires_at, revoked_
 - Passwords are never preserved (security best practice)
 - Reduces user frustration from re-entering data
 
+### Display Name and Username Enhancement (v1.4)
+**Date**: 2025-12-02  
+**Rationale**: To improve clarity and identification in the invitations list, we now display both the user's display name (friendly name) and their username for both creators and redeemers.
+
+**Implementation Details**:
+- Creator display format: `by [Display Name] ([username])`
+  - Example: `Created: 12/2/2025, 3:30:00 PM by Admin User (admin)`
+- Redeemer display format: `by [Display Name] ([username])`
+  - Example: `Used: 12/3/2025, 10:15:00 AM by John Doe (johndoe)`
+- Database queries enhanced to join with user table twice (using table aliases) to fetch both creator and redeemer information
+- Display name is shown prominently, with username in parentheses for reference
+
+**User Experience Benefits**:
+- Admins can immediately identify who created and who used invitations
+- Display names provide friendly identification
+- Usernames in parentheses provide technical reference for system operations
+- Consistent with user management UI patterns
+
+**Requirements Updated**:
+- FR-011a: Enhanced to specify "displaying their name and username"
+- FR-011b: Added to specify redeemer name and username display
+
 ---
 
-*Feature completed and tested 2025-11-30. All acceptance criteria met.*
+*Feature completed and tested 2025-11-30. Enhanced display 2025-12-02. All acceptance criteria met.*

@@ -509,5 +509,30 @@ describe('Invitation Business Logic', () => {
             // Within used/revoked group, newest first
             expect(usedIndex1).toBeLessThan(usedIndex2); // recent-revoked before old-used
         });
+
+        it('should include creator and redeemer usernames and display names', async () => {
+            const { getAllInvitationsWithCreators } = await import('./invitations');
+            const { invitations } = await import('@/lib/database/schema');
+
+            // Create invitation with known creator that gets used by known user
+            await testDb.insert(invitations).values({
+                token: 'test-with-usernames',
+                role: 'viewer',
+                createdBy: TEST_ADMIN_ID,
+                createdAt: new Date(),
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                usedAt: new Date(),
+                usedBy: TEST_USER_ID,
+            });
+
+            const result = await getAllInvitationsWithCreators(testDb);
+            const invitation = result.find(inv => inv.token === 'test-with-usernames');
+
+            expect(invitation).toBeDefined();
+            expect(invitation?.creatorUsername).toBe('admin');
+            expect(invitation?.creatorName).toBe('Admin User');
+            expect(invitation?.usedByUsername).toBe('viewer');
+            expect(invitation?.usedByName).toBe('Viewer User');
+        });
     });
 });

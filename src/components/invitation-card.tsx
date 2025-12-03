@@ -3,10 +3,12 @@
 import { Button } from '@/components';
 import type { Invitation } from '@/lib/database/schema';
 
-// Extended invitation type with username fields for display
+// Extended invitation type with username and display name fields for display
 interface InvitationDisplay extends Invitation {
     creatorUsername?: string | null;
+    creatorName?: string | null;
     usedByUsername?: string | null;
+    usedByName?: string | null;
 }
 
 interface InvitationCardProps {
@@ -133,7 +135,8 @@ export default function InvitationCard({ invitation, onRevoke }: InvitationCardP
                 <div style={{ marginBottom: 'var(--space-1)' }}>
                     <strong>Created:</strong>{' '}
                     {new Date(invitation.createdAt).toLocaleString()}
-                    {invitation.creatorUsername && ` by ${invitation.creatorUsername}`}
+                    {invitation.creatorName && ` by ${invitation.creatorName}`}
+                    {invitation.creatorUsername && ` (${invitation.creatorUsername})`}
                 </div>
                 <div style={{ marginBottom: 'var(--space-1)' }}>
                     <strong>Expires:</strong>{' '}
@@ -143,7 +146,8 @@ export default function InvitationCard({ invitation, onRevoke }: InvitationCardP
                     <div style={{ marginBottom: 'var(--space-1)' }}>
                         <strong>Used:</strong>{' '}
                         {new Date(invitation.usedAt).toLocaleString()}
-                        {invitation.usedByUsername && ` by ${invitation.usedByUsername}`}
+                        {invitation.usedByName && ` by ${invitation.usedByName}`}
+                        {invitation.usedByUsername && ` (${invitation.usedByUsername})`}
                     </div>
                 )}
                 {isRevoked && invitation.revokedAt && (

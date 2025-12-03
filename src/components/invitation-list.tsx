@@ -6,7 +6,9 @@ import type { Invitation } from '@/lib/database/schema';
 
 interface InvitationDisplay extends Invitation {
     creatorUsername?: string | null;
+    creatorName?: string | null;
     usedByUsername?: string | null;
+    usedByName?: string | null;
 }
 
 interface InvitationListProps {
