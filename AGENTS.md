@@ -36,8 +36,9 @@ src/
 │   └── logger.ts     # Pino logging
 └── proxy.ts          # Route protection proxy
 
-.specs/               # Spec-driven development documentation
-migrations/           # Database migrations
+.specify/            # Spec-kit: specifications and constitution
+specs/               # Spec-kit: implementation plans (created during planning phase)
+migrations/          # Database migrations
 ```
 
 ### Key Features (with Specs)
@@ -49,9 +50,11 @@ migrations/           # Database migrations
 
 ## Development Practices
 
-### Spec-Driven Development
-- **All features must have a spec** in `.specs/features/`
-- Use the template in `.specs/templates/feature-spec-template.md`
+### Spec-Driven Development (Spec-Kit)
+- **All features must have a spec** in `.specify/features/`
+- Use spec-kit commands: `/speckit.specify`, `/speckit.clarify`, `/speckit.plan`, `/speckit.tasks`, `/speckit.implement`
+- Feature specs are single files (e.g., `001-tuner-management.md`), not subdirectories
+- Implementation plans live in `specs/###-feature/` directory (created during planning phase)
 - Update spec status as implementation progresses
 - Specs drive implementation, not vice versa
 
@@ -166,24 +169,27 @@ git commit -m "feat: add new feature
 
 ```bash
 # 1. Create spec (if new feature)
-.specs/features/012-new-feature/spec.md
+.specify/features/012-new-feature.md
 
-# 2. Implement feature
+# 2. Plan implementation (spec-kit planning phase)
+specs/012-new-feature/plan.md
+
+# 3. Implement feature
 src/app/(protected)/new-feature/page.tsx
 
-# 3. Add comprehensive docs
+# 4. Add comprehensive docs
 docs/features/new-feature.md     # New file
 docs/features/index.md           # Add to feature list
 docs/config/environment-variables.md  # If adds env vars
 
-# 4. Update README feature list (optional, if major)
+# 5. Update README feature list (optional, if major)
 README.md                        # Add one-line feature highlight
 
-# 5. Test docs build
+# 6. Test docs build
 cd docs && npm run docs:build    # Verify no errors
 
-# 6. Commit everything together
-git add .specs/ src/ docs/ README.md
+# 7. Commit everything together
+git add .specify/ specs/ src/ docs/ README.md
 git commit -m "feat: add new feature X
 
 Implements new feature X that allows users to...
@@ -348,7 +354,7 @@ docker compose up -d     # Start with Docker Compose
 
 ## Contributing
 
-1. Create/update spec in `.specs/features/` FIRST
+1. Create/update spec in `.specify/features/` FIRST
 2. Implement feature following spec
 3. Update spec status as you progress
 4. Add/update tests
@@ -422,4 +428,6 @@ gh workflow run release.yml -f version=v1.0.0-alpha.2
 
 ---
 
-**Quick Start for Agents**: Review `.specs/constitution.md` and relevant feature specs in `.specs/features/` before making changes. Always update specs to match implementation.
+**Quick Start for Agents**: Review `.specify/memory/constitution.md` and relevant feature specs in `.specify/features/` before making changes. Always update specs to match implementation.
+
+**Spec-Kit Commands**: Use `/speckit.specify` to create specifications, `/speckit.clarify` to resolve ambiguities, `/speckit.plan` for implementation planning, `/speckit.tasks` to break down work, and `/speckit.implement` to execute.
