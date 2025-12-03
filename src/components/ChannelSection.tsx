@@ -24,6 +24,17 @@ interface OptimisticUpdate {
 }
 
 /**
+ * Check if audio codec is AC4
+ */
+function isAC4Audio(audioCodec: string | null): boolean {
+    if (!audioCodec) {
+        return false;
+    }
+    const codec = audioCodec.toLowerCase();
+    return codec.includes('ac4') || codec.includes('ac-4');
+}
+
+/**
  * Client Component: Displays a collapsible section of channels
  *
  * Shows channels in a grid layout with cards linking to the channel detail page.
@@ -420,8 +431,7 @@ export function ChannelSection({
                                                     >
                                                         <span
                                                             style={{
-                                                                fontWeight:
-                                                                    'var(--font-weight-medium)',
+                                                                fontWeight: 'var(--font-weight-medium)',
                                                                 color: 'var(--color-text-primary)',
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis',
@@ -434,19 +444,33 @@ export function ChannelSection({
                                                             <span
                                                                 style={{
                                                                     padding: '2px 8px',
-                                                                    backgroundColor:
-                                                                        'var(--color-success-bg)',
+                                                                    backgroundColor: 'var(--color-success-bg)',
                                                                     color: 'var(--color-success)',
-                                                                    borderRadius:
-                                                                        'var(--radius-sm)',
+                                                                    borderRadius: 'var(--radius-sm)',
                                                                     fontSize: 'var(--font-size-xs)',
-                                                                    fontWeight:
-                                                                        'var(--font-weight-medium)',
+                                                                    fontWeight: 'var(--font-weight-medium)',
                                                                     whiteSpace: 'nowrap',
                                                                 }}
                                                                 aria-label="High Definition"
                                                             >
                                                                 ✓ HD
+                                                            </span>
+                                                        )}
+                                                        {isAC4Audio(channel.audioCodec) && (
+                                                            <span
+                                                                style={{
+                                                                    padding: '2px 6px',
+                                                                    backgroundColor: 'var(--color-warning-bg)',
+                                                                    color: 'var(--color-warning)',
+                                                                    borderRadius: 'var(--radius-sm)',
+                                                                    fontSize: 'var(--font-size-xs)',
+                                                                    fontWeight: 'var(--font-weight-medium)',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                                title="AC4 audio not supported - silent audio"
+                                                                aria-label="AC4 audio codec - not supported"
+                                                            >
+                                                                ⚠️ AC4
                                                             </span>
                                                         )}
                                                     </div>

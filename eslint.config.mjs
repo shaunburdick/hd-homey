@@ -76,7 +76,8 @@ export default [
                     ignoreStrings: 'var(--space-1),var(--space-2),var(--space-3),var(--space-4),var(--space-5),' +
                         'var(--color-primary),var(--color-secondary),var(--color-error),var(--color-success),' +
                         'var(--color-text-primary),var(--color-text-secondary),var(--color-border),' +
-                        'var(--radius-sm),var(--radius-md),var(--radius-lg)'
+                        'var(--radius-sm),var(--radius-md),var(--radius-lg),' +
+                        'var(--font-weight-medium),var(--font-size-xs)'
                 }
             ]
         },
