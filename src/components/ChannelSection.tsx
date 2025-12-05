@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useOptimistic, useTransition } from 'react';
+import { useState, useOptimistic, useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ChannelWithPreference } from '@/lib/database/schema';
@@ -55,12 +55,27 @@ export function ChannelSection({
     emptyMessage = 'No channels in this section.',
     defaultExpanded = true,
 }: ChannelSectionProps) {
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const sectionId = `channel-section-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    // Include tunerId in storage key to make state per-tuner
+    const storageKey = `hd-homey-tuner-${tunerId}-${sectionId}-expanded`;
+
+    // Initialize state from localStorage if available, otherwise use defaultExpanded
+    const [isExpanded, setIsExpanded] = useState(() => {
+        if (typeof window === 'undefined') {
+            return defaultExpanded;
+        }
+        const stored = localStorage.getItem(storageKey);
+        return stored !== null ? stored === 'true' : defaultExpanded;
+    });
+
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
-    const sectionId = `channel-section-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    // Persist state to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem(storageKey, String(isExpanded));
+    }, [isExpanded, storageKey]);
 
     /**
      * Get base styles for action buttons
