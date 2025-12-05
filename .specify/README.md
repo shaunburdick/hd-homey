@@ -1,7 +1,7 @@
 # HD Homey Feature Status
 
-**Last Updated**: 2025-11-30  
-**Version**: 1.0.0-beta.4 (Better-Auth Migration Complete, User Invitations Complete)
+**Last Updated**: 2024-12-04  
+**Version**: 1.0.0-beta.5 (Channel Favorites and Organization Complete)
 
 This document provides a quick overview of all features and their implementation status.
 

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.5] - 2024-12-04
+
 ### Added
 
 - **Channel Favorites (SPEC-012)**: Users can now favorite and hide channels for personalized channel organization
@@ -18,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Optimistic UI updates for instant feedback
   - Full accessibility support with ARIA labels
   - All channels sorted numerically by guide number
+- **Channel Section State Persistence**: Channel section expand/collapse states now persist across page reloads
+  - Per-tuner state isolation (each tuner remembers its own section states)
+  - Independent state for Favorites, Channels, and Hidden sections
+  - Uses browser localStorage for persistence
 
 ## [1.0.0-beta.4] - 2025-11-30
 

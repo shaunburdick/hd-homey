@@ -184,7 +184,7 @@ If you're deploying HD Homey, follow these security recommendations:
 services:
   hd-homey:
     # Use specific version tags, not 'latest'
-    image: ghcr.io/shaunburdick/hd-homey:1.0.0-beta.4
+    image: ghcr.io/shaunburdick/hd-homey:1.0.0-beta.5
     
     # Run as non-root user
     user: "1000:1000"
@@ -335,7 +335,7 @@ This security policy is licensed under [CC BY 4.0](https://creativecommons.org/l
 
 ---
 
-**Last Updated**: 2025-11-30  
-**Version**: 1.0.0-beta.4
+**Last Updated**: 2024-12-04  
+**Version**: 1.0.0-beta.5
 
 Thank you for helping keep HD Homey and its users secure! 🔒

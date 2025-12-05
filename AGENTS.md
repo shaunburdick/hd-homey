@@ -365,7 +365,7 @@ docker compose up -d     # Start with Docker Compose
 ## Releases
 
 ### Current Version
-**1.0.0-beta.4** - Documentation and invitations release! Comprehensive VitePress documentation site, user invitation system (SPEC-010), enhanced video player loading states, and improved environment variable configuration with auto-detection. All 295 tests passing.
+**1.0.0-beta.5** - Channel organization and preferences release! Channel favorites and hiding (SPEC-012), persistent section expand/collapse states per tuner, optimistic UI updates, and full accessibility support. All 340 tests passing.
 
 ### Release Process
 

@@ -126,7 +126,7 @@ All core features are complete and tested:
 | Stream Security | ✅ Complete | ✅ 100% |
 | Authentication | ✅ Complete | ✅ 100% |
 
-**Current Version**: v1.0.0-beta.4
+**Current Version**: v1.0.0-beta.5
 
 [View Changelog](https://github.com/shaunburdick/hd-homey/blob/main/CHANGELOG.md)
 
