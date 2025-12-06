@@ -16,6 +16,41 @@ HD Homey implements HDHomeRun-compatible APIs plus custom endpoints for stream s
 
 ## Available APIs
 
+### Health Check API
+Simple health check endpoint for monitoring and infrastructure tooling.
+
+**Use cases:**
+- Docker health checks
+- Monitoring systems (Prometheus, Datadog, etc.)
+- Load balancer health probes
+- CI/CD pipeline verification
+
+**Endpoint**: `GET /api/health`
+
+**Authentication**: None required (public endpoint)
+
+**Response Format**: JSON
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-12-06T13:00:00.000Z",
+  "version": "1.0.0-beta.5",
+  "commit": "a1b2c3d",
+  "branch": "main",
+  "buildDate": "2025-12-06T12:55:53.650Z",
+  "environment": "production"
+}
+```
+
+**Fields:**
+- `status`: Always "ok" if server is responding
+- `timestamp`: Current server time (ISO 8601)
+- `version`: Semantic version (e.g., "1.0.0-beta.5")
+- `commit`: Git commit SHA (7 characters, may include `-dirty` suffix in development)
+- `branch`: Git branch name (null for detached HEAD)
+- `buildDate`: Build timestamp (ISO 8601)
+- `environment`: "production" or "development"
+
 ### HDHomeRun Lineup API
 HDHomeRun-compatible endpoint for channel discovery and device integration.
 
