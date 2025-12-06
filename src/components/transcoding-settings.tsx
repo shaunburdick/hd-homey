@@ -135,7 +135,6 @@ export default function TranscodingSettings({
                     onChange={(e) =>
                         handlePresetChange(e.target.value as TranscodeSettings['preset'])
                     }
-                    disabled={!settings.enabled}
                 >
                     <option value="low">Low (720p, 1000kbps)</option>
                     <option value="medium">Medium (1080p, 2000kbps)</option>
@@ -291,7 +290,6 @@ export default function TranscodingSettings({
                     }
                     min="1"
                     max="20"
-                    disabled={!settings.enabled}
                 />
                 <small>
                     {' '}
@@ -315,7 +313,6 @@ export default function TranscodingSettings({
                     }
                     min="1"
                     max="10"
-                    disabled={!settings.enabled}
                 />
                 <small>
                     {' '}
@@ -337,7 +334,6 @@ export default function TranscodingSettings({
                     }
                     min="2"
                     max="20"
-                    disabled={!settings.enabled}
                 />
                 <small>
                     {' '}
@@ -350,7 +346,7 @@ export default function TranscodingSettings({
             <div style={{ marginTop: 'var(--space-6)' }}>
                 <button
                     type="submit"
-                    disabled={isPending || !settings.enabled}
+                    disabled={isPending}
                 >
                     {isPending ? 'Saving...' : '💾 Save Settings'}
                 </button>
