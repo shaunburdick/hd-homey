@@ -5,8 +5,10 @@ import { getDb } from '@/lib/database/db';
 import { user } from '@/lib/database/schema';
 import { detectFFmpeg } from '@/lib/transcoding/ffmpeg';
 import { getTranscodingSettings, updateTranscodingSettings } from '@/lib/settings';
+import { getFormattedVersion } from '@/lib/version';
 
 export async function run() {
+    Logger.info(`HD Homey ${getFormattedVersion()} starting...`);
     Logger.info('Starting App with the following config: %o', Config);
 
     const db = await getDb();
