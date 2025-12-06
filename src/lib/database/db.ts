@@ -7,11 +7,26 @@ import Config from '@/lib/config';
 import Logger from '@/lib/logger';
 
 export type DB = BetterSQLite3Database<typeof schema>;
-let cachedConnection: Database.Database | undefined;
+
+/**
+ * Global database connection cache
+ *
+ * Using globalThis ensures the connection persists across HMR (Hot Module Replacement)
+ * in Next.js development mode. Without this, each module reload would create a new
+ * connection, resulting in multiple "Opening SQL DB" log messages.
+ *
+ * This is the standard pattern for database connections in Next.js, as demonstrated
+ * in Vercel's official examples:
+ * https://github.com/vercel/next.js/tree/canary/examples/prisma-postgres/lib
+ */
+declare global {
+
+    var __hdHomeyDbConnection: Database.Database | undefined;
+}
 
 export function connection() {
-    if (cachedConnection !== undefined) {
-        return cachedConnection;
+    if (globalThis.__hdHomeyDbConnection !== undefined) {
+        return globalThis.__hdHomeyDbConnection;
     }
     Logger.info(`Opening SQL DB: ${Config.DB_PATH}...`);
 
@@ -35,8 +50,8 @@ export function connection() {
     //     },
     // });
 
-    cachedConnection = db;
-    return cachedConnection;
+    globalThis.__hdHomeyDbConnection = db;
+    return globalThis.__hdHomeyDbConnection;
 }
 
 export async function getDb(): Promise<DB> {
