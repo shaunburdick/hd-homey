@@ -111,6 +111,17 @@ First-class Docker support for easy deployment:
 - Volume persistence
 - Health checks
 
+### Build Identification
+Comprehensive version tracking and build metadata for debugging and monitoring:
+- **Version Display**: Shows semantic version with commit SHA (e.g., `1.0.0-beta.5 (a1b2c3d)`)
+- **Context-Aware Formatting**: 
+  - Production: `VERSION (COMMIT)`
+  - Development feature branch: `VERSION (BRANCH@COMMIT)`
+  - Development with uncommitted changes: `VERSION (BRANCH@COMMIT-dirty)`
+- **UI Locations**: About page, footer (responsive layout), and startup log
+- **API Access**: `/api/health` endpoint includes complete version metadata
+- **Build Metadata**: Includes version, commit SHA, branch name, build date, and environment
+
 ## Feature Status
 
 All core features are complete and tested:

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Enhanced Build Identification (SPEC-013)**: Version display now includes commit SHA and build metadata for improved debugging and monitoring
+  - Version format: `VERSION (COMMIT)` in production, `VERSION (BRANCH@COMMIT)` in development feature branches
+  - `-dirty` suffix indicates uncommitted changes (development only)
+  - Version displayed in About page, footer (responsive layout), and startup log
+  - `/api/health` endpoint now includes complete version metadata (version, commit, branch, buildDate, environment)
+  - Build script automatically captures Git metadata during build time
+  - Footer layout responsive: version splits to separate line on mobile (≤640px)
+
 ## [1.0.0-beta.5] - 2024-12-04
 
 ### Added
