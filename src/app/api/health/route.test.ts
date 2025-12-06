@@ -31,5 +31,34 @@ describe('Health API', () => {
             const cacheControl = response.headers.get('Cache-Control');
             expect(cacheControl).toBe('no-cache, no-store, must-revalidate');
         });
+
+        it('should include version metadata', async () => {
+            const response = await GET();
+            const data = await response.json();
+
+            // Verify version metadata fields exist
+            expect(data).toHaveProperty('version');
+            expect(data).toHaveProperty('commit');
+            expect(data).toHaveProperty('branch');
+            expect(data).toHaveProperty('buildDate');
+            expect(data).toHaveProperty('environment');
+
+            // Verify types
+            expect(typeof data.version).toBe('string');
+            expect(typeof data.commit).toBe('string');
+            // branch can be null for detached HEAD
+            expect(data.branch === null || typeof data.branch === 'string').toBe(true);
+            expect(typeof data.buildDate).toBe('string');
+            expect(['production', 'development']).toContain(data.environment);
+        });
+
+        it('should have valid buildDate in ISO 8601 format', async () => {
+            const response = await GET();
+            const data = await response.json();
+
+            // Should be parseable as a date
+            const date = new Date(data.buildDate);
+            expect(date.toString()).not.toBe('Invalid Date');
+        });
     });
 });

@@ -4,13 +4,22 @@
  * No authentication required - this is a public endpoint for infrastructure
  */
 
+import { getVersionMetadata } from '@/lib/version';
+
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+    const version = getVersionMetadata();
+
     return Response.json(
         {
             status: 'ok',
             timestamp: new Date().toISOString(),
+            version: version.version,
+            commit: version.commit,
+            branch: version.branch,
+            buildDate: version.buildDate,
+            environment: version.environment,
         },
         {
             status: 200,
