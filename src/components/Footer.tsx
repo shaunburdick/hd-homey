@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import styles from './Footer.module.css';
-import { getVersion } from '@/lib/version';
+import { getFormattedVersion } from '@/lib/version';
 
 export function Footer() {
-    const version = getVersion();
+    const version = getFormattedVersion();
 
     return (
         <footer className={styles.footer}>
@@ -32,7 +32,7 @@ export function Footer() {
                     </Link>
                     <span className={styles.separator}>•</span>
                     <span className={styles.version}>
-                        v{version}
+                        {version}
                     </span>
                 </div>
             </div>

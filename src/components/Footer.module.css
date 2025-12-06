@@ -48,19 +48,20 @@
     border-radius: var(--radius-sm);
 }
 
-/* Mobile optimization */
-@media (max-width: 480px) {
+/* Mobile optimization - version moves to separate line */
+@media (max-width: 640px) {
     .content {
         font-size: var(--font-size-xs);
-        gap: var(--space-1) var(--space-2);
     }
     
-    .separator {
+    /* Hide separator before version on mobile */
+    .separator:last-of-type {
         display: none;
     }
     
-    .content {
-        flex-direction: column;
-        gap: var(--space-1);
+    /* Force version to its own line */
+    .version {
+        flex-basis: 100%;
+        text-align: center;
     }
 }

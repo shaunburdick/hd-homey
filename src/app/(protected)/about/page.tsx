@@ -2,10 +2,10 @@ import Image from 'next/image';
 import hdHomey from '@public/hd-homey.webp';
 import { Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
-import { getVersion } from '@/lib/version';
+import { getFormattedVersion } from '@/lib/version';
 
 export default function AboutPage() {
-    const version = getVersion();
+    const version = getFormattedVersion();
 
     return (
         <PageContainer maxWidth="lg">
