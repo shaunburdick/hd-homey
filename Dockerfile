@@ -21,9 +21,10 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Generate version.json, create data directory, and build
+# Generate version.json if not present (for local builds without Git), create data directory, and build
 # Set SKIP_PREBUILD to skip linting during Docker builds for speed
-RUN node scripts/generate-version.mjs && \
+# Note: CI builds should pre-generate version.json before docker build for accurate Git metadata
+RUN if [ ! -f version.json ]; then node scripts/generate-version.mjs; fi && \
     mkdir -p ./data/db && \
     SKIP_PREBUILD=true npm run build
 

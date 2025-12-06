@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Build script automatically captures Git metadata during build time
   - Footer layout responsive: version splits to separate line on mobile (≤640px)
 
+### Fixed
+
+- **Docker Build Version Detection**: Fixed Docker builds showing "unknown" instead of commit SHA
+  - GitHub Actions workflow now generates version.json before Docker build with Git metadata
+  - Dockerfile updated to use pre-generated version.json when available
+  - Local Docker builds gracefully fallback to generating version.json without Git
+
 ## [1.0.0-beta.5] - 2024-12-04
 
 ### Added

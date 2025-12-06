@@ -53,6 +53,19 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+
+            - name: Generate version.json with Git metadata
+              run: |
+                  node scripts/generate-version.mjs
+                  echo "Generated version.json:"
+                  cat version.json
+              env:
+                  NODE_ENV: production
+
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v3
 
