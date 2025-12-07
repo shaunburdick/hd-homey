@@ -4,14 +4,18 @@
 **Created**: 2025-12-07  
 **Status**: 📝 Specification Phase  
 **Owner**: HD Homey Core Team  
-**Version**: 1.0
+**Version**: 1.1  
+**Dependencies**: Phase 0 (Repository Reorganization) must be completed first
 
 ## Overview
 
 The HD Homey Android app brings live TV streaming to Android TV devices, phones, and tablets through a universal native application. Using a hybrid WebView + native video architecture, the app reuses HD Homey's existing web interface for browsing while providing optimal video playback through AndroidX Media3. The app supports multiple authentication methods (QR code, device code, username/password), automatic server discovery, and graceful fallback from MPEG-2 to HLS transcoding based on device capabilities.
 
+**IMPORTANT**: This feature requires **Phase 0: Repository Reorganization** to be completed first. The repository must be restructured into a monorepo before Android development begins.
+
 ## Problem Statement
 
+### User Problems (Android Experience)
 HD Homey currently requires users to access the web interface through browsers, which creates several limitations:
 - **Android TV users** must navigate with browser-based interfaces not optimized for D-pad/remote control
 - **Mobile users** lack a native app experience with proper video player integration
@@ -20,6 +24,183 @@ HD Homey currently requires users to access the web interface through browsers, 
 - **Authentication** through browser on TV requires painful on-screen keyboard typing
 
 An Android app solves these problems by providing native video playback, optimized TV navigation, and streamlined authentication.
+
+### Technical Problem (Repository Structure)
+The current HD Homey repository is structured as a single-app project with all code at the root level. Adding an Android app requires reorganizing into a **monorepo structure** to:
+- Separate concerns between web backend and Android client
+- Enable independent versioning and releases
+- Provide clear boundaries between platform-specific code
+- Scale to future platforms (iOS, desktop, etc.)
+
+**Phase 0** addresses the repository reorganization prerequisite before Android development begins.
+
+---
+
+## Phase 0: Repository Reorganization (PREREQUISITE)
+
+Before Android development can begin, the repository must be restructured into a monorepo.
+
+### Current Structure (Single-App Root)
+```
+hd-homey/
+├── src/              # Next.js app source
+├── docs/             # VitePress docs
+├── migrations/       # Database migrations
+├── public/           # Static assets
+├── Dockerfile        # Docker build
+├── compose.yml       # Docker Compose
+├── package.json      # Dependencies
+└── ...
+```
+
+### Target Structure (Monorepo)
+```
+hd-homey/
+├── apps/
+│   ├── web/              # Next.js app (moved from root)
+│   │   ├── src/
+│   │   ├── public/
+│   │   ├── Dockerfile    # Per-app Docker
+│   │   └── package.json
+│   ├── android/          # Android app (NEW)
+│   │   ├── app/
+│   │   ├── gradle/
+│   │   ├── build.gradle.kts
+│   │   └── settings.gradle.kts
+│   └── docs/             # VitePress docs (moved)
+│       └── package.json
+├── migrations/           # DB migrations (accessible to web)
+├── .specify/            # Specifications
+├── specs/               # Implementation plans
+├── compose.yml          # References apps/web/Dockerfile
+└── package.json         # Root workspace (npm workspaces)
+```
+
+### Phase 0 Requirements
+
+#### Functional Requirements (Phase 0)
+- **FR-P0-001**: Repository MUST be reorganized into monorepo structure before Android development begins
+- **FR-P0-002**: Next.js web app MUST be moved to `apps/web/` with all functionality intact
+- **FR-P0-003**: VitePress docs MUST be moved to `apps/docs/`
+- **FR-P0-004**: Database migrations MUST remain accessible to `apps/web/`
+- **FR-P0-005**: Docker build MUST work from `apps/web/Dockerfile`
+- **FR-P0-006**: Docker Compose MUST reference `apps/web/` context
+- **FR-P0-007**: Root `package.json` MUST define npm workspaces for `apps/web` and `apps/docs`
+- **FR-P0-008**: CI/CD workflows MUST be updated to work with new paths
+- **FR-P0-009**: All documentation MUST be updated with new file paths
+- **FR-P0-010**: `apps/android/` directory MUST be created (empty, ready for Phase 1)
+
+#### Non-Functional Requirements (Phase 0)
+- **NFR-P0-001**: All 340 existing tests MUST pass after reorganization
+- **NFR-P0-002**: Docker build MUST complete successfully
+- **NFR-P0-003**: Development workflow (`npm run dev`) MUST work unchanged
+- **NFR-P0-004**: Production deployment MUST work without breaking changes
+- **NFR-P0-005**: GitHub Pages docs deployment MUST continue working
+- **NFR-P0-006**: Migration MUST be completed in a single PR to avoid partial state
+
+#### Workspace Scripts (Hybrid Approach)
+Root `package.json` will provide shortcuts for common tasks plus explicit workspace options:
+
+```json
+{
+  "name": "hd-homey-monorepo",
+  "version": "1.0.0-beta.5",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/docs"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspace=apps/web",
+    "lint": "npm run lint --workspaces",
+    "web:dev": "npm run dev --workspace=apps/web",
+    "web:build": "npm run build --workspace=apps/web",
+    "web:test": "npm run test --workspace=apps/web",
+    "docs:dev": "npm run docs:dev --workspace=apps/docs",
+    "docs:build": "npm run docs:build --workspace=apps/docs"
+  }
+}
+```
+
+**Rationale**:
+- `npm run dev` → Quick shortcut (starts web app, most common task)
+- `npm run build` → Builds all workspaces (CI/CD)
+- `npm run web:dev` / `npm run docs:dev` → Explicit when needed
+- Best of both worlds: convenience + clarity
+
+#### Docker Changes
+**Current**: Single `Dockerfile` at root with build context at root
+
+**New**: Per-app Dockerfiles with app-specific context
+
+`apps/web/Dockerfile`:
+```dockerfile
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+# ... (rest remains same)
+```
+
+`compose.yml`:
+```yaml
+services:
+  hd-homey:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    # ... (rest remains same)
+```
+
+**Rationale**:
+- Simpler Dockerfiles (no complex path handling)
+- Each app is self-contained
+- Standard monorepo pattern
+- Android won't use Docker (APK builds only)
+
+#### CI/CD Changes
+GitHub Actions workflows must update paths:
+
+- `.github/workflows/test.yml` → Update working directory to `apps/web`
+- `.github/workflows/docker.yml` → Update context to `apps/web`
+- `.github/workflows/docs.yml` → Update working directory to `apps/docs`
+
+#### Documentation Updates
+All documentation with file paths must be updated:
+
+- `README.md` → Update structure diagram, file references
+- `AGENTS.md` → Update directory structure section
+- `docs/` → Update all code examples with `apps/web/` paths
+- `.specify/memory/constitution.md` → Update technical decisions if needed
+
+#### Migration Acceptance Criteria
+- [ ] All files moved to new locations
+- [ ] All tests passing (`npm test`)
+- [ ] Docker build succeeds (`docker compose build`)
+- [ ] Dev server works (`npm run dev`)
+- [ ] Docs build works (`npm run docs:build`)
+- [ ] CI/CD workflows pass on GitHub
+- [ ] GitHub Pages deploys successfully
+- [ ] All documentation updated
+- [ ] Single PR contains complete migration (no partial state)
+
+### Phase 0 Out of Scope
+- ❌ No shared TypeScript packages (`packages/api-types/`) - keep it simple
+- ❌ No Android code yet - just create empty `apps/android/` directory
+- ❌ No new features - pure reorganization
+- ❌ No Turborepo or other monorepo tools - use native npm workspaces
+
+---
 
 ## User Stories
 
@@ -261,6 +442,13 @@ An Android app solves these problems by providing native video playback, optimiz
 
 ## Technical Constraints
 
+### Repository Structure (Post Phase 0)
+- **Location**: Android app MUST be located at `apps/android/` in monorepo
+- **Independence**: Android app MUST be completely independent (no shared TypeScript packages)
+- **Web App**: HD Homey backend MUST be at `apps/web/`
+- **Build Isolation**: Android Gradle build MUST NOT depend on npm workspaces
+- **CI/CD**: Android MUST have separate GitHub Actions workflow for APK builds
+
 ### Platform Requirements
 - **Minimum Android Version**: Android 9 (Pie, API level 28)
 - **Target Android Version**: Android 14 (API level 34)
@@ -287,6 +475,8 @@ An Android app solves these problems by providing native video playback, optimiz
 - **JavaScript Bridge**: Communication via `addJavascriptInterface()`
 - **Single Activity**: Use single Activity with Fragment navigation (modern Android pattern)
 - **No Compose UI**: WebView-based, not Jetpack Compose (simplicity)
+- **No Shared Code**: Android and web apps share NO code (different languages - Kotlin vs TypeScript)
+- **WebView Target**: WebView loads web UI from `apps/web/` deployment (runtime HTTP, not file system)
 
 ### HD Homey Backend Dependencies
 
@@ -466,15 +656,26 @@ player.addListener(object : Player.Listener {
 
 ## Dependencies
 
-### Depends On
+### CRITICAL Prerequisite
+- **Phase 0: Repository Reorganization** - MUST be completed before Android development begins
+  - Reorganize repository into monorepo structure
+  - Move web app to `apps/web/`
+  - Create `apps/android/` directory
+  - Update all paths, Docker, CI/CD, documentation
+  - See "Phase 0" section above for complete requirements
+
+### Depends On (Backend Features)
 - **SPEC-002**: Channel Streaming (app consumes `/stream` endpoint)
 - **SPEC-003**: User Authentication (app uses JWT sessions from Better-Auth)
 - **SPEC-005**: Video Transcoding (app falls back to HLS when needed)
 - **SPEC-012**: Channel Favorites (app displays favorites in WebView)
 - **NEW**: HD Homey 1.1.0 device pairing backend (must be implemented)
+  - `/api/auth/device/code` - Generate device pairing codes
+  - `/api/auth/device/poll` - Poll for authorization status
+  - `/pair` - Web page for code entry and authorization
 
 ### Blocks
-- None (app is parallel effort to web development)
+- None (Android app is parallel effort to web development after Phase 0)
 
 ### Related To
 - **SPEC-004**: UI/UX Guidelines (app should follow accessibility principles)
@@ -507,11 +708,38 @@ Explicitly list what this feature does NOT include:
 
 ## Architecture Overview
 
+### Monorepo Context
+
+After Phase 0 reorganization, the project structure will be:
+
+```
+hd-homey/ (monorepo root)
+├── apps/
+│   ├── web/              # Next.js backend + web UI
+│   │   ├── src/
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   ├── android/          # Android app (THIS SPEC)
+│   │   ├── app/
+│   │   ├── gradle/
+│   │   └── build.gradle.kts
+│   └── docs/             # VitePress documentation
+├── migrations/           # Database migrations (used by apps/web)
+└── package.json          # Root workspace
+```
+
+**Key Relationships**:
+- Android app (`apps/android/`) is **completely independent** from web app
+- No shared code between Kotlin (Android) and TypeScript (web)
+- Android loads web UI via HTTP at runtime (WebView → deployed web app)
+- Android calls web API endpoints for auth, streaming, device pairing
+- Build systems are separate: Gradle (Android) vs npm (web)
+
 ### High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│           HD Homey Android App (Universal)              │
+│     HD Homey Android App (apps/android/)                │
 │                                                         │
 │  ┌───────────────────────────────────────────────────┐  │
 │  │          MainActivity (Single Activity)           │  │
@@ -540,7 +768,7 @@ Explicitly list what this feature does NOT include:
 └─────────────────────────────────────────────────────────┘
                          ↕ HTTPS/HTTP
 ┌─────────────────────────────────────────────────────────┐
-│               HD Homey Server (Backend)                 │
+│     HD Homey Server (apps/web/) - Next.js Backend      │
 │  - /api/auth/device/code (device pairing)              │
 │  - /api/auth/device/poll (pairing status)              │
 │  - /pair (pairing web page)                            │
@@ -735,11 +963,18 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ## Distribution & Release Strategy
 
+### Phase 0: Repository Reorganization (Prerequisite)
+- **Timeline**: 1-2 days (before any Android development)
+- **Deliverable**: Monorepo structure with `apps/android/` directory ready
+- **Status Gate**: All tests passing, Docker working, CI/CD updated
+- **See**: "Phase 0" section above for complete requirements
+
 ### Phase 1: Alpha Testing (v0.1-alpha)
 - **Distribution**: GitHub Releases (APK download)
 - **Target Audience**: Early adopters, developers, testers
 - **Goal**: Validate core functionality, gather initial feedback
 - **Timeline**: 2-4 weeks of development, 2 weeks of testing
+- **Build**: GitHub Actions workflow for APK building in `apps/android/`
 
 ### Phase 2: Beta Testing (v0.5-beta)
 - **Distribution**: GitHub Releases (APK download)
@@ -759,6 +994,8 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ### APK Distribution (GitHub Releases)
 - Signed APK artifacts attached to GitHub releases
+- Built from `apps/android/` via GitHub Actions
+- Separate release versioning from web app (web: v1.0.0-beta.5, android: v0.1-alpha)
 - Installation instructions in README:
   ```
   1. Enable "Install from unknown sources" in Android settings
@@ -908,6 +1145,39 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ---
 
-**Version**: 1.0 | **Created**: 2025-12-07 | **Last Updated**: 2025-12-07
+## Clarifications Applied
 
-*This specification is ready for clarification phase. Next steps: Resolve any ambiguities, then hand off to modern-architect-engineer for implementation planning.*
+### v1.1 - Monorepo Reorganization (2025-12-07)
+**Context**: Initial spec (v1.0) didn't account for repository structure changes needed to support Android app alongside existing web app.
+
+**Questions Answered**:
+1. **Q**: How should repository be structured to support multiple apps?
+   **A**: Full monorepo reorganization (Option A) with `apps/web/`, `apps/android/`, `apps/docs/`
+
+2. **Q**: Should Android and web share TypeScript code?
+   **A**: No shared packages - keep it simple (different languages, minimal API surface)
+
+3. **Q**: What should the Next.js app directory be named?
+   **A**: `apps/web/` (emphasizes web interface)
+
+4. **Q**: How should workspace scripts be organized?
+   **A**: Hybrid approach - shortcuts for common tasks (`npm run dev`) + explicit options (`npm run docs:dev`)
+
+5. **Q**: How should Docker builds work in monorepo?
+   **A**: Per-app Dockerfiles (`apps/web/Dockerfile`) with app-specific build context
+
+**Changes Made**:
+- Added **Phase 0: Repository Reorganization** as critical prerequisite
+- Updated **Technical Constraints** to include repository structure requirements
+- Updated **Architecture Overview** to show monorepo context and app locations
+- Updated **Dependencies** section to list Phase 0 as critical prerequisite
+- Updated **Distribution & Release Strategy** to include Phase 0 timeline
+- Documented monorepo decisions and rationale throughout spec
+
+**Impact**: Android development CANNOT begin until Phase 0 (repository reorganization) is completed. This is now explicit in the specification.
+
+---
+
+**Version**: 1.1 | **Created**: 2025-12-07 | **Last Updated**: 2025-12-07
+
+*This specification is ready for implementation. Next steps: Complete Phase 0 (repository reorganization), then hand off to modern-architect-engineer for Android app planning (Phase 1+).*
