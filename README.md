@@ -1,4 +1,4 @@
-<img src="public/hd-homey.webp" alt="HD Homey" width="50%" height="auto" />
+<img src="apps/web/public/hd-homey.webp" alt="HD Homey" width="50%" height="auto" />
 
 # HD Homey
 
@@ -12,6 +12,23 @@
 Stream live TV from your HDHomeRun devices anywhere with secure authentication, role-based access control, and real-time video transcoding.
 
 📚 **[Read the full documentation →](https://shaunburdick.github.io/hd-homey/)**
+
+## Repository Structure
+
+HD Homey uses a monorepo structure with npm workspaces:
+
+```
+hd-homey/
+├── apps/
+│   ├── web/          # Main Next.js application
+│   │   ├── migrations/  # Database migrations
+│   │   ├── src/         # Source code
+│   │   └── public/      # Static assets
+│   ├── docs/         # VitePress documentation site
+│   └── android/      # Android app (coming soon)
+├── .specify/         # Specifications and constitution
+└── specs/            # Implementation plans
+```
 
 ## Quick Start
 

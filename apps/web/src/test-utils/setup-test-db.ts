@@ -11,7 +11,7 @@ export function createTestDatabase(): DB {
     const sqlite = new Database(':memory:');
     const db = drizzle(sqlite, { schema });
 
-    // Run migrations
+    // Run migrations (relative to apps/web working directory)
     migrate(db, { migrationsFolder: './migrations' });
 
     return db;

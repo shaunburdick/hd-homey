@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Repository Structure (BREAKING)**: Reorganized repository into monorepo with npm workspaces
+  - Created `apps/` directory to house multiple applications
+  - Moved web application: `src/` → `apps/web/src/`, `public/` → `apps/web/public/`
+  - Moved migrations: `migrations/` → `apps/web/migrations/` (web app specific)
+  - Moved documentation: `docs/` → `apps/docs/`
+  - Created Android app placeholder: `apps/android/` (Phase 1 coming soon)
+  - Web app package renamed from `hd-homey` to `@hd-homey/web`
+  - Updated all configuration files (tsconfig, next.config, drizzle.config, Dockerfile, compose.yml)
+  - Simplified Docker: each app uses its own directory as build context
+  - Updated CI/CD workflows for monorepo structure (test.yml, docker.yml, docs.yml)
+  - **Developer Impact**: After pulling, run `npm install` to set up workspaces
+  - Workspace commands: `npm run dev` (shortcut) or `npm run web:dev` (explicit)
+
 ### Added
 
 - **Enhanced Build Identification (SPEC-013)**: Version display now includes commit SHA and build metadata for improved debugging and monitoring

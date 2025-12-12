@@ -59,6 +59,7 @@ jobs:
                   node-version: "22"
 
             - name: Generate version.json with Git metadata
+              working-directory: apps/web
               run: |
                   node scripts/generate-version.mjs
                   echo "Generated version.json:"
@@ -112,7 +113,7 @@ jobs:
               id: build
               uses: docker/build-push-action@v6
               with:
-                  context: .
+                  context: ./apps/web
                   platforms: linux/amd64
                   labels: ${{ steps.meta.outputs.labels }}
                   # Push by digest for multi-platform manifest creation

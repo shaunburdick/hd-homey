@@ -4,12 +4,12 @@ on:
     push:
         branches: [main, develop]
         paths-ignore:
-            - 'docs/**'
+            - 'apps/docs/**'
             - '.github/workflows/docs.yml'
     pull_request:
         branches: [main, develop]
         paths-ignore:
-            - 'docs/**'
+            - 'apps/docs/**'
             - '.github/workflows/docs.yml'
     workflow_dispatch:
     workflow_call:
@@ -42,18 +42,15 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: npm
 
-            - name: Install dependencies
+            - name: Install root dependencies
               run: npm ci --prefer-offline
 
-            - name: Run ESLint (root)
+            - name: Run ESLint (web)
+              working-directory: apps/web
               run: npm run lint
 
-            - name: Install docs dependencies
-              working-directory: docs
-              run: npm ci --prefer-offline
-
             - name: Run ESLint (docs)
-              working-directory: docs
+              working-directory: apps/docs
               run: npm run lint
 
     # Type checking job runs in parallel with tests
@@ -71,13 +68,15 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: npm
 
-            - name: Install dependencies
+            - name: Install root dependencies
               run: npm ci --prefer-offline
 
             - name: Generate Next.js types
+              working-directory: apps/web
               run: npx next typegen
 
             - name: Run TypeScript compiler
+              working-directory: apps/web
               run: npx tsc --noEmit
 
     # Test job with coverage
@@ -95,10 +94,11 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: npm
 
-            - name: Install dependencies
+            - name: Install root dependencies
               run: npm ci --prefer-offline
 
             - name: Run tests with coverage
+              working-directory: apps/web
               run: npm run test:coverage
 
             - name: Upload coverage reports
@@ -106,7 +106,7 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: coverage-report
-                  path: coverage/
+                  path: apps/web/coverage/
                   retention-days: 7
 
     # Build job - only runs after lint, typecheck, and test pass
@@ -125,19 +125,20 @@ jobs:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: npm
 
-            - name: Install dependencies
+            - name: Install root dependencies
               run: npm ci --prefer-offline
 
             - name: Restore Next.js cache
               uses: actions/cache@v4
               with:
                   path: |
-                      .next/cache
-                  key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx') }}
+                      apps/web/.next/cache
+                  key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('apps/web/**/*.ts', 'apps/web/**/*.tsx', 'apps/web/**/*.js', 'apps/web/**/*.jsx') }}
                   restore-keys: |
                       ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-
 
             - name: Build Next.js application
+              working-directory: apps/web
               run: npm run build
 
             - name: Upload build artifacts
@@ -145,6 +146,6 @@ jobs:
               with:
                   name: nextjs-build
                   path: |
-                      .next/
-                      !.next/cache
+                      apps/web/.next/
+                      !apps/web/.next/cache
                   retention-days: 7

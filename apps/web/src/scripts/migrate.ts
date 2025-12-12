@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import Database from 'better-sqlite3';
@@ -11,7 +12,9 @@ async function runMigrations() {
         const sqlite = new Database(Config.DB_PATH);
         const db = drizzle(sqlite);
 
-        await migrate(db, { migrationsFolder: './migrations' });
+        // Migrations are at ./migrations relative to apps/web working directory
+        const migrationsPath = resolve(process.cwd(), './migrations');
+        await migrate(db, { migrationsFolder: migrationsPath });
 
         Logger.info('Database migrations completed successfully');
         process.exit(0);
