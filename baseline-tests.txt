@@ -1,0 +1,420 @@
+
+> hd-homey@1.0.0-beta.5 test
+> npm run lint && npm run typecheck && npm run test:unit
+
+
+> hd-homey@1.0.0-beta.5 lint
+> eslint .
+
+
+> hd-homey@1.0.0-beta.5 typecheck
+> tsc --noEmit
+
+
+> hd-homey@1.0.0-beta.5 test:unit
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.14 [39m[90m/home/shaunburdick/github/shaunburdick/hd-homey[39m
+
+ [32m✓[39m src/lib/version.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/app/api/health/route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/lib/auth.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/proxy.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/lib/transcoding/ffmpeg.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/lib/transcoding/session-manager.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+[17:20:35.819] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.820] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.824] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 1
+[17:20:35.824] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 0
+[17:20:35.825] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.829] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.829] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.829] [32mINFO[39m (hd-homey): [36mReusing existing session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 0
+[17:20:35.832] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 1
+[17:20:35.832] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 0
+[17:20:35.832] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.833] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 1,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.833] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.835] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 1
+[17:20:35.835] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 0
+[17:20:35.835] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.836] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.836] [31mERROR[39m (hd-homey): [36mFailed to start transcoding session[39m
+    [35msessionId[39m: "1:42"
+    error: {}
+[17:20:35.837] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 0
+[17:20:35.837] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.837] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.838] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-1"
+    [35mviewerCount[39m: 1
+[17:20:35.838] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-2"
+    [35mviewerCount[39m: 2
+[17:20:35.838] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 1
+[17:20:35.838] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 2
+[17:20:35.838] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.838] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.839] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.839] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-1"
+    [35mviewerCount[39m: 1
+[17:20:35.839] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-2"
+    [35mviewerCount[39m: 2
+[17:20:35.839] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 1
+[17:20:35.839] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 2
+[17:20:35.839] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.841] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.841] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.841] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-1"
+    [35mviewerCount[39m: 1
+[17:20:35.841] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-2"
+    [35mviewerCount[39m: 2
+[17:20:35.842] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 1
+[17:20:35.843] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 2
+[17:20:35.843] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.843] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.843] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.843] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 0
+[17:20:35.843] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.843] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 0
+[17:20:35.844] [33mWARN[39m (hd-homey): [36mAttempted to stop non-existent session[39m
+    [35msessionId[39m: "9:99"
+[17:20:35.845] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 0
+[17:20:35.846] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.846] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.846] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:43"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v11.1"
+    [35moutputDir[39m: "data/transcoding/1-43"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.846] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:43"
+[17:20:35.846] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-1"
+    [35mviewerCount[39m: 1
+[17:20:35.848] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 2
+[17:20:35.848] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 1
+[17:20:35.848] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:43"
+    [35mviewerCount[39m: 0
+[17:20:35.848] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.848] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:43"
+[17:20:35.849] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 0
+[17:20:35.850] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.850] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.850] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-1"
+    [35mviewerCount[39m: 1
+[17:20:35.850] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 1
+[17:20:35.850] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 1
+[17:20:35.850] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.850] [32mINFO[39m (hd-homey): [36mCreating new transcoding session[39m
+    [35msessionId[39m: "1:42"
+    [35msourceUrl[39m: "http://tuner:5004/auto/v10.1"
+    [35moutputDir[39m: "data/transcoding/1-42"
+    [35msettings[39m: {
+      "enabled": false,
+      "preset": "medium",
+      "videoCodec": "libx264",
+      "videoBitrate": 2000,
+      "audioBitrate": 128,
+      "resolution": "1080p",
+      "framerate": 30,
+      "maxSessions": 5,
+      "segmentDuration": 2,
+      "playlistSize": 20,
+      "hardwareAccel": "none"
+    }
+[17:20:35.851] [32mINFO[39m (hd-homey/12345): [36mTranscoding session started[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.851] [32mINFO[39m (hd-homey): [36mViewer added to session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerId[39m: "viewer-1"
+    [35mviewerCount[39m: 1
+[17:20:35.851] [32mINFO[39m (hd-homey): [36mNo viewers remaining - stopping transcoding session[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.851] [32mINFO[39m (hd-homey): [36mStopping session[39m
+    [35msessionId[39m: "1:42"
+    [35mviewerCount[39m: 0
+[17:20:35.851] [32mINFO[39m (hd-homey): [36mSession stopped and cleaned up[39m
+    [35msessionId[39m: "1:42"
+[17:20:35.851] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 0
+[17:20:35.864] [32mINFO[39m (hd-homey): [36mSIGTERM received, cleaning up transcoding sessions[39m
+[17:20:35.864] [32mINFO[39m (hd-homey): [36mStopping all transcoding sessions[39m
+    [35mcount[39m: 0
+ [32m✓[39m src/lib/stream-token.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/lib/settings.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 180[2mms[22m[39m
+ [32m✓[39m src/lib/preferences/preferences.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 244[2mms[22m[39m
+ [32m✓[39m src/lib/actions/channel-preferences.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 137[2mms[22m[39m
+ [32m✓[39m src/components/video-player.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/lib/errors.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/components/ChannelSection.test.tsx [2m([22m[2m20 tests[22m[2m)[22m[33m 1325[2mms[22m[39m
+       [33m[2m✓[22m[39m should render section with title and channel count [33m 566[2mms[22m[39m
+ [32m✓[39m src/app/(protected)/tuners/actions.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/app/api/tuners/route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1408[2mms[22m[39m
+     [33m[2m✓[22m[39m should return all active tuners [33m 482[2mms[22m[39m
+ [32m✓[39m src/app/(protected)/page.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 1073[2mms[22m[39m
+   [33m[2m✓[22m[39m Page [33m 725[2mms[22m[39m
+ [32m✓[39m src/lib/database/schema.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 1873[2mms[22m[39m
+       [33m[2m✓[22m[39m should allow updating updatedAt on update [33m 1507[2mms[22m[39m
+ [32m✓[39m src/lib/actions/profile.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2139[2mms[22m[39m
+       [33m[2m✓[22m[39m should successfully change password with valid inputs [33m 927[2mms[22m[39m
+       [33m[2m✓[22m[39m should fail when current password is incorrect [33m 365[2mms[22m[39m
+ [32m✓[39m src/app/api/tuners/[id]/route.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 2061[2mms[22m[39m
+ [32m✓[39m src/lib/actions/users.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 2653[2mms[22m[39m
+       [33m[2m✓[22m[39m should create a new user when authenticated as admin [33m 476[2mms[22m[39m
+       [33m[2m✓[22m[39m should hash password before storing [33m 321[2mms[22m[39m
+       [33m[2m✓[22m[39m should update password only when provided [33m 337[2mms[22m[39m
+ [32m✓[39m src/lib/actions/invitations.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 3588[2mms[22m[39m
+       [33m[2m✓[22m[39m should create invitation with valid data [33m 466[2mms[22m[39m
+ [32m✓[39m src/lib/hdhr/tuner.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 3696[2mms[22m[39m
+       [33m[2m✓[22m[39m should fetch and parse lineup.json successfully [33m 439[2mms[22m[39m
+ [32m✓[39m src/app/invite/[token]/actions.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 3828[2mms[22m[39m
+     [33m[2m✓[22m[39m should successfully redeem valid invitation [33m 515[2mms[22m[39m
+ [32m✓[39m src/lib/transcoding/transcode.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 5169[2mms[22m[39m
+       [33m[2m✓[22m[39m should send SIGKILL after timeout if process does not exit [33m 5002[2mms[22m[39m
+ [32m✓[39m src/lib/invitations/invitations.test.ts [2m([22m[2m35 tests[22m[2m)[22m[33m 5198[2mms[22m[39m
+       [33m[2m✓[22m[39m should generate a token [33m 398[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m25 passed[39m[22m[90m (25)[39m
+[2m      Tests [22m [1m[32m349 passed[39m[22m[90m (349)[39m
+[2m   Start at [22m 17:20:33
+[2m   Duration [22m 8.57s[2m (transform 7.44s, setup 1.43s, import 28.14s, tests 34.83s, environment 36.07s)[22m
+
