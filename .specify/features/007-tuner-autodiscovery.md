@@ -2,12 +2,16 @@
 
 **Feature ID**: `007-tuner-autodiscovery`  
 **Created**: 2025-11-20  
+**Last Updated**: 2025-12-13  
 **Status**: Draft  
-**Owner**: HD Homey Core Team
+**Owner**: HD Homey Core Team  
+**Version**: 1.1
 
 ## Overview
 
 Tuner Autodiscovery enables administrators to automatically detect HDHomeRun devices on the local network through UDP broadcast discovery, eliminating the need to manually lookup device IP addresses or URLs. Users can initiate a network scan, view discovered devices with their details, and add them to the system with pre-populated information.
+
+**Version 1.1 Updates**: Extended to support discovery of HDHomeRun recording devices (SCRIBE, SERVIO, DVR software) in addition to tuner-only devices. Discovery now identifies device capabilities (tuner, recording, or both) and allows adding to appropriate system tables.
 
 ## User Stories
 
@@ -24,6 +28,8 @@ Tuner Autodiscovery enables administrators to automatically detect HDHomeRun dev
 - **Given** the discovery scan is running, **When** devices respond, **Then** I see a list of discovered devices with their details
 - **Given** discovery completes, **When** no devices are found, **Then** I see a helpful message explaining why (network configuration, no devices, etc.)
 - **Given** multiple devices are on the network, **When** discovery completes, **Then** all devices are listed with their unique identifiers
+- **Given** a device has recording capability, **When** discovery completes, **Then** the device is marked with a "Recording" badge or indicator
+- **Given** a device has both tuner and recording capability, **When** viewing discovered devices, **Then** both capabilities are clearly indicated
 
 ---
 
@@ -40,6 +46,8 @@ Tuner Autodiscovery enables administrators to automatically detect HDHomeRun dev
 - **Given** I'm on the pre-filled form, **When** I submit without changes, **Then** the tuner is created with discovered information
 - **Given** I'm on the pre-filled form, **When** I modify the name or path, **Then** my changes are used instead of discovered values
 - **Given** a discovered device is already added, **When** I view discovered devices, **Then** that device shows "Already Added" status
+- **Given** a discovered device has recording capability, **When** I click "Add", **Then** I'm prompted to add as tuner, recording device, or both
+- **Given** a device has both capabilities, **When** I choose "both", **Then** entries are created in both tuners and recording_devices tables
 
 ---
 
@@ -88,6 +96,11 @@ Tuner Autodiscovery enables administrators to automatically detect HDHomeRun dev
 - **FR-008**: System SHOULD handle both IPv4 and IPv6 discovery (IPv4 required, IPv6 nice-to-have)
 - **FR-009**: System SHOULD deduplicate devices that respond on multiple network interfaces
 - **FR-010**: System MUST allow manual tuner addition even if discovery fails
+- **FR-011**: System MUST query discovered devices on port 4999 for `/discover.json` to determine recording capability (presence of `StorageURL` field)
+- **FR-012**: System MUST indicate recording capability in discovered device list (badge, icon, or label)
+- **FR-013**: System MUST allow adding discovered devices as tuner-only, recording-only, or both
+- **FR-014**: System MUST check if device is already added as tuner, recording device, or both before showing "Add" option
+- **FR-015**: System MUST extract `StorageURL` from `/discover.json` response for recording-capable devices
 
 ### Non-Functional Requirements
 
@@ -108,8 +121,12 @@ Tuner Autodiscovery enables administrators to automatically detect HDHomeRun dev
   - `tuner_count`: Number of tuners (number)
   - `device_type`: Type of device (tuner, storage, etc.)
   - `is_legacy`: Whether device uses legacy protocol (boolean)
+  - `has_recording`: Whether device has recording capability (boolean) - NEW
+  - `storage_url`: Recording storage URL if available (string, optional) - NEW
+  - `friendly_name`: Device friendly name from discover.json (string, optional) - NEW
+  - `free_space`: Available storage in bytes (number, optional) - NEW
 
-- **No persistent storage required** - discovery results are transient and only used to populate tuner form
+- **No persistent storage required** - discovery results are transient and only used to populate tuner/recording device form
 
 ## Technical Constraints
 
@@ -120,6 +137,9 @@ Tuner Autodiscovery enables administrators to automatically detect HDHomeRun dev
 - Must parse binary packet format according to HDHomeRun specification
 - Should implement timeout mechanism (default 1-2 seconds)
 - Must respect network broadcast permissions (some networks block broadcasts)
+- Must query port 4999 for `/discover.json` after initial UDP discovery to detect recording capability
+- Must handle HTTP requests to `:4999/discover.json` with timeout (2 seconds max)
+- Must parse JSON response from recording devices to extract `StorageURL` and other recording metadata
 
 ## Edge Cases & Error Handling
 
@@ -148,11 +168,27 @@ Tuner Autodiscovery enables administrators to automatically detect HDHomeRun dev
   - Mark as "Already Added" in discovery results
   - Allow viewing details but disable "Add" button
   - Provide link to existing tuner page
+  - Check both tuners AND recording_devices tables to determine "already added" status
 
 - **What if device responds but is unreachable for channel scan?**
   - Still allow adding to system
   - Show warning that connectivity test is recommended
   - Channel scan will fail normally with existing error handling
+
+- **What if device has recording capability but user only wants to add as tuner?**
+  - Allow user to choose which capability to add (tuner, recording, or both)
+  - Show checkbox or radio options during add flow
+  - Save to appropriate table(s) based on selection
+
+- **What if port 4999 query times out but UDP discovery succeeded?**
+  - Mark device as tuner-only (assume no recording capability)
+  - Allow user to manually add as recording device later if needed
+  - Log timeout for debugging
+
+- **What if device has StorageURL but reports tuner_count=0?**
+  - Mark as recording-only device
+  - Only show option to add as recording device
+  - Don't show in tuner list
 
 ### Concurrent Operations
 
@@ -186,13 +222,16 @@ Tuner Autodiscovery enables administrators to automatically detect HDHomeRun dev
 
 - **Depends On**: 
   - SPEC-001 (Tuner Management) - Must have existing tuner add workflow
+  - SPEC-014 (Recording Playback) - Must have recording device management workflow
   - Node.js `dgram` module - UDP socket support
+  - Node.js `http` or `fetch` - HTTP requests to `:4999/discover.json`
   
 - **Blocks**: 
   - None - This is an optional convenience feature
-
+  
 - **Related To**: 
   - SPEC-006 (Tuner Validation) - Discovery provides data that validation can verify
+  - SPEC-014 (Recording Playback) - Recording device discovery enables this feature
   - Manual tuner addition workflow remains as fallback
 
 ## Out of Scope
@@ -207,26 +246,39 @@ Explicitly list what this feature does NOT include:
 - ❌ Persistent storage of discovery results
 - ❌ Discovery history or logs beyond current session
 - ❌ mDNS/Bonjour discovery (only UDP broadcast)
+- ❌ Automatic determination of device capabilities - user chooses what to add (tuner, recording, or both)
+- ❌ Recording list preview during discovery - only detect capability, not enumerate recordings
 
 ## Open Questions
 
 - [x] Should discovery run automatically when visiting tuners page? **No** - Manual trigger only to avoid unnecessary network traffic
 - [x] How long should discovery timeout be? **1-2 seconds default** - Most devices respond within 500ms
 - [x] Should we support IPv6? **IPv4 required, IPv6 nice-to-have** - Most networks are IPv4
-- [ ] Should we show device model/hardware version? **If available in response** - Check HDHomeRun protocol
-- [ ] Should discovery results persist across page refreshes? **No** - Transient only, re-scan if needed
-- [ ] Should we detect duplicate device paths before adding? **Yes** - Check against existing tuners
+- [x] Should we show device model/hardware version? **If available in response** - Check HDHomeRun protocol
+- [x] Should discovery results persist across page refreshes? **No** - Transient only, re-scan if needed
+- [x] Should we detect duplicate device paths before adding? **Yes** - Check against existing tuners
+- [x] How should we detect recording capability? **Query :4999/discover.json after UDP discovery, check for StorageURL field**
+- [x] Should we automatically add device to both tables if it has both capabilities? **No** - User chooses (tuner, recording, or both)
+- [x] Should we show recording-only devices in tuner list? **No** - Separate pages for tuners vs recordings, only show in appropriate context
+- [x] What if :4999 query times out? **Mark as tuner-only, allow manual recording device add later**
 
 ## References
 
 - HDHomeRun libhdhomerun: https://github.com/Silicondust/libhdhomerun
 - HDHomeRun discovery protocol: UDP port 65001, broadcast to 255.255.255.255
 - HDHomeRun API documentation: https://www.silicondust.com/hdhomerun/developers/
+- HDHomeRun Record Engine API: https://github.com/Silicondust/documentation/wiki/Old-Record-Engine-Status
+- Record Engine discover endpoint: `http://<device-ip>:4999/discover.json`
 - Related specs:
-  - `.specs/features/001-tuner-management/spec.md` - Core tuner CRUD
-  - `.specs/features/006-tuner-validation/spec.md` - Connectivity testing
+  - `.specify/features/001-tuner-management.md` - Core tuner CRUD
+  - `.specify/features/006-tuner-validation.md` - Connectivity testing
+  - `.specify/features/014-recording-playback.md` - Recording device management
 - Node.js dgram module: https://nodejs.org/api/dgram.html
 
 ---
 
 *This specification should be reviewed and approved before creating an implementation plan.*
+
+**Version History**:
+- v1.0 (2025-11-20): Initial specification for tuner discovery only
+- v1.1 (2025-12-13): Extended to support recording device discovery (SCRIBE, SERVIO, DVR software)
