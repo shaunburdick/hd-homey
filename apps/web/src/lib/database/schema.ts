@@ -250,6 +250,52 @@ export const invitationRelations = relations(invitations, ({ one }) => ({
 }));
 
 // ===================================
+// Device Codes Table (SPEC-013 Phase 1)
+// ===================================
+
+/**
+ * Device codes table for device pairing authentication
+ * Allows Android TV, tablets, and phones to authenticate via device code flow
+ * instead of typing passwords with TV remote
+ */
+export const deviceCodes = sqliteTable(
+    'device_codes',
+    {
+        id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
+        code: text('code', { length: 6 }).notNull().unique(), // 6-character alphanumeric (e.g., "A8F2K9")
+        deviceName: text('device_name', { length: 100 }).notNull(), // e.g., "Living Room TV"
+        deviceType: text('device_type', { length: 20 }).notNull(), // "tv", "tablet", "phone"
+        // Status: "pending", "authorized", "expired", "denied"
+        status: text('status', { length: 20 }).notNull().default('pending'),
+        createdAt: integer('created_at', { mode: 'timestamp_ms' })
+            .notNull()
+            .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`),
+        expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+        authorizedAt: integer('authorized_at', { mode: 'timestamp_ms' }),
+        authorizedBy: text('authorized_by').references(() => user.id, { onDelete: 'restrict' }),
+        ipAddress: text('ip_address'), // IP of device requesting code
+        userAgent: text('user_agent'), // User agent of device
+    },
+    (table) => [
+        index('idx_device_codes_code').on(table.code),
+        index('idx_device_codes_status').on(table.status, table.expiresAt),
+        index('idx_device_codes_authorized_by').on(table.authorizedBy),
+    ]
+);
+
+export type DeviceCode = typeof deviceCodes.$inferSelect;
+export type DeviceCodeInsert = typeof deviceCodes.$inferInsert;
+
+// Device Code Relations
+export const deviceCodeRelations = relations(deviceCodes, ({ one }) => ({
+    authorizer: one(user, {
+        fields: [deviceCodes.authorizedBy],
+        references: [user.id],
+        relationName: 'deviceCodeAuthorizer',
+    }),
+}));
+
+// ===================================
 // User Channel Preferences Table (SPEC-012)
 // ===================================
 
