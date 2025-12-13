@@ -2,7 +2,27 @@
 <resources>
     <string name="app_name">HD Homey</string>
     
-    <!-- Server Setup -->
+    <!-- Server List -->
+    <string name="servers_title">Your Servers</string>
+    <string name="servers_empty_title">No servers configured</string>
+    <string name="servers_empty_message">Add your first HD Homey server to get started</string>
+    <string name="servers_add_button">Add Server</string>
+    <string name="server_authenticated">● Authenticated</string>
+    <string name="server_not_authenticated">● Not Authenticated</string>
+    <string name="server_token_expired">● Session Expired</string>
+    
+    <!-- Add Server -->
+    <string name="add_server_title">Add Server</string>
+    <string name="add_server_instructions">Enter your HD Homey server details</string>
+    <string name="add_server_name_hint">Server name (e.g., Home, Office)</string>
+    <string name="add_server_url_hint">Server URL</string>
+    <string name="add_server_url_helper">Example: http://192.168.1.100:3000</string>
+    <string name="add_server_connect_button">Connect</string>
+    <string name="add_server_cancel_button">Cancel</string>
+    <string name="add_server_testing">Testing connection…</string>
+    <string name="add_server_success">Server added successfully!</string>
+    
+    <!-- Server Setup (legacy, will be removed) -->
     <string name="server_setup_title">Connect to HD Homey</string>
     <string name="discovering_server">Discovering HD Homey on your network…</string>
     <string name="manual_setup">Enter URL manually</string>

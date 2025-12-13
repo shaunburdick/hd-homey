@@ -87,6 +87,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.cardview)
+    implementation(libs.androidx.coordinatorlayout)
+    
+    // Material Design
+    implementation(libs.google.material)
 
     // Navigation
     implementation(libs.androidx.navigation.fragment.ktx)

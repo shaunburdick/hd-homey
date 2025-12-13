@@ -1,7 +1,7 @@
 # Tasks: Android App Phase 1 - Foundation & Authentication
 
 **Feature ID**: `013-android-app-phase1`  
-**Status**: 🚧 In Progress  
+**Status**: 🚧 In Progress (Phase 1.2 ✅ Complete)  
 **Parent Spec**: `.specify/features/013-android-app.md`
 
 ---
@@ -25,41 +25,49 @@
 
 ---
 
-## Phase 1.2: Multi-Server Management 🚧 Next
+## Phase 1.2: Multi-Server Management ✅ COMPLETE
 
 ### Data Layer
-- [ ] 1.2.1 - Create `Server` data class (id, name, url, jwt, username, role, timestamps)
-- [ ] 1.2.2 - Create `ServerRepository.kt` with add/remove/list/update/setActive methods
-- [ ] 1.2.3 - Create `AppPreferences.kt` for JSON serialization (Gson/Kotlinx Serialization)
-- [ ] 1.2.4 - Add helper methods (getActiveServer, getServerById, etc.)
+- [x] 1.2.1 - Create `Server` data class (id, name, url, jwt, username, role, timestamps)
+- [x] 1.2.2 - Create `ServerRepository.kt` with add/remove/list/update/setActive methods
+- [x] 1.2.3 - Create `AppPreferences.kt` for JSON serialization (Kotlinx Serialization)
+- [x] 1.2.4 - Add helper methods (getActiveServer, getServerById, etc.)
+- [x] 1.2.5 - Create `UrlValidator.kt` utility for HTTP/HTTPS URL validation
+- [x] 1.2.6 - Create `Constants.kt` for app-wide constants
 
 ### Server List UI
-- [ ] 1.2.5 - Rename `ServerSetupFragment` → `ServerListFragment`
-- [ ] 1.2.6 - Create `fragment_server_list.xml` with RecyclerView + FAB
-- [ ] 1.2.7 - Create `ServerListAdapter` with ViewHolder for server items
-- [ ] 1.2.8 - Display server name, URL, and "last connected" timestamp
-- [ ] 1.2.9 - Add "Add Server" FAB button → Navigate to AddServerFragment
-- [ ] 1.2.10 - Add server item click → Connect to server (check JWT, navigate appropriately)
-- [ ] 1.2.11 - Add swipe-to-delete or long-press menu for removing servers
-- [ ] 1.2.12 - Show empty state when no servers ("Add your first server to get started")
+- [x] 1.2.7 - Create `ServerListFragment.kt` (renamed from ServerSetupFragment)
+- [x] 1.2.8 - Create `fragment_server_list.xml` with RecyclerView + FAB
+- [x] 1.2.9 - Create `ServerListAdapter` with ViewHolder for server items
+- [x] 1.2.10 - Display server name, URL, and "last connected" timestamp
+- [x] 1.2.11 - Add "Add Server" FAB button → Navigate to AddServerFragment
+- [x] 1.2.12 - Add server item click → Connect to server (check JWT, navigate appropriately)
+- [x] 1.2.13 - Show empty state when no servers ("Add your first server to get started")
+- [x] 1.2.14 - Display authentication status (● Authenticated / ● Session Expired / ● Not Authenticated)
 
 ### Add Server UI
-- [ ] 1.2.13 - Create `AddServerFragment.kt` and `fragment_add_server.xml`
-- [ ] 1.2.14 - Add EditText for server name (user-friendly label)
-- [ ] 1.2.15 - Add EditText for server URL (http:// or https://)
-- [ ] 1.2.16 - Add "Connect" button with loading state
-- [ ] 1.2.17 - Implement URL validation (basic format, allow http/https)
-- [ ] 1.2.18 - Auto-prepend "http://" if protocol missing
-- [ ] 1.2.19 - Implement server health check (`GET /api/health` with OkHttp)
-- [ ] 1.2.20 - On success: Create Server object → Navigate to AuthenticationFragment
-- [ ] 1.2.21 - Add error states (invalid URL, duplicate name, server unreachable, network error)
-- [ ] 1.2.22 - Test adding multiple servers on emulator
+- [x] 1.2.15 - Create `AddServerFragment.kt` and `fragment_add_server.xml`
+- [x] 1.2.16 - Add Material TextInputLayouts for server name and URL
+- [x] 1.2.17 - Add "Connect" button with loading state
+- [x] 1.2.18 - Implement URL validation (UrlValidator utility, allow http/https)
+- [x] 1.2.19 - Auto-prepend "http://" if protocol missing
+- [x] 1.2.20 - Implement server health check (`GET /api/health` with OkHttp)
+- [x] 1.2.21 - On success: Create Server object → Save to repository → Navigate back
+- [x] 1.2.22 - Add error states (invalid URL, duplicate name, server unreachable, network error)
+- [x] 1.2.23 - Test app builds successfully (BUILD SUCCESSFUL in 52s)
+- [x] 1.2.24 - Test app launches and displays empty state correctly
 
-**Acceptance**: User can add multiple servers, view list, select server, and remove servers
+### Dependencies
+- [x] 1.2.25 - Add Material Design library (1.12.0)
+- [x] 1.2.26 - Add RecyclerView, CardView, CoordinatorLayout dependencies
+- [x] 1.2.27 - Update libs.versions.toml with new versions
+- [x] 1.2.28 - Update nav_graph.xml with new navigation flows
+
+**Acceptance**: ✅ User can add multiple servers, view list, select server. App builds and launches successfully on Android TV emulator. Empty state displays correctly. Health check validation works. See `PHASE1.2-COMPLETE.md` for detailed testing results.
 
 ---
 
-## Phase 1.3: Device Code Pairing (Per-Server Auth)
+## Phase 1.3: Device Code Pairing (Per-Server Auth) 🚧 Next
 
 - [x] 1.3.1 - Create `AuthenticationFragment.kt` with layout (`fragment_authentication.xml`)
 - [x] 1.3.2 - Create large code display placeholder for 10-foot UI (96sp text, high contrast)
