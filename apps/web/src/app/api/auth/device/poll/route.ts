@@ -104,8 +104,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
                 return NextResponse.json({ status: 'denied' });
 
             case 'authorized': {
+                // Defensive check: authorizer should always exist due to FK constraints,
+                // but handle gracefully in case of database corruption or schema issues
                 if (deviceCode.authorizer === null || deviceCode.authorizer === undefined) {
-                    // This shouldn't happen, but handle it
                     return NextResponse.json(
                         { error: 'Authorization error' },
                         { status: 500 }

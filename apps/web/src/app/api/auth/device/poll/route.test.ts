@@ -188,39 +188,6 @@ describe('GET /api/auth/device/poll', () => {
         expect(json.status).toBe('pending');
     });
 
-    // Note: This test is skipped because we can't easily test orphaned FK references
-    // In production, FK constraints prevent this scenario
-    it.skip('should return 500 if authorizer data is missing for authorized code', async () => {
-        // First create a temporary user that we'll delete
-        const { user } = await import('@/lib/database/schema');
-        const [tempUser] = await testDb.insert(user).values({
-            id: 'temp-user-id',
-            username: 'tempuser',
-            name: 'Temp User',
-            email: 'temp@test.com',
-            emailVerified: false,
-            isActive: true,
-        }).returning();
-
-        await createDeviceCode({
-            status: 'authorized',
-            authorizedBy: tempUser.id,
-            authorizedAt: new Date(),
-        });
-
-        // Now delete the user to create orphaned reference
-        await testDb.delete(user).where(await import('drizzle-orm').then(m => m.eq(user.id, tempUser.id)));
-
-        const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
-
-        const response = await GET(request);
-        const json = await response.json();
-
-        expect(response.status).toBe(500);
-        expect(json.error).toBe('Authorization error');
-    });
-
     it('should call signInUser with correct userId', async () => {
         const { auth } = await import('@/lib/auth/auth');
 
