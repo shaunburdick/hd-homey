@@ -143,8 +143,9 @@ next-env.d.ts
 # OS
 .DS_Store
 
-# Application
-data/
+# Application data directories (runtime data, databases, etc.)
+# But NOT source code in apps/android/app/src/main/java/com/hdhomey/app/data/
+/data/
 apps/web/data/
 version.json
 baseline-*.txt
