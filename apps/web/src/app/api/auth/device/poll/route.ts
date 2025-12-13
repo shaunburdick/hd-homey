@@ -65,7 +65,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
         // Find the device code
         const deviceCode = await db.query.deviceCodes.findFirst({
-            where: eq(deviceCodes.code, code),
+            where: eq(deviceCodes.code, code.toUpperCase()),
             with: {
                 authorizer: {
                     columns: {
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             if (deviceCode.status === 'pending') {
                 await db.update(deviceCodes)
                     .set({ status: 'expired' })
-                    .where(eq(deviceCodes.code, code));
+                    .where(eq(deviceCodes.code, code.toUpperCase()));
             }
             return NextResponse.json({ status: 'expired' });
         }
