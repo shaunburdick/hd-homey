@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/serverSetupFragment">
+
+    <!-- Server Setup Fragment -->
+    <fragment
+        android:id="@+id/serverSetupFragment"
+        android:name="com.hdhomey.app.ui.setup.ServerSetupFragment"
+        android:label="Server Setup">
+        <action
+            android:id="@+id/action_serverSetup_to_authentication"
+            app:destination="@id/authenticationFragment" />
+    </fragment>
+
+    <!-- Authentication Fragment -->
+    <fragment
+        android:id="@+id/authenticationFragment"
+        android:name="com.hdhomey.app.ui.auth.AuthenticationFragment"
+        android:label="Authentication">
+        <action
+            android:id="@+id/action_authentication_to_success"
+            app:destination="@id/successFragment" />
+    </fragment>
+
+    <!-- Success Fragment -->
+    <fragment
+        android:id="@+id/successFragment"
+        android:name="com.hdhomey.app.ui.success.SuccessFragment"
+        android:label="Success" />
+
+</navigation>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HD Homey</string>
+    
+    <!-- Server Setup -->
+    <string name="server_setup_title">Connect to HD Homey</string>
+    <string name="discovering_server">Discovering HD Homey on your network…</string>
+    <string name="manual_setup">Enter URL manually</string>
+    <string name="server_url_hint">http://hd-homey.local:3000</string>
+    <string name="connect_button">Connect</string>
+    <string name="server_unreachable">Could not connect to server</string>
+    <string name="invalid_url">Please enter a valid URL</string>
+    
+    <!-- Authentication -->
+    <string name="auth_title">Pair Your Device</string>
+    <string name="go_to">Go to:</string>
+    <string name="enter_code">Enter code:</string>
+    <string name="code_expires_in">Code expires in %1$ds</string>
+    <string name="auth_failed">Authentication failed</string>
+    <string name="code_expired">Code expired. Please try again.</string>
+    <string name="authorization_denied">Authorization denied</string>
+    <string name="try_again">Try Again</string>
+    
+    <!-- Success -->
+    <string name="success_title">You\'re Connected!</string>
+    <string name="success_message">Your device is now paired with HD Homey</string>
+    
+    <!-- Errors -->
+    <string name="network_error">Network error. Please check your connection.</string>
+    <string name="server_error">Server error. Please try again later.</string>
+</resources>

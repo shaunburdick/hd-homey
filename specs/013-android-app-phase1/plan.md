@@ -33,16 +33,17 @@ Phase 1 establishes the Android app foundation with core architecture, server di
 - **Networking**: OkHttp 4.12.0+ with Kotlin Coroutines
 
 ### 3. Key Fragments (Phase 1 Scope)
-1. **ServerSetupFragment** - mDNS discovery + manual URL entry
-2. **AuthenticationFragment** - Device code pairing flow
-3. **SuccessFragment** - "You're connected!" placeholder (actual UI comes in Phase 2)
+1. **ServerListFragment** - List configured servers, add/remove/select
+2. **AddServerFragment** - Manual server URL entry + name
+3. **AuthenticationFragment** - Device code pairing flow
+4. **SuccessFragment** - "Connected!" → Navigate to ServerListFragment or main app
 
 ### 4. Backend Requirements (HD Homey 1.1.0)
 Must implement device pairing API in Next.js backend:
 - `POST /api/auth/device/code` - Generate pairing code
 - `GET /api/auth/device/poll?code=XXX` - Check authorization status
 - `GET /pair` - Web page for code entry
-- JWT token storage in Android Keystore
+- JWT tokens stored per-server in Android (SharedPreferences with JSON)
 
 ---
 
@@ -75,9 +76,6 @@ org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.0+
 
 // Android TV (Leanback)
 androidx.leanback:leanback:1.2.0-alpha04+
-
-// mDNS Discovery (Android NSD - built-in)
-// No dependency needed - uses android.net.nsd.*
 
 // Security (Android Keystore - built-in)
 androidx.security:security-crypto:1.1.0-alpha06+
@@ -170,21 +168,24 @@ Must implement in `apps/web/`:
 
 ---
 
-### AD-5: mDNS Discovery with Manual Fallback
-**Decision**: Auto-discover `hd-homey.local` via mDNS, with manual URL entry fallback
+### AD-5: Manual Server URL Entry (No mDNS Discovery)
+**Decision**: Require users to manually enter HD Homey server URL (HTTPS)
 
 **Rationale**:
-- Zero-config setup for most users (local network)
-- Manual fallback for edge cases (remote access, mDNS blocked)
-- Native Android NSD API (no external dependencies)
-- Improves first-run experience
+- HD Homey is designed for self-hosted home lab environments
+- Users may use HTTP, HTTPS, or self-signed certificates
+- Backend and Android app may be remote OR local (flexible)
+- Simpler implementation - no NSD API complexity
+- Users know their setup best (don't enforce security policies)
 
 **Alternatives Considered**:
-- Manual only: More friction
+- mDNS discovery: Only works locally, doesn't match remote use case
 - Cloud-based discovery: Out of scope, adds backend complexity
+- QR code scanning: Interesting but premature optimization
+- Enforce HTTPS: Too restrictive for home labs (HTTP, self-signed certs common)
 
-**Tradeoff**: mDNS not guaranteed to work (firewall, network issues)
-**Acceptance**: Fallback covers edge cases
+**Tradeoff**: Requires user to know their server URL (acceptable for self-hosted app)
+**Acceptance**: Users already have server URL from initial HD Homey setup, any protocol accepted
 
 ---
 
@@ -198,23 +199,28 @@ apps/android/
 │   │   │   ├── java/com/hdhomey/app/
 │   │   │   │   ├── MainActivity.kt              # Single Activity
 │   │   │   │   ├── ui/
-│   │   │   │   │   ├── setup/
-│   │   │   │   │   │   └── ServerSetupFragment.kt
+│   │   │   │   │   ├── servers/
+│   │   │   │   │   │   ├── ServerListFragment.kt        # List/select servers
+│   │   │   │   │   │   ├── AddServerFragment.kt         # Add new server
+│   │   │   │   │   │   └── ServerListAdapter.kt         # RecyclerView adapter
 │   │   │   │   │   ├── auth/
-│   │   │   │   │   │   └── AuthenticationFragment.kt
+│   │   │   │   │   │   └── AuthenticationFragment.kt    # Device code pairing
 │   │   │   │   │   └── success/
-│   │   │   │   │       └── SuccessFragment.kt
+│   │   │   │   │       └── SuccessFragment.kt           # Connection success
+│   │   │   │   ├── data/
+│   │   │   │   │   ├── model/
+│   │   │   │   │   │   └── Server.kt                    # Server data class
+│   │   │   │   │   └── repository/
+│   │   │   │   │       └── ServerRepository.kt          # CRUD for servers
 │   │   │   │   ├── network/
-│   │   │   │   │   ├── HdHomeyApi.kt           # API client
-│   │   │   │   │   ├── DeviceCodeService.kt    # Device pairing logic
-│   │   │   │   │   └── models/                 # Data classes
-│   │   │   │   ├── discovery/
-│   │   │   │   │   └── MdnsDiscovery.kt        # mDNS service
+│   │   │   │   │   ├── HdHomeyApi.kt                    # API client
+│   │   │   │   │   ├── DeviceCodeService.kt             # Device pairing logic
+│   │   │   │   │   └── models/                          # API data classes
 │   │   │   │   ├── storage/
-│   │   │   │   │   ├── SecurePreferences.kt    # Android Keystore wrapper
-│   │   │   │   │   └── AppPreferences.kt       # Server URL, etc.
+│   │   │   │   │   └── AppPreferences.kt                # SharedPreferences wrapper
 │   │   │   │   └── util/
 │   │   │   │       ├── DeviceTypeDetector.kt   # TV/Tablet/Phone detection
+│   │   │   │       ├── UrlValidator.kt         # URL validation helper
 │   │   │   │       └── Constants.kt
 │   │   │   ├── res/
 │   │   │   │   ├── layout/                     # XML layouts
@@ -243,28 +249,42 @@ apps/android/
 
 ### Local Storage (Android)
 
+#### Server Entity (Room Database or SharedPreferences)
+```kotlin
+data class Server(
+    val id: String,                      // UUID (unique identifier)
+    val name: String,                    // User-defined name ("Home", "Office", etc.)
+    val url: String,                     // e.g., "http://192.168.1.100:3000"
+    val jwt: String?,                    // JWT session token (null if not authenticated)
+    val expiresAt: Long?,                // JWT expiration timestamp (null if not authenticated)
+    val userRole: String?,               // "admin" or "viewer" (null if not authenticated)
+    val username: String?,               // Username for this connection (null if not authenticated)
+    val lastConnected: Long,             // Last successful connection timestamp
+    val createdAt: Long                  // When server was added
+)
+```
+
+**Storage Strategy:**
+- **Phase 1**: Use SharedPreferences with JSON serialization
+- **Phase 2+**: Migrate to Room database if needed (more complex queries)
+
+**Notes:**
+- Each server has its own JWT (different auth per server)
+- Users can add the same URL twice with different credentials
+- Server list persists across app restarts
+
 #### AppPreferences (SharedPreferences)
 ```kotlin
-data class ServerConfig(
-    val serverUrl: String,           // e.g., "http://hd-homey.local:3000"
-    val connectionType: ConnectionType, // LOCAL or REMOTE
-    val lastConnected: Long          // Timestamp
-)
-
-enum class ConnectionType {
-    LOCAL,    // http://hd-homey.local
-    REMOTE    // https://homey.example.com
-}
-```
-
-#### SecurePreferences (Android Keystore)
-```kotlin
-data class AuthToken(
-    val jwt: String,                 // JWT session token
-    val expiresAt: Long,             // Unix timestamp
-    val userRole: String             // "admin" or "viewer"
+data class AppState(
+    val activeServerId: String?,         // Currently connected server ID (null if none)
+    val servers: List<Server>,           // All configured servers
+    val hasCompletedOnboarding: Boolean  // First launch flag
 )
 ```
+
+**Migration Strategy:**
+- Existing single-server setups automatically convert to a server list
+- Active server is the first one in the list
 
 ### API Models (Network)
 
@@ -400,41 +420,63 @@ On approval:
 
 ---
 
-### Phase 1.2: Server Discovery (4-6 hours)
-**Goal**: mDNS discovery + manual URL entry
+### Phase 1.2: Multi-Server Management (6-8 hours)
+**Goal**: List, add, remove, and select servers
 
 **Tasks**:
-1. Create `ServerSetupFragment` layout (XML)
-2. Implement `MdnsDiscovery.kt` using Android NSD
-3. Create "Discovering..." UI with spinner
-4. Add manual URL entry form
-5. Validate server connectivity (`GET /api/health`)
-6. Store server URL in `AppPreferences`
-7. Navigate to AuthenticationFragment on success
+1. Create `Server` data class (id, name, url, jwt, timestamps)
+2. Create `ServerRepository.kt` with CRUD operations
+3. Create `AppPreferences.kt` for JSON serialization
+4. Create `ServerListFragment` layout (RecyclerView)
+5. Create `ServerListAdapter` with server items
+6. Implement "Add Server" button → Navigate to AddServerFragment
+7. Implement "Remove Server" (swipe or long-press)
+8. Create `AddServerFragment` with name + URL inputs
+9. Implement URL validation (basic format, allow http/https)
+10. Implement server health check (`GET /api/health`)
+11. On successful connection → Navigate to AuthenticationFragment
+12. Add error states (invalid URL, server unreachable, duplicate name)
 
-**Deliverable**: User can discover or manually enter HD Homey server URL
+**Deliverable**: User can add multiple servers, see list, and select one to connect
 
 ---
 
 ### Phase 1.3: Device Code Pairing (6-8 hours)
-**Goal**: Display device code, poll for authorization, store JWT
+**Goal**: Display device code, poll for authorization, store JWT per server
 
 **Tasks**:
-1. Create `AuthenticationFragment` layout
-2. Implement `DeviceCodeService.kt` (API client)
-3. Call `POST /api/auth/device/code`
-4. Display code prominently (large text for TV)
+1. Update `AuthenticationFragment` to receive server ID as argument
+2. Implement `DeviceCodeService.kt` (API client with dynamic base URL)
+3. Call `POST /api/auth/device/code` for selected server
+4. Display code prominently (96sp text for TV)
 5. Poll `GET /api/auth/device/poll` every 3 seconds
-6. Handle authorization statuses (pending, authorized, expired)
-7. Store JWT in `SecurePreferences` (Android Keystore)
-8. Navigate to SuccessFragment on authorized
+6. Handle authorization statuses (pending, authorized, expired, denied)
+7. On authorized: Parse JWT, extract username and role
+8. Update server in repository with JWT, username, role, expiresAt
+9. Navigate to SuccessFragment with server name
+10. Add countdown timer for code expiration
 
-**Deliverable**: User can authenticate using device code
+**Deliverable**: User can authenticate and JWT is stored per-server
 
 ---
 
-### Phase 1.4: Backend Implementation (HD Homey 1.1.0) (6-10 hours)
-**Goal**: Implement device pairing API in Next.js backend
+### Phase 1.4: App Launch Logic (2-3 hours)
+**Goal**: Route user to correct screen on launch
+
+**Tasks**:
+1. In MainActivity.onCreate, check if servers exist
+2. If no servers → Navigate to AddServerFragment ("Add Your First Server")
+3. If servers exist but no active server → Navigate to ServerListFragment
+4. If active server exists with valid JWT → Navigate to main app (Phase 2)
+5. If active server exists with expired JWT → Navigate to ServerListFragment
+6. Add "Disconnect" action in main app → Returns to ServerListFragment
+
+**Deliverable**: App routes correctly based on state
+
+---
+
+### Phase 1.5: Backend Implementation (HD Homey 1.1.0) (6-10 hours)
+**Goal**: Implement device pairing API in Next.js backend (Already complete!)
 
 **Tasks**:
 1. Create device code storage (in-memory Map or database table)
@@ -486,21 +528,21 @@ On approval:
 
 ### Phase 1 Complete When:
 - [ ] Android project builds successfully in `apps/android/`
-- [ ] App launches on Android TV emulator
+- [x] App launches on Android TV emulator
 - [ ] App launches on phone emulator
-- [ ] mDNS discovery finds HD Homey on local network
-- [ ] Manual URL entry works
-- [ ] Device code displayed prominently
+- [ ] Manual server URL entry works with validation
+- [ ] Server connectivity check (`/api/health`) succeeds
+- [ ] Device code displayed prominently (96sp for TV)
 - [ ] Polling detects authorization within 5 seconds
 - [ ] JWT token stored securely in Android Keystore
 - [ ] Backend endpoints return correct responses
-- [ ] Error states handled gracefully
+- [ ] Error states handled gracefully (network, invalid URL, server unreachable)
 - [ ] All unit tests passing
 - [ ] App works on Android 9+ (API 28+)
 
 ### User Stories Covered:
 - ✅ **Story 1**: First-Time Setup on Android TV (device code method)
-- ✅ **Story 5**: Automatic Server Discovery (mDNS)
+- ✅ **Story 2**: Manual Server Entry (primary method for remote access)
 - ⚠️ **Story 8**: Persistent Authentication (JWT stored, expiry not yet handled)
 
 ---
@@ -520,14 +562,15 @@ On approval:
 
 ## Risks & Mitigations
 
-### Risk 1: mDNS Discovery Unreliable
+### Risk 1: Users Don't Know Their Server URL
 **Probability**: Medium  
-**Impact**: High (bad first-run experience)
+**Impact**: Medium (setup friction)
 
 **Mitigation**:
-- Provide clear manual URL entry fallback
-- Show helpful error messages ("Can't find HD Homey? Enter URL manually")
-- Test on multiple network configurations
+- Add helpful placeholder text ("https://hd-homey.example.com")
+- Show clear error messages with examples
+- Include "Where do I find this?" help text linking to docs
+- Consider QR code scanning in future phase
 
 ---
 
@@ -574,25 +617,35 @@ On approval:
 ```
 
 ### Manual Testing Scenarios
-1. **Happy Path (TV)**:
+1. **Happy Path - Local HTTP (TV)**:
    - Launch app on Android TV emulator
-   - Wait for mDNS discovery
-   - See device code
+   - Enter local server URL (http://192.168.1.100:3000)
+   - See "Connecting..." state
+   - Server validation succeeds
+   - See device code screen
    - Authorize on browser
    - See success screen
 
-2. **Manual URL Entry**:
-   - Launch app
-   - Wait for mDNS timeout
-   - Enter manual URL
+2. **Happy Path - HTTPS (Phone)**:
+   - Launch app on phone emulator
+   - Enter HTTPS URL (https://hd-homey.example.com)
    - Complete device code flow
+   - Verify responsive layout
 
-3. **Remote Access**:
-   - Enter HTTPS URL manually
+3. **Home Lab HTTP**:
+   - Enter HTTP URL (http://homelab.local:3000)
+   - Complete device code flow
+   - Verify JWT stored
+
+4. **Remote HTTPS Access**:
+   - Enter public HTTPS URL with domain
    - Complete device code flow over internet
+   - Verify works from different network
 
-4. **Error Cases**:
-   - Server unreachable → Show error message
+5. **Error Cases**:
+   - Invalid URL format → Show "Please enter a valid URL"
+   - Missing protocol → Auto-prepend "http://"
+   - Server unreachable → Show "Can't reach server. Check URL and connection."
    - Code expires → Show "Code expired, try again"
    - Authorization denied → Show "Access denied"
 
