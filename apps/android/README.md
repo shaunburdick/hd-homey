@@ -1,13 +1,371 @@
-# HD Homey Android App
+# HD Homey Android TV App
 
-This directory is reserved for the Android app implementation (SPEC-013 Phase 1+).
+Native Android TV application for HD Homey that provides a seamless 10-foot UI experience for browsing and streaming live TV channels.
 
 ## Status
 
-🚧 **Under Development** - Phase 0 (repository reorganization) in progress.
+🚧 **Phase 2: Android App Development** - Project structure created, ready for macOS development.
+
+**Phase 1 Complete**: Backend Device Pairing API is fully implemented and tested.
+
+## Prerequisites
+
+### macOS Development Setup
+
+1. **Android Studio** (Latest stable - Hedgehog 2023.1.1+)
+   ```bash
+   # Download from: https://developer.android.com/studio
+   # Or via Homebrew:
+   brew install --cask android-studio
+   ```
+
+2. **Java Development Kit (JDK 17+)**
+   ```bash
+   # Check if installed:
+   java -version
+   
+   # Install via Homebrew if needed:
+   brew install openjdk@17
+   ```
+
+3. **Android SDK** (via Android Studio)
+   - API Level 31+ (Android 12+) for TV
+   - Android TV x86 System Image for emulator
+
+4. **Git** (for repository management)
+   ```bash
+   # Should already be installed, verify:
+   git --version
+   ```
+
+## Project Structure
+
+```
+apps/android/
+├── app/                          # Main application module
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/hdhomey/tv/
+│   │   │   │   ├── MainActivity.kt          # Main TV activity
+│   │   │   │   ├── ui/
+│   │   │   │   │   ├── auth/               # Authentication/pairing screens
+│   │   │   │   │   │   ├── PairingFragment.kt
+│   │   │   │   │   │   └── CodeDisplayFragment.kt
+│   │   │   │   │   ├── browse/             # Channel browsing
+│   │   │   │   │   │   ├── BrowseFragment.kt
+│   │   │   │   │   │   └── ChannelRow.kt
+│   │   │   │   │   ├── player/             # Video player
+│   │   │   │   │   │   ├── PlayerActivity.kt
+│   │   │   │   │   │   └── PlaybackFragment.kt
+│   │   │   │   │   └── settings/           # App settings
+│   │   │   │   │       └── SettingsFragment.kt
+│   │   │   │   ├── data/
+│   │   │   │   │   ├── api/                # Backend API client
+│   │   │   │   │   │   ├── HdHomeyApi.kt
+│   │   │   │   │   │   ├── DevicePairingApi.kt
+│   │   │   │   │   │   └── ChannelApi.kt
+│   │   │   │   │   ├── model/              # Data models
+│   │   │   │   │   │   ├── Channel.kt
+│   │   │   │   │   │   ├── DeviceCode.kt
+│   │   │   │   │   │   └── User.kt
+│   │   │   │   │   └── repository/         # Data repositories
+│   │   │   │   │       ├── AuthRepository.kt
+│   │   │   │   │       └── ChannelRepository.kt
+│   │   │   │   └── util/
+│   │   │   │       ├── TokenManager.kt      # JWT token storage
+│   │   │   │       └── PreferenceManager.kt # Shared preferences
+│   │   │   ├── res/
+│   │   │   │   ├── layout/                  # XML layouts
+│   │   │   │   ├── values/                  # Strings, colors, themes
+│   │   │   │   ├── drawable/                # Icons and images
+│   │   │   │   └── xml/                     # Preferences, shortcuts
+│   │   │   └── AndroidManifest.xml
+│   │   ├── androidTest/                     # Instrumented tests
+│   │   └── test/                            # Unit tests
+│   ├── build.gradle.kts                     # Module build config
+│   └── proguard-rules.pro
+├── build.gradle.kts                         # Project build config
+├── settings.gradle.kts                      # Project settings
+├── gradle.properties                        # Gradle properties
+├── local.properties                         # Local SDK path (gitignored)
+├── README.md                                # This file
+├── SETUP.md                                 # Detailed setup instructions
+└── DEVELOPMENT.md                           # Development guide
+```
+
+## Quick Start (macOS)
+
+### 1. Clone Repository (if not already done)
+
+```bash
+git clone https://github.com/shaunburdick/hd-homey.git
+cd hd-homey
+git checkout 013-android-app  # Or main after Phase 1 is merged
+```
+
+### 2. Open Project in Android Studio
+
+```bash
+# From terminal:
+open -a "Android Studio" apps/android
+
+# Or from Android Studio:
+# File → Open → Navigate to hd-homey/apps/android
+```
+
+### 3. Configure Android SDK
+
+1. Open **Android Studio → Preferences → Appearance & Behavior → System Settings → Android SDK**
+2. Install required SDK platforms:
+   - ✅ Android 12.0 (S) - API Level 31
+   - ✅ Android 13.0 (T) - API Level 33
+   - ✅ Android 14.0 (U) - API Level 34
+3. Install SDK Tools (SDK Tools tab):
+   - ✅ Android SDK Build-Tools
+   - ✅ Android Emulator
+   - ✅ Android SDK Platform-Tools
+
+### 4. Create Android TV Emulator
+
+1. Open **Tools → Device Manager**
+2. Click **Create Device**
+3. Select **TV** category
+4. Choose **Android TV (1080p)**
+5. Select **API 31+** system image
+6. Click **Finish**
+
+### 5. Configure Backend URL
+
+Create `apps/android/local.properties`:
+
+```properties
+# Android SDK location (auto-generated by Android Studio)
+sdk.dir=/Users/YOUR_USERNAME/Library/Android/sdk
+
+# Backend API configuration
+# For local development, use your machine's IP address (not localhost)
+backend.url=http://192.168.1.XXX:3000
+
+# Or use ngrok/tunneling service for remote testing
+# backend.url=https://your-ngrok-url.ngrok-free.app
+```
+
+### 6. Start Backend Server
+
+In WSL2 or another terminal:
+
+```bash
+cd /path/to/hd-homey
+npm run dev  # Starts backend on 0.0.0.0:3000
+```
+
+Find your machine's IP:
+```bash
+# On macOS:
+ipconfig getifaddr en0
+
+# On WSL2:
+ip addr show eth0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1
+```
+
+### 7. Build and Run
+
+```bash
+# From Android Studio: Click the green "Run" button
+# Or from terminal:
+cd apps/android
+./gradlew installDebug
+```
+
+## Technology Stack
+
+### Core Dependencies
+
+- **Kotlin** 1.9+
+- **Jetpack Compose for TV** - Modern declarative UI
+- **Compose Navigation** - Screen navigation
+- **AndroidX Leanback** - TV-optimized UI components (fallback)
+- **Coroutines + Flow** - Async operations
+- **ViewModel + LiveData** - State management
+- **Retrofit + OkHttp** - HTTP client for API calls
+- **Moshi** - JSON parsing
+- **Coil** - Image loading
+- **ExoPlayer** - Video playback
+- **DataStore** - Preferences and token storage
+- **Hilt** - Dependency injection
+- **Truth** - Testing assertions
+- **MockK** - Mocking framework
+
+### TV-Specific Features
+
+- **Leanback library** - TV navigation patterns
+- **D-pad navigation** - Remote control support
+- **Focus management** - TV UI focus handling
+- **10-foot UI** - Large text, high contrast
+- **Banner and icon** - TV launcher assets
+
+## Device Pairing Flow (Already Implemented in Backend)
+
+The Android app will implement the client side of the OAuth 2.0 Device Code Flow:
+
+```
+1. App calls POST /api/auth/device/code
+   → Receives: { code: "A8F2K9", pairingUrl: "...", expiresAt: "..." }
+
+2. Display code on TV screen:
+   "Go to tv.example.com/pair
+    Enter code: A8F2K9"
+
+3. Poll GET /api/auth/device/poll?code=A8F2K9 every 3 seconds
+   → While pending: { status: "pending" }
+   → On success: { status: "authorized", token: "eyJ...", user: {...} }
+
+4. Store JWT token securely
+5. Navigate to main channel browsing screen
+6. Include token in all API requests: Authorization: Bearer {token}
+```
+
+## API Endpoints (Already Implemented)
+
+All backend endpoints are documented and tested:
+
+- **Device Pairing**: See `/apps/docs/api/device-pairing.md`
+- **Health Check**: `GET /api/health`
+- **Channel Lineup**: `GET /api/lineup.json`
+- **Stream URLs**: Secured with HMAC tokens (auto-handled by backend)
+
+## Development Workflow
+
+### 1. Feature Development
+```bash
+# Create feature branch from 013-android-app
+git checkout 013-android-app
+git pull origin 013-android-app
+git checkout -b android-feature-browsing
+
+# Make changes in apps/android/
+# Test on emulator or device
+# Commit changes
+git add apps/android/
+git commit -m "feat(android): implement channel browsing UI"
+```
+
+### 2. Testing
+```bash
+# Unit tests
+./gradlew test
+
+# Instrumented tests (requires emulator/device)
+./gradlew connectedAndroidTest
+
+# Lint
+./gradlew lint
+```
+
+### 3. Building Release APK
+```bash
+./gradlew assembleRelease
+
+# APK location:
+# apps/android/app/build/outputs/apk/release/app-release.apk
+```
+
+## Project Phases
+
+### ✅ Phase 0: Repository Reorganization
+- Monorepo structure created
+- `apps/android/` directory established
+
+### ✅ Phase 1: Backend Device Pairing API
+- OAuth 2.0 Device Code Flow implemented
+- 4 API endpoints (generate, poll, validate, authorize)
+- Database schema and migrations
+- Web UI at `/pair` for authorization
+- 50 comprehensive unit tests
+- Complete API documentation
+
+### 🚧 Phase 2: Android App Development (Current)
+- [ ] Initial Android project setup with Gradle
+- [ ] Device pairing UI implementation
+- [ ] JWT token storage and management
+- [ ] API client with Retrofit
+- [ ] Channel browsing UI with Leanback
+- [ ] Video player with ExoPlayer
+- [ ] Settings and preferences
+- [ ] Error handling and offline support
+
+### 🔮 Phase 3: Advanced Features
+- [ ] Channel favorites sync
+- [ ] Search functionality
+- [ ] Recommendations and continue watching
+- [ ] Recording playback
+- [ ] Multiple tuner support
+- [ ] App shortcuts
+
+## Resources
+
+### Documentation
+- [API Documentation](../docs/api/device-pairing.md) - Complete API reference
+- [Android TV Development Guide](https://developer.android.com/training/tv) - Official Android TV docs
+- [Jetpack Compose for TV](https://developer.android.com/jetpack/compose/tv) - Modern UI framework
+- [ExoPlayer Guide](https://developer.android.com/guide/topics/media/exoplayer) - Video playback
+
+### Sample Code
+- [Android TV Samples](https://github.com/android/tv-samples) - Official Google samples
+- [Leanback Showcase](https://github.com/googlearchive/androidtv-Leanback) - TV UI patterns
+
+### Tools
+- [Android Studio](https://developer.android.com/studio) - IDE
+- [Vysor](https://www.vysor.io/) - Mirror Android device to computer
+- [Scrcpy](https://github.com/Genymobile/scrcpy) - Open-source screen mirroring
+
+## Troubleshooting
+
+### Backend Connection Issues
+
+**Problem**: App can't connect to backend
+```
+Error: Failed to connect to /192.168.1.100:3000
+```
+
+**Solution**:
+1. Verify backend is running: `curl http://localhost:3000/api/health`
+2. Find correct IP address (not `localhost` from emulator)
+3. Check firewall settings allow port 3000
+4. Use `0.0.0.0` instead of `127.0.0.1` in backend config
+
+### Emulator Performance
+
+**Problem**: Emulator is slow or laggy
+
+**Solution**:
+1. Enable hardware acceleration (HAXM on macOS Intel, Hypervisor.framework on Apple Silicon)
+2. Allocate more RAM to emulator (4GB minimum)
+3. Use x86_64 system images (faster than ARM on Intel Macs)
+4. Use physical Android TV device for better performance
+
+### Build Errors
+
+**Problem**: Gradle build fails
+
+**Solution**:
+1. Invalidate caches: **File → Invalidate Caches → Invalidate and Restart**
+2. Clean build: `./gradlew clean build`
+3. Update Gradle: `./gradlew wrapper --gradle-version=8.4`
+4. Check `local.properties` has correct SDK path
 
 ## Next Steps
 
-Phase 1 of Android app development will begin after Phase 0 is merged to main.
+See **SETUP.md** for detailed Android Studio setup instructions.
 
-See `.specify/features/013-android-app.md` for the complete specification.
+See **DEVELOPMENT.md** for development guidelines and coding standards.
+
+## Need Help?
+
+- [GitHub Issues](https://github.com/shaunburdick/hd-homey/issues) - Report bugs or request features
+- [SPEC-013](../../.specify/features/013-android-app.md) - Complete specification
+- [API Docs](../docs/api/device-pairing.md) - Backend API reference
+
+---
+
+**Ready to develop on macOS!** 🚀
