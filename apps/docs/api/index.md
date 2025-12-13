@@ -84,6 +84,34 @@ Custom API for generating secure stream access tokens.
 - `POST /api/streams/token` - Generate stream token
 - `GET /api/streams/validate` - Validate token
 
+### Device Pairing API
+OAuth 2.0 Device Authorization Grant (RFC 8628) for authenticating devices without keyboard input.
+
+**Use cases:**
+- Android TV authentication
+- Smart TV applications
+- Set-top boxes and streaming devices
+- Mobile device pairing
+- Any device with limited input capabilities
+
+**How it works:**
+1. Device generates a short code (e.g., "A8F2K9")
+2. User visits pairing URL on their phone/computer
+3. User enters code and authorizes the device
+4. Device receives JWT token for authenticated API access
+
+**Authentication**: Mixed (public code generation, session-based authorization)
+
+**Endpoints**:
+- `POST /api/auth/device/code` - Generate device code
+- `GET /api/auth/device/poll` - Poll authorization status
+- `GET /api/auth/device/validate` - Validate code
+- `POST /api/auth/device/authorize` - Authorize device (requires login)
+
+**Built-in UI**: `/pair` - Web interface for entering and authorizing codes
+
+See [Device Pairing API](/api/device-pairing) for detailed documentation and integration guide.
+
 ## Authentication
 
 ### Session-Based Authentication

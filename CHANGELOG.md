@@ -24,6 +24,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Device Pairing API (SPEC-013 Phase 1)**: OAuth 2.0 Device Authorization Grant for authenticating devices without keyboard input
+  - OAuth 2.0 Device Code Flow (RFC 8628) for TV and mobile device authentication
+  - Generate 6-character device codes optimized for remote control input (no ambiguous characters)
+  - Poll-based authorization flow with automatic status updates (pending/authorized/denied/expired)
+  - Secure JWT token generation upon successful authorization
+  - Built-in web UI at `/pair` for code entry and authorization
+  - Automatic code expiration after 5 minutes for security
+  - Support for multiple device types: TV, tablet, and phone
+  - Session-based authorization requiring user authentication
+  - Complete audit trail with IP address, user agent, and authorization timestamps
+  - 49 comprehensive unit tests with 100% endpoint coverage
+  - Full API documentation and Android integration guide
 - **Enhanced Build Identification (SPEC-013)**: Version display now includes commit SHA and build metadata for improved debugging and monitoring
   - Version format: `VERSION (COMMIT)` in production, `VERSION (BRANCH@COMMIT)` in development feature branches
   - `-dirty` suffix indicates uncommitted changes (development only)

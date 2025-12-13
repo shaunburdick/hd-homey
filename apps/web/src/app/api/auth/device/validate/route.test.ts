@@ -21,6 +21,9 @@ vi.mock('@/lib/logger', () => ({
 
 const { refreshDb } = setupTestDatabase();
 
+// Test constants
+const TEST_API_BASE_URL = 'http://localhost:3000/api/auth/device/validate';
+
 describe('GET /api/auth/device/validate', () => {
     beforeEach(async () => {
         testDb = await refreshDb({ seed: true }); // Need seed for user references
@@ -49,7 +52,7 @@ describe('GET /api/auth/device/validate', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/validate?code=VALID1');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=VALID1`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -100,7 +103,7 @@ describe('GET /api/auth/device/validate', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/validate?code=VALID1');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=VALID1`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -117,7 +120,7 @@ describe('GET /api/auth/device/validate', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/validate?code=VALID1');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=VALID1`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -132,7 +135,7 @@ describe('GET /api/auth/device/validate', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/validate?code=VALID1');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=VALID1`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -201,7 +204,7 @@ describe('GET /api/auth/device/validate', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/validate?code=VALID1');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=VALID1`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -219,7 +222,7 @@ describe('GET /api/auth/device/validate', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/validate?code=VALID1');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=VALID1`);
 
         const response = await GET(request);
         const json = await response.json();

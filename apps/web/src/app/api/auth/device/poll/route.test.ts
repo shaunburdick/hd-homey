@@ -33,6 +33,9 @@ vi.mock('@/lib/auth/auth', () => ({
 
 const { refreshDb } = setupTestDatabase();
 
+// Test constants
+const TEST_API_BASE_URL = 'http://localhost:3000/api/auth/device/poll';
+
 describe('GET /api/auth/device/poll', () => {
     beforeEach(async () => {
         testDb = await refreshDb({ seed: true });
@@ -58,7 +61,7 @@ describe('GET /api/auth/device/poll', () => {
         await createDeviceCode();
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=TEST01`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -75,7 +78,7 @@ describe('GET /api/auth/device/poll', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=TEST01`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -96,7 +99,7 @@ describe('GET /api/auth/device/poll', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=TEST01`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -115,7 +118,7 @@ describe('GET /api/auth/device/poll', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=TEST01`);
 
         await GET(request);
 
@@ -133,7 +136,7 @@ describe('GET /api/auth/device/poll', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=TEST01`);
 
         const response = await GET(request);
         const json = await response.json();
@@ -198,7 +201,7 @@ describe('GET /api/auth/device/poll', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=TEST01`);
 
         await GET(request);
 
@@ -215,7 +218,7 @@ describe('GET /api/auth/device/poll', () => {
 
         // Poll 3 times
         for (let i = 0; i < 3; i++) {
-            const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
+            const request = new NextRequest(`${TEST_API_BASE_URL}?code=TEST01`);
             const response = await GET(request);
             const json = await response.json();
 
@@ -234,7 +237,7 @@ describe('GET /api/auth/device/poll', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/poll?code=TEST01');
+        const request = new NextRequest(`${TEST_API_BASE_URL}?code=TEST01`);
 
         const response = await GET(request);
         const json = await response.json();

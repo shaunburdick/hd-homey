@@ -37,10 +37,15 @@ vi.mock('next/headers', () => ({
 
 const { refreshDb } = setupTestDatabase();
 
+// Test constants
+const TEST_ADMIN_USER_ID = 'test-admin-uuid';
+const TEST_API_URL = 'http://localhost:3000/api/auth/device/authorize';
+const JSON_CONTENT_TYPE = 'application/json';
+
 function createMockSession(overrides?: Record<string, unknown>) {
     return {
         user: {
-            id: 'test-admin-uuid',
+            id: TEST_ADMIN_USER_ID,
             username: 'admin',
             name: 'Admin User',
             email: 'admin@local.hdhomey.app',
@@ -53,7 +58,7 @@ function createMockSession(overrides?: Record<string, unknown>) {
         },
         session: {
             id: 'session-1',
-            userId: 'test-admin-uuid',
+            userId: TEST_ADMIN_USER_ID,
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
             token: 'test-token',
             createdAt: new Date(),
@@ -89,9 +94,9 @@ describe('POST /api/auth/device/authorize', () => {
         await createDeviceCode();
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -109,9 +114,9 @@ describe('POST /api/auth/device/authorize', () => {
         await createDeviceCode();
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -122,7 +127,7 @@ describe('POST /api/auth/device/authorize', () => {
         });
 
         expect(updated?.status).toBe('authorized');
-        expect(updated?.authorizedBy).toBe('test-admin-uuid');
+        expect(updated?.authorizedBy).toBe(TEST_ADMIN_USER_ID);
         expect(updated?.authorizedAt).toBeDefined();
         expect(updated?.authorizedAt).toBeInstanceOf(Date);
     });
@@ -133,9 +138,9 @@ describe('POST /api/auth/device/authorize', () => {
         await createDeviceCode();
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -152,9 +157,9 @@ describe('POST /api/auth/device/authorize', () => {
         await createDeviceCode();
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -179,9 +184,9 @@ describe('POST /api/auth/device/authorize', () => {
         await createDeviceCode();
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -194,9 +199,9 @@ describe('POST /api/auth/device/authorize', () => {
 
     it('should return 404 for non-existent code', async () => {
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'NOTA01' }), // Valid format, doesn't exist
         });
 
@@ -213,9 +218,9 @@ describe('POST /api/auth/device/authorize', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -234,9 +239,9 @@ describe('POST /api/auth/device/authorize', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -253,9 +258,9 @@ describe('POST /api/auth/device/authorize', () => {
         });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -268,9 +273,9 @@ describe('POST /api/auth/device/authorize', () => {
 
     it('should return 400 for missing code', async () => {
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({}),
         });
 
@@ -284,9 +289,9 @@ describe('POST /api/auth/device/authorize', () => {
 
     it('should return 400 for invalid code length', async () => {
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'ABC' }), // Too short
         });
 
@@ -301,9 +306,9 @@ describe('POST /api/auth/device/authorize', () => {
         await createDeviceCode({ code: 'LOWER1' });
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'lower1' }),
         });
 
@@ -323,9 +328,9 @@ describe('POST /api/auth/device/authorize', () => {
         const beforeAuth = Date.now();
 
         const { NextRequest } = await import('next/server');
-        const request = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
 
@@ -351,9 +356,9 @@ describe('POST /api/auth/device/authorize', () => {
         const { NextRequest } = await import('next/server');
 
         // First authorization
-        const request1 = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request1 = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
         await POST(request1);
@@ -363,9 +368,9 @@ describe('POST /api/auth/device/authorize', () => {
         });
 
         // Second authorization attempt
-        const request2 = new NextRequest('http://localhost:3000/api/auth/device/authorize', {
+        const request2 = new NextRequest(TEST_API_URL, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': JSON_CONTENT_TYPE },
             body: JSON.stringify({ code: 'AUTH01' }),
         });
         const response2 = await POST(request2);

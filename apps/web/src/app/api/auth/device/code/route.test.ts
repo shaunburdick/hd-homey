@@ -26,6 +26,7 @@ const TEST_API_URL = 'http://localhost:3000/api/auth/device/code';
 const CONTENT_TYPE = 'application/json';
 const TEST_DEVICE_NAME = 'Test TV';
 const TEST_DEVICE_TYPE = 'tv';
+const INVALID_REQUEST_ERROR = 'Invalid request';
 
 describe('POST /api/auth/device/code', () => {
     beforeEach(async () => {
@@ -146,7 +147,7 @@ describe('POST /api/auth/device/code', () => {
         const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
             headers: {
-                'content-type': 'application/json',
+                'content-type': CONTENT_TYPE,
                 'x-forwarded-for': '192.168.1.100',
             },
             body: JSON.stringify({
@@ -174,7 +175,7 @@ describe('POST /api/auth/device/code', () => {
         const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
             headers: {
-                'content-type': 'application/json',
+                'content-type': CONTENT_TYPE,
                 'user-agent': userAgent,
             },
             body: JSON.stringify({
@@ -208,7 +209,7 @@ describe('POST /api/auth/device/code', () => {
         const json = await response.json();
 
         expect(response.status).toBe(400);
-        expect(json.error).toBe('Invalid request');
+        expect(json.error).toBe(INVALID_REQUEST_ERROR);
         expect(json.details).toBeDefined();
     });
 
@@ -219,7 +220,7 @@ describe('POST /api/auth/device/code', () => {
             method: 'POST',
             headers: { 'content-type': CONTENT_TYPE },
             body: JSON.stringify({
-                deviceName: 'Test TV',
+                deviceName: TEST_DEVICE_NAME,
             }),
         });
 
@@ -227,7 +228,7 @@ describe('POST /api/auth/device/code', () => {
         const json = await response.json();
 
         expect(response.status).toBe(400);
-        expect(json.error).toBe('Invalid request');
+        expect(json.error).toBe(INVALID_REQUEST_ERROR);
     });
 
     it('should return 400 for invalid deviceType', async () => {
@@ -237,7 +238,7 @@ describe('POST /api/auth/device/code', () => {
             method: 'POST',
             headers: { 'content-type': CONTENT_TYPE },
             body: JSON.stringify({
-                deviceName: 'Test TV',
+                deviceName: TEST_DEVICE_NAME,
                 deviceType: 'invalid-type',
             }),
         });
@@ -246,7 +247,7 @@ describe('POST /api/auth/device/code', () => {
         const json = await response.json();
 
         expect(response.status).toBe(400);
-        expect(json.error).toBe('Invalid request');
+        expect(json.error).toBe(INVALID_REQUEST_ERROR);
     });
 
     it('should accept all valid device types', async () => {
@@ -276,7 +277,7 @@ describe('POST /api/auth/device/code', () => {
         const request = new NextRequest(TEST_API_URL, {
             method: 'POST',
             headers: {
-                'content-type': 'application/json',
+                'content-type': CONTENT_TYPE,
                 'x-real-ip': '10.0.0.5',
             },
             body: JSON.stringify({
