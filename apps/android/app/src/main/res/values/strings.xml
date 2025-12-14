@@ -81,4 +81,9 @@
     <!-- Channel Item -->
     <string name="favorite_channel">Favorite channel</string>
     <string name="hd_badge">HD</string>
+    
+    <!-- Video Player -->
+    <string name="player_loading">Loading stream…</string>
+    <string name="player_loading_channel">Loading %1$s…</string>
+    <string name="player_retry">Retry</string>
 </resources>

@@ -48,5 +48,13 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Video player activity -->
+        <activity
+            android:name=".ui.player.PlayerActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
     </application>
 </manifest>
