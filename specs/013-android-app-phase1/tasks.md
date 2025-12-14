@@ -99,15 +99,15 @@
 
 ---
 
-## Phase 1.4: App Launch Logic & Navigation 🚧 Next
+## Phase 1.4: App Launch Logic & Navigation ✅ COMPLETE
 
 - [x] 1.4.1 - Update `nav_graph.xml` with new fragments (ServerList, AddServer, Auth, Success)
-- [ ] 1.4.2 - In MainActivity.onCreate: Check if servers exist in AppPreferences
-- [ ] 1.4.3 - If no servers → Navigate to AddServerFragment ("Add Your First Server")
-- [ ] 1.4.4 - If servers exist → Navigate to ServerListFragment
-- [ ] 1.4.5 - Update SuccessFragment to show server name and "View Channels" button
-- [ ] 1.4.6 - From SuccessFragment: Navigate back to ServerListFragment or main app (Phase 2)
-- [ ] 1.4.7 - Handle back button navigation correctly (no back from ServerList if it's entry point)
+- [x] 1.4.2 - In MainActivity.onCreate: Check if servers exist in AppPreferences
+- [x] 1.4.3 - If no servers → Navigate to AddServerFragment ("Add Your First Server")
+- [x] 1.4.4 - If servers exist → Navigate to ServerListFragment
+- [x] 1.4.5 - Update SuccessFragment to show server name and "View Channels" button
+- [x] 1.4.6 - From SuccessFragment: Navigate back to ServerListFragment or main app (Phase 2)
+- [x] 1.4.7 - Handle back button navigation correctly (no back from ServerList if it's entry point)
 - [ ] 1.4.8 - Add "Disconnect" action in main app (Phase 2) → Returns to ServerListFragment
 - [ ] 1.4.9 - Test navigation flow: Add server → Auth → Success → List
 - [ ] 1.4.10 - Test navigation flow: Select existing server → Main app

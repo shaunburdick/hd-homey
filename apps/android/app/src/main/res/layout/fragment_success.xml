@@ -48,10 +48,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/tv_margin_large"
-        android:text="@string/done"
+        android:text="@string/back_to_servers"
         android:minWidth="200dp"
         app:layout_constraintTop_toBottomOf="@id/text_server_info"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Phase 2: Add "View Channels" button here that navigates to channel browser -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

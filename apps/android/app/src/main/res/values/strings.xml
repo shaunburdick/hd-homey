@@ -49,6 +49,8 @@
     <string name="success_message">Your device is now paired with HD Homey</string>
     <string name="success_authenticated_as">Authenticated as %1$s (%2$s) on %3$s</string>
     <string name="done">Done</string>
+    <string name="back_to_servers">Back to Servers</string>
+    <string name="view_channels">View Channels</string>
     
     <!-- Errors -->
     <string name="network_error">Network error. Please check your connection.</string>
