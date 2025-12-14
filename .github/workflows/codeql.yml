@@ -53,8 +53,14 @@ jobs:
                   languages: ${{ matrix.language }}
                   queries: +security-extended,security-and-quality
 
-            - name: Autobuild
+            - name: Autobuild (TypeScript only)
+              if: matrix.language == 'javascript-typescript'
               uses: github/codeql-action/autobuild@v3
+
+            - name: Build Android App (for CodeQL)
+              if: matrix.language == 'java-kotlin'
+              working-directory: apps/android
+              run: ./gradlew assembleDebug --no-daemon
 
             - name: Perform CodeQL Analysis
               uses: github/codeql-action/analyze@v3
