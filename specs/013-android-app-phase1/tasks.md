@@ -116,7 +116,7 @@
 
 ---
 
-## Phase 1.5: Polish & Testing
+## Phase 1.5: Polish & Testing 🚧 In Progress
 
 ### UI Polish
 - [x] 1.5.1 - Apply Android TV theme if TV detected (large text, high contrast)
@@ -131,8 +131,8 @@
 - [ ] 1.5.8 - Write unit test for `ServerRepository` CRUD operations
 - [ ] 1.5.9 - Write unit test for `DeviceCodeService.generateCode()`
 - [ ] 1.5.10 - Write unit test for `DeviceCodeService.pollAuthorization()`
-- [ ] 1.5.11 - Write unit test for URL validation helper
-- [ ] 1.5.12 - Write unit test for AppPreferences JSON serialization
+- [x] 1.5.11 - Write unit test for URL validation helper (22 tests passing)
+- [x] 1.5.12 - Write unit test for AppPreferences JSON serialization (13 tests passing)
 
 ### Manual Testing
 - [ ] 1.5.13 - Manual test: Add multiple servers (HTTP and HTTPS)
