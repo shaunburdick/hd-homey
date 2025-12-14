@@ -20,8 +20,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hdhomey.app.R
 import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.data.repository.ServerRepository
-import com.hdhomey.app.storage.AppPreferences
 import com.hdhomey.app.util.Constants
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Fragment displaying a list of configured HD Homey servers.
@@ -29,21 +30,24 @@ import com.hdhomey.app.util.Constants
  * Features:
  * - RecyclerView showing all saved servers
  * - Empty state when no servers configured
- * - FloatingActionButton to add new servers
+ * FloatingActionButton to add new servers
  * - Server selection navigates to authentication or main app
  * - Long-press for context menu (edit/delete)
  * - Swipe-to-delete gesture
  * - Loading state on server item click
  * - Skeleton loading animation while fetching servers
  */
+@AndroidEntryPoint
 class ServerListFragment : Fragment() {
 
+    @Inject
+    lateinit var repository: ServerRepository
+    
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyState: LinearLayout
     private lateinit var skeletonLoadingState: LinearLayout
     private lateinit var addServerFab: FloatingActionButton
     private lateinit var adapter: ServerListAdapter
-    private lateinit var repository: ServerRepository
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreateView(
@@ -57,9 +61,7 @@ class ServerListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize repository
-        val prefs = AppPreferences.getInstance(requireContext())
-        repository = ServerRepository(prefs)
+        // Repository is injected by Hilt - no manual initialization needed
 
         // Setup views
         recyclerView = view.findViewById(R.id.servers_recycler_view)
