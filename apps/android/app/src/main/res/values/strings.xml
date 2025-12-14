@@ -65,4 +65,20 @@
     <!-- Errors -->
     <string name="network_error">Network error. Please check your connection.</string>
     <string name="server_error">Server error. Please try again later.</string>
+    
+    <!-- Channel List -->
+    <string name="tuner_name_placeholder">Tuner</string>
+    <string name="channel_count_placeholder">Loading channels…</string>
+    <string name="channel_count">%1$d channels available</string>
+    <string name="channel_count_with_favorites">%1$d channels (%2$d favorites)</string>
+    <string name="loading_channels">Loading channels…</string>
+    <string name="no_channels_found">No Channels Found</string>
+    <string name="no_channels_subtext">This tuner doesn\'t have any channels. Try scanning for channels in the tuner settings.</string>
+    <string name="no_channels_icon">No channels icon</string>
+    <string name="error_icon">Error icon</string>
+    <string name="retry">Retry</string>
+    
+    <!-- Channel Item -->
+    <string name="favorite_channel">Favorite channel</string>
+    <string name="hd_badge">HD</string>
 </resources>
