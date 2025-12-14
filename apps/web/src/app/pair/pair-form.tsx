@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Logger from '@/lib/logger';
+import { Button, Card } from '@/components';
 
 interface PairDeviceFormProps {
     code?: string;
@@ -12,15 +14,18 @@ interface PairDeviceFormProps {
     };
 }
 
+interface DeviceInfo {
+    deviceName: string;
+    deviceType: string;
+    expiresAt: string;
+}
+
 export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps) {
     const router = useRouter();
     const [code, setCode] = useState(initialCode ?? '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [deviceInfo, setDeviceInfo] = useState<{
-        deviceName: string;
-        deviceType: string;
-    } | null>(null);
+    const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,18 +33,30 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
         setError(null);
 
         try {
-            // Validate code format
-            if (!/^[A-Z0-9]{6}$/.test(code.toUpperCase())) {
-                setError('Invalid code format. Code must be 6 characters.');
+            // Validate code format client-side
+            const cleanCode = code.trim().toUpperCase();
+            if (!/^[A-Z0-9]{6}$/.test(cleanCode)) {
+                setError('Invalid code format. Code must be exactly 6 alphanumeric characters.');
                 setLoading(false);
                 return;
             }
 
-            // Check if code exists and get device info
-            const response = await fetch(`/api/auth/device/validate?code=${code.toUpperCase()}`);
+            // Validate code with server
+            const response = await fetch(`/api/auth/device/validate?code=${cleanCode}`);
+
             if (!response.ok) {
-                const data = await response.json();
-                setError(data.error ?? 'Invalid code');
+                const data = await response.json().catch(() => ({ error: 'Failed to validate code' }));
+
+                // Provide user-friendly error messages
+                if (response.status === 404) {
+                    setError('This code does not exist. Please check the code and try again.');
+                } else if (response.status === 410) {
+                    setError('This code has expired. Please generate a new code on your device.');
+                } else if (response.status === 409) {
+                    setError('This code has already been used. Please generate a new code on your device.');
+                } else {
+                    setError(data.error || 'Unable to validate code. Please try again.');
+                }
                 setLoading(false);
                 return;
             }
@@ -47,8 +64,9 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
             const data = await response.json();
             setDeviceInfo(data);
             setLoading(false);
-        } catch {
-            setError('Failed to validate code');
+        } catch (err) {
+            Logger.error({ err }, 'Error validating device code');
+            setError('Network error. Please check your connection and try again.');
             setLoading(false);
         }
     };
@@ -67,8 +85,21 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
             });
 
             if (!response.ok) {
-                const data = await response.json();
-                setError(data.error ?? 'Authorization failed');
+                const data = await response.json().catch(() => ({ error: 'Authorization failed' }));
+
+                // Provide user-friendly error messages
+                if (response.status === 401) {
+                    setError('Your session has expired. Please sign in again.');
+                    setTimeout(() => router.push('/users/signin?returnTo=/pair'), 2000);
+                } else if (response.status === 404) {
+                    setError('This code no longer exists. Please start over.');
+                } else if (response.status === 410) {
+                    setError('This code has expired. Please generate a new code on your device.');
+                } else if (response.status === 409) {
+                    setError('This code has already been used. Please generate a new code on your device.');
+                } else {
+                    setError(data.error || 'Unable to authorize device. Please try again.');
+                }
                 setLoading(false);
                 return;
             }
@@ -76,8 +107,9 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
             // Success! Redirect to success page
             const deviceName = deviceInfo?.deviceName ?? 'Device';
             router.push(`/pair/success?device=${encodeURIComponent(deviceName)}`);
-        } catch {
-            setError('Failed to authorize device');
+        } catch (err) {
+            Logger.error({ err }, 'Error authorizing device');
+            setError('Network error. Please check your connection and try again.');
             setLoading(false);
         }
     };
@@ -88,88 +120,128 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
         setError(null);
     };
 
+    // Authorization confirmation screen
     if (deviceInfo !== null) {
         return (
-            <div style={{
-                maxWidth: '500px',
-                margin: '2rem auto',
-                padding: '2rem',
-                border: '1px solid var(--nc-bg-3)',
-                borderRadius: '4px',
-            }}>
-                <p>
-                    <strong>{user.username}</strong>, do you want to authorize this device?
-                </p>
-                <dl>
-                    <dt><strong>Device Name:</strong></dt>
-                    <dd>{deviceInfo.deviceName}</dd>
-                    <dt><strong>Device Type:</strong></dt>
-                    <dd style={{ textTransform: 'capitalize' }}>{deviceInfo.deviceType}</dd>
-                    <dt><strong>Code:</strong></dt>
-                    <dd><code>{code.toUpperCase()}</code></dd>
-                </dl>
+            <Card>
+                <div className="space-y-6">
+                    <div>
+                        <h2 className="text-xl font-semibold mb-2">Authorize Device</h2>
+                        <p className="text-secondary">
+                            <strong>{user.username}</strong>, do you want to authorize this device?
+                        </p>
+                    </div>
 
-                {error !== null && (
-                    <p style={{ color: 'var(--nc-ac-1, red)', margin: '1rem 0' }} role="alert">
-                        {error}
-                    </p>
-                )}
+                    <dl className="space-y-3">
+                        <div>
+                            <dt className="text-sm font-medium text-tertiary">Device Name</dt>
+                            <dd className="mt-1 text-base">{deviceInfo.deviceName}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-sm font-medium text-tertiary">Device Type</dt>
+                            <dd className="mt-1 text-base capitalize">{deviceInfo.deviceType}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-sm font-medium text-tertiary">Code</dt>
+                            <dd className="mt-1">
+                                <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded font-mono text-lg">
+                                    {code.toUpperCase()}
+                                </code>
+                            </dd>
+                        </div>
+                    </dl>
 
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                    <button
-                        onClick={handleAuthorize}
-                        disabled={loading}
-                        style={{ flex: 1 }}
-                    >
-                        {loading ? 'Authorizing...' : 'Yes, Authorize'}
-                    </button>
-                    <button
-                        onClick={handleDeny}
-                        disabled={loading}
-                        style={{ flex: 1 }}
-                    >
-                        Cancel
-                    </button>
+                    {error !== null && (
+                        <div role="alert" className="rounded p-4" style={{
+                            backgroundColor: 'var(--color-error-bg)',
+                            border: '1px solid var(--color-error)',
+                            color: 'var(--color-error)',
+                        }}>
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="flex gap-3">
+                        <Button
+                            onClick={handleAuthorize}
+                            loading={loading}
+                            disabled={loading}
+                            className="flex-1"
+                        >
+                            {loading ? 'Authorizing...' : 'Yes, Authorize'}
+                        </Button>
+                        <Button
+                            onClick={handleDeny}
+                            disabled={loading}
+                            variant="secondary"
+                            className="flex-1"
+                        >
+                            Cancel
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            </Card>
         );
     }
 
+    // Code entry form
     return (
-        <form onSubmit={handleSubmit} style={{ maxWidth: '400px', margin: '2rem auto' }}>
-            <p>Enter the 6-character code shown on your device:</p>
+        <Card>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                    <h2 className="text-xl font-semibold mb-2">Enter Device Code</h2>
+                    <p className="text-secondary text-sm">
+                        Enter the 6-character code shown on your device to authorize it.
+                    </p>
+                </div>
 
-            <label htmlFor="code">
-                Device Code:
-                <input
-                    id="code"
-                    type="text"
-                    value={code}
-                    onChange={(e) => {
-                        setCode(e.target.value.toUpperCase());
-                    }}
-                    maxLength={6}
-                    placeholder="A8F2K9"
-                    required
-                    pattern="[A-Z0-9]{6}"
-                    style={{
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.2em',
-                        fontSize: '1.5rem',
-                        textAlign: 'center',
-                    }}
-                />
-            </label>
+                {error !== null && (
+                    <div role="alert" className="rounded p-4" style={{
+                        backgroundColor: 'var(--color-error-bg)',
+                        border: '1px solid var(--color-error)',
+                        color: 'var(--color-error)',
+                    }}>
+                        {error}
+                    </div>
+                )}
 
-            {error !== null && (
-                <p style={{ color: 'var(--nc-ac-1, red)', margin: '1rem 0' }} role="alert">
-                    {error}
-                </p>
-            )}
+                <div>
+                    <label htmlFor="code" className="block text-sm font-medium mb-2">
+                        Device Code
+                    </label>
+                    <input
+                        id="code"
+                        type="text"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value.toUpperCase())}
+                        maxLength={6}
+                        placeholder="A8F2K9"
+                        required
+                        pattern="[A-Z0-9]{6}"
+                        disabled={loading}
+                        className="w-full text-center text-2xl font-mono tracking-widest uppercase"
+                        style={{
+                            padding: 'var(--space-3)',
+                            letterSpacing: '0.2em',
+                        }}
+                        aria-describedby="code-help"
+                        // eslint-disable-next-line jsx-a11y/no-autofocus
+                        autoFocus
+                    />
+                    <p id="code-help" className="mt-2 text-sm text-tertiary">
+                        The code is case-insensitive and expires after 5 minutes.
+                    </p>
+                </div>
 
-            <button type="submit" disabled={loading || code.length !== 6}>
-                {loading ? 'Validating...' : 'Continue'}
-            </button>
-        </form>
+                <Button
+                    type="submit"
+                    loading={loading}
+                    disabled={loading || code.length !== 6}
+                    className="w-full"
+                >
+                    {loading ? 'Validating...' : 'Continue'}
+                </Button>
+            </form>
+        </Card>
     );
 }
