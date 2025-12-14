@@ -40,6 +40,52 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- TODO: Add pairing URL and countdown timer in Phase 1.3 -->
+    <TextView
+        android:id="@+id/text_pairing_url"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tv_margin_medium"
+        android:text="@string/loading"
+        android:textSize="@dimen/text_size_body"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/text_device_code"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/text_countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tv_margin_medium"
+        android:text=""
+        android:textSize="@dimen/text_size_caption"
+        android:textColor="@color/text_tertiary"
+        app:layout_constraintTop_toBottomOf="@id/text_pairing_url"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/loading_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tv_margin_medium"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/text_countdown"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/text_error"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tv_margin_medium"
+        android:visibility="gone"
+        android:textSize="@dimen/text_size_body"
+        android:textColor="@color/error_red"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/loading_indicator"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

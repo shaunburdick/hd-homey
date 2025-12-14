@@ -33,17 +33,22 @@
     
     <!-- Authentication -->
     <string name="auth_title">Pair Your Device</string>
+    <string name="auth_title_for_server">Pair with %1$s</string>
     <string name="go_to">Go to:</string>
     <string name="enter_code">Enter code:</string>
-    <string name="code_expires_in">Code expires in %1$ds</string>
+    <string name="pairing_instructions">Visit %1$s on another device and enter this code</string>
+    <string name="code_expires_in">Code expires in %1$d:%2$02d</string>
     <string name="auth_failed">Authentication failed</string>
     <string name="code_expired">Code expired. Please try again.</string>
     <string name="authorization_denied">Authorization denied</string>
     <string name="try_again">Try Again</string>
+    <string name="loading">Loading…</string>
     
     <!-- Success -->
     <string name="success_title">You\'re Connected!</string>
     <string name="success_message">Your device is now paired with HD Homey</string>
+    <string name="success_authenticated_as">Authenticated as %1$s (%2$s) on %3$s</string>
+    <string name="done">Done</string>
     
     <!-- Errors -->
     <string name="network_error">Network error. Please check your connection.</string>

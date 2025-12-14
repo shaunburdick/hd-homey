@@ -12,6 +12,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 // @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
 import { username } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { deviceAuth } from './device-auth-plugin';
 import { connection } from '@/lib/database/db';
 import * as schema from '@/lib/database/schema';
 import { AuthRoles } from '@/lib/auth-roles';
@@ -93,6 +94,7 @@ export const auth = betterAuth({
     // Authentication plugins
     plugins: [
         username(),
+        deviceAuth(), // Device code authentication for Android/TV apps
     ],
 
     // Security

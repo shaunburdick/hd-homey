@@ -46,6 +46,7 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
 
             const data = await response.json();
             setDeviceInfo(data);
+            setLoading(false);
         } catch {
             setError('Failed to validate code');
             setLoading(false);

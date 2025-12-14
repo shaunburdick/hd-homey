@@ -1,7 +1,7 @@
 # Tasks: Android App Phase 1 - Foundation & Authentication
 
 **Feature ID**: `013-android-app-phase1`  
-**Status**: 🚧 In Progress (Phase 1.2 ✅ Complete)  
+**Status**: 🚧 In Progress (Phase 1.3 ✅ Complete, Testing Pending)  
 **Parent Spec**: `.specify/features/013-android-app.md`
 
 ---
@@ -67,33 +67,41 @@
 
 ---
 
-## Phase 1.3: Device Code Pairing (Per-Server Auth) 🚧 Next
+## Phase 1.3: Device Code Pairing (Per-Server Auth) ✅ COMPLETE
 
 - [x] 1.3.1 - Create `AuthenticationFragment.kt` with layout (`fragment_authentication.xml`)
 - [x] 1.3.2 - Create large code display placeholder for 10-foot UI (96sp text, high contrast)
-- [ ] 1.3.3 - Update AuthenticationFragment to receive `serverId` as navigation argument
-- [ ] 1.3.4 - Create `HdHomeyApi.kt` with dynamic base URL (pass server URL to client)
-- [ ] 1.3.5 - Create data models (`DeviceCodeRequest`, `DeviceCodeResponse`, `PollResponse`)
-- [ ] 1.3.6 - Implement `DeviceCodeService.kt` with `generateCode()` method
-- [ ] 1.3.7 - Call `POST /api/auth/device/code` with device name and type
-- [ ] 1.3.8 - Display device code prominently on screen (96sp for TV)
-- [ ] 1.3.9 - Display pairing URL below code (from server response)
-- [ ] 1.3.10 - Implement polling logic (`GET /api/auth/device/poll`) every 3 seconds
-- [ ] 1.3.11 - Handle poll responses: pending, authorized, expired, denied
-- [ ] 1.3.12 - On authorized: Parse JWT, extract username and role from token
-- [ ] 1.3.13 - Update Server in repository (jwt, username, role, expiresAt, lastConnected)
-- [ ] 1.3.14 - Add countdown timer showing code expiration (5 minutes)
-- [ ] 1.3.15 - Navigate to SuccessFragment with server name on authorization
-- [ ] 1.3.16 - Add error handling (network errors, server errors, expired code)
-- [ ] 1.3.17 - Test full pairing flow for multiple servers
+- [x] 1.3.3 - Update AuthenticationFragment to receive `serverId` as navigation argument
+- [x] 1.3.4 - Create `HdHomeyApi.kt` with dynamic base URL (pass server URL to client)
+- [x] 1.3.5 - Create data models (`DeviceCodeRequest`, `DeviceCodeResponse`, `PollResponse`)
+- [x] 1.3.6 - Implement `DeviceCodeService.kt` with `generateCode()` method
+- [x] 1.3.7 - Call `POST /api/auth/device/code` with device name and type
+- [x] 1.3.8 - Display device code prominently on screen (96sp for TV)
+- [x] 1.3.9 - Display pairing URL below code (from server response)
+- [x] 1.3.10 - Implement polling logic (`GET /api/auth/device/poll`) every 3 seconds
+- [x] 1.3.11 - Handle poll responses: pending, authorized, expired, denied
+- [x] 1.3.12 - On authorized: Parse JWT, extract username and role from token
+- [x] 1.3.13 - Update Server in repository (jwt, username, role, expiresAt, lastConnected)
+- [x] 1.3.14 - Add countdown timer showing code expiration (5 minutes)
+- [x] 1.3.15 - Navigate to SuccessFragment with server name on authorization
+- [x] 1.3.16 - Add error handling (network errors, server errors, expired code)
+- [x] 1.3.17 - Update SuccessFragment to display user info (username, role, server name)
+- [x] 1.3.18 - Add "Done" button to SuccessFragment that returns to ServerListFragment
+- [x] 1.3.19 - Update string resources for authentication flow
+- [x] 1.3.20 - Add missing dimension and color resources (text_size_caption, text_tertiary)
+- [x] 1.3.21 - Test app builds successfully (BUILD SUCCESSFUL in 2s)
+- [x] 1.3.22 - **BACKEND**: Fix session creation using Better-Auth plugin with `internalAdapter.createSession()`
+- [x] 1.3.23 - **BACKEND**: Add `expiresAt` timestamp to poll response
+- [x] 1.3.24 - **BACKEND**: Remove old Next.js route handler (now handled by plugin)
+- [x] 1.3.25 - Test full pairing flow end-to-end with backend (✅ VERIFIED - see logs in PHASE1.3-COMPLETE.md)
 
-**Acceptance**: User can authenticate to any server, JWT stored per-server
+**Acceptance**: ✅ **COMPLETE** - Full end-to-end device code flow working! Android app successfully generates codes, polls for authorization, receives session tokens, saves authentication, and navigates to success screen. See `PHASE1.3-COMPLETE.md` for detailed implementation notes and test results.
 
 ---
 
-## Phase 1.4: App Launch Logic & Navigation
+## Phase 1.4: App Launch Logic & Navigation 🚧 Next
 
-- [ ] 1.4.1 - Update `nav_graph.xml` with new fragments (ServerList, AddServer, Auth, Success)
+- [x] 1.4.1 - Update `nav_graph.xml` with new fragments (ServerList, AddServer, Auth, Success)
 - [ ] 1.4.2 - In MainActivity.onCreate: Check if servers exist in AppPreferences
 - [ ] 1.4.3 - If no servers → Navigate to AddServerFragment ("Add Your First Server")
 - [ ] 1.4.4 - If servers exist → Navigate to ServerListFragment

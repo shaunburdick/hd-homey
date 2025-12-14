@@ -50,6 +50,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         // Parse and validate request body
         const body = await request.json();
+        logger.info({ body }, 'Device code request body');
         const validated = deviceCodeRequestSchema.parse(body);
 
         // Generate unique code (retry if collision)
@@ -116,6 +117,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         );
     } catch (error) {
         if (error instanceof z.ZodError) {
+            logger.error({ error: error.issues }, 'Device code validation error');
             return NextResponse.json(
                 {
                     error: 'Invalid request',

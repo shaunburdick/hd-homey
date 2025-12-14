@@ -13,4 +13,5 @@
     <dimen name="text_size_headline">48sp</dimen>
     <dimen name="text_size_title">32sp</dimen>
     <dimen name="text_size_body">16sp</dimen>
+    <dimen name="text_size_caption">14sp</dimen>
 </resources>
