@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/tv_margin_small"
+    app:cardBackgroundColor="@color/surface_dark"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:id="@+id/skeleton_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/tv_margin_medium">
+
+        <!-- Server Name Skeleton -->
+        <View
+            android:layout_width="150dp"
+            android:layout_height="24dp"
+            android:background="@drawable/shimmer_background" />
+
+        <!-- Server URL Skeleton -->
+        <View
+            android:layout_width="250dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/shimmer_background" />
+
+        <!-- Status and Last Connected Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <!-- Status Skeleton -->
+            <View
+                android:layout_width="120dp"
+                android:layout_height="16dp"
+                android:layout_weight="1"
+                android:background="@drawable/shimmer_background" />
+
+            <!-- Last Connected Skeleton -->
+            <View
+                android:layout_width="100dp"
+                android:layout_height="16dp"
+                android:background="@drawable/shimmer_background" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

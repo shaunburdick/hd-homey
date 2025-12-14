@@ -20,25 +20,36 @@ This document provides AI agents with essential context to quickly understand an
 
 ### Directory Structure
 ```
-src/
-├── app/               # Next.js App Router pages and API routes
-│   ├── (protected)/  # Auth-protected routes (tuners, channels, users, settings)
-│   ├── api/          # API endpoints
-│   └── users/        # Public auth routes (signin, get-started)
-├── components/       # React components
-├── lib/              # Utilities and core logic
-│   ├── auth/         # Better-Auth configuration and helpers
-│   │   ├── auth.ts   # Better-Auth instance
-│   │   ├── auth-client.ts  # Client-side auth hooks
-│   │   └── helpers.ts # Role checking (requireAdmin, etc.)
-│   ├── database/     # Database schema and operations
-│   │   └── schema.ts # Unified schema (includes Better-Auth tables)
-│   └── logger.ts     # Pino logging
-└── proxy.ts          # Route protection proxy
+apps/
+├── web/               # Main Next.js application
+│   ├── migrations/           # Database migrations
+│   ├── src/
+│   │   ├── app/               # Next.js App Router pages and API routes
+│   │   │   ├── (protected)/  # Auth-protected routes (tuners, channels, users, settings)
+│   │   │   ├── api/          # API endpoints
+│   │   │   └── users/        # Public auth routes (signin, get-started)
+│   │   ├── components/       # React components
+│   │   ├── lib/              # Utilities and core logic
+│   │   │   ├── auth/         # Better-Auth configuration and helpers
+│   │   │   │   ├── auth.ts   # Better-Auth instance
+│   │   │   │   ├── auth-client.ts  # Client-side auth hooks
+│   │   │   │   └── helpers.ts # Role checking (requireAdmin, etc.)
+│   │   │   ├── database/     # Database schema and operations
+│   │   │   │   └── schema.ts # Unified schema (includes Better-Auth tables)
+│   │   │   └── logger.ts     # Pino logging
+│   │   └── proxy.ts          # Route protection proxy
+│   ├── public/        # Static assets
+│   ├── scripts/       # Build scripts
+│   └── package.json   # Web app dependencies
+├── docs/              # VitePress documentation site
+│   ├── .vitepress/    # VitePress configuration
+│   ├── getting-started/
+│   ├── features/
+│   └── package.json   # Docs dependencies
+└── android/           # Android app (Phase 1, coming soon)
 
 .specify/            # Spec-kit: specifications and constitution
 specs/               # Spec-kit: implementation plans (created during planning phase)
-migrations/          # Database migrations
 ```
 
 ### Key Features (with Specs)
@@ -63,13 +74,14 @@ migrations/          # Database migrations
 **CRITICAL**: HD Homey uses a dual-documentation approach that MUST be kept in sync:
 
 #### Documentation Structure
-1. **README.md** (root) - Quick pitch and getting started (83 lines)
+1. **README.md** (root) - Quick pitch and getting started (~95 lines)
    - Project description and badges
+   - Repository structure overview
    - Minimal quick start guide
    - Feature highlights with links to docs
    - Links to comprehensive documentation
    
-2. **docs/** (VitePress site) - Comprehensive documentation (~4,400 lines)
+2. **apps/docs/** (VitePress site) - Comprehensive documentation (~4,400 lines)
    - Deployed to: https://shaunburdick.github.io/hd-homey/
    - Full installation guides
    - Detailed feature documentation
@@ -99,38 +111,38 @@ When making changes, update BOTH locations as needed:
 - [ ] Updating tech stack versions (major versions only)
 - [ ] Changing project status or version
 
-**2. docs/ Updates Required When**:
-- [ ] Adding new features → Update `docs/features/`
-- [ ] Changing configuration → Update `docs/config/`
-- [ ] Adding installation methods → Update `docs/getting-started/installation.md`
-- [ ] Fixing common issues → Update `docs/troubleshooting/`
-- [ ] Changing APIs → Update `docs/api/`
-- [ ] Modifying workflows → Update `docs/contributing/`
+**2. apps/docs/ Updates Required When**:
+- [ ] Adding new features → Update `apps/docs/features/`
+- [ ] Changing configuration → Update `apps/docs/config/`
+- [ ] Adding installation methods → Update `apps/docs/getting-started/installation.md`
+- [ ] Fixing common issues → Update `apps/docs/troubleshooting/`
+- [ ] Changing APIs → Update `apps/docs/api/`
+- [ ] Modifying workflows → Update `apps/docs/contributing/`
 
 **3. Specific Files to Check**:
 ```
 Feature changes:
-  → docs/features/[feature-name].md
-  → docs/features/index.md (overview)
+  → apps/docs/features/[feature-name].md
+  → apps/docs/features/index.md (overview)
   → README.md (feature list if major)
 
 Configuration changes:
-  → docs/config/environment-variables.md
-  → docs/config/database.md
-  → docs/getting-started/installation.md (if affects setup)
+  → apps/docs/config/environment-variables.md
+  → apps/docs/config/database.md
+  → apps/docs/getting-started/installation.md (if affects setup)
 
 New capabilities:
-  → docs/getting-started/quick-start.md
-  → docs/getting-started/first-stream.md (if user-facing)
+  → apps/docs/getting-started/quick-start.md
+  → apps/docs/getting-started/first-stream.md (if user-facing)
   → README.md (quick start if critical)
 ```
 
 #### Documentation Development Workflow
 
 ```bash
-# 1. Make your code changes
-# 2. Update relevant docs/ files
-cd docs && npm run docs:dev  # Preview at http://localhost:5173/hd-homey/
+# 1. Make your code changes in apps/web/
+# 2. Update relevant docs/ files in apps/docs/
+npm run docs:dev  # Preview at http://localhost:5173/hd-homey/
 
 # 3. Verify all internal links work
 npm run docs:build            # Checks for dead links
@@ -141,17 +153,17 @@ npm run docs:build            # Checks for dead links
 npm run lint                  # Lints docs with eslint-config-shaunburdick
 
 # 6. Commit docs WITH your code changes (same commit or same PR)
-git add src/ docs/ README.md
+git add apps/web/ apps/docs/ README.md
 git commit -m "feat: add new feature
 
 - Implement feature X
-- Update docs/features/feature-x.md
+- Update apps/docs/features/feature-x.md
 - Update README feature list"
 ```
 
 #### Documentation Style Guidelines
 
-**docs/ (VitePress)**:
+**apps/docs/ (VitePress)**:
 - Use clear, descriptive headings (H2 for major sections, H3 for subsections)
 - Include code examples with syntax highlighting
 - Add callouts for warnings, tips, and notes using VitePress containers
@@ -175,27 +187,27 @@ git commit -m "feat: add new feature
 specs/012-new-feature/plan.md
 
 # 3. Implement feature
-src/app/(protected)/new-feature/page.tsx
+apps/web/src/app/(protected)/new-feature/page.tsx
 
 # 4. Add comprehensive docs
-docs/features/new-feature.md     # New file
-docs/features/index.md           # Add to feature list
-docs/config/environment-variables.md  # If adds env vars
+apps/docs/features/new-feature.md     # New file
+apps/docs/features/index.md           # Add to feature list
+apps/docs/config/environment-variables.md  # If adds env vars
 
 # 5. Update README feature list (optional, if major)
 README.md                        # Add one-line feature highlight
 
 # 6. Test docs build
-cd docs && npm run docs:build    # Verify no errors
+npm run docs:build    # Verify no errors
 
 # 7. Commit everything together
-git add .specify/ specs/ src/ docs/ README.md
+git add .specify/ specs/ apps/web/ apps/docs/ README.md
 git commit -m "feat: add new feature X
 
 Implements new feature X that allows users to...
 
 Documentation:
-- Add docs/features/new-feature.md
+- Add apps/docs/features/new-feature.md
 - Update feature index
 - Add environment variable docs"
 ```
@@ -205,11 +217,11 @@ Documentation:
 ❌ **Don't**: Update code without updating docs  
 ✅ **Do**: Update docs in the same commit/PR as the code
 
-❌ **Don't**: Copy-paste large sections from README to docs  
-✅ **Do**: Keep README minimal, comprehensive details in docs/
+❌ **Don't**: Copy-paste large sections from README to apps/docs/  
+✅ **Do**: Keep README minimal, comprehensive details in apps/docs/
 
 ❌ **Don't**: Use absolute URLs for internal doc links  
-✅ **Do**: Use relative paths in docs/ for internal navigation
+✅ **Do**: Use relative paths in apps/docs/ for internal navigation
 
 ❌ **Don't**: Forget to run `docs:build` before committing  
 ✅ **Do**: Verify build succeeds and links work
@@ -223,7 +235,7 @@ Documentation:
 - **URL**: https://shaunburdick.github.io/hd-homey/
 - **Workflow**: `.github/workflows/docs.yml`
 - **Build time**: ~2-3 seconds
-- **Preview**: Run `cd docs && npm run docs:dev` locally before pushing
+- **Preview**: Run `npm run docs:dev` locally before pushing
 
 ### Code Patterns
 
@@ -267,7 +279,7 @@ try {
 ```
 
 #### Authentication & Route Protection
-- **Proxy**: `src/proxy.ts` protects all routes requiring authentication
+- **Proxy**: `apps/web/src/proxy.ts` protects all routes requiring authentication
   - Public routes: `/users/signin`, `/get-started`, `/api/auth/*`
   - Token-authenticated: `/api/transcode/*` (HMAC tokens validated in handlers)
   - Session-authenticated: All other routes (checked by proxy)
@@ -281,8 +293,8 @@ try {
 #### Database
 - All DB code is server-side only (Node.js APIs like `fs`)
 - Use Drizzle ORM for queries
-- Database schema in `src/lib/database/schema.ts`
-- Migrations in `migrations/` directory
+- Database schema in `apps/web/src/lib/database/schema.ts`
+- Migrations in `apps/web/migrations/` directory
 - **Important**: Do NOT use transactions for simple operations - they can cause "cannot commit" errors
 
 ## Configuration
@@ -311,22 +323,23 @@ BETTER_AUTH_URL=http://localhost:3000                # Auth base URL (auto-detec
 
 ### Running Locally
 ```bash
-npm ci                    # Install dependencies
-cp .env-example .env     # Configure environment
-npm run dev              # Start dev server on 0.0.0.0:3000
+npm install              # Install all workspace dependencies
+cp apps/web/.env-example apps/web/.env  # Configure environment
+npm run dev              # Start web app dev server on 0.0.0.0:3000
+npm run docs:dev         # Start docs site (optional)
 ```
 
 ### Running Tests
 ```bash
-npm test                 # Lint + unit tests
-npm run test:coverage    # With coverage report
+npm test                 # Lint + unit tests (web app)
+npm run test:coverage    # With coverage report (web app)
 ```
 
 ### Database Operations
 ```bash
-npm run db:studio        # Open Drizzle Studio
-npm run db:migrate       # Run migrations
-npm run db:generate      # Generate migration from schema changes
+npm run db:studio        # Open Drizzle Studio (web app)
+npm run db:migrate       # Run migrations (web app)
+npm run db:generate      # Generate migration from schema changes (web app)
 ```
 
 ### Docker
@@ -334,16 +347,33 @@ npm run db:generate      # Generate migration from schema changes
 docker compose up -d     # Start with Docker Compose
 ```
 
+### Workspace Commands
+```bash
+# Root-level shortcuts (delegate to web app)
+npm run dev              # → npm run dev -w @hd-homey/web
+npm test                 # → npm test -w @hd-homey/web
+npm run build            # → npm run build --workspaces
+npm run lint             # → npm run lint --workspaces
+
+# Explicit workspace commands
+npm run web:dev          # Start web app
+npm run web:build        # Build web app
+npm run web:test         # Test web app
+npm run docs:dev         # Start docs site
+npm run docs:build       # Build docs site
+```
+
 ## Known Issues & Quirks
 
-1. **WSL2**: Dev server binds to `0.0.0.0` for WSL2 compatibility
-2. **NEXT_REDIRECT**: Server actions that redirect throw `NEXT_REDIRECT` - this is normal, handle with `isRedirectError()`
-3. **0.0.0.0 redirects**: Always use relative paths or check `NEXTAUTH_URL` for absolute URLs
-4. **Session updates**: Call `router.refresh()` after login/logout to update UI
-5. **Build-time DB**: Dynamic routes export `dynamic = 'force-dynamic'` to avoid DB access during build
-6. **Transactions**: Avoid using db transactions for simple operations - they can fail with "cannot commit"
-7. **Proxy**: Route protection is enforced at the proxy level (`src/proxy.ts`). Token-authenticated routes (transcoding) bypass proxy and validate tokens in handlers. Proxy runs on Edge Runtime but works with Better-Auth because it uses JWT sessions (no database access needed for session validation).
-8. **Password Hashing**: Better-Auth uses scrypt (not bcrypt) with format `salt:hash`. Do not use bcrypt functions for password operations.
+1. **Monorepo Structure**: HD Homey uses npm workspaces with apps in `apps/` directory. Use workspace commands or shortcuts defined in root package.json.
+2. **WSL2**: Dev server binds to `0.0.0.0` for WSL2 compatibility
+3. **NEXT_REDIRECT**: Server actions that redirect throw `NEXT_REDIRECT` - this is normal, handle with `isRedirectError()`
+4. **0.0.0.0 redirects**: Always use relative paths or check `NEXTAUTH_URL` for absolute URLs
+5. **Session updates**: Call `router.refresh()` after login/logout to update UI
+6. **Build-time DB**: Dynamic routes export `dynamic = 'force-dynamic'` to avoid DB access during build
+7. **Transactions**: Avoid using db transactions for simple operations - they can fail with "cannot commit"
+8. **Proxy**: Route protection is enforced at the proxy level (`apps/web/src/proxy.ts`). Token-authenticated routes (transcoding) bypass proxy and validate tokens in handlers. Proxy runs on Edge Runtime but works with Better-Auth because it uses JWT sessions (no database access needed for session validation).
+9. **Password Hashing**: Better-Auth uses scrypt (not bcrypt) with format `salt:hash`. Do not use bcrypt functions for password operations.
 
 ## Testing
 
@@ -382,12 +412,13 @@ docker compose up -d     # Start with Docker Compose
 4. **Update version references** in all files:
    - `README.md`: Update version badge (search for "badge/version")
    - `AGENTS.md`: Update "Current Version" section (this file)
-   - `docs/.vitepress/config.ts`: Update version in nav dropdown (line 19)
+   - `apps/docs/.vitepress/config.ts`: Update version in nav dropdown (line 19)
+   - `apps/web/package.json`: Update version (use `npm version` in workspace)
    - Search entire project for previous version number to catch any other references
 
 5. **Commit and tag**:
    ```bash
-   git add package.json package-lock.json CHANGELOG.md README.md AGENTS.md
+   git add apps/web/package.json package-lock.json CHANGELOG.md README.md AGENTS.md apps/docs/.vitepress/config.ts
    git commit -m "chore: release v<version>"
    git tag -a v<version> -m "Release v<version>"
    git push origin main --tags

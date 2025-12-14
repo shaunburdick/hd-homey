@@ -9,6 +9,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Android TV App Phase 1 (SPEC-013)**: Foundation & Authentication - Complete native Android TV application for device pairing and server management
+  - **Multi-Server Management**: Add, edit, and delete multiple HD Homey server instances with health check validation
+  - **Device Code Pairing**: Full OAuth 2.0 device code flow implementation
+    - Generate 6-character codes displayed in large 96sp text optimized for 10-foot UI
+    - Real-time polling with 3-second intervals and countdown timer
+    - Automatic JWT token extraction and storage
+    - Support for code expiration, denial, and retry scenarios
+  - **Professional Branding**: HD Homey app icon in all densities (mdpi→xxxhdpi) + round variants + 320x180 TV banner
+  - **Polished 10-foot UI**:
+    - Shimmer/skeleton loaders for smooth transitions
+    - Ripple animations and active server highlighting
+    - Staggered fade-in success animations
+    - Loading states on all interactions
+    - Welcoming empty states with helpful guidance
+  - **Comprehensive Error Handling**:
+    - Retry/cancel buttons in all error states
+    - Clear, actionable error messages with troubleshooting tips
+    - Network error recovery with auto-retry options
+    - Server deletion via swipe-to-delete and context menu
+  - **Testing & Quality**:
+    - 86 unit tests with 100% data layer coverage
+    - Repository pattern with ServerRepository, DeviceCodeService
+    - JSON serialization with Kotlinx Serialization
+    - URL validation with protocol auto-prepending
+  - **Android TV Optimization**:
+    - D-pad navigation with focus management
+    - High contrast colors and large touch targets
+    - Remote control optimized layouts
+    - TV banner and adaptive icons
+  - **Technology Stack**: Kotlin 2.1.0, AndroidX libraries, Navigation Component, OkHttp, Coroutines
+  - **Build**: 20MB APK, lint clean (0 errors), targetSdk 35 (Android 15)
+- **Web App Improvements (Phase 1 Support)**:
+  - Device pairing link added to user Profile page for easy discovery
+  - All authenticated users (admin + viewer) can now access device pairing
+  - Improved device pairing UI with better error handling and visual feedback
+
+### Changed
+
+- **Repository Structure (BREAKING)**: Reorganized repository into monorepo with npm workspaces
+  - Created `apps/` directory to house multiple applications
+  - Moved web application: `src/` → `apps/web/src/`, `public/` → `apps/web/public/`
+  - Moved migrations: `migrations/` → `apps/web/migrations/` (web app specific)
+  - Moved documentation: `docs/` → `apps/docs/`
+  - Created Android app placeholder: `apps/android/` (Phase 1 coming soon)
+  - Web app package renamed from `hd-homey` to `@hd-homey/web`
+  - Updated all configuration files (tsconfig, next.config, drizzle.config, Dockerfile, compose.yml)
+  - Simplified Docker: each app uses its own directory as build context
+  - Updated CI/CD workflows for monorepo structure (test.yml, docker.yml, docs.yml)
+  - **Developer Impact**: After pulling, run `npm install` to set up workspaces
+  - Workspace commands: `npm run dev` (shortcut) or `npm run web:dev` (explicit)
+
+### Added
+
+- **Device Pairing API (SPEC-013 Phase 1)**: OAuth 2.0 Device Authorization Grant for authenticating devices without keyboard input
+  - OAuth 2.0 Device Code Flow (RFC 8628) for TV and mobile device authentication
+  - Generate 6-character device codes optimized for remote control input (no ambiguous characters)
+  - Poll-based authorization flow with automatic status updates (pending/authorized/denied/expired)
+  - Secure JWT token generation upon successful authorization
+  - Built-in web UI at `/pair` for code entry and authorization
+  - Automatic code expiration after 5 minutes for security
+  - Support for multiple device types: TV, tablet, and phone
+  - Session-based authorization requiring user authentication
+  - Complete audit trail with IP address, user agent, and authorization timestamps
+  - 49 comprehensive unit tests with 100% endpoint coverage
+  - Full API documentation and Android integration guide
 - **Enhanced Build Identification (SPEC-013)**: Version display now includes commit SHA and build metadata for improved debugging and monitoring
   - Version format: `VERSION (COMMIT)` in production, `VERSION (BRANCH@COMMIT)` in development feature branches
   - `-dirty` suffix indicates uncommitted changes (development only)

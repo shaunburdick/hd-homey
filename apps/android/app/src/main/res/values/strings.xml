@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HD Homey</string>
+    
+    <!-- Server List -->
+    <string name="servers_title">Your Servers</string>
+    <string name="servers_empty_title">Welcome to HD Homey!</string>
+    <string name="servers_empty_message">Get started by adding your first HD Homey server</string>
+    <string name="servers_empty_hint">Tap the + button below to add a server</string>
+    <string name="servers_add_button">Add Server</string>
+    <string name="server_authenticated">● Authenticated</string>
+    <string name="server_not_authenticated">● Not Authenticated</string>
+    <string name="server_token_expired">● Session Expired</string>
+    <string name="active_server_badge">ACTIVE</string>
+    <string name="server_user_info">%1$s (%2$s)</string>
+    
+    <!-- Add Server -->
+    <string name="add_server_title">Add Server</string>
+    <string name="add_server_instructions">Enter your HD Homey server details</string>
+    <string name="add_server_name_hint">Server name (e.g., Home, Office)</string>
+    <string name="add_server_url_hint">http://192.168.1.100:3000</string>
+    <string name="add_server_url_helper">Enter your HD Homey server URL (include http:// or https://)</string>
+    <string name="add_server_connect_button">Connect</string>
+    <string name="add_server_cancel_button">Cancel</string>
+    <string name="add_server_testing">Testing connection…</string>
+    <string name="add_server_success">Server added successfully!</string>
+    
+    <!-- Server Setup (legacy, will be removed) -->
+    <string name="server_setup_title">Connect to HD Homey</string>
+    <string name="discovering_server">Discovering HD Homey on your network…</string>
+    <string name="manual_setup">Enter URL manually</string>
+    <string name="server_url_hint">http://hd-homey.local:3000</string>
+    <string name="connect_button">Connect</string>
+    <string name="server_unreachable">Could not connect to server</string>
+    <string name="invalid_url">Please enter a valid URL</string>
+    
+    <!-- Authentication -->
+    <string name="auth_title">Pair Your Device</string>
+    <string name="auth_title_for_server">Pair with %1$s</string>
+    <string name="go_to">Go to:</string>
+    <string name="enter_code">Enter code:</string>
+    <string name="pairing_instructions">Visit %1$s on another device and enter this code</string>
+    <string name="code_expires_in">Code expires in %1$d:%2$02d</string>
+    <string name="auth_failed">Authentication failed</string>
+    <string name="code_expired">Code expired. Please try again.</string>
+    <string name="authorization_denied">Authorization denied</string>
+    <string name="try_again">Try Again</string>
+    <string name="loading">Loading…</string>
+    
+    <!-- Authentication status messages -->
+    <string name="auth_status_connecting">Connecting to server…</string>
+    <string name="auth_status_generating">Generating device code…</string>
+    <string name="auth_status_waiting">Waiting for authorization…</string>
+    <string name="auth_status_checking">Checking authorization…</string>
+    <string name="auth_status_success">Authorization successful!</string>
+    
+    <!-- Success -->
+    <string name="success_title">You\'re Connected!</string>
+    <string name="success_message">Your device is now paired with HD Homey</string>
+    <string name="success_authenticated_as">Authenticated as %1$s (%2$s) on %3$s</string>
+    <string name="done">Done</string>
+    <string name="back_to_servers">Back to Servers</string>
+    <string name="view_channels">View Channels</string>
+    
+    <!-- Errors -->
+    <string name="network_error">Network error. Please check your connection.</string>
+    <string name="server_error">Server error. Please try again later.</string>
+</resources>

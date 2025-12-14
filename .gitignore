@@ -41,6 +41,8 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+apps/*/node_modules/
+**/node_modules/
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
@@ -103,6 +105,8 @@ dist
 # VitePress cache and build output
 docs/.vitepress/cache
 docs/.vitepress/dist
+apps/docs/.vitepress/cache
+apps/docs/.vitepress/dist
 
 # Docusaurus cache and generated files
 .docusaurus
@@ -132,14 +136,19 @@ docs/.vitepress/dist
 # next.js
 /.next/
 /out/
+apps/web/.next/
+apps/web/out/
 next-env.d.ts
 
 # OS
 .DS_Store
 
-# Application
-data/
+# Application data directories (runtime data, databases, etc.)
+# But NOT source code in apps/android/app/src/main/java/com/hdhomey/app/data/
+/data/
+apps/web/data/
 version.json
+baseline-*.txt
 
 # Spec-kit agent folders (may contain credentials/tokens)
 .opencode/

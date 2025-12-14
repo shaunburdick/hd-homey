@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_dark"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/tv_margin_large">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/add_server_title"
+            android:textAlignment="center"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_size_headline"
+            android:textStyle="bold" />
+
+        <!-- Instructions -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tv_margin_small"
+            android:text="@string/add_server_instructions"
+            android:textAlignment="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_size_body" />
+
+        <!-- Server Name Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tv_margin_large"
+            android:hint="@string/add_server_name_hint"
+            app:boxBackgroundColor="@color/surface_dark"
+            app:boxBackgroundMode="filled"
+            app:boxStrokeColor="@color/hd_homey_blue"
+            app:hintTextColor="@color/text_secondary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/server_name_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_size_body"
+                tools:text="Home Server" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Server URL Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/server_url_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tv_margin_medium"
+            android:hint="@string/add_server_url_hint"
+            app:boxBackgroundColor="@color/surface_dark"
+            app:boxBackgroundMode="filled"
+            app:boxStrokeColor="@color/hd_homey_blue"
+            app:hintTextColor="@color/text_secondary"
+            app:helperText="@string/add_server_url_helper"
+            app:helperTextTextColor="@color/text_secondary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/server_url_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_size_body"
+                tools:text="http://192.168.1.100:3000" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Error Message -->
+        <TextView
+            android:id="@+id/error_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tv_margin_small"
+            android:textAlignment="center"
+            android:textColor="@color/error_red"
+            android:textSize="@dimen/text_size_body"
+            android:visibility="gone"
+            tools:text="Server is unreachable"
+            tools:visibility="visible" />
+
+        <!-- Connect Button -->
+        <Button
+            android:id="@+id/connect_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tv_margin_large"
+            android:backgroundTint="@color/hd_homey_blue"
+            android:minHeight="@dimen/touch_target_min"
+            android:text="@string/add_server_connect_button"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_size_body" />
+
+        <!-- Loading Indicator -->
+        <ProgressBar
+            android:id="@+id/loading_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/tv_margin_medium"
+            android:indeterminateTint="@color/hd_homey_blue"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <!-- Cancel Button -->
+        <Button
+            android:id="@+id/cancel_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tv_margin_small"
+            android:backgroundTint="@color/surface_dark"
+            android:minHeight="@dimen/touch_target_min"
+            android:text="@string/add_server_cancel_button"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_size_body"
+            style="?attr/materialButtonOutlinedStyle" />
+    </LinearLayout>
+</ScrollView>

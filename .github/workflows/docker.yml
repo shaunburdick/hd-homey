@@ -8,9 +8,11 @@ on:
         paths-ignore:
             - "**.md"
             - ".specs/**"
+            - ".specify/**"
             - "LICENSE"
             - ".vscode/**"
-            - "docs/**"
+            - "apps/docs/**"
+            - "apps/android/**"
             - ".github/workflows/test.yml"
             - ".github/workflows/docs.yml"
             - ".github/workflows/codeql.yml"
@@ -20,9 +22,11 @@ on:
         paths-ignore:
             - "**.md"
             - ".specs/**"
+            - ".specify/**"
             - "LICENSE"
             - ".vscode/**"
-            - "docs/**"
+            - "apps/docs/**"
+            - "apps/android/**"
             - ".github/workflows/test.yml"
             - ".github/workflows/docs.yml"
             - ".github/workflows/codeql.yml"
@@ -59,6 +63,7 @@ jobs:
                   node-version: "22"
 
             - name: Generate version.json with Git metadata
+              working-directory: apps/web
               run: |
                   node scripts/generate-version.mjs
                   echo "Generated version.json:"
@@ -113,6 +118,7 @@ jobs:
               uses: docker/build-push-action@v6
               with:
                   context: .
+                  file: ./apps/web/Dockerfile
                   platforms: linux/amd64
                   labels: ${{ steps.meta.outputs.labels }}
                   # Push by digest for multi-platform manifest creation
