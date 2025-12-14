@@ -1,0 +1,254 @@
+openapi: 3.0.3
+info:
+  title: HD Homey Channel Preferences API
+  description: |
+    API for managing user channel preferences (favorites and hidden channels).
+    
+    **STATUS: NOT YET IMPLEMENTED**
+    This API specification documents the required backend endpoint for Phase 2.
+    The database schema (user_channel_preferences table) exists but the REST API does not.
+    
+    **Implementation Required**:
+    - Create /api/preferences/channels GET endpoint
+    - Create /api/preferences/channels POST/PATCH endpoint for updates (future)
+    - Join channels with user_channel_preferences for authenticated user
+  version: 1.0.0
+  contact:
+    name: HD Homey API Support
+
+servers:
+  - url: https://{server}/api
+    description: HD Homey server
+    variables:
+      server:
+        default: localhost:3000
+        description: HD Homey server hostname and port
+
+paths:
+  /preferences/channels:
+    get:
+      summary: Get channel preferences for authenticated user
+      description: |
+        Returns channel preferences (favorites, hidden) for the authenticated user.
+        Joins channels table with user_channel_preferences table.
+        
+        Only returns channels with explicit preferences set (isFavorite=true or isHidden=true).
+        Channels without preferences are omitted (Android app treats them as neutral).
+        
+        **IMPLEMENTATION NOTE**: Use LEFT JOIN pattern from ChannelOrganizer.tsx
+        but filter to only user's preferences with at least one flag set.
+      operationId: getChannelPreferences
+      tags:
+        - Preferences
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tunerId
+          in: query
+          required: false
+          description: Filter preferences by tuner ID (optional, returns all tuners if omitted)
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Channel preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChannelPreference'
+              examples:
+                withPreferences:
+                  summary: User has favorites and hidden channels
+                  value:
+                    data:
+                      - channelId: 1
+                        tunerId: 1
+                        guideNumber: "2.1"
+                        guideName: "CBS"
+                        isFavorite: true
+                        isHidden: false
+                        updatedAt: 1734200000000
+                      - channelId: 5
+                        tunerId: 1
+                        guideNumber: "7.1"
+                        guideName: "ABC"
+                        isFavorite: true
+                        isHidden: false
+                        updatedAt: 1734201000000
+                      - channelId: 12
+                        tunerId: 1
+                        guideNumber: "45.1"
+                        guideName: "Shopping Network"
+                        isFavorite: false
+                        isHidden: true
+                        updatedAt: 1734202000000
+                emptyPreferences:
+                  summary: User has no preferences set
+                  value:
+                    data: []
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    ChannelPreference:
+      type: object
+      description: |
+        Channel with user preference flags.
+        Combines data from channels and user_channel_preferences tables.
+      required:
+        - channelId
+        - tunerId
+        - guideNumber
+        - guideName
+        - isFavorite
+        - isHidden
+        - updatedAt
+      properties:
+        channelId:
+          type: integer
+          format: int32
+          description: Channel primary key (from channels.id)
+          example: 1
+        tunerId:
+          type: integer
+          format: int32
+          description: Tuner ID (from channels.fk_tuner)
+          example: 1
+        guideNumber:
+          type: string
+          description: Channel number (e.g., "2.1")
+          pattern: '^\d+\.\d+$'
+          example: "2.1"
+        guideName:
+          type: string
+          description: Channel name
+          example: "CBS"
+        isFavorite:
+          type: boolean
+          description: Whether channel is marked as favorite
+          example: true
+        isHidden:
+          type: boolean
+          description: Whether channel is marked as hidden
+          example: false
+        updatedAt:
+          type: integer
+          format: int64
+          description: |
+            Unix timestamp (milliseconds) when preference was last updated.
+            From user_channel_preferences.updated_at field.
+          example: 1734200000000
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Unauthorized"
+        message:
+          type: string
+          description: Detailed error description
+          example: "Valid authentication token required"
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+            message: "Valid authentication token required"
+    
+    InternalServerError:
+      description: Server error occurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Internal Server Error"
+            message: "Failed to retrieve channel preferences"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from device pairing flow.
+        Include in Authorization header: `Authorization: Bearer <token>`
+        
+        Token expiry: 7 days
+        Refresh: Re-authenticate via device pairing flow when expired
+
+tags:
+  - name: Preferences
+    description: User channel preference operations
+
+externalDocs:
+  description: Database schema (user_channel_preferences table)
+  url: https://github.com/shaunburdick/hd-homey/blob/main/apps/web/src/lib/database/schema.ts
+
+x-implementation-notes: |
+  **Backend Implementation Required**:
+  
+  1. Create file: apps/web/src/app/api/preferences/channels/route.ts
+  
+  2. Implementation pattern:
+     ```typescript
+     export async function GET(request: NextRequest) {
+       const session = await auth.api.getSession({ headers: request.headers });
+       if (!session?.user) {
+         return Response.json({ error: 'Unauthorized' }, { status: 401 });
+       }
+       
+       const tunerId = request.nextUrl.searchParams.get('tunerId');
+       const db = await getDb();
+       
+       // Join channels with user preferences
+       const prefs = await db
+         .select({
+           channelId: channels.id,
+           tunerId: channels.fk_tuner,
+           guideNumber: channels.guideNumber,
+           guideName: channels.guideName,
+           isFavorite: userChannelPreferences.isFavorite,
+           isHidden: userChannelPreferences.isHidden,
+           updatedAt: userChannelPreferences.updatedAt,
+         })
+         .from(userChannelPreferences)
+         .innerJoin(channels, eq(userChannelPreferences.channelId, channels.id))
+         .where(
+           and(
+             eq(userChannelPreferences.userId, session.user.id),
+             tunerId ? eq(channels.fk_tuner, parseInt(tunerId, 10)) : undefined,
+             isNull(channels.deleted_at)
+           )
+         );
+       
+       return Response.json({ data: prefs });
+     }
+     ```
+  
+  3. Reference: apps/web/src/components/ChannelOrganizer.tsx (lines 29-67)
+     for LEFT JOIN pattern with user_channel_preferences.
+  
+  4. Android app caching strategy:
+     - Fetch preferences once per session (app startup)
+     - Store in memory (ChannelRepository)
+     - Merge with channel list for display
+     - Future: Implement POST/PATCH for preference updates
