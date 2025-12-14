@@ -2,16 +2,58 @@
 
 **Feature ID**: `013-android-app`  
 **Created**: 2025-12-07  
-**Status**: 📝 Specification Phase  
+**Status**: ✅ Phase 1 Complete | 🚧 Phase 2 In Progress  
 **Owner**: HD Homey Core Team  
-**Version**: 1.1  
-**Dependencies**: Phase 0 (Repository Reorganization) must be completed first
+**Version**: 1.2  
+**Dependencies**: Phase 0 (Repository Reorganization) - ✅ COMPLETE
 
 ## Overview
 
 The HD Homey Android app brings live TV streaming to Android TV devices, phones, and tablets through a universal native application. Using a hybrid WebView + native video architecture, the app reuses HD Homey's existing web interface for browsing while providing optimal video playback through AndroidX Media3. The app supports multiple authentication methods (QR code, device code, username/password), automatic server discovery, and graceful fallback from MPEG-2 to HLS transcoding based on device capabilities.
 
 **IMPORTANT**: This feature requires **Phase 0: Repository Reorganization** to be completed first. The repository must be restructured into a monorepo before Android development begins.
+
+## Current Status (December 13, 2025)
+
+### ✅ Phase 0: Repository Reorganization - COMPLETE
+- Repository restructured into monorepo (`apps/web/`, `apps/android/`, `apps/docs/`)
+- All tests passing, Docker working, CI/CD updated
+- Documentation updated with new paths
+
+### ✅ Phase 1: Multi-Server Management & Device Pairing - COMPLETE
+**Location**: `apps/android/` (Kotlin, Android 12+, Target SDK 35)
+
+**Features Implemented**:
+- ✅ Multi-server management (add/edit/delete servers)
+- ✅ OAuth 2.0 device code pairing (6-character codes)
+- ✅ JWT token storage with encrypted SharedPreferences
+- ✅ Professional HD Homey branding (app icon, TV banner, launch screen)
+- ✅ Polished 10-foot UI with animations and shimmer loaders
+- ✅ Comprehensive error handling (retry, cancel, network resilience)
+- ✅ Android TV optimized (D-pad navigation, focus management)
+- ✅ 86 unit tests with 100% data layer coverage
+- ✅ Lint clean (0 errors), 20MB APK
+
+**Technical Stack**:
+- Kotlin 2.1.0, Gradle 8.13, Target SDK 35 (Android 15), Min SDK 31 (Android 12)
+- Architecture: Simplified Repository Pattern (ViewModels and DataStore coming in Phase 2)
+- Testing: JUnit 4, Mockito, Robolectric
+- Dependencies: OkHttp 4.12.0, Gson 2.11.0, Material Components 1.12.0
+
+**Documentation**:
+- `apps/android/README.md` - Project overview and Phase 1 achievements
+- `apps/android/SETUP.md` - Development setup guide
+- `apps/android/DEVELOPMENT.md` - Architecture and patterns
+- `apps/android/MANUAL-TEST-GUIDE.md` - Manual testing scenarios
+- `specs/013-android-app-phase1/` - Implementation plans and completion docs
+
+### 🚧 Phase 2: Channel Browsing & Streaming - IN PROGRESS
+**Next Steps**:
+- Fetch channel lineup from authenticated servers
+- Display channels with TV-optimized UI (D-pad navigable)
+- HLS video playback with ExoPlayer (Media3)
+- Stream URL generation with HMAC tokens
+- Channel favorites integration (read from web app preferences)
 
 ## Problem Statement
 
@@ -1178,6 +1220,61 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ---
 
-**Version**: 1.1 | **Created**: 2025-12-07 | **Last Updated**: 2025-12-07
+## Specification Change Log
 
-*This specification is ready for implementation. Next steps: Complete Phase 0 (repository reorganization), then hand off to modern-architect-engineer for Android app planning (Phase 1+).*
+### v1.2 - Phase 1 Complete (2025-12-13)
+**Status Update**: Phase 1 (Multi-Server Management & Device Pairing) is complete and production-ready.
+
+**Changes Made**:
+- Updated status from "Specification Phase" to "Phase 1 Complete | Phase 2 In Progress"
+- Added "Current Status" section with Phase 0 and Phase 1 achievements
+- Documented Phase 1 technical stack and architecture (Kotlin, Repository Pattern, 86 tests)
+- Noted Phase 2 next steps (channel browsing, streaming, ExoPlayer)
+- Confirmed all Phase 1 deliverables: multi-server, device pairing, branding, polish, testing
+
+**Phase 1 Deliverables Met**:
+- ✅ Multi-server management with persistent storage
+- ✅ OAuth 2.0 device code pairing (6-character codes, 5-minute expiry)
+- ✅ JWT token storage with encryption
+- ✅ Professional branding (icon, TV banner, shimmer loaders)
+- ✅ Error handling with retry/cancel flows
+- ✅ Android TV optimization (D-pad, 10-foot UI)
+- ✅ Comprehensive testing (86 tests, 100% data layer coverage)
+- ✅ Documentation (README, SETUP, DEVELOPMENT, MANUAL-TEST-GUIDE)
+
+**Next Phase**: Phase 2 will add channel browsing, video playback (Media3/ExoPlayer), channel favorites, and HLS streaming with HMAC authentication.
+
+### v1.1 - Monorepo Reorganization (2025-12-07)
+**Context**: Initial spec (v1.0) didn't account for repository structure changes needed to support Android app alongside existing web app.
+
+**Questions Answered**:
+1. **Q**: How should repository be structured to support multiple apps?
+   **A**: Full monorepo reorganization (Option A) with `apps/web/`, `apps/android/`, `apps/docs/`
+
+2. **Q**: Should Android and web share TypeScript code?
+   **A**: No shared packages - keep it simple (different languages, minimal API surface)
+
+3. **Q**: What should the Next.js app directory be named?
+   **A**: `apps/web/` (emphasizes web interface)
+
+4. **Q**: How should workspace scripts be organized?
+   **A**: Hybrid approach - shortcuts for common tasks (`npm run dev`) + explicit options (`npm run docs:dev`)
+
+5. **Q**: How should Docker builds work in monorepo?
+   **A**: Per-app Dockerfiles (`apps/web/Dockerfile`) with app-specific build context
+
+**Changes Made**:
+- Added **Phase 0: Repository Reorganization** as critical prerequisite
+- Updated **Technical Constraints** to include repository structure requirements
+- Updated **Architecture Overview** to show monorepo context and app locations
+- Updated **Dependencies** section to list Phase 0 as critical prerequisite
+- Updated **Distribution & Release Strategy** to include Phase 0 timeline
+- Documented monorepo decisions and rationale throughout spec
+
+**Impact**: Android development CANNOT begin until Phase 0 (repository reorganization) is completed. This is now explicit in the specification.
+
+---
+
+**Version**: 1.2 | **Created**: 2025-12-07 | **Last Updated**: 2025-12-13
+
+*Phase 1 implementation complete! Phase 2 (channel browsing & streaming) ready to begin.*
