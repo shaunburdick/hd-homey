@@ -18,7 +18,6 @@ RUN --mount=type=cache,target=/root/.npm \
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY apps/web ./apps/web
 # Generate version.json if not present (for local builds without Git), create data directory, and build
 # Set SKIP_PREBUILD to skip linting during Docker builds for speed
