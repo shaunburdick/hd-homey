@@ -12,7 +12,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --workspace=apps/web --ignore-scripts
+    npm ci --workspace=apps/web
 
 # 2. Rebuild the source code only when needed
 FROM base AS builder
