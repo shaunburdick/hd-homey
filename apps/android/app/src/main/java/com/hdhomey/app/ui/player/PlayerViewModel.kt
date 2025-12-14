@@ -51,10 +51,16 @@ class PlayerViewModel @Inject constructor(
     // Internal state
     private var currentStreamToken: StreamToken? = null
     private var tokenRefreshJob: Job? = null
+    private var retryJob: Job? = null
     private var currentTunerId: Int? = null
     private var currentChannelId: Int? = null
     private var currentServerUrl: String? = null
     private var currentChannelName: String = ""
+    
+    // Retry state with exponential backoff
+    private var retryCount: Int = 0
+    private val maxRetries: Int = 3
+    private val baseDelayMs: Long = 1000L // Start with 1 second delay
 
     /**
      * Loads and starts playing a channel stream.
@@ -66,9 +72,22 @@ class PlayerViewModel @Inject constructor(
      * @param channelId Channel ID (database primary key)
      * @param channelName Display name of the channel
      * @param serverUrl Base URL of the HD Homey server
+     * @param resetRetryCount Whether to reset retry counter (default true for new streams)
      */
-    fun loadStream(tunerId: Int, channelId: Int, channelName: String, serverUrl: String) {
-        // Store parameters for token refresh
+    fun loadStream(
+        tunerId: Int,
+        channelId: Int,
+        channelName: String,
+        serverUrl: String,
+        resetRetryCount: Boolean = true
+    ) {
+        // Reset retry count for new stream loads
+        if (resetRetryCount) {
+            retryCount = 0
+            retryJob?.cancel()
+        }
+        
+        // Store parameters for token refresh and retries
         currentTunerId = tunerId
         currentChannelId = channelId
         currentServerUrl = serverUrl
@@ -82,6 +101,9 @@ class PlayerViewModel @Inject constructor(
                 val result = generateStreamUrlUseCase(serverUrl, tunerId, channelId)
                 result.fold(
                     onSuccess = { streamUrl ->
+                        // Success - reset retry count
+                        retryCount = 0
+                        
                         // Emit stream URL for Activity to set on player
                         _streamUrlEvents.emit(streamUrl)
 
@@ -159,10 +181,11 @@ class PlayerViewModel @Inject constructor(
 
     /**
      * Handles back button press.
-     * Stops token refresh and navigates back to channel list.
+     * Stops token refresh, retry jobs, and navigates back to channel list.
      */
     fun onBackPressed() {
         tokenRefreshJob?.cancel()
+        retryJob?.cancel()
         viewModelScope.launch {
             _navigationEvents.emit(PlayerNavigation.NavigateBack)
         }
@@ -210,16 +233,60 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
-     * Retries loading the stream after an error.
+     * Retries loading the stream after an error with exponential backoff.
      * Only applicable for retryable errors (network issues).
+     * 
+     * Uses exponential backoff: 1s, 2s, 4s delays for retries 1-3.
+     * Maximum of 3 retries before giving up.
      */
     fun retry() {
         val tunerId = currentTunerId ?: return
         val channelId = currentChannelId ?: return
         val serverUrl = currentServerUrl ?: return
         val channelName = currentChannelName
-
-        loadStream(tunerId, channelId, channelName, serverUrl)
+        
+        // Check if we've exceeded max retries
+        if (retryCount >= maxRetries) {
+            _uiState.value = PlayerUiState.Error(
+                message = "Maximum retries exceeded. Please check your connection and try again later.",
+                isRetryable = false,
+                errorType = PlayerUiState.ErrorType.NETWORK
+            )
+            return
+        }
+        
+        // Calculate exponential backoff delay: 1s, 2s, 4s
+        val delayMs = baseDelayMs * (1 shl retryCount) // 2^retryCount
+        retryCount++
+        
+        // Show preparing state with retry indicator
+        _uiState.value = PlayerUiState.Preparing(
+            channelName = "$channelName (Retry $retryCount/$maxRetries in ${delayMs / 1000}s...)"
+        )
+        
+        // Schedule retry with exponential backoff
+        retryJob?.cancel()
+        retryJob = viewModelScope.launch {
+            delay(delayMs)
+            loadStream(tunerId, channelId, channelName, serverUrl, resetRetryCount = false)
+        }
+    }
+    
+    /**
+     * Manual retry initiated by user button press.
+     * Resets retry counter and attempts immediate reload.
+     */
+    fun retryManual() {
+        val tunerId = currentTunerId ?: return
+        val channelId = currentChannelId ?: return
+        val serverUrl = currentServerUrl ?: return
+        val channelName = currentChannelName
+        
+        // User-initiated retry resets the counter
+        retryCount = 0
+        retryJob?.cancel()
+        
+        loadStream(tunerId, channelId, channelName, serverUrl, resetRetryCount = true)
     }
 
     /**
@@ -240,10 +307,11 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
-     * Cancels token refresh when ViewModel is cleared.
+     * Cancels all background jobs when ViewModel is cleared.
      */
     override fun onCleared() {
         super.onCleared()
         tokenRefreshJob?.cancel()
+        retryJob?.cancel()
     }
 }

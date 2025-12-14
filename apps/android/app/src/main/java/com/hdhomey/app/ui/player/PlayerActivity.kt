@@ -150,9 +150,9 @@ class PlayerActivity : AppCompatActivity() {
         errorText = findViewById(R.id.error_text)
         errorRetryButton = findViewById(R.id.error_retry_button)
 
-        // Set up retry button
+        // Set up retry button (manual retry resets the retry counter)
         errorRetryButton.setOnClickListener {
-            viewModel.retry()
+            viewModel.retryManual()
         }
     }
 

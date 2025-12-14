@@ -57,48 +57,81 @@ sealed interface PlayerUiState {
      *
      * @property message User-friendly error message
      * @property isRetryable Whether the user can retry the operation
+     * @property errorType Category of error for specific handling
      */
     data class Error(
         val message: String,
-        val isRetryable: Boolean
+        val isRetryable: Boolean,
+        val errorType: ErrorType = ErrorType.UNKNOWN
     ) : PlayerUiState {
         companion object {
             /**
              * Maps exceptions to user-friendly error states.
              *
              * @param throwable The exception that occurred
-             * @return Error state with appropriate message and retry flag
+             * @return Error state with appropriate message, retry flag, and error type
              */
             fun fromThrowable(throwable: Throwable): Error {
                 return when (throwable) {
                     is java.io.IOException -> Error(
                         message = "Network error. Check your connection and try again.",
-                        isRetryable = true
+                        isRetryable = true,
+                        errorType = ErrorType.NETWORK
                     )
                     is retrofit2.HttpException -> when (throwable.code()) {
                         401 -> Error(
                             message = "Session expired. Please sign in again.",
-                            isRetryable = false
+                            isRetryable = false,
+                            errorType = ErrorType.AUTHENTICATION
                         )
                         403 -> Error(
                             message = "Access denied. You don't have permission to view this channel.",
-                            isRetryable = false
+                            isRetryable = false,
+                            errorType = ErrorType.AUTHENTICATION
                         )
                         404 -> Error(
                             message = "Channel not found. It may have been removed.",
-                            isRetryable = false
+                            isRetryable = false,
+                            errorType = ErrorType.STREAM_UNAVAILABLE
+                        )
+                        502, 503, 504 -> Error(
+                            message = "Server temporarily unavailable. Try again in a few moments.",
+                            isRetryable = true,
+                            errorType = ErrorType.SERVER_ERROR
                         )
                         else -> Error(
                             message = "Server error (${throwable.code()}). Try again later.",
-                            isRetryable = true
+                            isRetryable = true,
+                            errorType = ErrorType.SERVER_ERROR
                         )
                     }
                     else -> Error(
                         message = "An unexpected error occurred: ${throwable.message ?: "Unknown error"}",
-                        isRetryable = true
+                        isRetryable = true,
+                        errorType = ErrorType.UNKNOWN
                     )
                 }
             }
         }
+    }
+    
+    /**
+     * Categories of errors for specialized handling and messaging.
+     */
+    enum class ErrorType {
+        /** Network connectivity issues (retryable with exponential backoff) */
+        NETWORK,
+        
+        /** Authentication/authorization failures (requires re-login) */
+        AUTHENTICATION,
+        
+        /** Server errors or unavailability (retryable with backoff) */
+        SERVER_ERROR,
+        
+        /** Channel/stream not available (not retryable) */
+        STREAM_UNAVAILABLE,
+        
+        /** Unknown or unexpected errors (retryable with caution) */
+        UNKNOWN
     }
 }
