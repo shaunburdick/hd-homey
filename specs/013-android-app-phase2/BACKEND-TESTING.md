@@ -5,10 +5,12 @@ Testing commands for the two new API endpoints implemented for Android Phase 2.
 ## Prerequisites
 
 1. **HD Homey server running**: `npm run dev` or Docker container
-2. **Valid JWT token**: Obtain from device pairing or web login
+2. **Valid session token**: Obtain from device pairing or web login
 3. **Test data**: At least one tuner with channels scanned
 
-## Getting a JWT Token
+## Getting a Session Token
+
+**Important**: HD Homey uses Better-Auth with JWT sessions stored in **cookies**, not Bearer tokens. Use the `Cookie` header, not `Authorization: Bearer`.
 
 ### Option 1: Extract from Browser (Easiest)
 
@@ -16,7 +18,7 @@ Testing commands for the two new API endpoints implemented for Android Phase 2.
 2. Sign in with your credentials
 3. Open browser DevTools (F12) → Application/Storage → Cookies
 4. Find cookie named `better-auth.session_token`
-5. Copy the value (this is your JWT)
+5. Copy the value (this is your session token)
 
 ### Option 2: Use Device Pairing Flow
 
@@ -37,7 +39,7 @@ curl -X POST http://localhost:3000/api/auth/device/poll \
   -H "Content-Type: application/json" \
   -d '{"device_code": "<device_code_from_step_1>"}'
 
-# Response: { "access_token": "<JWT_TOKEN>", "token_type": "Bearer", "expires_in": 604800 }
+# Response: { "access_token": "<SESSION_TOKEN>", "token_type": "Bearer", "expires_in": 604800 }
 ```
 
 ---
@@ -47,12 +49,12 @@ curl -X POST http://localhost:3000/api/auth/device/poll \
 ### Test 1: Valid Request
 
 ```bash
-# Replace <JWT_TOKEN> with your actual token
+# Replace <SESSION_TOKEN> with your actual token from browser cookies
 # Replace tunerId=1 and channelId=1 with actual IDs from your database
 
 curl -X POST http://localhost:3000/api/stream-token \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Cookie: better-auth.session_token=<SESSION_TOKEN>" \
   -d '{"tunerId": 1, "channelId": 1}'
 ```
 
@@ -87,7 +89,7 @@ curl -X POST http://localhost:3000/api/stream-token \
 ```bash
 curl -X POST http://localhost:3000/api/stream-token \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Cookie: better-auth.session_token=<SESSION_TOKEN>" \
   -d '{"tunerId": "not-a-number", "channelId": 1}'
 ```
 
@@ -105,7 +107,7 @@ curl -X POST http://localhost:3000/api/stream-token \
 ```bash
 curl -X POST http://localhost:3000/api/stream-token \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Cookie: better-auth.session_token=<SESSION_TOKEN>" \
   -d '{"tunerId": 999, "channelId": 1}'
 ```
 
@@ -122,7 +124,7 @@ curl -X POST http://localhost:3000/api/stream-token \
 ```bash
 curl -X POST http://localhost:3000/api/stream-token \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Cookie: better-auth.session_token=<SESSION_TOKEN>" \
   -d '{"tunerId": 1, "channelId": 999}'
 ```
 
@@ -142,7 +144,7 @@ curl -X POST http://localhost:3000/api/stream-token \
 
 ```bash
 curl -X GET http://localhost:3000/api/preferences/channels \
-  -H "Authorization: Bearer <JWT_TOKEN>"
+  -H "Cookie: better-auth.session_token=<SESSION_TOKEN>"
 ```
 
 **Expected Response (200)**:
@@ -175,7 +177,7 @@ curl -X GET http://localhost:3000/api/preferences/channels \
 
 ```bash
 curl -X GET "http://localhost:3000/api/preferences/channels?tunerId=1" \
-  -H "Authorization: Bearer <JWT_TOKEN>"
+  -H "Cookie: better-auth.session_token=<SESSION_TOKEN>"
 ```
 
 **Expected Response (200)**: Same format as Test 1, but only channels for tuner 1
@@ -198,7 +200,7 @@ curl -X GET http://localhost:3000/api/preferences/channels
 
 ```bash
 curl -X GET "http://localhost:3000/api/preferences/channels?tunerId=not-a-number" \
-  -H "Authorization: Bearer <JWT_TOKEN>"
+  -H "Cookie: better-auth.session_token=<SESSION_TOKEN>"
 ```
 
 **Expected Response (400)**:
@@ -214,7 +216,7 @@ curl -X GET "http://localhost:3000/api/preferences/channels?tunerId=not-a-number
 ```bash
 # If authenticated user has no channel preferences set
 curl -X GET http://localhost:3000/api/preferences/channels \
-  -H "Authorization: Bearer <JWT_TOKEN>"
+  -H "Cookie: better-auth.session_token=<SESSION_TOKEN>"
 ```
 
 **Expected Response (200)**:
@@ -232,7 +234,7 @@ curl -X GET http://localhost:3000/api/preferences/channels \
 
 1. **Create Environment Variables**:
    - `base_url`: `http://localhost:3000`
-   - `jwt_token`: Your JWT token from browser or device pairing
+   - `jwt_token`: Your session token from browser or device pairing
 
 2. **Import as Collection**:
 
@@ -310,7 +312,7 @@ Or use the web UI:
 ## Common Issues
 
 ### Issue: 401 Unauthorized
-- **Cause**: Invalid or expired JWT token
+- **Cause**: Invalid or expired session token
 - **Solution**: Get a fresh token from browser or device pairing
 
 ### Issue: 404 Not Found (tunerId/channelId)
