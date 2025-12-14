@@ -15,8 +15,23 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.hdhomey.app.R
+import com.hdhomey.app.data.repository.ServerRepository
+import com.hdhomey.app.ui.player.PlayerActivity
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.EntryPoint
+import dagger.hilt.android.components.FragmentComponent
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * Entry point for accessing Fragment-scoped dependencies.
+ */
+@EntryPoint
+@dagger.hilt.InstallIn(FragmentComponent::class)
+interface ChannelListEntryPoint {
+    fun serverRepository(): ServerRepository
+}
 
 /**
  * Fragment displaying channel list from HDHomeRun tuner.
@@ -63,6 +78,9 @@ class ChannelListFragment : Fragment() {
 
     private val viewModel: ChannelListViewModel by viewModels()
 
+    // ServerRepository accessed via EntryPoint to avoid Kotlin metadata issues
+    private lateinit var serverRepository: ServerRepository
+
     // View references
     private lateinit var tunerNameText: TextView
     private lateinit var channelCountText: TextView
@@ -86,6 +104,12 @@ class ChannelListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Get ServerRepository via EntryPoint
+        serverRepository = EntryPointAccessors.fromFragment(
+            this,
+            ChannelListEntryPoint::class.java
+        ).serverRepository()
 
         // Initialize views
         tunerNameText = view.findViewById(R.id.tunerNameText)
@@ -265,30 +289,32 @@ class ChannelListFragment : Fragment() {
     /**
      * Navigate to video player activity.
      *
-     * Opens PlayerActivity with channel details.
+     * Opens PlayerActivity with channel details and server URL.
      *
      * @param tunerId Tuner ID
      * @param channelId Channel ID
      * @param channelName Channel name for display
      */
     private fun navigateToPlayer(tunerId: Int, channelId: Int, channelName: String) {
-        // TODO: Create PlayerActivity in next tasks (T045-T056)
-        // For now, show a toast
-        Toast.makeText(
-            requireContext(),
-            "Play channel: $channelName (will open player in Phase 2.3)",
-            Toast.LENGTH_SHORT
-        ).show()
+        // Get active server URL
+        val activeServer = serverRepository.getActiveServer()
+        if (activeServer == null) {
+            Toast.makeText(
+                requireContext(),
+                "No active server found. Please select a server first.",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
 
-        // Uncomment when PlayerActivity is created:
-        /*
+        // Launch PlayerActivity with channel details
         val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
             putExtra(PlayerActivity.EXTRA_TUNER_ID, tunerId)
             putExtra(PlayerActivity.EXTRA_CHANNEL_ID, channelId)
             putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, channelName)
+            putExtra(PlayerActivity.EXTRA_SERVER_URL, activeServer.url)
         }
         startActivity(intent)
-        */
     }
 
     companion object {

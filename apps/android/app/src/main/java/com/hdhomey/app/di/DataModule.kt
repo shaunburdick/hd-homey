@@ -154,6 +154,29 @@ object DataModule {
     ): com.hdhomey.app.data.repository.PreferencesRepository {
         return com.hdhomey.app.data.repository.PreferencesRepository(apiService)
     }
+
+    /**
+     * Provides ServerRepository for HD Homey server management.
+     *
+     * Handles:
+     * - CRUD operations for server configurations
+     * - Active server selection
+     * - Authentication state tracking
+     *
+     * Used by:
+     * - Phase 1: Server list and authentication flows
+     * - Phase 2: Channel list (get active server URL)
+     *
+     * @param appPreferences AppPreferences for server storage
+     * @return ServerRepository singleton
+     */
+    @Provides
+    @Singleton
+    fun provideServerRepository(
+        appPreferences: AppPreferences
+    ): com.hdhomey.app.data.repository.ServerRepository {
+        return com.hdhomey.app.data.repository.ServerRepository(appPreferences)
+    }
 }
 
 /**
