@@ -1,7 +1,7 @@
 # Phase 1.5 Progress: Polish & Testing
 
 **Date**: 2025-01-13  
-**Status**: ✅ Phase 1.5A Critical Fixes COMPLETE!
+**Status**: ✅ Phase 1.5B High Priority Fixes COMPLETE!
 
 ## Summary
 
@@ -11,67 +11,96 @@ Phase 1.5 focuses on testing and polishing the Android app before Phase 2. Curre
 - ✅ Unit tests for ServerRepository (35 tests)
 - ✅ Unit tests for DeviceCodeService (16 tests)
 - ✅ **Phase 1.5A: Critical UI Fixes (15 tasks)** - Authentication retry/cancel, server delete/edit, health check retry
-- ⏳ Phase 1.5B: High Priority Fixes (in progress)
+- ✅ **Phase 1.5B: High Priority Fixes (12 tasks)** - Error messages, loading feedback, URL validation UX
+- ⏳ Phase 1.5C: Medium Priority Polish (deferred)
 - ⏳ Manual testing scenarios (deferred)
 
-## Phase 1.5A: Critical UI Fixes ✅ COMPLETE
+## Phase 1.5B: High Priority Fixes ✅ COMPLETE
 
-### Task 1.5.21-1.5.25: AuthenticationFragment Retry/Cancel ✅
-**Commit**: `b64c539` - feat(android): add retry/cancel buttons to AuthenticationFragment
+### Task 1.5.36-1.5.39: Improved Error Messages ✅
+**Commit**: `8ee6263` - feat(android): add ErrorHandler with context-aware error messages
 
-**Problem**: Users stuck in authentication flow with no way to recover from errors or cancel.
-
-**Solution**:
-- Added retry button that stops polling, resets UI, and restarts auth flow
-- Added cancel button that stops polling and returns to server list
-- Improved error messages with actionable guidance
-- Preserved device code visibility on errors (don't replace with "ERROR")
-
-**Files Modified**:
-- `apps/android/app/src/main/res/layout/fragment_authentication.xml`
-- `apps/android/app/src/main/java/com/hdhomey/app/ui/auth/AuthenticationFragment.kt`
-
-### Task 1.5.26-1.5.31: ServerListFragment Delete/Edit ✅
-**Commit**: `9bc9cbb` - feat(android): add delete/edit functionality to ServerListFragment
-
-**Problem**: No way to remove servers from list after adding them.
+**Problem**: Generic error messages didn't tell users what to do (e.g., "Network error", "Server unreachable").
 
 **Solution**:
-- Added swipe-to-delete (left or right) using ItemTouchHelper
-- Added context menu (long-press) with Edit/Delete options
-- Added confirmation dialog showing server name and auth data warning
-- Used `bindingAdapterPosition` (not deprecated `adapterPosition`)
+- Created ErrorHandler utility with context-aware error messages
+- Expanded Constants.Errors from 6 to 22 messages
+- All messages now explain WHAT happened and WHAT TO DO
+- Distinguishes network errors vs server errors vs auth errors
+- No technical jargon (DNS, HTTP codes, etc.)
+
+**Example Improvements**:
+- Before: "Network error. Please check your connection."
+- After: "Cannot connect to the network. Check your WiFi or mobile data connection and try again."
 
 **Files Modified**:
-- `apps/android/app/src/main/res/menu/server_context_menu.xml` (new)
-- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/ServerListAdapter.kt`
-- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/ServerListFragment.kt`
+- `apps/android/app/src/main/java/com/hdhomey/app/util/Constants.kt` - Expanded error messages
+- `apps/android/app/src/main/java/com/hdhomey/app/util/ErrorHandler.kt` (new) - Context-aware error handling
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/AddServerFragment.kt` - Use ErrorHandler
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/auth/AuthenticationFragment.kt` - Use ErrorHandler
 
-### Task 1.5.32-1.5.35: AddServerFragment Retry Button ✅
-**Commit**: `ab822f7` - feat(android): add retry button to AddServerFragment health check
+### Task 1.5.40-1.5.43: Loading Feedback ✅
+**Commit**: `0b8906c` - feat(android): add loading status indicators to AuthenticationFragment
 
-**Problem**: After health check failure, users must navigate away to retry.
+**Problem**: Users wondered "is it working?" during authentication - no feedback during polling.
 
 **Solution**:
-- Connect button becomes "Try Again" after health check failure
-- Added `setRetryState(retry: Boolean)` to change button text
-- Updated `performHealthCheck()` to call `setRetryState(true)` on failure
-- Improved error messages with actionable guidance (e.g., "Cannot reach server. Check the URL and your network connection, then try again.")
+- Added status TextView showing contextual messages
+- Clear feedback at every stage of authentication
+- Status messages: "Connecting...", "Generating code...", "Waiting for authorization...", "Authorization successful!"
+- Subtle feedback during polling (text without spinner)
+- Prominent feedback during code generation (text with spinner)
+
+**UI Flow**:
+1. **Connecting**: Show "Connecting to server..." with spinner
+2. **Generating**: Show "Generating device code..." with spinner
+3. **Code displayed**: Hide status, show code and countdown
+4. **Polling**: Show "Waiting for authorization..." WITHOUT spinner (subtle)
+5. **Success**: Show "Authorization successful!" without spinner
+6. **Error**: Hide status, show error with retry/cancel
 
 **Files Modified**:
-- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/AddServerFragment.kt`
+- `apps/android/app/src/main/res/layout/fragment_authentication.xml` - Added text_status TextView
+- `apps/android/app/src/main/res/values/strings.xml` - Added 5 status message strings
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/auth/AuthenticationFragment.kt` - Integrated status display
+
+### Task 1.5.44-1.5.47: URL Validation UX ✅
+**Commit**: `a166bb2` - feat(android): improve URL validation UX with debouncing
+
+**Problem**: Real-time validation showed errors while typing (e.g., user types "192" → error appears immediately).
+
+**Solution**:
+- Debounced validation (500ms delay after typing stops)
+- Immediate validation on focus loss (onBlur)
+- Clear error while typing (don't show stale errors)
+- Better hint text: placeholder example instead of generic label
+- Helper text explains URL format requirements
+
+**Validation Flow**:
+1. User types: Error clears, no validation yet
+2. User pauses 500ms: Validation runs (if not blank)
+3. User leaves field: Immediate validation
+4. User clicks Connect: Full validation before health check
+
+**UI Improvements**:
+- Hint: "Server URL" → "http://192.168.1.100:3000" (example placeholder)
+- Helper: "Example: ..." → "Enter your HD Homey server URL (include http:// or https://)"
+
+**Files Modified**:
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/AddServerFragment.kt` - Debounced validation
+- `apps/android/app/src/main/res/values/strings.xml` - Updated hints
 
 ### Impact
 
-**Before Phase 1.5A**: Users had 3 critical "dead-ends" where they got stuck with no recovery option:
-1. Authentication errors → Must restart app
-2. Wrong server added → Stuck with it forever
-3. Health check fails → Must clear form and re-enter everything
+**Before Phase 1.5B**: Users had 3 high-priority UX issues:
+1. Unclear error messages - "Network error" → what should I do?
+2. Silent polling - "Is it working or frozen?"
+3. Annoying validation - Errors appear while typing "192..."
 
-**After Phase 1.5A**: All dead-ends eliminated:
-1. ✅ Authentication errors → Retry/Cancel buttons
-2. ✅ Wrong server added → Swipe or context menu to delete
-3. ✅ Health check fails → "Try Again" button
+**After Phase 1.5B**: All issues resolved:
+1. ✅ Clear, actionable error messages with troubleshooting steps
+2. ✅ Visual feedback at every stage of authentication
+3. ✅ Smooth validation that doesn't interrupt typing
 
 ## Test Results
 
