@@ -117,14 +117,16 @@ class AddServerFragment : Fragment() {
      * Handles Connect button click.
      *
      * Validates inputs, performs health check, and saves server if successful.
+     * Also acts as Retry button when health check has previously failed.
      */
     private fun onConnectClick() {
         val name = serverNameInput.text.toString().trim()
         val url = serverUrlInput.text.toString().trim()
 
-        // Clear previous errors
+        // Clear previous errors and reset to normal state
         hideError()
         serverUrlLayout.error = null
+        setRetryState(false)
 
         // Validate name
         if (name.isBlank()) {
@@ -156,7 +158,7 @@ class AddServerFragment : Fragment() {
      *
      * Makes a GET request to /api/health endpoint.
      * On success: Saves server and navigates back.
-     * On failure: Shows error message.
+     * On failure: Shows error message with retry button.
      */
     private fun performHealthCheck(name: String, url: String) {
         Log.d(Constants.Tags.ADD_SERVER, "Performing health check for $url")
@@ -176,14 +178,16 @@ class AddServerFragment : Fragment() {
                     if (isHealthy) {
                         onHealthCheckSuccess(name, url)
                     } else {
-                        showError(Constants.Errors.SERVER_UNREACHABLE)
+                        showError("Cannot reach server. Check the URL and your network connection, then try again.")
+                        setRetryState(true)
                     }
                 }
             } catch (e: Exception) {
                 Log.e(Constants.Tags.ADD_SERVER, "Health check failed", e)
                 withContext(Dispatchers.Main) {
                     setLoadingState(false)
-                    showError(Constants.Errors.NETWORK_ERROR)
+                    showError("Network error. Check your connection and try again.")
+                    setRetryState(true)
                 }
             }
         }
@@ -253,6 +257,20 @@ class AddServerFragment : Fragment() {
 
         if (loading) {
             connectButton.text = getString(R.string.add_server_testing)
+        } else {
+            // Text will be set by setRetryState() if needed
+            connectButton.text = getString(R.string.add_server_connect_button)
+        }
+    }
+    
+    /**
+     * Sets retry state (changes Connect button to Retry).
+     * 
+     * @param retry true to show as Retry button, false for Connect button
+     */
+    private fun setRetryState(retry: Boolean) {
+        if (retry) {
+            connectButton.text = getString(R.string.try_again)
         } else {
             connectButton.text = getString(R.string.add_server_connect_button)
         }
