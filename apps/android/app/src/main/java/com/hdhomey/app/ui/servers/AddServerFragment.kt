@@ -1,6 +1,8 @@
 package com.hdhomey.app.ui.servers
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -48,6 +50,11 @@ class AddServerFragment : Fragment() {
     private lateinit var loadingIndicator: ProgressBar
     private lateinit var repository: ServerRepository
 
+    // Debouncing for URL validation
+    private val validationHandler = Handler(Looper.getMainLooper())
+    private var validationRunnable: Runnable? = null
+    private val validationDelayMs = 500L
+
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(Constants.Timeouts.CONNECTION, TimeUnit.MILLISECONDS)
@@ -84,14 +91,35 @@ class AddServerFragment : Fragment() {
         connectButton.setOnClickListener { onConnectClick() }
         cancelButton.setOnClickListener { onCancelClick() }
 
-        // Real-time URL validation
+        // Debounced URL validation
         serverUrlInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                // Cancel any pending validation
+                validationRunnable?.let { validationHandler.removeCallbacks(it) }
+                
+                // Clear error while typing
+                if (s?.isNotBlank() == true) {
+                    serverUrlLayout.error = null
+                }
+            }
             override fun afterTextChanged(s: Editable?) {
-                validateUrlInput()
+                // Schedule validation after delay
+                validationRunnable?.let { validationHandler.removeCallbacks(it) }
+                validationRunnable = Runnable {
+                    validateUrlInput()
+                }
+                validationHandler.postDelayed(validationRunnable!!, validationDelayMs)
             }
         })
+        
+        // Validate on focus loss (immediate feedback when leaving field)
+        serverUrlInput.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                validationRunnable?.let { validationHandler.removeCallbacks(it) }
+                validateUrlInput()
+            }
+        }
     }
 
     /**
@@ -291,5 +319,12 @@ class AddServerFragment : Fragment() {
      */
     private fun hideError() {
         errorMessage.visibility = View.GONE
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Cancel any pending validation to avoid memory leaks
+        validationRunnable?.let { validationHandler.removeCallbacks(it) }
+        validationRunnable = null
     }
 }
