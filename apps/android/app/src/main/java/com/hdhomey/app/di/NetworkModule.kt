@@ -39,15 +39,17 @@ object NetworkModule {
      * Provides configured OkHttpClient with interceptors.
      *
      * Interceptor order matters:
-     * 1. AuthInterceptor - adds JWT token to requests
-     * 2. LoggingInterceptor - logs requests/responses (debug only)
-     * 3. ErrorInterceptor - handles auth errors and triggers re-auth
+     * 1. BaseUrlInterceptor - rewrites URL to use active server's base URL
+     * 2. AuthInterceptor - adds JWT token to requests
+     * 3. LoggingInterceptor - logs requests/responses (debug only)
+     * 4. ErrorInterceptor - handles auth errors and triggers re-auth
      *
      * Connection pooling and timeouts configured for video streaming:
      * - 30s connect timeout (backend health check)
      * - 60s read timeout (HLS manifest/segment downloads)
      * - 30s write timeout (POST requests)
      *
+     * @param baseUrlInterceptor Rewrites URLs to use active server
      * @param authInterceptor Injects JWT tokens into requests
      * @param errorInterceptor Handles 401/403 authentication errors
      * @return Configured OkHttpClient singleton
@@ -55,10 +57,12 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
+        baseUrlInterceptor: com.hdhomey.app.api.interceptors.BaseUrlInterceptor,
         authInterceptor: com.hdhomey.app.api.interceptors.AuthInterceptor,
         errorInterceptor: com.hdhomey.app.api.interceptors.ErrorInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(baseUrlInterceptor)
             .addInterceptor(authInterceptor)
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
