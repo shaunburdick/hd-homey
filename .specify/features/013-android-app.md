@@ -2,9 +2,9 @@
 
 **Feature ID**: `013-android-app`  
 **Created**: 2025-12-07  
-**Status**: ✅ Phase 1 Complete | 🚧 Phase 2 In Progress  
+**Status**: ✅ Phase 1 Complete & Merged | 🚀 Phase 2 Ready  
 **Owner**: HD Homey Core Team  
-**Version**: 1.2  
+**Version**: 1.3  
 **Dependencies**: Phase 0 (Repository Reorganization) - ✅ COMPLETE
 
 ## Overview
@@ -13,14 +13,16 @@ The HD Homey Android app brings live TV streaming to Android TV devices, phones,
 
 **IMPORTANT**: This feature requires **Phase 0: Repository Reorganization** to be completed first. The repository must be restructured into a monorepo before Android development begins.
 
-## Current Status (December 13, 2025)
+## Current Status (December 14, 2025)
 
 ### ✅ Phase 0: Repository Reorganization - COMPLETE
 - Repository restructured into monorepo (`apps/web/`, `apps/android/`, `apps/docs/`)
 - All tests passing, Docker working, CI/CD updated
 - Documentation updated with new paths
 
-### ✅ Phase 1: Multi-Server Management & Device Pairing - COMPLETE
+### ✅ Phase 1: Multi-Server Management & Device Pairing - COMPLETE & MERGED
+**Duration**: December 7-13, 2025 (7 days)  
+**Branch**: `013-android-app` (squash merged to `main`)  
 **Location**: `apps/android/` (Kotlin, Android 12+, Target SDK 35)
 
 **Features Implemented**:
@@ -37,23 +39,52 @@ The HD Homey Android app brings live TV streaming to Android TV devices, phones,
 **Technical Stack**:
 - Kotlin 2.1.0, Gradle 8.13, Target SDK 35 (Android 15), Min SDK 31 (Android 12)
 - Architecture: Simplified Repository Pattern (ViewModels and DataStore coming in Phase 2)
-- Testing: JUnit 4, Mockito, Robolectric
-- Dependencies: OkHttp 4.12.0, Gson 2.11.0, Material Components 1.12.0
+- Testing: JUnit 4, Truth assertions, Robolectric, MockK
+- Dependencies: OkHttp 4.12.0, Kotlinx Serialization 1.7.3, Material Components 1.12.0
+- Networking: Direct OkHttp (no Retrofit yet)
 
 **Documentation**:
 - `apps/android/README.md` - Project overview and Phase 1 achievements
 - `apps/android/SETUP.md` - Development setup guide
 - `apps/android/DEVELOPMENT.md` - Architecture and patterns
 - `apps/android/MANUAL-TEST-GUIDE.md` - Manual testing scenarios
-- `specs/013-android-app-phase1/` - Implementation plans and completion docs
+- `specs/013-android-app-phase1/PHASE1-SUMMARY.md` - Comprehensive Phase 1 summary
+- `specs/013-android-app-phase1/archive/` - Phase completion documents
 
-### 🚧 Phase 2: Channel Browsing & Streaming - IN PROGRESS
-**Next Steps**:
+**Phase 1 Learnings**:
+- Simplified architecture (no ViewModels) accelerated development
+- Robolectric enabled fast unit tests without emulator
+- D-pad navigation required careful focus management in XML layouts
+- SharedPreferences + JSON worked well but DataStore will improve type safety
+- Backend device pairing API integration was seamless
+- 100% data layer test coverage caught bugs early
+
+### 🚧 Phase 2: Channel Browsing & Streaming - READY TO START
+**Branch**: `013-android-app-phase2` (created from `main`)  
+**Estimated Duration**: 3-4 weeks
+
+**Planned Features**:
 - Fetch channel lineup from authenticated servers
 - Display channels with TV-optimized UI (D-pad navigable)
-- HLS video playback with ExoPlayer (Media3)
+- AndroidX Media3 (ExoPlayer) video playback
+- HLS stream playback with automatic quality selection
 - Stream URL generation with HMAC tokens
 - Channel favorites integration (read from web app preferences)
+- Channel metadata display (name, number, logo)
+
+**Architecture Evolution (Phase 2)**:
+- Introduce ViewModels for UI state management
+- Add Use Cases for business logic separation
+- Migrate from SharedPreferences to DataStore
+- Add Retrofit for cleaner API calls (optional)
+- Add Coil for image loading (channel logos)
+
+**Prerequisites (Already Complete)**:
+- ✅ Authentication flow (JWT tokens stored)
+- ✅ Server management (active server selection)
+- ✅ Backend channel lineup API (`GET /api/lineup.json`)
+- ✅ Backend HLS transcoding API (`/api/transcode/...`)
+- ✅ Backend stream authentication (HMAC tokens)
 
 ## Problem Statement
 
@@ -1222,6 +1253,29 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ## Specification Change Log
 
+### v1.3 - Phase 1 Merged, Phase 2 Ready (2025-12-14)
+**Status Update**: Phase 1 complete, merged to main, and Phase 2 directory structure created.
+
+**Changes Made**:
+- Updated status from "Phase 2 In Progress" to "Phase 1 Complete & Merged | Phase 2 Ready"
+- Documented Phase 1 merge details (squash merge to main, 323 files, +24,331 lines)
+- Added Phase 1 learnings section (simplified architecture, Robolectric, D-pad focus)
+- Created comprehensive Phase 1 summary (`specs/013-android-app-phase1/PHASE1-SUMMARY.md`)
+- Archived all Phase 1 completion documents
+- Created Phase 2 directory structure (`specs/013-android-app-phase2/`)
+- Updated technical stack details (Kotlinx Serialization, Truth assertions, MockK)
+- Documented Phase 2 architecture evolution plans (ViewModels, DataStore, Retrofit, Coil)
+
+**Phase 1 Success Metrics**:
+- ✅ All 86 tests passing (0 failures)
+- ✅ 100% data layer coverage (Repository, Services, Preferences, Validators)
+- ✅ Lint clean (0 errors)
+- ✅ 20MB APK (debug build)
+- ✅ Squash merged to main
+- ✅ Branch: `013-android-app-phase2` created from main
+
+**Next Phase**: Phase 2 will implement channel browsing, AndroidX Media3 video playback, HLS streaming, and channel favorites integration.
+
 ### v1.2 - Phase 1 Complete (2025-12-13)
 **Status Update**: Phase 1 (Multi-Server Management & Device Pairing) is complete and production-ready.
 
@@ -1275,6 +1329,6 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ---
 
-**Version**: 1.2 | **Created**: 2025-12-07 | **Last Updated**: 2025-12-13
+**Version**: 1.3 | **Created**: 2025-12-07 | **Last Updated**: 2025-12-14
 
-*Phase 1 implementation complete! Phase 2 (channel browsing & streaming) ready to begin.*
+*Phase 1 merged to main! Phase 2 (channel browsing & streaming) ready to begin on branch `013-android-app-phase2`.*
