@@ -1,8 +1,8 @@
 services:
     hd-homey:
         build:
-            context: ./apps/web
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: apps/web/Dockerfile
         image: ghcr.io/shaunburdick/hd-homey
         container_name: hd-homey
         restart: unless-stopped

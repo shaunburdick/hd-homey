@@ -10,5 +10,5 @@ node src/scripts/migrate.mjs
 
 echo "Starting HD Homey..."
 
-# Start the application
-exec node server.js
+# Start the application (server.js is in apps/web/ due to standalone output structure)
+exec node apps/web/server.js
