@@ -12,6 +12,7 @@
     <string name="server_not_authenticated">● Not Authenticated</string>
     <string name="server_token_expired">● Session Expired</string>
     <string name="active_server_badge">ACTIVE</string>
+    <string name="server_user_info">%1$s (%2$s)</string>
     
     <!-- Add Server -->
     <string name="add_server_title">Add Server</string>

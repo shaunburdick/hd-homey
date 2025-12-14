@@ -137,7 +137,11 @@ class ServerListAdapter(
                     
                     // Show user info if authenticated
                     if (server.username != null && server.userRole != null) {
-                        serverUserInfo.text = "${server.username} (${server.userRole.capitalize()})"
+                        serverUserInfo.text = itemView.context.getString(
+                            R.string.server_user_info,
+                            server.username,
+                            server.userRole.capitalize()
+                        )
                         serverUserInfo.visibility = View.VISIBLE
                     } else {
                         serverUserInfo.visibility = View.GONE

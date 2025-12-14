@@ -1,8 +1,6 @@
 package com.hdhomey.app.ui.servers
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -24,6 +22,8 @@ import com.hdhomey.app.util.Constants
 import com.hdhomey.app.util.ErrorHandler
 import com.hdhomey.app.util.UrlValidator
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -50,9 +50,8 @@ class AddServerFragment : Fragment() {
     private lateinit var loadingIndicator: ProgressBar
     private lateinit var repository: ServerRepository
 
-    // Debouncing for URL validation
-    private val validationHandler = Handler(Looper.getMainLooper())
-    private var validationRunnable: Runnable? = null
+    // Coroutine-based debouncing for URL validation
+    private var validationJob: Job? = null
     private val validationDelayMs = 500L
 
     private val httpClient: OkHttpClient by lazy {
@@ -91,12 +90,12 @@ class AddServerFragment : Fragment() {
         connectButton.setOnClickListener { onConnectClick() }
         cancelButton.setOnClickListener { onCancelClick() }
 
-        // Debounced URL validation
+        // Coroutine-based debounced URL validation
         serverUrlInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 // Cancel any pending validation
-                validationRunnable?.let { validationHandler.removeCallbacks(it) }
+                validationJob?.cancel()
                 
                 // Clear error while typing
                 if (s?.isNotBlank() == true) {
@@ -104,19 +103,19 @@ class AddServerFragment : Fragment() {
                 }
             }
             override fun afterTextChanged(s: Editable?) {
-                // Schedule validation after delay
-                validationRunnable?.let { validationHandler.removeCallbacks(it) }
-                validationRunnable = Runnable {
+                // Schedule validation after delay using coroutines
+                validationJob?.cancel()
+                validationJob = lifecycleScope.launch {
+                    delay(validationDelayMs)
                     validateUrlInput()
                 }
-                validationHandler.postDelayed(validationRunnable!!, validationDelayMs)
             }
         })
         
         // Validate on focus loss (immediate feedback when leaving field)
         serverUrlInput.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus) {
-                validationRunnable?.let { validationHandler.removeCallbacks(it) }
+                validationJob?.cancel()
                 validateUrlInput()
             }
         }
@@ -324,7 +323,7 @@ class AddServerFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         // Cancel any pending validation to avoid memory leaks
-        validationRunnable?.let { validationHandler.removeCallbacks(it) }
-        validationRunnable = null
+        validationJob?.cancel()
+        validationJob = null
     }
 }

@@ -122,8 +122,8 @@ class AuthenticationFragment : Fragment() {
                 // Show connecting status
                 showStatus(getString(R.string.auth_status_connecting))
                 
-                // Load server
-                val server = repository.getServerById(serverId!!)
+                // Load server with explicit null check
+                val server = serverId?.let { repository.getServerById(it) }
                 if (server == null) {
                     hideStatus()
                     showError("Server not found")
@@ -283,9 +283,15 @@ class AuthenticationFragment : Fragment() {
             val user = pollResponse.user ?: throw Exception("No user info in response")
             val expiresAt = pollResponse.expiresAt ?: (System.currentTimeMillis() + (24 * 60 * 60 * 1000)) // Default 24h
             
+            // Verify serverId is available before updating
+            val currentServerId = serverId
+            if (currentServerId == null) {
+                throw Exception("Server ID not available")
+            }
+            
             // Update server in repository
             val success = repository.updateServerAuthentication(
-                serverId = serverId!!,
+                serverId = currentServerId,
                 jwt = token,
                 expiresAt = expiresAt,
                 username = user.username,
