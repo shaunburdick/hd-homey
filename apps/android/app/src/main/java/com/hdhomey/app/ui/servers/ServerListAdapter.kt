@@ -14,16 +14,17 @@ import com.hdhomey.app.data.model.Server
  * RecyclerView adapter for displaying a list of configured HD Homey servers.
  *
  * Uses ListAdapter with DiffUtil for efficient updates.
- * Supports item click callbacks for server selection.
+ * Supports item click and long-click callbacks for server selection and management.
  */
 class ServerListAdapter(
-    private val onServerClick: (Server) -> Unit
+    private val onServerClick: (Server) -> Unit,
+    private val onServerLongClick: (Server, View) -> Boolean
 ) : ListAdapter<Server, ServerListAdapter.ServerViewHolder>(ServerDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ServerViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_server, parent, false)
-        return ServerViewHolder(view, onServerClick)
+        return ServerViewHolder(view, onServerClick, onServerLongClick)
     }
 
     override fun onBindViewHolder(holder: ServerViewHolder, position: Int) {
@@ -35,7 +36,8 @@ class ServerListAdapter(
      */
     class ServerViewHolder(
         itemView: View,
-        private val onServerClick: (Server) -> Unit
+        private val onServerClick: (Server) -> Unit,
+        private val onServerLongClick: (Server, View) -> Boolean
     ) : RecyclerView.ViewHolder(itemView) {
 
         private val serverName: TextView = itemView.findViewById(R.id.server_name)
@@ -43,8 +45,11 @@ class ServerListAdapter(
         private val serverStatus: TextView = itemView.findViewById(R.id.server_status)
         private val serverLastConnected: TextView = itemView.findViewById(R.id.server_last_connected)
         private val serverUserInfo: TextView = itemView.findViewById(R.id.server_user_info)
+        
+        private var currentServer: Server? = null
 
         fun bind(server: Server) {
+            currentServer = server
             serverName.text = server.name
             serverUrl.text = server.url
             serverLastConnected.text = server.getLastConnectedDisplay()
@@ -75,9 +80,13 @@ class ServerListAdapter(
                 }
             }
 
-            // Set click listener
+            // Set click listeners
             itemView.setOnClickListener {
-                onServerClick(server)
+                currentServer?.let { onServerClick(it) }
+            }
+            
+            itemView.setOnLongClickListener {
+                currentServer?.let { onServerLongClick(it, itemView) } ?: false
             }
         }
 
