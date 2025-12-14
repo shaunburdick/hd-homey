@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hdhomey.app.domain.model.StreamToken
 import com.hdhomey.app.domain.usecase.GenerateStreamUrlUseCase
+import com.hdhomey.app.util.NetworkConnectivityHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,10 +29,12 @@ import javax.inject.Inject
  * Activity sets them on the player.
  *
  * @property generateStreamUrlUseCase Use case for generating authenticated stream URLs
+ * @property networkHelper Helper for checking network connectivity
  */
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val generateStreamUrlUseCase: GenerateStreamUrlUseCase
+    private val generateStreamUrlUseCase: GenerateStreamUrlUseCase,
+    private val networkHelper: NetworkConnectivityHelper
 ) : ViewModel() {
 
     // UI State
@@ -81,6 +84,16 @@ class PlayerViewModel @Inject constructor(
         serverUrl: String,
         resetRetryCount: Boolean = true
     ) {
+        // Check network connectivity before attempting to load
+        if (!networkHelper.isNetworkAvailable()) {
+            _uiState.value = PlayerUiState.Error(
+                message = "No internet connection. Please check your network and try again.",
+                isRetryable = true,
+                errorType = PlayerUiState.ErrorType.NETWORK
+            )
+            return
+        }
+        
         // Reset retry count for new stream loads
         if (resetRetryCount) {
             retryCount = 0
