@@ -43,6 +43,7 @@ class AuthenticationFragment : Fragment() {
     private lateinit var deviceCodeText: TextView
     private lateinit var pairingUrlText: TextView
     private lateinit var countdownText: TextView
+    private lateinit var statusText: TextView
     private lateinit var loadingIndicator: ProgressBar
     private lateinit var errorText: TextView
     private lateinit var buttonContainer: LinearLayout
@@ -76,6 +77,7 @@ class AuthenticationFragment : Fragment() {
         deviceCodeText = view.findViewById(R.id.text_device_code)
         pairingUrlText = view.findViewById(R.id.text_pairing_url)
         countdownText = view.findViewById(R.id.text_countdown)
+        statusText = view.findViewById(R.id.text_status)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
         errorText = view.findViewById(R.id.text_error)
         buttonContainer = view.findViewById(R.id.button_container)
@@ -117,11 +119,13 @@ class AuthenticationFragment : Fragment() {
         
         lifecycleScope.launch {
             try {
-                showLoading(true)
+                // Show connecting status
+                showStatus(getString(R.string.auth_status_connecting))
                 
                 // Load server
                 val server = repository.getServerById(serverId!!)
                 if (server == null) {
+                    hideStatus()
                     showError("Server not found")
                     showActionButtons(showRetry = false, showCancel = true)
                     return@launch
@@ -135,8 +139,14 @@ class AuthenticationFragment : Fragment() {
                 val httpClient = HdHomeyApi.createClient(server.url)
                 deviceCodeService = DeviceCodeService(server.url, httpClient)
                 
+                // Show generating code status
+                showStatus(getString(R.string.auth_status_generating))
+                
                 // Generate device code
                 val response = deviceCodeService.generateCode(getDeviceName())
+                
+                // Hide loading status once code is generated
+                hideStatus()
                 
                 // Display code and URL
                 showDeviceCode(response)
@@ -149,15 +159,17 @@ class AuthenticationFragment : Fragment() {
                 val expiresIn = java.time.Duration.between(java.time.Instant.now(), expiresAt).toMillis()
                 startCountdown(expiresIn)
                 
+                // Show waiting status with subtle indicator
+                showStatus(getString(R.string.auth_status_waiting), showLoading = false)
+                
                 // Start polling
                 startPolling(response)
                 
             } catch (e: Exception) {
                 Log.e(Constants.Tags.AUTH, "Failed to start authentication", e)
+                hideStatus()
                 showError(ErrorHandler.getCodeGenerationError(e))
                 showActionButtons(showRetry = true, showCancel = true)
-            } finally {
-                showLoading(false)
             }
         }
     }
@@ -195,6 +207,7 @@ class AuthenticationFragment : Fragment() {
             override fun onFinish() {
                 countdownText.text = getString(R.string.code_expired)
                 stopPolling()
+                hideStatus()
                 showError(Constants.Errors.AUTH_EXPIRED)
                 showActionButtons(showRetry = true, showCancel = true)
             }
@@ -223,12 +236,14 @@ class AuthenticationFragment : Fragment() {
                         }
                         "authorized" -> {
                             Log.d(Constants.Tags.AUTH, "Authorization successful!")
+                            showStatus(getString(R.string.auth_status_success), showLoading = false)
                             handleAuthorizationSuccess(pollResponse)
                             break
                         }
                         "expired" -> {
                             Log.d(Constants.Tags.AUTH, "Authorization expired")
                             countDownTimer?.cancel()
+                            hideStatus()
                             showError(Constants.Errors.AUTH_EXPIRED)
                             showActionButtons(showRetry = true, showCancel = true)
                             break
@@ -236,6 +251,7 @@ class AuthenticationFragment : Fragment() {
                         "denied" -> {
                             Log.d(Constants.Tags.AUTH, "Authorization denied")
                             countDownTimer?.cancel()
+                            hideStatus()
                             showError(Constants.Errors.AUTH_DENIED)
                             showActionButtons(showRetry = true, showCancel = true)
                             break
@@ -248,6 +264,7 @@ class AuthenticationFragment : Fragment() {
             } catch (e: Exception) {
                 Log.e(Constants.Tags.AUTH, "Polling error", e)
                 countDownTimer?.cancel()
+                hideStatus()
                 showError(ErrorHandler.getPollingError(e))
                 showActionButtons(showRetry = true, showCancel = true)
             }
@@ -320,6 +337,26 @@ class AuthenticationFragment : Fragment() {
     }
     
     /**
+     * Shows a status message (e.g., "Connecting...", "Waiting for authorization...").
+     * 
+     * @param message The status message to display
+     * @param showLoading Whether to show the loading indicator alongside the message
+     */
+    private fun showStatus(message: String, showLoading: Boolean = true) {
+        statusText.text = message
+        statusText.visibility = View.VISIBLE
+        loadingIndicator.visibility = if (showLoading) View.VISIBLE else View.GONE
+    }
+    
+    /**
+     * Hides the status message and loading indicator.
+     */
+    private fun hideStatus() {
+        statusText.visibility = View.GONE
+        loadingIndicator.visibility = View.GONE
+    }
+    
+    /**
      * Shows an error message (preserves device code visibility).
      */
     private fun showError(message: String) {
@@ -369,6 +406,8 @@ class AuthenticationFragment : Fragment() {
         deviceCodeText.text = getString(R.string.loading)
         pairingUrlText.text = getString(R.string.loading)
         countdownText.text = ""
+        hideError()
+        hideStatus()
         
         // Restart authentication flow
         startAuthenticationFlow()
@@ -384,6 +423,7 @@ class AuthenticationFragment : Fragment() {
         // Stop any ongoing operations
         stopPolling()
         countDownTimer?.cancel()
+        hideStatus()
         
         // Navigate back to server list
         findNavController().popBackStack()

@@ -44,6 +44,13 @@
     <string name="try_again">Try Again</string>
     <string name="loading">Loading…</string>
     
+    <!-- Authentication status messages -->
+    <string name="auth_status_connecting">Connecting to server…</string>
+    <string name="auth_status_generating">Generating device code…</string>
+    <string name="auth_status_waiting">Waiting for authorization…</string>
+    <string name="auth_status_checking">Checking authorization…</string>
+    <string name="auth_status_success">Authorization successful!</string>
+    
     <!-- Success -->
     <string name="success_title">You\'re Connected!</string>
     <string name="success_message">Your device is now paired with HD Homey</string>
