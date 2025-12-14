@@ -8,23 +8,23 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+# Copy root package files for monorepo workspace support
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
 RUN --mount=type=cache,target=/root/.npm \
-    if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-    elif [ -f package-lock.json ]; then npm ci; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i; \
-    else echo "Lockfile not found." && exit 1; \
-    fi
+    npm ci --workspace=apps/web --ignore-scripts
 
 # 2. Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY apps/web ./apps/web
 # Generate version.json if not present (for local builds without Git), create data directory, and build
 # Set SKIP_PREBUILD to skip linting during Docker builds for speed
 # Note: CI builds should pre-generate version.json before docker build for accurate Git metadata
-RUN if [ ! -f version.json ]; then node scripts/generate-version.mjs; fi && \
+RUN cd apps/web && \
+    if [ ! -f version.json ]; then node scripts/generate-version.mjs; fi && \
     mkdir -p ./data/db && \
     SKIP_PREBUILD=true npm run build
 
@@ -42,22 +42,22 @@ RUN apk add --no-cache ffmpeg
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-COPY --from=builder /app/migrations ./migrations
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/version.json ./version.json
+COPY --from=builder /app/apps/web/migrations ./migrations
+COPY --from=builder /app/apps/web/public ./public
+COPY --from=builder /app/apps/web/version.json ./version.json
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./.next/static
 
 # Copy migration script and dependencies
-COPY --from=builder --chown=nextjs:nodejs /app/src/scripts/migrate.mjs ./src/scripts/migrate.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/src/scripts/migrate.mjs ./src/scripts/migrate.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 
 # Copy entrypoint script
-COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
+COPY --chown=nextjs:nodejs apps/web/docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Create data directory with correct ownership
