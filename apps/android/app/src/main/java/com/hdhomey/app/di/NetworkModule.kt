@@ -121,5 +121,23 @@ object NetworkModule {
             .build()
     }
 
-    // TODO T024: Add HdHomeyApiService provider here
+    /**
+     * Provides HdHomeyApiService implementation.
+     *
+     * Retrofit creates the implementation automatically from the interface.
+     * All API endpoints are defined in HdHomeyApiService.
+     *
+     * Endpoints:
+     * - GET /api/tuners/{tunerId}/channels - Fetch channel lineup
+     * - POST /api/stream-token - Generate HLS stream token
+     * - GET /api/preferences/channels - Fetch user channel preferences
+     *
+     * @param retrofit Configured Retrofit instance with base URL and converters
+     * @return HdHomeyApiService implementation
+     */
+    @Provides
+    @Singleton
+    fun provideHdHomeyApiService(retrofit: Retrofit): com.hdhomey.app.api.HdHomeyApiService {
+        return retrofit.create(com.hdhomey.app.api.HdHomeyApiService::class.java)
+    }
 }
