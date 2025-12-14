@@ -44,12 +44,49 @@
         android:id="@+id/successFragment"
         android:name="com.hdhomey.app.ui.success.SuccessFragment"
         android:label="Success">
-        <!-- After success, navigate back to server list -->
+        <argument
+            android:name="serverId"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="serverName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="username"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="role"
+            app:argType="string"
+            app:nullable="true" />
+        <!-- Phase 2: Navigate to channel list instead of server list -->
+        <action
+            android:id="@+id/action_success_to_channelList"
+            app:destination="@id/channelListFragment"
+            app:popUpTo="@id/serverListFragment"
+            app:popUpToInclusive="false" />
+        <!-- Legacy action for backward compatibility -->
         <action
             android:id="@+id/action_success_to_serverList"
             app:destination="@id/serverListFragment"
             app:popUpTo="@id/serverListFragment"
             app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Channel List Fragment (Phase 2) -->
+    <fragment
+        android:id="@+id/channelListFragment"
+        android:name="com.hdhomey.app.ui.channels.ChannelListFragment"
+        android:label="Channels">
+        <argument
+            android:name="tunerId"
+            app:argType="integer"
+            app:nullable="false" />
+        <argument
+            android:name="tunerName"
+            app:argType="string"
+            android:defaultValue="HD Homey" />
     </fragment>
 
 </navigation>

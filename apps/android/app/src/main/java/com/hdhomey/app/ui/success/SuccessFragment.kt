@@ -15,12 +15,12 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.hdhomey.app.R
 
-/**
- * Success fragment shown after successful authentication.
- * 
- * Displays server name, username, and role with a success animation,
- * then allows user to return to the server list.
- */
+    /**
+     * Success fragment shown after successful authentication.
+     * 
+     * Displays server name, username, and role with a success animation,
+     * then navigates to the channel list to browse available channels.
+     */
 class SuccessFragment : Fragment() {
     
     private lateinit var successIcon: ImageView
@@ -64,9 +64,15 @@ class SuccessFragment : Fragment() {
         // Animate the success screen
         animateSuccess()
         
-        // Done button navigates back to server list
+        // Done button navigates to channel list
         doneButton.setOnClickListener {
-            findNavController().navigate(R.id.action_success_to_serverList)
+            // Navigate to channel list with tuner info
+            // Default to tunerId=1 (first tuner) since we don't have tuner selection yet
+            val bundle = Bundle().apply {
+                putInt("tunerId", 1)
+                putString("tunerName", serverName)
+            }
+            findNavController().navigate(R.id.action_success_to_channelList, bundle)
         }
     }
     
