@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Database Migrations in Docker**: Fixed database path resolution to prevent "no such table" errors when redeploying with latest images. The monorepo structure caused working directory ambiguity where relative paths resolved differently for migration script vs. Next.js app. The entrypoint script now normalizes relative paths to absolute paths while maintaining full backwards compatibility with existing `HD_HOMEY_DB_PATH` configurations.
+- **Static Asset 404s in Docker**: Fixed Next.js static assets (JS/CSS) returning 404 errors in production. The Dockerfile was copying `.next/static` to the wrong location - Next.js standalone server expects static files at `apps/web/.next/static/` relative to the server's working directory.
 
 ### Added
 
