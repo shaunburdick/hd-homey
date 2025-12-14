@@ -68,7 +68,7 @@
                 android:layout_marginBottom="@dimen/tv_margin_medium"
                 android:contentDescription="@string/servers_empty_title"
                 android:src="@android:drawable/ic_menu_add"
-                android:tint="@color/text_tertiary" />
+                app:tint="@color/text_tertiary" />
 
             <TextView
                 android:layout_width="wrap_content"

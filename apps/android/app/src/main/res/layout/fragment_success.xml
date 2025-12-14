@@ -15,7 +15,7 @@
         android:layout_marginBottom="@dimen/tv_margin_medium"
         android:contentDescription="@string/success_title"
         android:src="@android:drawable/checkbox_on_background"
-        android:tint="@color/success_green"
+        app:tint="@color/success_green"
         android:alpha="0"
         android:scaleX="0.5"
         android:scaleY="0.5"
