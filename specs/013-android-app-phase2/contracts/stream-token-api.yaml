@@ -1,0 +1,202 @@
+openapi: 3.0.3
+info:
+  title: HD Homey Stream Token API
+  description: API for generating short-lived HMAC tokens for HLS video streaming
+  version: 1.0.0
+  contact:
+    name: HD Homey API Support
+
+servers:
+  - url: https://{server}/api
+    description: HD Homey server
+    variables:
+      server:
+        default: localhost:3000
+        description: HD Homey server hostname and port
+
+paths:
+  /stream-token:
+    post:
+      summary: Generate stream token for HLS playback
+      description: |
+        Generates a short-lived HMAC-SHA256 signed token for streaming a specific channel.
+        Requires valid JWT session authentication (Authorization header).
+        
+        Token is valid for 15 minutes and grants access to:
+        - HLS playlist: /api/transcode/{tunerId}/{channelId}/playlist.m3u8?token={token}
+        - HLS segments: /api/transcode/{tunerId}/{channelId}/{segment}?token={token}
+        
+        Token format: base64url(tunerId:channelId:expiresAt:signature)
+        where signature = HMAC-SHA256(tunerId:channelId:expiresAt, streamSecret).slice(0, 32)
+      operationId: generateStreamToken
+      tags:
+        - Streaming
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamTokenRequest'
+            examples:
+              channelStream:
+                summary: Request token for channel 2.1 on tuner 1
+                value:
+                  tunerId: 1
+                  channelId: 5
+      responses:
+        '200':
+          description: Stream token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamTokenResponse'
+              examples:
+                success:
+                  summary: Typical token response
+                  value:
+                    token: "MToxOjE3MzQyMDQ4MDA6YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXow"
+                    expiresAt: 1734204800
+                    tunerId: 1
+                    channelId: 5
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/ChannelNotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    StreamTokenRequest:
+      type: object
+      required:
+        - tunerId
+        - channelId
+      properties:
+        tunerId:
+          type: integer
+          format: int32
+          description: Tuner ID
+          minimum: 1
+          example: 1
+        channelId:
+          type: integer
+          format: int32
+          description: Channel ID (database primary key, not guideNumber)
+          minimum: 1
+          example: 5
+
+    StreamTokenResponse:
+      type: object
+      required:
+        - token
+        - expiresAt
+        - tunerId
+        - channelId
+      properties:
+        token:
+          type: string
+          description: |
+            Base64url-encoded HMAC token.
+            Append to HLS URLs as query parameter: ?token={token}
+          example: "MToxOjE3MzQyMDQ4MDA6YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXow"
+        expiresAt:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) when token expires
+          example: 1734204800
+        tunerId:
+          type: integer
+          format: int32
+          description: Tuner ID (echoed from request)
+          example: 1
+        channelId:
+          type: integer
+          format: int32
+          description: Channel ID (echoed from request)
+          example: 5
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Detailed error description
+          example: "tunerId and channelId are required"
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            missingParams:
+              summary: Missing required parameters
+              value:
+                error: "Bad Request"
+                message: "tunerId and channelId are required"
+            invalidParams:
+              summary: Invalid parameter types
+              value:
+                error: "Bad Request"
+                message: "tunerId must be a positive integer"
+    
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+            message: "Valid authentication token required"
+    
+    ChannelNotFound:
+      description: Channel does not exist for specified tuner
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Not Found"
+            message: "Channel 999 not found on tuner 1"
+    
+    InternalServerError:
+      description: Server error occurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Internal Server Error"
+            message: "Failed to generate stream token"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from device pairing flow.
+        Include in Authorization header: `Authorization: Bearer <token>`
+        
+        Token expiry: 7 days
+        Refresh: Re-authenticate via device pairing flow when expired
+
+tags:
+  - name: Streaming
+    description: HLS streaming token operations
+
+externalDocs:
+  description: Stream token implementation
+  url: https://github.com/shaunburdick/hd-homey/blob/main/apps/web/src/lib/stream-token.ts

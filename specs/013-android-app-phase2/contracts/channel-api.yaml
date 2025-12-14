@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: HD Homey Channel API
+  description: API for retrieving channel lineup from HDHomeRun tuners
+  version: 1.0.0
+  contact:
+    name: HD Homey API Support
+
+servers:
+  - url: https://{server}/api
+    description: HD Homey server
+    variables:
+      server:
+        default: localhost:3000
+        description: HD Homey server hostname and port
+
+paths:
+  /tuners/{tunerId}/channels:
+    get:
+      summary: Get channel lineup for a tuner
+      description: |
+        Returns all channels discovered on the specified tuner.
+        Requires valid JWT session authentication (Authorization header).
+        
+        Channels are returned in database order (by ID).
+        Android app should sort by guideNumber for display.
+      operationId: getTunerChannels
+      tags:
+        - Channels
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tunerId
+          in: path
+          required: true
+          description: The tuner ID (integer)
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+          example: 1
+      responses:
+        '200':
+          description: Channel lineup retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Channel'
+              examples:
+                success:
+                  summary: Typical channel lineup
+                  value:
+                    data:
+                      - id: 1
+                        fk_tuner: 1
+                        guideNumber: "2.1"
+                        guideName: "CBS"
+                        videoCodec: "H264"
+                        audioCodec: "AAC"
+                        hd: 1
+                        url: "http://192.168.1.100:5004/auto/v2.1"
+                        is_active: true
+                        created_at: 1702512345
+                        modified_at: 1702512345
+                        deleted_at: null
+                      - id: 2
+                        fk_tuner: 1
+                        guideNumber: "4.1"
+                        guideName: "NBC"
+                        videoCodec: "H264"
+                        audioCodec: "AAC"
+                        hd: 1
+                        url: "http://192.168.1.100:5004/auto/v4.1"
+                        is_active: true
+                        created_at: 1702512350
+                        modified_at: 1702512350
+                        deleted_at: null
+                      - id: 3
+                        fk_tuner: 1
+                        guideNumber: "7.1"
+                        guideName: "ABC"
+                        videoCodec: "MPEG2"
+                        audioCodec: "AC3"
+                        hd: 0
+                        url: "http://192.168.1.100:5004/auto/v7.1"
+                        is_active: true
+                        created_at: 1702512355
+                        modified_at: 1702512355
+                        deleted_at: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/TunerNotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Channel:
+      type: object
+      description: Channel entity from SQLite database
+      required:
+        - id
+        - fk_tuner
+        - guideNumber
+        - guideName
+        - videoCodec
+        - audioCodec
+        - hd
+        - url
+        - is_active
+        - created_at
+        - modified_at
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: Channel primary key (auto-increment)
+          example: 1
+        fk_tuner:
+          type: integer
+          format: int32
+          description: Foreign key to tuners table
+          example: 1
+        guideNumber:
+          type: string
+          description: |
+            Channel number as displayed in TV guide (e.g., "2.1", "13.1").
+            Format: major.minor where both are integers.
+          pattern: '^\d+\.\d+$'
+          example: "2.1"
+        guideName:
+          type: string
+          description: Channel name (station call letters or network name)
+          maxLength: 255
+          example: "CBS"
+        videoCodec:
+          type: string
+          description: Video codec (H264, MPEG2, HEVC, etc.)
+          example: "H264"
+        audioCodec:
+          type: string
+          description: Audio codec (AAC, AC3, MP3, etc.)
+          example: "AAC"
+        hd:
+          type: integer
+          format: int32
+          description: HD flag (1 = HD, 0 = SD)
+          enum: [0, 1]
+          example: 1
+        url:
+          type: string
+          format: uri
+          description: Direct stream URL from HDHomeRun device
+          example: "http://192.168.1.100:5004/auto/v2.1"
+        is_active:
+          type: boolean
+          description: Whether channel is currently active
+          example: true
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) when channel was created
+          example: 1702512345
+        modified_at:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) when channel was last modified
+          example: 1702512345
+        deleted_at:
+          type: integer
+          format: int64
+          nullable: true
+          description: Unix timestamp (seconds) when channel was soft-deleted (null if active)
+          example: null
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Not Found"
+        message:
+          type: string
+          description: Detailed error description
+          example: "Tuner with ID 999 not found"
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+            message: "Valid authentication token required"
+    
+    TunerNotFound:
+      description: Tuner does not exist or was deleted
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Not Found"
+            message: "Tuner not found"
+    
+    InternalServerError:
+      description: Server error occurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Internal Server Error"
+            message: "An unexpected error occurred"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from device pairing flow.
+        Include in Authorization header: `Authorization: Bearer <token>`
+        
+        Token expiry: 7 days
+        Refresh: Re-authenticate via device pairing flow when expired
+
+tags:
+  - name: Channels
+    description: Channel lineup operations
