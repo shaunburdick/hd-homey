@@ -1,328 +1,274 @@
-# Quick Reference: Continuing Android Development
+# Phase 1.5 UI Polish - Task Breakdown Summary
 
-**Last Updated**: December 13, 2025  
-**Current Status**: Phase 1.2 ✅ Complete, Phase 1.3 Ready to Start  
-**Branch**: `013-android-app`  
-**Last Commit**: `c9b7937` - Multi-server management
+**Date**: 2025-01-13  
+**Status**: Documented - Ready to Implement
 
----
+## Overview
 
-## Current State
+Comprehensive audit of Android app UI identified **11 critical usability issues** causing "dead-ends" where users get stuck. This document provides the implementation plan to fix these issues.
 
-### ✅ What's Complete
-- **Phase 1.1**: Android project setup, basic navigation, placeholder fragments
-- **Phase 1.2**: Multi-server management (add/list/select servers with health checks)
+## Documents Created
 
-### 🚧 What's Next
-- **Phase 1.3**: Device code pairing integration (6-8 hours)
-  - Update AuthenticationFragment to receive serverId
-  - Implement device code API client (POST /code, GET /poll)
-  - Store JWT in server object after successful pairing
+1. **`UI-ISSUES.md`** - Detailed analysis of all 11 issues with examples and impact
+2. **`tasks.md`** - Updated with 38 specific implementation tasks (1.5.21-1.5.58)
+3. **`CONTINUE-HERE.md`** - This file - Start here for implementation
 
----
+## Issue Summary
 
-## Quick Commands
+| Priority | Count | Estimated Hours |
+|----------|-------|----------------|
+| **Critical (1.5A)** | 3 issues | 4-6 hours |
+| **High (1.5B)** | 4 issues | 3-4 hours |
+| **Medium (1.5C)** | 4 issues | 2-3 hours |
+| **TOTAL** | **11 issues** | **9-13 hours** |
 
-### Build & Run
-```bash
-# Set Java home
-export JAVA_HOME=/snap/android-studio/209/jbr
+## Critical Issues (Phase 1.5A - MUST FIX)
 
-# Build APK
-cd /home/shaunburdick/github/shaunburdick/hd-homey/apps/android
-./gradlew assembleDebug
+### 1. AuthenticationFragment: No Error Recovery
+**Problem**: Users get stuck when errors occur (connection fails, code expires, auth denied)
 
-# Start emulator (if not running)
-export ANDROID_HOME=~/Android/Sdk
-$ANDROID_HOME/emulator/emulator @HD_Homey_TV_API31 -no-audio -no-boot-anim -no-window &
+**Tasks (5)**:
+- 1.5.21 - Add "Try Again" button to layout
+- 1.5.22 - Add "Cancel" button to layout
+- 1.5.23 - Implement retry logic (regenerate code, restart polling)
+- 1.5.24 - Implement cancel logic (stop polling, navigate back)
+- 1.5.25 - Preserve code visibility on errors (don't show "ERROR")
 
-# Wait for boot
-adb wait-for-device
-sleep 5
-
-# Install and launch
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell monkey -p com.hdhomey.app.debug -c android.intent.category.LAUNCHER 1
-
-# View logs
-adb logcat -s "ServerListFragment:D" "AddServerFragment:D" "MainActivity:D"
-```
-
-### Git Commands
-```bash
-cd /home/shaunburdick/github/shaunburdick/hd-homey
-
-# Check status
-git status
-git log --oneline -5
-
-# Pull latest
-git pull origin 013-android-app
-
-# Push changes
-git push origin 013-android-app
-```
+**Impact**: HIGH - Users currently must restart app to recover from errors
 
 ---
 
-## Environment Setup (If Switching Computers)
+### 2. ServerListFragment: No Server Management
+**Problem**: Can't delete or edit servers - list becomes cluttered forever
 
-### WSL2 Requirements
-```bash
-# System packages (already installed on current machine)
-sudo apt-get install -y libpulse0 libnss3 libnss3-tools libxkbfile1 \
-  libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 libcups2t64 \
-  libxss1 libxrandr2 libasound2t64 libatk1.0-0t64 libatk-bridge2.0-0t64 \
-  libpango-1.0-0 libcairo2 libatspi2.0-0t64
+**Tasks (6)**:
+- 1.5.26 - Add swipe-to-delete with ItemTouchHelper
+- 1.5.27 - Add delete confirmation dialog
+- 1.5.28 - Add long-press context menu
+- 1.5.29 - Add "Edit Server" option
+- 1.5.30 - Add "Delete Server" option in menu
+- 1.5.31 - Update ServerRepository with delete method
 
-# KVM access (already configured)
-sudo usermod -aG kvm $USER
-```
-
-### Environment Variables
-```bash
-# Add to ~/.bashrc or set per-session
-export JAVA_HOME=/snap/android-studio/209/jbr
-export ANDROID_HOME=~/Android/Sdk
-export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator
-```
-
-### Android Studio (if needed)
-- Install from: https://developer.android.com/studio
-- Or use snap: `sudo snap install android-studio --classic`
-- SDK location: `~/Android/Sdk`
-- JDK: Built-in JDK at `/snap/android-studio/209/jbr`
-
-### Emulator (already created)
-```bash
-# List emulators
-$ANDROID_HOME/emulator/emulator -list-avds
-
-# Current emulator: HD_Homey_TV_API31 (Android TV, API 31, 1920x1080)
-```
+**Impact**: HIGH - Users stuck with typos, test servers, can't clean up
 
 ---
 
-## Project Structure
+### 3. AddServerFragment: No Health Check Retry
+**Problem**: Health check fails → user stuck looking at error
 
-```
-apps/android/
-├── app/
-│   ├── src/main/
-│   │   ├── java/com/hdhomey/app/
-│   │   │   ├── data/
-│   │   │   │   ├── model/Server.kt               # NEW (Phase 1.2)
-│   │   │   │   └── repository/ServerRepository.kt # NEW (Phase 1.2)
-│   │   │   ├── storage/
-│   │   │   │   └── AppPreferences.kt              # NEW (Phase 1.2)
-│   │   │   ├── ui/
-│   │   │   │   ├── auth/AuthenticationFragment.kt  # Phase 1.1 (needs update)
-│   │   │   │   ├── servers/                        # NEW (Phase 1.2)
-│   │   │   │   │   ├── AddServerFragment.kt
-│   │   │   │   │   ├── ServerListAdapter.kt
-│   │   │   │   │   └── ServerListFragment.kt
-│   │   │   │   ├── setup/ServerSetupFragment.kt    # LEGACY (will remove)
-│   │   │   │   └── success/SuccessFragment.kt
-│   │   │   ├── util/                               # NEW (Phase 1.2)
-│   │   │   │   ├── Constants.kt
-│   │   │   │   └── UrlValidator.kt
-│   │   │   └── MainActivity.kt
-│   │   ├── res/
-│   │   │   ├── layout/
-│   │   │   │   ├── fragment_add_server.xml         # NEW (Phase 1.2)
-│   │   │   │   ├── fragment_server_list.xml        # NEW (Phase 1.2)
-│   │   │   │   ├── item_server.xml                 # NEW (Phase 1.2)
-│   │   │   │   └── [other layouts]
-│   │   │   └── navigation/nav_graph.xml            # UPDATED (Phase 1.2)
-│   │   └── AndroidManifest.xml
-│   └── build.gradle.kts                             # UPDATED (Phase 1.2)
-├── gradle/
-│   ├── libs.versions.toml                           # UPDATED (Phase 1.2)
-│   └── wrapper/gradle-wrapper.properties
-├── build.gradle.kts
-├── settings.gradle.kts
-├── local.properties                                  # LOCAL (not in git)
-├── LAUNCH-IN-ANDROID-STUDIO.md                      # NEW (Phase 1.2)
-├── QUICKSTART.md
-├── SETUP.md
-└── DEVELOPMENT.md
+**Tasks (4)**:
+- 1.5.32 - Add "Retry" button to layout error state
+- 1.5.33 - Show retry button on failure
+- 1.5.34 - Implement retry logic
+- 1.5.35 - Consider auto-retry for transient errors
 
-specs/013-android-app-phase1/
-├── plan.md                                          # Phase 1 architecture
-├── tasks.md                                         # UPDATED (Phase 1.2 complete)
-├── PHASE1.1-COMPLETE.md                             # Phase 1.1 summary
-└── PHASE1.2-COMPLETE.md                             # NEW (Phase 1.2 summary)
-```
+**Impact**: MEDIUM - Users can click Connect again, but not obvious
 
 ---
 
-## Phase 1.3 Roadmap
+## High Priority Issues (Phase 1.5B - SHOULD FIX)
 
-### Files to Create
-```
-apps/android/app/src/main/java/com/hdhomey/app/
-├── api/
-│   ├── HdHomeyApi.kt              # OkHttp client with dynamic base URL
-│   ├── DeviceCodeService.kt       # Device code API calls
-│   └── models/
-│       ├── DeviceCodeRequest.kt
-│       ├── DeviceCodeResponse.kt
-│       └── PollResponse.kt
-```
+### 4. Error Messages Not Actionable
+**Problem**: Generic errors like "Connection error" don't help users fix issues
 
-### Files to Update
-```
-apps/android/app/src/main/java/com/hdhomey/app/ui/
-├── auth/AuthenticationFragment.kt   # Add serverId argument, device code logic
-└── success/SuccessFragment.kt       # Show server name, user info
-```
+**Tasks (4)**:
+- 1.5.36 - Update Constants.kt with actionable messages
+- 1.5.37 - Add error helper with suggestions
+- 1.5.38 - Distinguish error types (network/server/auth)
+- 1.5.39 - Add troubleshooting tips
 
-### API Endpoints to Implement
+**Example Fix**:
 ```kotlin
-// POST /api/auth/device/code
-data class DeviceCodeRequest(
-    val deviceName: String,
-    val deviceType: String = "android_tv"
-)
+// Before
+"Connection error"
 
-data class DeviceCodeResponse(
-    val deviceCode: String,        // "ABCD12"
-    val userCode: String,           // Same as deviceCode
-    val verificationUri: String,    // "http://192.168.1.100:3000/pair"
-    val expiresIn: Int,             // 300 (5 minutes)
-    val interval: Int               // 3 (seconds between polls)
-)
-
-// GET /api/auth/device/poll?code=ABCD12
-data class PollResponse(
-    val status: String,             // "pending" | "authorized" | "expired" | "denied"
-    val token: String?,             // JWT if authorized
-    val expiresAt: Long?,           // Token expiration timestamp
-    val user: UserInfo?
-)
-
-data class UserInfo(
-    val username: String,
-    val role: String                // "admin" | "viewer"
-)
-```
-
-### Implementation Flow
-1. User selects server from ServerListFragment
-2. Navigate to AuthenticationFragment with serverId bundle
-3. AuthenticationFragment loads server from repository
-4. POST to `{serverUrl}/api/auth/device/code`
-5. Display code prominently (96sp text for TV)
-6. Poll `{serverUrl}/api/auth/device/poll?code=XXX` every 3 seconds
-7. On authorized: Extract JWT, parse token for username/role
-8. Update server in repository: `updateServerAuthentication(serverId, jwt, expiresAt, username, role)`
-9. Navigate to SuccessFragment
-10. Return to ServerListFragment showing "● Authenticated"
-
----
-
-## Testing Strategy
-
-### Manual Testing Checklist for Phase 1.3
-- [ ] Add server with HTTP URL
-- [ ] Select server → Navigate to authentication
-- [ ] Device code displays (6 characters, 96sp)
-- [ ] Pairing URL shows below code
-- [ ] Open backend URL in browser, enter code
-- [ ] Authorization succeeds, app polls and receives JWT
-- [ ] Navigate to success screen
-- [ ] Return to server list, status shows "● Authenticated"
-- [ ] Verify JWT stored in AppPreferences
-- [ ] Select authenticated server → Should navigate to main app (Phase 2 placeholder)
-
-### Backend Setup for Testing
-```bash
-# Start HD Homey backend
-cd ~/github/shaunburdick/hd-homey/apps/web
-npm run dev
-
-# Backend should be running on http://192.168.1.100:3000
-# Health endpoint: http://192.168.1.100:3000/api/health
-# Pairing page: http://192.168.1.100:3000/pair
+// After
+"Cannot reach server. Check your network connection and server URL, then try again."
 ```
 
 ---
 
-## Common Issues & Solutions
+### 5. Minimal Loading Feedback
+**Problem**: Users don't know what's happening during async operations
 
-### Gradle Build Errors
-```bash
-# Clean build
-./gradlew clean
+**Tasks (4)**:
+- 1.5.40 - Add status TextView for operation states
+- 1.5.41 - Show prominent loading indicator
+- 1.5.42 - Add polling indicator
+- 1.5.43 - Update UI states (loading → code → polling → result)
 
-# Clear Gradle cache
-rm -rf ~/.gradle/caches
+---
 
-# Rebuild
-./gradlew assembleDebug
+### 6. URL Validation Too Aggressive
+**Problem**: Errors show while user is typing (annoying)
+
+**Tasks (4)**:
+- 1.5.44 - Delay validation until onBlur or 500ms after typing
+- 1.5.45 - Add placeholder: "http://192.168.1.100:3000"
+- 1.5.46 - Add hint text
+- 1.5.47 - Add help icon with examples
+
+---
+
+## Medium Priority (Phase 1.5C - CAN DEFER)
+
+### 7-10. Polish Items
+- Visual feedback on server clicks
+- Highlight active server
+- Improve empty states
+- Success animations
+
+**Tasks (8)**: 1.5.2 through 1.5.8 (already in tasks.md)
+
+---
+
+## Implementation Order
+
+### Recommended Sequence
+
+**Week 1 - Critical Fixes (Phase 1.5A)**:
+1. **Day 1-2**: AuthenticationFragment retry/cancel (tasks 1.5.21-1.5.25)
+2. **Day 3-4**: ServerListFragment delete/edit (tasks 1.5.26-1.5.31)
+3. **Day 5**: AddServerFragment retry (tasks 1.5.32-1.5.35)
+
+**Week 2 - High Priority (Phase 1.5B)**:
+4. **Day 1**: Improve error messages (tasks 1.5.36-1.5.39)
+5. **Day 2**: Better loading feedback (tasks 1.5.40-1.5.43)
+6. **Day 3**: URL validation UX (tasks 1.5.44-1.5.47)
+
+**Week 3 - Manual Testing**:
+7. **Day 1-2**: Manual testing (tasks 1.5.48-1.5.58)
+8. **Day 3**: Fix bugs found in testing
+9. **Day 4-5**: Phase 1.5C polish (optional)
+
+---
+
+## Testing Plan
+
+After implementing fixes, test these scenarios:
+
+### Authentication Flow Testing
+1. ✅ Start auth → Cancel mid-flow → Returns to server list
+2. ✅ Auth fails → Click "Try Again" → Generates new code
+3. ✅ Code expires → Click "Try Again" → Starts fresh
+4. ✅ Network error → Click "Try Again" → Retries successfully
+
+### Server Management Testing
+5. ✅ Swipe server → Confirm delete → Server removed
+6. ✅ Long-press server → Select "Edit" → Can modify details
+7. ✅ Long-press server → Select "Delete" → Confirmation shown
+8. ✅ Delete active server → Active server cleared
+
+### Error Handling Testing
+9. ✅ Health check fails → "Retry" button shown → Click works
+10. ✅ Network error → Error message explains issue + retry option
+11. ✅ Invalid URL → Validation delayed, helpful message shown
+
+### Polish Testing (Optional)
+12. ✅ Click server → Loading state shown briefly
+13. ✅ Active server highlighted in list
+14. ✅ Empty state shows welcoming message
+
+---
+
+## Files to Modify
+
+### Layouts (XML)
+- `apps/android/app/src/main/res/layout/fragment_authentication.xml`
+- `apps/android/app/src/main/res/layout/fragment_add_server.xml`
+- `apps/android/app/src/main/res/layout/fragment_server_list.xml`
+- `apps/android/app/src/main/res/values/strings.xml` (add new strings)
+
+### Kotlin Files
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/auth/AuthenticationFragment.kt`
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/AddServerFragment.kt`
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/ServerListFragment.kt`
+- `apps/android/app/src/main/java/com/hdhomey/app/data/repository/ServerRepository.kt`
+- `apps/android/app/src/main/java/com/hdhomey/app/util/Constants.kt`
+
+### New Files to Create
+- `apps/android/app/src/main/java/com/hdhomey/app/util/ErrorHelper.kt` (optional)
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/common/LoadingState.kt` (optional)
+
+---
+
+## Design Patterns to Use
+
+### 1. ItemTouchHelper for Swipe-to-Delete
+```kotlin
+val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+    override fun onMove(...) = false
+    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+        val position = viewHolder.adapterPosition
+        showDeleteConfirmation(position)
+    }
+})
+itemTouchHelper.attachToRecyclerView(recyclerView)
 ```
 
-### Emulator Not Starting
-```bash
-# Check emulator status
-$ANDROID_HOME/emulator/emulator -list-avds
-
-# Kill all emulator processes
-pkill -f emulator
-
-# Start with verbose logging
-$ANDROID_HOME/emulator/emulator @HD_Homey_TV_API31 -verbose
+### 2. AlertDialog for Confirmations
+```kotlin
+AlertDialog.Builder(requireContext())
+    .setTitle("Delete Server?")
+    .setMessage("Are you sure you want to delete ${server.name}?")
+    .setPositiveButton("Delete") { _, _ -> deleteServer(server) }
+    .setNegativeButton("Cancel", null)
+    .show()
 ```
 
-### ADB Not Detecting Device
-```bash
-# Restart ADB server
-adb kill-server
-adb start-server
-
-# Check devices
-adb devices
-
-# If no devices, wait for emulator boot
-adb wait-for-device
-```
-
-### App Not Launching
-```bash
-# Clear app data
-adb shell pm clear com.hdhomey.app.debug
-
-# Uninstall and reinstall
-adb uninstall com.hdhomey.app.debug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+### 3. PopupMenu for Context Actions
+```kotlin
+val popup = PopupMenu(requireContext(), view)
+popup.inflate(R.menu.server_context_menu)
+popup.setOnMenuItemClickListener { item ->
+    when (item.itemId) {
+        R.id.action_edit -> editServer(server)
+        R.id.action_delete -> confirmDelete(server)
+    }
+    true
+}
+popup.show()
 ```
 
 ---
 
-## Documentation References
+## Success Metrics
 
-### Project Docs
-- Main plan: `specs/013-android-app-phase1/plan.md`
-- Tasks: `specs/013-android-app-phase1/tasks.md`
-- Phase 1.1 summary: `specs/013-android-app-phase1/PHASE1.1-COMPLETE.md`
-- Phase 1.2 summary: `specs/013-android-app-phase1/PHASE1.2-COMPLETE.md`
-- Android Studio guide: `apps/android/LAUNCH-IN-ANDROID-STUDIO.md`
-
-### External Resources
-- Android TV guidelines: https://developer.android.com/design/ui/tv
-- Kotlin coroutines: https://kotlinlang.org/docs/coroutines-overview.html
-- OkHttp: https://square.github.io/okhttp/
-- Material Design: https://m3.material.io/
+Phase 1.5 UI polish is complete when:
+- ✅ All 86 unit tests still passing
+- ✅ No dead-ends in user flows (every error has recovery path)
+- ✅ Users can delete/edit servers
+- ✅ Error messages are actionable
+- ✅ Loading states provide feedback
+- ✅ Manual testing scenarios all pass
 
 ---
 
-## Summary
+## Next Steps
 
-**You're ready to continue!** Phase 1.2 is committed and ready. Next is Phase 1.3 (device code pairing), which will integrate the authentication flow with the server selection UI you just built.
+**Choose one**:
 
-**Current branch**: `013-android-app`  
-**Last commit**: `c9b7937`  
-**Build status**: ✅ SUCCESS (52s, ~19MB APK)  
-**Emulator**: HD_Homey_TV_API31 (Android 12, API 31)
+### Option A: Start implementing now
+Run: `/implement-ui-polish` (if you want me to start coding)
 
-Pull the latest changes on your new machine, set up the environment, and you're good to go! 🚀
+### Option B: Review tasks first
+- Review `UI-ISSUES.md` for detailed analysis
+- Review `tasks.md` tasks 1.5.21-1.5.58
+- Prioritize which fixes to do first
+
+### Option C: Manual testing first
+- Build current app and test on emulator
+- Experience the dead-ends firsthand
+- Then implement fixes
+
+**Recommendation**: Start with Option A - implement Phase 1.5A critical fixes (tasks 1.5.21-1.5.35). These are blocking user flows and must be fixed before Phase 2.
+
+---
+
+## Questions?
+
+- Which phase should we start with (1.5A, 1.5B, or 1.5C)?
+- Want to implement all at once or incrementally?
+- Should we do manual testing before or after fixes?
+
+Let me know and I'll continue! 🚀
