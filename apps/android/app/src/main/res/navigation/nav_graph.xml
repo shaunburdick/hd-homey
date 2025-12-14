@@ -15,6 +15,9 @@
         <action
             android:id="@+id/action_serverList_to_authentication"
             app:destination="@id/authenticationFragment" />
+        <action
+            android:id="@+id/action_serverList_to_channelList"
+            app:destination="@id/channelListFragment" />
     </fragment>
 
     <!-- Add Server Fragment (Phase 1.2) -->

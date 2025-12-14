@@ -174,7 +174,7 @@ class ServerListFragment : Fragment() {
      * Handles server item click.
      *
      * Logic:
-     * - If authenticated and token valid → Set as active, navigate to main app (Phase 2)
+     * - If authenticated and token valid → Set as active, navigate to channel list (Phase 2)
      * - If token expired or not authenticated → Navigate to authentication
      * 
      * Shows loading indicator briefly for visual feedback.
@@ -201,10 +201,8 @@ class ServerListFragment : Fragment() {
 
         when {
             server.isAuthenticated() -> {
-                Log.d(Constants.Tags.SERVER_LIST, "Server is authenticated, token valid")
-                // TODO Phase 2: Navigate to main app
-                // For now, show a placeholder or re-authenticate
-                navigateToAuthentication(server)
+                Log.d(Constants.Tags.SERVER_LIST, "Server is authenticated, navigating to channel list")
+                navigateToChannelList(server)
             }
             else -> {
                 Log.d(Constants.Tags.SERVER_LIST, "Server needs authentication")
@@ -329,5 +327,19 @@ class ServerListFragment : Fragment() {
             putString("serverId", server.id)
         }
         findNavController().navigate(R.id.action_serverList_to_authentication, bundle)
+    }
+
+    /**
+     * Navigates to Channel List screen for an authenticated server.
+     *
+     * Passes tuner ID and server name as arguments to channel list fragment.
+     * Defaults to tunerId=1 for single-tuner setups.
+     */
+    private fun navigateToChannelList(server: Server) {
+        val bundle = Bundle().apply {
+            putInt("tunerId", 1) // Default to first tuner
+            putString("tunerName", server.name)
+        }
+        findNavController().navigate(R.id.action_serverList_to_channelList, bundle)
     }
 }
