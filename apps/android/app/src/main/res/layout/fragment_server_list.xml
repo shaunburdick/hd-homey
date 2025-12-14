@@ -32,6 +32,22 @@
             android:clipToPadding="false"
             android:padding="@dimen/tv_margin_small"
             tools:listitem="@layout/item_server" />
+        
+        <!-- Skeleton Loading State -->
+        <LinearLayout
+            android:id="@+id/skeleton_loading_state"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="@dimen/tv_margin_small"
+            android:visibility="gone"
+            tools:visibility="visible">
+            
+            <include layout="@layout/item_server_skeleton" />
+            <include layout="@layout/item_server_skeleton" />
+            <include layout="@layout/item_server_skeleton" />
+        </LinearLayout>
 
         <!-- Empty State -->
         <LinearLayout

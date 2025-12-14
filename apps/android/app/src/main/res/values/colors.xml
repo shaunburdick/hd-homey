@@ -18,4 +18,8 @@
     <color name="success_green">#4caf50</color>
     <color name="error_red">#f44336</color>
     <color name="warning_yellow">#ffc107</color>
+    
+    <!-- Shimmer colors -->
+    <color name="shimmer_placeholder">#3a3a3a</color>
+    <color name="shimmer_highlight">#4a4a4a</color>
 </resources>

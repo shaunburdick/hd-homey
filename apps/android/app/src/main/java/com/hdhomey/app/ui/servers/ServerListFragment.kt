@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import androidx.appcompat.app.AlertDialog
@@ -33,11 +34,13 @@ import com.hdhomey.app.util.Constants
  * - Long-press for context menu (edit/delete)
  * - Swipe-to-delete gesture
  * - Loading state on server item click
+ * - Skeleton loading animation while fetching servers
  */
 class ServerListFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyState: LinearLayout
+    private lateinit var skeletonLoadingState: LinearLayout
     private lateinit var addServerFab: FloatingActionButton
     private lateinit var adapter: ServerListAdapter
     private lateinit var repository: ServerRepository
@@ -61,6 +64,7 @@ class ServerListFragment : Fragment() {
         // Setup views
         recyclerView = view.findViewById(R.id.servers_recycler_view)
         emptyState = view.findViewById(R.id.empty_state)
+        skeletonLoadingState = view.findViewById(R.id.skeleton_loading_state)
         addServerFab = view.findViewById(R.id.add_server_fab)
 
         // Setup RecyclerView
@@ -91,15 +95,54 @@ class ServerListFragment : Fragment() {
 
     /**
      * Loads all servers from repository and updates the UI.
+     * Shows skeleton loading state briefly for visual feedback.
      */
     private fun loadServers() {
-        val servers = repository.getAllServers()
-        Log.d(Constants.Tags.SERVER_LIST, "Loaded ${servers.size} servers")
-
-        if (servers.isEmpty()) {
-            showEmptyState()
+        // Show skeleton loading if we have servers (otherwise show empty state)
+        val hasServers = repository.getAllServers().isNotEmpty()
+        
+        if (hasServers) {
+            showSkeletonLoading()
+            
+            // Simulate brief loading delay for shimmer effect (200ms)
+            handler.postDelayed({
+                if (isAdded) {
+                    val servers = repository.getAllServers()
+                    Log.d(Constants.Tags.SERVER_LIST, "Loaded ${servers.size} servers")
+                    
+                    if (servers.isEmpty()) {
+                        showEmptyState()
+                    } else {
+                        showServerList(servers)
+                    }
+                }
+            }, 200)
         } else {
-            showServerList(servers)
+            // First load - check immediately
+            val servers = repository.getAllServers()
+            Log.d(Constants.Tags.SERVER_LIST, "Loaded ${servers.size} servers")
+            
+            if (servers.isEmpty()) {
+                showEmptyState()
+            } else {
+                showServerList(servers)
+            }
+        }
+    }
+    
+    /**
+     * Shows the skeleton loading state with shimmer animation.
+     */
+    private fun showSkeletonLoading() {
+        recyclerView.visibility = View.GONE
+        emptyState.visibility = View.GONE
+        skeletonLoadingState.visibility = View.VISIBLE
+        
+        // Apply shimmer animation to all skeleton views
+        val shimmerAnim = AnimationUtils.loadAnimation(requireContext(), R.anim.shimmer)
+        for (i in 0 until skeletonLoadingState.childCount) {
+            val child = skeletonLoadingState.getChildAt(i)
+            child.startAnimation(shimmerAnim)
         }
     }
 
@@ -108,6 +151,7 @@ class ServerListFragment : Fragment() {
      */
     private fun showEmptyState() {
         recyclerView.visibility = View.GONE
+        skeletonLoadingState.visibility = View.GONE
         emptyState.visibility = View.VISIBLE
     }
 
@@ -115,8 +159,9 @@ class ServerListFragment : Fragment() {
      * Shows the server list.
      */
     private fun showServerList(servers: List<Server>) {
-        recyclerView.visibility = View.VISIBLE
+        skeletonLoadingState.visibility = View.GONE
         emptyState.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
         
         // Update active server ID
         val activeServer = repository.getActiveServer()
