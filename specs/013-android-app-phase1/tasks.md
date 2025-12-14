@@ -116,7 +116,7 @@
 
 ---
 
-## Phase 1.5: Polish & Testing ✅ Unit Testing COMPLETE
+## Phase 1.5: Polish & Testing ✅ COMPLETE
 
 ### UI Polish - Phase 1.5A: Critical Fixes ✅ COMPLETE
 
@@ -172,8 +172,8 @@
 - [x] 1.5.4 - Add ripple animation to server items
 - [x] 1.5.5 - Improve empty state with icon and welcoming message
 - [x] 1.5.6 - Add success animation to SuccessFragment
-- [ ] 1.5.7 - Add app icon and TV banner (320x180) (future)
-- [ ] 1.5.8 - Add shimmer/skeleton loaders (future)
+- [x] 1.5.7 - Add app icon and TV banner (320x180)
+- [x] 1.5.8 - Add shimmer/skeleton loaders
 
 ### Unit Tests ✅ ALL COMPLETE - 86 Tests Passing!
 - [x] 1.5.9 - Write unit test for `ServerRepository` CRUD operations (35 tests passing)
@@ -199,8 +199,10 @@
 - ✅ All 86 unit tests passing with 100% coverage of data layer
 - ✅ Phase 1.5A critical fixes implemented (retry/cancel/delete functionality)
 - ✅ Phase 1.5B high priority fixes implemented (better errors and loading feedback)
-- ⏳ Phase 1.5C polish tasks in progress
-- ⏳ Manual testing scenarios verified with new UI
+- ✅ Phase 1.5C polish tasks implemented (animations, visual feedback)
+- ✅ App icon and TV banner added (Task 1.5.7)
+- ✅ Shimmer/skeleton loaders added (Task 1.5.8)
+- ⏳ Manual testing scenarios can be verified with MANUAL-TEST-PLAN.md
 
 ---
 
