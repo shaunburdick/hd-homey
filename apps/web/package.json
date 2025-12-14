@@ -29,7 +29,7 @@
     "drizzle-orm": "^0.44.7",
     "drizzle-typebox": "^0.3.3",
     "hls.js": "^1.6.14",
-    "next": "^16.0.3",
+    "next": "^16.0.10",
     "pino": "^10.1.0",
     "pino-pretty": "^13.0.0",
     "react": "^19.2.0",
