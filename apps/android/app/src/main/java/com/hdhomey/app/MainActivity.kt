@@ -5,6 +5,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import com.hdhomey.app.storage.AppPreferences
+import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Main activity for HD Homey Android app.
@@ -16,10 +17,17 @@ import com.hdhomey.app.storage.AppPreferences
  * - First launch (no servers) → AddServerFragment
  * - Has servers → ServerListFragment (default)
  * 
+ * Phase 2: Hilt-enabled for dependency injection.
+ * - ViewModels automatically injected in fragments
+ * - Repositories and use cases available via @Inject
+ * 
  * Back button behavior:
  * - From ServerListFragment → Exits app
  * - From other screens → Standard back navigation
+ *
+ * @see dagger.hilt.android.AndroidEntryPoint
  */
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
