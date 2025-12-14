@@ -118,33 +118,88 @@
 
 ## Phase 1.5: Polish & Testing ✅ Unit Testing COMPLETE
 
-### UI Polish (Deferred)
+### UI Polish - Phase 1.5A: Critical Fixes (MUST FIX)
+
+**See**: `specs/013-android-app-phase1/UI-ISSUES.md` for detailed analysis
+
+#### AuthenticationFragment: Error Recovery
+- [ ] 1.5.21 - Add "Try Again" button to fragment_authentication.xml layout
+- [ ] 1.5.22 - Add "Cancel" button to fragment_authentication.xml layout
+- [ ] 1.5.23 - Implement retry logic: clear error, regenerate code, restart polling
+- [ ] 1.5.24 - Implement cancel logic: stop polling, navigate back to server list
+- [ ] 1.5.25 - Update error display to preserve code visibility (don't replace with "ERROR")
+
+#### ServerListFragment: Server Management
+- [ ] 1.5.26 - Add swipe-to-delete using ItemTouchHelper in ServerListFragment
+- [ ] 1.5.27 - Add delete confirmation dialog (AlertDialog)
+- [ ] 1.5.28 - Implement long-press context menu (PopupMenu or BottomSheet)
+- [ ] 1.5.29 - Add "Edit Server" option (navigate to edit screen)
+- [ ] 1.5.30 - Add "Delete Server" option in context menu
+- [ ] 1.5.31 - Update ServerRepository to support server deletion
+
+#### AddServerFragment: Health Check Retry
+- [ ] 1.5.32 - Add "Retry" button to fragment_add_server.xml error state
+- [ ] 1.5.33 - Show retry button on health check failure
+- [ ] 1.5.34 - Implement retry logic: re-run health check with same values
+- [ ] 1.5.35 - Consider auto-retry once for transient network errors
+
+### UI Polish - Phase 1.5B: High Priority (SHOULD FIX)
+
+#### Improve Error Messages
+- [ ] 1.5.36 - Update Constants.kt error messages to be actionable
+- [ ] 1.5.37 - Add error message helper with suggestions (e.g., "Check network and try again")
+- [ ] 1.5.38 - Distinguish error types: network vs server vs authentication
+- [ ] 1.5.39 - Add troubleshooting tips to error messages
+
+#### AuthenticationFragment: Better Loading Feedback
+- [ ] 1.5.40 - Add status TextView for "Connecting...", "Generating code...", "Waiting..."
+- [ ] 1.5.41 - Show prominent loading indicator during code generation
+- [ ] 1.5.42 - Add subtle polling indicator (e.g., animated icon or text)
+- [ ] 1.5.43 - Update UI states: loading → showing code → polling → success/error
+
+#### AddServerFragment: URL Validation UX
+- [ ] 1.5.44 - Delay real-time validation until onBlur or 500ms after typing stops
+- [ ] 1.5.45 - Add placeholder text: "http://192.168.1.100:3000"
+- [ ] 1.5.46 - Add hint text: "Enter your HD Homey server URL"
+- [ ] 1.5.47 - Add help icon/link with format examples
+
+### UI Polish - Phase 1.5C: Polish (CAN DEFER)
+
+#### Visual Feedback & Polish
 - [x] 1.5.1 - Apply Android TV theme if TV detected (large text, high contrast)
-- [ ] 1.5.2 - Add loading indicators for async operations (deferred to later phases)
-- [ ] 1.5.3 - Add error states with retry buttons (deferred to later phases)
-- [ ] 1.5.4 - Add app icon and TV banner (320x180) (deferred to later phases)
-- [ ] 1.5.5 - Polish UI spacing and colors for 10-foot interface (deferred to later phases)
-- [ ] 1.5.6 - Test on phone emulator (portrait/landscape) (deferred)
-- [ ] 1.5.7 - Test on TV emulator (landscape, D-pad navigation) (deferred)
+- [ ] 1.5.2 - Add loading state on server item click
+- [ ] 1.5.3 - Highlight active server in ServerListFragment
+- [ ] 1.5.4 - Add ripple animation to server items
+- [ ] 1.5.5 - Improve empty state with icon and welcoming message
+- [ ] 1.5.6 - Add success animation to SuccessFragment
+- [ ] 1.5.7 - Add app icon and TV banner (320x180) (future)
+- [ ] 1.5.8 - Add shimmer/skeleton loaders (future)
 
 ### Unit Tests ✅ ALL COMPLETE - 86 Tests Passing!
-- [x] 1.5.8 - Write unit test for `ServerRepository` CRUD operations (35 tests passing)
-- [x] 1.5.9 - Write unit test for `DeviceCodeService.generateCode()` (16 tests passing)
-- [x] 1.5.10 - Write unit test for `DeviceCodeService.pollAuthorization()` (included in 16 tests)
-- [x] 1.5.11 - Write unit test for URL validation helper (22 tests passing)
-- [x] 1.5.12 - Write unit test for AppPreferences JSON serialization (13 tests passing)
+- [x] 1.5.9 - Write unit test for `ServerRepository` CRUD operations (35 tests passing)
+- [x] 1.5.10 - Write unit test for `DeviceCodeService.generateCode()` (16 tests passing)
+- [x] 1.5.11 - Write unit test for `DeviceCodeService.pollAuthorization()` (included in 16 tests)
+- [x] 1.5.12 - Write unit test for URL validation helper (22 tests passing)
+- [x] 1.5.13 - Write unit test for AppPreferences JSON serialization (13 tests passing)
 
-### Manual Testing (Deferred)
-- [ ] 1.5.13 - Manual test: Add multiple servers (HTTP and HTTPS)
-- [ ] 1.5.14 - Manual test: Authenticate to different servers
-- [ ] 1.5.15 - Manual test: Remove server from list
-- [ ] 1.5.16 - Manual test: Switch between servers
-- [ ] 1.5.17 - Manual test: Code expiration handling
-- [ ] 1.5.18 - Manual test: Authorization denial handling
-- [ ] 1.5.19 - Manual test: Network error handling
-- [ ] 1.5.20 - Manual test: Same URL, different users
+### Manual Testing (After UI Fixes)
+- [ ] 1.5.48 - Manual test: Add multiple servers (HTTP and HTTPS)
+- [ ] 1.5.49 - Manual test: Authenticate to different servers
+- [ ] 1.5.50 - Manual test: Delete server from list (swipe and context menu)
+- [ ] 1.5.51 - Manual test: Edit server details
+- [ ] 1.5.52 - Manual test: Cancel authentication mid-flow
+- [ ] 1.5.53 - Manual test: Retry after health check failure
+- [ ] 1.5.54 - Manual test: Retry after authentication error
+- [ ] 1.5.55 - Manual test: Code expiration with retry
+- [ ] 1.5.56 - Manual test: Authorization denial with retry
+- [ ] 1.5.57 - Manual test: Network error handling with retry
+- [ ] 1.5.58 - Manual test: Same URL, different users
 
-**Acceptance**: ✅ All 86 unit tests passing with 100% coverage of data layer!
+**Acceptance**: 
+- ✅ All 86 unit tests passing with 100% coverage of data layer
+- ⏳ Phase 1.5A critical fixes implemented (retry/cancel/delete functionality)
+- ⏳ Phase 1.5B high priority fixes implemented (better errors and loading feedback)
+- ⏳ Manual testing scenarios verified with new UI
 
 ---
 
