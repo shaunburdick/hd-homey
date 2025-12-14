@@ -1,6 +1,8 @@
 package com.hdhomey.app.ui.servers
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -30,6 +32,7 @@ import com.hdhomey.app.util.Constants
  * - Server selection navigates to authentication or main app
  * - Long-press for context menu (edit/delete)
  * - Swipe-to-delete gesture
+ * - Loading state on server item click
  */
 class ServerListFragment : Fragment() {
 
@@ -38,6 +41,7 @@ class ServerListFragment : Fragment() {
     private lateinit var addServerFab: FloatingActionButton
     private lateinit var adapter: ServerListAdapter
     private lateinit var repository: ServerRepository
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -113,6 +117,11 @@ class ServerListFragment : Fragment() {
     private fun showServerList(servers: List<Server>) {
         recyclerView.visibility = View.VISIBLE
         emptyState.visibility = View.GONE
+        
+        // Update active server ID
+        val activeServer = repository.getActiveServer()
+        adapter.setActiveServerId(activeServer?.id)
+        
         adapter.submitList(servers)
     }
 
@@ -122,9 +131,25 @@ class ServerListFragment : Fragment() {
      * Logic:
      * - If authenticated and token valid → Set as active, navigate to main app (Phase 2)
      * - If token expired or not authenticated → Navigate to authentication
+     * 
+     * Shows loading indicator briefly for visual feedback.
      */
     private fun onServerClick(server: Server) {
         Log.d(Constants.Tags.SERVER_LIST, "Server clicked: ${server.name} (${server.id})")
+        
+        // Find the position of the clicked server
+        val position = adapter.currentList.indexOfFirst { it.id == server.id }
+        if (position != -1) {
+            // Show loading indicator
+            adapter.showLoadingForPosition(position)
+            
+            // Hide loading after 300ms (gives visual feedback before navigation)
+            handler.postDelayed({
+                if (isAdded) {  // Check if fragment is still attached
+                    adapter.hideLoadingForPosition(position)
+                }
+            }, 300)
+        }
 
         // Set as active server
         repository.setActiveServer(server.id)

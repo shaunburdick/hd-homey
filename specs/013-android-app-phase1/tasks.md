@@ -118,60 +118,60 @@
 
 ## Phase 1.5: Polish & Testing ✅ Unit Testing COMPLETE
 
-### UI Polish - Phase 1.5A: Critical Fixes (MUST FIX)
+### UI Polish - Phase 1.5A: Critical Fixes ✅ COMPLETE
 
 **See**: `specs/013-android-app-phase1/UI-ISSUES.md` for detailed analysis
 
 #### AuthenticationFragment: Error Recovery
-- [ ] 1.5.21 - Add "Try Again" button to fragment_authentication.xml layout
-- [ ] 1.5.22 - Add "Cancel" button to fragment_authentication.xml layout
-- [ ] 1.5.23 - Implement retry logic: clear error, regenerate code, restart polling
-- [ ] 1.5.24 - Implement cancel logic: stop polling, navigate back to server list
-- [ ] 1.5.25 - Update error display to preserve code visibility (don't replace with "ERROR")
+- [x] 1.5.21 - Add "Try Again" button to fragment_authentication.xml layout
+- [x] 1.5.22 - Add "Cancel" button to fragment_authentication.xml layout
+- [x] 1.5.23 - Implement retry logic: clear error, regenerate code, restart polling
+- [x] 1.5.24 - Implement cancel logic: stop polling, navigate back to server list
+- [x] 1.5.25 - Update error display to preserve code visibility (don't replace with "ERROR")
 
 #### ServerListFragment: Server Management
-- [ ] 1.5.26 - Add swipe-to-delete using ItemTouchHelper in ServerListFragment
-- [ ] 1.5.27 - Add delete confirmation dialog (AlertDialog)
-- [ ] 1.5.28 - Implement long-press context menu (PopupMenu or BottomSheet)
-- [ ] 1.5.29 - Add "Edit Server" option (navigate to edit screen)
-- [ ] 1.5.30 - Add "Delete Server" option in context menu
-- [ ] 1.5.31 - Update ServerRepository to support server deletion
+- [x] 1.5.26 - Add swipe-to-delete using ItemTouchHelper in ServerListFragment
+- [x] 1.5.27 - Add delete confirmation dialog (AlertDialog)
+- [x] 1.5.28 - Implement long-press context menu (PopupMenu or BottomSheet)
+- [x] 1.5.29 - Add "Edit Server" option (navigate to edit screen)
+- [x] 1.5.30 - Add "Delete Server" option in context menu
+- [x] 1.5.31 - Update ServerRepository to support server deletion
 
 #### AddServerFragment: Health Check Retry
-- [ ] 1.5.32 - Add "Retry" button to fragment_add_server.xml error state
-- [ ] 1.5.33 - Show retry button on health check failure
-- [ ] 1.5.34 - Implement retry logic: re-run health check with same values
-- [ ] 1.5.35 - Consider auto-retry once for transient network errors
+- [x] 1.5.32 - Add "Retry" button to fragment_add_server.xml error state
+- [x] 1.5.33 - Show retry button on health check failure
+- [x] 1.5.34 - Implement retry logic: re-run health check with same values
+- [x] 1.5.35 - Consider auto-retry once for transient network errors
 
-### UI Polish - Phase 1.5B: High Priority (SHOULD FIX)
+### UI Polish - Phase 1.5B: High Priority ✅ COMPLETE
 
 #### Improve Error Messages
-- [ ] 1.5.36 - Update Constants.kt error messages to be actionable
-- [ ] 1.5.37 - Add error message helper with suggestions (e.g., "Check network and try again")
-- [ ] 1.5.38 - Distinguish error types: network vs server vs authentication
-- [ ] 1.5.39 - Add troubleshooting tips to error messages
+- [x] 1.5.36 - Update Constants.kt error messages to be actionable
+- [x] 1.5.37 - Add error message helper with suggestions (e.g., "Check network and try again")
+- [x] 1.5.38 - Distinguish error types: network vs server vs authentication
+- [x] 1.5.39 - Add troubleshooting tips to error messages
 
 #### AuthenticationFragment: Better Loading Feedback
-- [ ] 1.5.40 - Add status TextView for "Connecting...", "Generating code...", "Waiting..."
-- [ ] 1.5.41 - Show prominent loading indicator during code generation
-- [ ] 1.5.42 - Add subtle polling indicator (e.g., animated icon or text)
-- [ ] 1.5.43 - Update UI states: loading → showing code → polling → success/error
+- [x] 1.5.40 - Add status TextView for "Connecting...", "Generating code...", "Waiting..."
+- [x] 1.5.41 - Show prominent loading indicator during code generation
+- [x] 1.5.42 - Add subtle polling indicator (e.g., animated icon or text)
+- [x] 1.5.43 - Update UI states: loading → showing code → polling → success/error
 
 #### AddServerFragment: URL Validation UX
-- [ ] 1.5.44 - Delay real-time validation until onBlur or 500ms after typing stops
-- [ ] 1.5.45 - Add placeholder text: "http://192.168.1.100:3000"
-- [ ] 1.5.46 - Add hint text: "Enter your HD Homey server URL"
-- [ ] 1.5.47 - Add help icon/link with format examples
+- [x] 1.5.44 - Delay real-time validation until onBlur or 500ms after typing stops
+- [x] 1.5.45 - Add placeholder text: "http://192.168.1.100:3000"
+- [x] 1.5.46 - Add hint text: "Enter your HD Homey server URL"
+- [x] 1.5.47 - Add help icon/link with format examples
 
-### UI Polish - Phase 1.5C: Polish (CAN DEFER)
+### UI Polish - Phase 1.5C: Polish (CAN DEFER) ✅ COMPLETE
 
 #### Visual Feedback & Polish
 - [x] 1.5.1 - Apply Android TV theme if TV detected (large text, high contrast)
-- [ ] 1.5.2 - Add loading state on server item click
-- [ ] 1.5.3 - Highlight active server in ServerListFragment
-- [ ] 1.5.4 - Add ripple animation to server items
-- [ ] 1.5.5 - Improve empty state with icon and welcoming message
-- [ ] 1.5.6 - Add success animation to SuccessFragment
+- [x] 1.5.2 - Add loading state on server item click
+- [x] 1.5.3 - Highlight active server in ServerListFragment
+- [x] 1.5.4 - Add ripple animation to server items
+- [x] 1.5.5 - Improve empty state with icon and welcoming message
+- [x] 1.5.6 - Add success animation to SuccessFragment
 - [ ] 1.5.7 - Add app icon and TV banner (320x180) (future)
 - [ ] 1.5.8 - Add shimmer/skeleton loaders (future)
 
@@ -197,8 +197,9 @@
 
 **Acceptance**: 
 - ✅ All 86 unit tests passing with 100% coverage of data layer
-- ⏳ Phase 1.5A critical fixes implemented (retry/cancel/delete functionality)
-- ⏳ Phase 1.5B high priority fixes implemented (better errors and loading feedback)
+- ✅ Phase 1.5A critical fixes implemented (retry/cancel/delete functionality)
+- ✅ Phase 1.5B high priority fixes implemented (better errors and loading feedback)
+- ⏳ Phase 1.5C polish tasks in progress
 - ⏳ Manual testing scenarios verified with new UI
 
 ---

@@ -4,12 +4,14 @@
     
     <!-- Server List -->
     <string name="servers_title">Your Servers</string>
-    <string name="servers_empty_title">No servers configured</string>
-    <string name="servers_empty_message">Add your first HD Homey server to get started</string>
+    <string name="servers_empty_title">Welcome to HD Homey!</string>
+    <string name="servers_empty_message">Get started by adding your first HD Homey server</string>
+    <string name="servers_empty_hint">Tap the + button below to add a server</string>
     <string name="servers_add_button">Add Server</string>
     <string name="server_authenticated">● Authenticated</string>
     <string name="server_not_authenticated">● Not Authenticated</string>
     <string name="server_token_expired">● Session Expired</string>
+    <string name="active_server_badge">ACTIVE</string>
     
     <!-- Add Server -->
     <string name="add_server_title">Add Server</string>

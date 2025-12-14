@@ -8,6 +8,8 @@
     <!-- UI colors -->
     <color name="background_dark">#1a1a1a</color>
     <color name="surface_dark">#2a2a2a</color>
+    <color name="surface_dark_elevated">#353535</color>
+    <color name="primary_blue">#007bff</color>
     <color name="text_primary">#ffffff</color>
     <color name="text_secondary">#b3b3b3</color>
     <color name="text_tertiary">#808080</color>

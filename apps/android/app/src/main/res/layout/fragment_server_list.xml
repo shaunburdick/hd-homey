@@ -45,6 +45,15 @@
             android:visibility="gone"
             tools:visibility="visible">
 
+            <!-- Icon -->
+            <ImageView
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_marginBottom="@dimen/tv_margin_medium"
+                android:contentDescription="@string/servers_empty_title"
+                android:src="@android:drawable/ic_menu_add"
+                android:tint="@color/text_tertiary" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -62,6 +71,16 @@
                 android:textAlignment="center"
                 android:textColor="@color/text_secondary"
                 android:textSize="@dimen/text_size_body" />
+            
+            <!-- Hint about FAB -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tv_margin_medium"
+                android:text="@string/servers_empty_hint"
+                android:textAlignment="center"
+                android:textColor="@color/text_tertiary"
+                android:textSize="@dimen/text_size_caption" />
         </LinearLayout>
     </LinearLayout>
 
