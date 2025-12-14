@@ -2,7 +2,55 @@
 
 Development guidelines, architecture patterns, and implementation details for the HD Homey Android TV app.
 
-## Architecture Overview
+> **Note**: This document describes the overall architecture vision. Phase 1 (Foundation & Authentication) is complete with a simplified architecture. See `apps/android/app/src/main/java/com/hdhomey/app/` for actual implementation. Phase 2 will expand with additional layers (ViewModels, Use Cases) as complexity increases.
+
+## Current Implementation (Phase 1)
+
+### Actual Project Structure
+
+```
+com.hdhomey.app/
+├── MainActivity.kt              # Single activity with Navigation Component
+├── ui/                          # UI layer (Fragments)
+│   ├── servers/                # Server management
+│   │   ├── ServerListFragment.kt
+│   │   ├── ServerListAdapter.kt
+│   │   └── AddServerFragment.kt
+│   ├── auth/                   # Device pairing
+│   │   └── AuthenticationFragment.kt
+│   └── success/                # Success confirmation
+│       └── SuccessFragment.kt
+├── api/                        # API services
+│   ├── HdHomeyApi.kt          # OkHttp client factory
+│   └── DeviceCodeService.kt   # Device code endpoints
+├── data/                       # Data models
+│   ├── Server.kt
+│   ├── DeviceCodeRequest.kt
+│   ├── DeviceCodeResponse.kt
+│   └── PollResponse.kt
+├── repository/                 # Data repositories
+│   └── ServerRepository.kt    # Server CRUD operations
+├── storage/                    # Local storage
+│   └── AppPreferences.kt      # SharedPreferences wrapper
+└── util/                       # Utilities
+    ├── Constants.kt
+    └── UrlValidator.kt
+```
+
+### Architecture Pattern
+
+Phase 1 uses a simplified **Repository Pattern**:
+- **Fragments**: UI and user interaction
+- **Repositories**: Data access and business logic
+- **API Services**: HTTP communication
+- **Storage**: Local persistence
+
+Phase 2 will introduce:
+- **ViewModels**: UI state management
+- **Use Cases**: Business logic layer
+- **DataStore**: Secure token storage
+
+## Architecture Overview (Target for Phase 2+)
 
 The app follows **Clean Architecture** principles with MVVM pattern:
 

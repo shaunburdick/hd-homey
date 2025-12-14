@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Android TV App Phase 1 (SPEC-013)**: Foundation & Authentication - Complete native Android TV application for device pairing and server management
+  - **Multi-Server Management**: Add, edit, and delete multiple HD Homey server instances with health check validation
+  - **Device Code Pairing**: Full OAuth 2.0 device code flow implementation
+    - Generate 6-character codes displayed in large 96sp text optimized for 10-foot UI
+    - Real-time polling with 3-second intervals and countdown timer
+    - Automatic JWT token extraction and storage
+    - Support for code expiration, denial, and retry scenarios
+  - **Professional Branding**: HD Homey app icon in all densities (mdpi→xxxhdpi) + round variants + 320x180 TV banner
+  - **Polished 10-foot UI**:
+    - Shimmer/skeleton loaders for smooth transitions
+    - Ripple animations and active server highlighting
+    - Staggered fade-in success animations
+    - Loading states on all interactions
+    - Welcoming empty states with helpful guidance
+  - **Comprehensive Error Handling**:
+    - Retry/cancel buttons in all error states
+    - Clear, actionable error messages with troubleshooting tips
+    - Network error recovery with auto-retry options
+    - Server deletion via swipe-to-delete and context menu
+  - **Testing & Quality**:
+    - 86 unit tests with 100% data layer coverage
+    - Repository pattern with ServerRepository, DeviceCodeService
+    - JSON serialization with Kotlinx Serialization
+    - URL validation with protocol auto-prepending
+  - **Android TV Optimization**:
+    - D-pad navigation with focus management
+    - High contrast colors and large touch targets
+    - Remote control optimized layouts
+    - TV banner and adaptive icons
+  - **Technology Stack**: Kotlin 2.1.0, AndroidX libraries, Navigation Component, OkHttp, Coroutines
+  - **Build**: 20MB APK, lint clean (0 errors), targetSdk 35 (Android 15)
+- **Web App Improvements (Phase 1 Support)**:
+  - Device pairing link added to user Profile page for easy discovery
+  - All authenticated users (admin + viewer) can now access device pairing
+  - Improved device pairing UI with better error handling and visual feedback
+
 ### Changed
 
 - **Repository Structure (BREAKING)**: Reorganized repository into monorepo with npm workspaces

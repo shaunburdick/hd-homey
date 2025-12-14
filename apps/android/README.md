@@ -4,9 +4,19 @@ Native Android TV application for HD Homey that provides a seamless 10-foot UI e
 
 ## Status
 
-🚧 **Phase 2: Android App Development** - Project structure created, ready for macOS development.
+✅ **Phase 1 Complete!** - Foundation & Authentication fully implemented and tested.
 
-**Phase 1 Complete**: Backend Device Pairing API is fully implemented and tested.
+🚀 **Ready for Phase 2**: Channel browsing and video streaming.
+
+### Phase 1 Achievements
+- ✅ Multi-server management with add/edit/delete
+- ✅ OAuth 2.0 device code pairing flow
+- ✅ JWT token storage and session management
+- ✅ Professional HD Homey branding (app icon, TV banner)
+- ✅ Polished 10-foot UI with animations and visual feedback
+- ✅ Comprehensive error handling with retry/cancel options
+- ✅ 86 unit tests passing (100% data layer coverage)
+- ✅ Android TV optimized navigation and focus management
 
 ## Prerequisites
 
@@ -45,52 +55,58 @@ apps/android/
 ├── app/                          # Main application module
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/com/hdhomey/tv/
-│   │   │   │   ├── MainActivity.kt          # Main TV activity
+│   │   │   ├── java/com/hdhomey/app/
+│   │   │   │   ├── MainActivity.kt          # Main activity with navigation
 │   │   │   │   ├── ui/
-│   │   │   │   │   ├── auth/               # Authentication/pairing screens
-│   │   │   │   │   │   ├── PairingFragment.kt
-│   │   │   │   │   │   └── CodeDisplayFragment.kt
-│   │   │   │   │   ├── browse/             # Channel browsing
-│   │   │   │   │   │   ├── BrowseFragment.kt
-│   │   │   │   │   │   └── ChannelRow.kt
-│   │   │   │   │   ├── player/             # Video player
-│   │   │   │   │   │   ├── PlayerActivity.kt
-│   │   │   │   │   │   └── PlaybackFragment.kt
-│   │   │   │   │   └── settings/           # App settings
-│   │   │   │   │       └── SettingsFragment.kt
-│   │   │   │   ├── data/
-│   │   │   │   │   ├── api/                # Backend API client
-│   │   │   │   │   │   ├── HdHomeyApi.kt
-│   │   │   │   │   │   ├── DevicePairingApi.kt
-│   │   │   │   │   │   └── ChannelApi.kt
-│   │   │   │   │   ├── model/              # Data models
-│   │   │   │   │   │   ├── Channel.kt
-│   │   │   │   │   │   ├── DeviceCode.kt
-│   │   │   │   │   │   └── User.kt
-│   │   │   │   │   └── repository/         # Data repositories
-│   │   │   │   │       ├── AuthRepository.kt
-│   │   │   │   │       └── ChannelRepository.kt
-│   │   │   │   └── util/
-│   │   │   │       ├── TokenManager.kt      # JWT token storage
-│   │   │   │       └── PreferenceManager.kt # Shared preferences
+│   │   │   │   │   ├── servers/            # Server management screens
+│   │   │   │   │   │   ├── ServerListFragment.kt
+│   │   │   │   │   │   ├── ServerListAdapter.kt
+│   │   │   │   │   │   └── AddServerFragment.kt
+│   │   │   │   │   ├── auth/               # Authentication/pairing
+│   │   │   │   │   │   └── AuthenticationFragment.kt
+│   │   │   │   │   └── success/            # Success confirmation
+│   │   │   │   │       └── SuccessFragment.kt
+│   │   │   │   ├── api/                    # API services
+│   │   │   │   │   ├── HdHomeyApi.kt
+│   │   │   │   │   └── DeviceCodeService.kt
+│   │   │   │   ├── data/                   # Data models
+│   │   │   │   │   ├── Server.kt
+│   │   │   │   │   ├── DeviceCodeRequest.kt
+│   │   │   │   │   ├── DeviceCodeResponse.kt
+│   │   │   │   │   └── PollResponse.kt
+│   │   │   │   ├── repository/             # Data repositories
+│   │   │   │   │   └── ServerRepository.kt
+│   │   │   │   ├── storage/                # Local storage
+│   │   │   │   │   └── AppPreferences.kt
+│   │   │   │   └── util/                   # Utilities
+│   │   │   │       ├── Constants.kt
+│   │   │   │       └── UrlValidator.kt
 │   │   │   ├── res/
 │   │   │   │   ├── layout/                  # XML layouts
 │   │   │   │   ├── values/                  # Strings, colors, themes
+│   │   │   │   ├── mipmap-*/                # App icons (all densities)
 │   │   │   │   ├── drawable/                # Icons and images
-│   │   │   │   └── xml/                     # Preferences, shortcuts
+│   │   │   │   ├── drawable-xhdpi/          # TV banner (320x180)
+│   │   │   │   ├── animator/                # Animations
+│   │   │   │   └── navigation/              # Navigation graph
 │   │   │   └── AndroidManifest.xml
-│   │   ├── androidTest/                     # Instrumented tests
-│   │   └── test/                            # Unit tests
+│   │   └── test/                            # Unit tests (86 tests)
+│   │       ├── ServerRepositoryTest.kt
+│   │       ├── DeviceCodeServiceTest.kt
+│   │       ├── UrlValidatorTest.kt
+│   │       └── AppPreferencesTest.kt
 │   ├── build.gradle.kts                     # Module build config
 │   └── proguard-rules.pro
 ├── build.gradle.kts                         # Project build config
 ├── settings.gradle.kts                      # Project settings
+├── gradle/
+│   └── libs.versions.toml                   # Dependency versions
 ├── gradle.properties                        # Gradle properties
 ├── local.properties                         # Local SDK path (gitignored)
 ├── README.md                                # This file
 ├── SETUP.md                                 # Detailed setup instructions
-└── DEVELOPMENT.md                           # Development guide
+├── DEVELOPMENT.md                           # Development guide
+└── QUICKSTART.md                            # Quick start guide
 ```
 
 ## Quick Start (macOS)
@@ -179,34 +195,48 @@ cd apps/android
 
 ## Technology Stack
 
-### Core Dependencies
+### Core Dependencies (Phase 1)
 
-- **Kotlin** 1.9+
-- **Jetpack Compose for TV** - Modern declarative UI
-- **Compose Navigation** - Screen navigation
-- **AndroidX Leanback** - TV-optimized UI components (fallback)
-- **Coroutines + Flow** - Async operations
-- **ViewModel + LiveData** - State management
-- **Retrofit + OkHttp** - HTTP client for API calls
-- **Moshi** - JSON parsing
-- **Coil** - Image loading
-- **ExoPlayer** - Video playback
-- **DataStore** - Preferences and token storage
-- **Hilt** - Dependency injection
-- **Truth** - Testing assertions
-- **MockK** - Mocking framework
+- **Kotlin** 2.1.0 - Modern, concise Android development
+- **Android SDK** 35 (Android 15) - Target platform
+- **Minimum SDK** 31 (Android 12) - TV compatibility
+- **Gradle** 8.13 - Build system
+- **AndroidX Libraries**:
+  - Core KTX 1.15.0 - Kotlin extensions
+  - AppCompat 1.7.0 - Backward compatibility
+  - ConstraintLayout 2.2.0 - Flexible layouts
+  - Material 1.12.0 - Material Design components
+  - RecyclerView 1.3.2 - Efficient lists
+  - CardView 1.0.0 - Card-based UI
+  - Leanback 1.2.0-alpha04 - TV-optimized components
+- **Navigation** 2.8.5 - Fragment navigation
+- **Coroutines** 1.10.1 - Asynchronous programming
+- **OkHttp** 4.12.0 - HTTP client
+- **Kotlinx Serialization** 1.7.3 - JSON parsing
+- **Testing**:
+  - JUnit 4.13.2 - Unit testing framework
+  - Truth 1.4.4 - Fluent assertions
+  - Robolectric 4.14.1 - Android unit tests
+  - MockK 1.13.13 - Mocking framework
 
-### TV-Specific Features
+### TV-Specific Features (Implemented)
 
-- **Leanback library** - TV navigation patterns
-- **D-pad navigation** - Remote control support
-- **Focus management** - TV UI focus handling
-- **10-foot UI** - Large text, high contrast
-- **Banner and icon** - TV launcher assets
+- **HD Homey Branding**: Custom app icon (all densities) + 320x180 TV banner
+- **10-foot UI**: Large text (96sp codes), high contrast colors
+- **D-pad Navigation**: Remote control support with focus management
+- **Animations**: Shimmer loaders, ripple effects, staggered fade-ins
+- **Error Recovery**: Retry/cancel buttons, clear error messages
+- **Visual Feedback**: Loading indicators, active server highlighting
 
-## Device Pairing Flow (Already Implemented in Backend)
+### Phase 2 Dependencies (Coming Soon)
 
-The Android app will implement the client side of the OAuth 2.0 Device Code Flow:
+- **ExoPlayer** - HLS video playback
+- **Coil** - Channel logo image loading
+- **DataStore** - Secure token storage (replacing SharedPreferences)
+
+## Device Pairing Flow (Fully Implemented)
+
+The Android app implements the client side of the OAuth 2.0 Device Code Flow:
 
 ```
 1. App calls POST /api/auth/device/code
@@ -272,35 +302,66 @@ git commit -m "feat(android): implement channel browsing UI"
 
 ## Project Phases
 
-### ✅ Phase 0: Repository Reorganization
+### ✅ Phase 0: Repository Reorganization (Complete)
 - Monorepo structure created
 - `apps/android/` directory established
+- Backend device pairing API fully implemented
 
-### ✅ Phase 1: Backend Device Pairing API
-- OAuth 2.0 Device Code Flow implemented
-- 4 API endpoints (generate, poll, validate, authorize)
-- Database schema and migrations
-- Web UI at `/pair` for authorization
-- 50 comprehensive unit tests
-- Complete API documentation
+### ✅ Phase 1: Foundation & Authentication (Complete)
+**All tasks completed!** See `specs/013-android-app-phase1/` for detailed documentation.
 
-### 🚧 Phase 2: Android App Development (Current)
-- [ ] Initial Android project setup with Gradle
-- [ ] Device pairing UI implementation
-- [ ] JWT token storage and management
-- [ ] API client with Retrofit
-- [ ] Channel browsing UI with Leanback
-- [ ] Video player with ExoPlayer
-- [ ] Settings and preferences
-- [ ] Error handling and offline support
+#### Phase 1.1: Project Setup ✅
+- Android project created with Kotlin 2.1.0
+- Gradle build configured with version catalogs
+- Navigation Component with safe args
+- AndroidManifest configured for TV
 
-### 🔮 Phase 3: Advanced Features
-- [ ] Channel favorites sync
+#### Phase 1.2: Multi-Server Management ✅
+- Server list with add/edit/delete functionality
+- Health check validation (`GET /api/health`)
+- Server persistence with JSON serialization
+- Empty state and active server highlighting
+
+#### Phase 1.3: Device Code Pairing ✅
+- OAuth 2.0 device code generation (`POST /api/auth/device/code`)
+- 6-character code display (96sp for 10-foot UI)
+- Polling for authorization (`GET /api/auth/device/poll`)
+- JWT token extraction and storage
+- Countdown timer (5-minute expiration)
+
+#### Phase 1.4: App Launch Logic ✅
+- Smart entry point (server list vs add server)
+- Navigation between authentication flows
+- Success confirmation screen
+
+#### Phase 1.5: Polish & Testing ✅
+- **Sub-phase A**: Error recovery (retry/cancel/delete)
+- **Sub-phase B**: Better error messages and loading feedback
+- **Sub-phase C**: Animations and visual polish
+- **Sub-phase D**: HD Homey branding (icon, banner, shimmer loaders)
+- **Unit Tests**: 86 tests passing, 100% data layer coverage
+
+#### Phase 1.6: Documentation & Cleanup ✅
+- Updated README, SETUP, DEVELOPMENT docs
+- KDoc comments on public APIs
+- Lint clean (0 errors)
+- Build verified (20MB APK)
+
+### 🚀 Phase 2: Channel Browsing & Streaming (Next)
+- [ ] Fetch channel lineup from tuners
+- [ ] Browse channels with TV-optimized UI
+- [ ] Display channel metadata (name, number, logo)
+- [ ] HLS video playback with ExoPlayer
+- [ ] Stream URL generation with HMAC tokens
+- [ ] Player controls and error handling
+
+### 🔮 Phase 3: Advanced Features (Future)
+- [ ] Channel favorites and hiding (sync with backend)
 - [ ] Search functionality
-- [ ] Recommendations and continue watching
+- [ ] EPG (Electronic Program Guide)
 - [ ] Recording playback
 - [ ] Multiple tuner support
-- [ ] App shortcuts
+- [ ] Picture-in-picture mode
 
 ## Resources
 
