@@ -6,6 +6,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -31,6 +33,7 @@ import kotlinx.coroutines.launch
  * 3. Displays code prominently for user to enter on another device
  * 4. Polls server every 3 seconds for authorization
  * 5. On success: Stores JWT and user info, navigates to success screen
+ * 6. On error: Shows retry and cancel buttons for recovery
  */
 class AuthenticationFragment : Fragment() {
     
@@ -41,12 +44,16 @@ class AuthenticationFragment : Fragment() {
     private lateinit var countdownText: TextView
     private lateinit var loadingIndicator: ProgressBar
     private lateinit var errorText: TextView
+    private lateinit var buttonContainer: LinearLayout
+    private lateinit var retryButton: Button
+    private lateinit var cancelButton: Button
     
     private lateinit var repository: ServerRepository
     private lateinit var deviceCodeService: DeviceCodeService
     
     private var serverId: String? = null
     private var serverName: String? = null
+    private var serverUrl: String? = null
     private var deviceCode: String? = null
     private var countDownTimer: CountDownTimer? = null
     private var pollingJob: Job? = null
@@ -70,6 +77,13 @@ class AuthenticationFragment : Fragment() {
         countdownText = view.findViewById(R.id.text_countdown)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
         errorText = view.findViewById(R.id.text_error)
+        buttonContainer = view.findViewById(R.id.button_container)
+        retryButton = view.findViewById(R.id.button_retry)
+        cancelButton = view.findViewById(R.id.button_cancel)
+        
+        // Setup button listeners
+        retryButton.setOnClickListener { onRetryClick() }
+        cancelButton.setOnClickListener { onCancelClick() }
         
         // Initialize repository
         val prefs = AppPreferences.getInstance(requireContext())
@@ -80,6 +94,7 @@ class AuthenticationFragment : Fragment() {
         
         if (serverId == null) {
             showError("No server selected")
+            showActionButtons(showRetry = false, showCancel = true)
             return
         }
         
@@ -95,6 +110,10 @@ class AuthenticationFragment : Fragment() {
      * 4. Display code and start polling
      */
     private fun startAuthenticationFlow() {
+        // Hide error and buttons from previous attempts
+        hideError()
+        hideActionButtons()
+        
         lifecycleScope.launch {
             try {
                 showLoading(true)
@@ -103,10 +122,12 @@ class AuthenticationFragment : Fragment() {
                 val server = repository.getServerById(serverId!!)
                 if (server == null) {
                     showError("Server not found")
+                    showActionButtons(showRetry = false, showCancel = true)
                     return@launch
                 }
                 
                 serverName = server.name
+                serverUrl = server.url
                 titleText.text = getString(R.string.auth_title_for_server, serverName)
                 
                 // Create API client
@@ -114,12 +135,13 @@ class AuthenticationFragment : Fragment() {
                 deviceCodeService = DeviceCodeService(server.url, httpClient)
                 
                 // Generate device code
-                deviceCodeService = DeviceCodeService(server.url, httpClient)
-                
                 val response = deviceCodeService.generateCode(getDeviceName())
                 
                 // Display code and URL
                 showDeviceCode(response)
+                
+                // Show cancel button during auth flow
+                showActionButtons(showRetry = false, showCancel = true)
                 
                 // Start countdown timer (parse ISO 8601 expiration time)
                 val expiresAt = java.time.Instant.parse(response.expiresAt)
@@ -131,7 +153,8 @@ class AuthenticationFragment : Fragment() {
                 
             } catch (e: Exception) {
                 Log.e(Constants.Tags.AUTH, "Failed to start authentication", e)
-                showError("Failed to connect to server: ${e.message}")
+                showError("Failed to connect to server. Check your network connection and try again.")
+                showActionButtons(showRetry = true, showCancel = true)
             } finally {
                 showLoading(false)
             }
@@ -171,7 +194,8 @@ class AuthenticationFragment : Fragment() {
             override fun onFinish() {
                 countdownText.text = getString(R.string.code_expired)
                 stopPolling()
-                showError("Code expired. Please try again.")
+                showError("Code expired. Click 'Try Again' to generate a new code.")
+                showActionButtons(showRetry = true, showCancel = true)
             }
         }.start()
     }
@@ -203,12 +227,16 @@ class AuthenticationFragment : Fragment() {
                         }
                         "expired" -> {
                             Log.d(Constants.Tags.AUTH, "Authorization expired")
-                            showError("Code expired. Please try again.")
+                            countDownTimer?.cancel()
+                            showError("Code expired. Click 'Try Again' to generate a new code.")
+                            showActionButtons(showRetry = true, showCancel = true)
                             break
                         }
                         "denied" -> {
                             Log.d(Constants.Tags.AUTH, "Authorization denied")
-                            showError("Authorization denied by user.")
+                            countDownTimer?.cancel()
+                            showError("Authorization denied. Click 'Try Again' or 'Cancel'.")
+                            showActionButtons(showRetry = true, showCancel = true)
                             break
                         }
                         else -> {
@@ -218,7 +246,9 @@ class AuthenticationFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 Log.e(Constants.Tags.AUTH, "Polling error", e)
-                showError("Connection error: ${e.message}")
+                countDownTimer?.cancel()
+                showError("Connection lost. Check your network and try again.")
+                showActionButtons(showRetry = true, showCancel = true)
             }
         }
     }
@@ -289,12 +319,73 @@ class AuthenticationFragment : Fragment() {
     }
     
     /**
-     * Shows an error message.
+     * Shows an error message (preserves device code visibility).
      */
     private fun showError(message: String) {
         errorText.text = message
         errorText.visibility = View.VISIBLE
-        deviceCodeText.text = "ERROR"
+        // Don't replace device code with "ERROR" - preserve visibility of what went wrong
+    }
+    
+    /**
+     * Hides error message.
+     */
+    private fun hideError() {
+        errorText.visibility = View.GONE
+    }
+    
+    /**
+     * Shows/hides action buttons (retry and cancel).
+     * 
+     * @param showRetry Whether to show the retry button
+     * @param showCancel Whether to show the cancel button
+     */
+    private fun showActionButtons(showRetry: Boolean, showCancel: Boolean) {
+        retryButton.visibility = if (showRetry) View.VISIBLE else View.GONE
+        cancelButton.visibility = if (showCancel) View.VISIBLE else View.GONE
+        buttonContainer.visibility = if (showRetry || showCancel) View.VISIBLE else View.GONE
+    }
+    
+    /**
+     * Hides all action buttons.
+     */
+    private fun hideActionButtons() {
+        buttonContainer.visibility = View.GONE
+    }
+    
+    /**
+     * Handles retry button click.
+     * Restarts the entire authentication flow.
+     */
+    private fun onRetryClick() {
+        Log.d(Constants.Tags.AUTH, "Retry button clicked")
+        
+        // Stop any ongoing polling and countdown
+        stopPolling()
+        countDownTimer?.cancel()
+        
+        // Reset UI state
+        deviceCodeText.text = getString(R.string.loading)
+        pairingUrlText.text = getString(R.string.loading)
+        countdownText.text = ""
+        
+        // Restart authentication flow
+        startAuthenticationFlow()
+    }
+    
+    /**
+     * Handles cancel button click.
+     * Stops polling and navigates back to server list.
+     */
+    private fun onCancelClick() {
+        Log.d(Constants.Tags.AUTH, "Cancel button clicked")
+        
+        // Stop any ongoing operations
+        stopPolling()
+        countDownTimer?.cancel()
+        
+        // Navigate back to server list
+        findNavController().popBackStack()
     }
     
     /**
