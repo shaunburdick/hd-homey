@@ -128,7 +128,7 @@
 - [ ] 1.5.7 - Test on TV emulator (landscape, D-pad navigation)
 
 ### Unit Tests
-- [ ] 1.5.8 - Write unit test for `ServerRepository` CRUD operations
+- [x] 1.5.8 - Write unit test for `ServerRepository` CRUD operations (35 tests passing)
 - [ ] 1.5.9 - Write unit test for `DeviceCodeService.generateCode()`
 - [ ] 1.5.10 - Write unit test for `DeviceCodeService.pollAuthorization()`
 - [x] 1.5.11 - Write unit test for URL validation helper (22 tests passing)
