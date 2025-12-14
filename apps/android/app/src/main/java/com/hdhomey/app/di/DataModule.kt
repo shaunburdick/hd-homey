@@ -109,9 +109,51 @@ object DataModule {
         return com.hdhomey.app.data.repository.TokenRepository(tokenDataStore)
     }
 
-    // TODO T029: Add ChannelRepository provider here
-    // TODO T030: Add PreferencesRepository provider here
-    // TODO T031: Wire up all repositories with @Singleton scope
+    /**
+     * Provides ChannelRepository for channel data operations.
+     *
+     * Handles:
+     * - Fetching channel lineups from tuners
+     * - Generating stream tokens for HLS playback
+     *
+     * Used by:
+     * - GetChannelsUseCase
+     * - GenerateStreamUrlUseCase
+     *
+     * @param apiService HD Homey API service for HTTP requests
+     * @return ChannelRepository singleton
+     */
+    @Provides
+    @Singleton
+    fun provideChannelRepository(
+        apiService: com.hdhomey.app.api.HdHomeyApiService
+    ): com.hdhomey.app.data.repository.ChannelRepository {
+        return com.hdhomey.app.data.repository.ChannelRepository(apiService)
+    }
+
+    /**
+     * Provides PreferencesRepository for user preferences operations.
+     *
+     * Handles:
+     * - Fetching user's channel favorites and hidden channels
+     * - Graceful degradation when backend endpoint not implemented
+     *
+     * Used by:
+     * - GetChannelPreferencesUseCase
+     *
+     * Note: Different from AppPreferences (app-level settings).
+     * This repository handles user-specific channel preferences from backend.
+     *
+     * @param apiService HD Homey API service for HTTP requests
+     * @return PreferencesRepository singleton
+     */
+    @Provides
+    @Singleton
+    fun providePreferencesRepository(
+        apiService: com.hdhomey.app.api.HdHomeyApiService
+    ): com.hdhomey.app.data.repository.PreferencesRepository {
+        return com.hdhomey.app.data.repository.PreferencesRepository(apiService)
+    }
 }
 
 /**
