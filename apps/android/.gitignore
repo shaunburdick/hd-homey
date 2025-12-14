@@ -1,8 +1,7 @@
 # Gradle files
 .gradle/
 build/
-gradlew
-gradlew.bat
+# Note: gradlew and gradlew.bat should be committed (Gradle best practice)
 
 # Local configuration files
 local.properties
