@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -78,6 +80,7 @@ dependencies {
     // Kotlin
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.core)
 
     // AndroidX Core
     implementation(libs.androidx.core.ktx)
@@ -104,7 +107,25 @@ dependencies {
     // Networking
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
+
+    // Dependency Injection
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
+    // Image Loading
+    implementation(libs.coil)
+    implementation(libs.coil.gif)
+
+    // Data Storage
+    implementation(libs.androidx.datastore.preferences)
+
+    // Media & Video
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.exoplayer.hls)
 
     // Security
     implementation(libs.androidx.security.crypto)
@@ -113,9 +134,12 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
 }
