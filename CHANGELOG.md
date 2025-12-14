@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Database Migrations in Docker**: Fixed migration script to use absolute paths in production mode, preventing "no such table" errors when redeploying with latest images. Migration script now correctly detects working directory context and uses `/app/migrations` in Docker containers.
+
 ### Added
 
 - **Android TV App Phase 1 (SPEC-013)**: Foundation & Authentication - Complete native Android TV application for device pairing and server management
