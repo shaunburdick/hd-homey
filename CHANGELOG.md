@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Database Migrations in Docker**: Fixed migration script to use absolute paths in production mode, preventing "no such table" errors when redeploying with latest images. Migration script now correctly detects working directory context and uses `/app/migrations` in Docker containers.
+- **Database Migrations in Docker**: Fixed database path resolution to prevent "no such table" errors when redeploying with latest images. The monorepo structure caused working directory ambiguity where relative paths resolved differently for migration script vs. Next.js app. The entrypoint script now normalizes relative paths to absolute paths while maintaining full backwards compatibility with existing `HD_HOMEY_DB_PATH` configurations.
 
 ### Added
 
