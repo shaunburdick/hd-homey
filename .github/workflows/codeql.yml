@@ -52,15 +52,14 @@ jobs:
               with:
                   languages: ${{ matrix.language }}
                   queries: +security-extended,security-and-quality
-
-            - name: Autobuild (TypeScript only)
-              if: matrix.language == 'javascript-typescript'
-              uses: github/codeql-action/autobuild@v3
+                  build-mode: ${{ matrix.language == 'java-kotlin' && 'manual' || 'none' }}
 
             - name: Build Android App (for CodeQL)
               if: matrix.language == 'java-kotlin'
               working-directory: apps/android
-              run: ./gradlew assembleDebug --no-daemon
+              run: |
+                  ./gradlew clean
+                  ./gradlew assembleDebug --no-daemon --rerun-tasks
 
             - name: Perform CodeQL Analysis
               uses: github/codeql-action/analyze@v3
