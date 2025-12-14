@@ -24,6 +24,7 @@ permissions:
 
 env:
     NODE_VERSION: "20"
+    JAVA_VERSION: "17"
     SKIP_INSTRUMENTATION: true
 
 jobs:
@@ -109,11 +110,77 @@ jobs:
                   path: apps/web/coverage/
                   retention-days: 7
 
+    # Android lint job runs in parallel for fast feedback
+    android-lint:
+        name: Android Lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup JDK
+              uses: actions/setup-java@v4
+              with:
+                  distribution: 'temurin'
+                  java-version: ${{ env.JAVA_VERSION }}
+                  cache: 'gradle'
+
+            - name: Grant execute permission for gradlew
+              working-directory: apps/android
+              run: chmod +x gradlew
+
+            - name: Run Android Lint
+              working-directory: apps/android
+              run: ./gradlew lintDebug
+
+            - name: Upload lint results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: android-lint-report
+                  path: apps/android/app/build/reports/lint-results-debug.html
+                  retention-days: 7
+
+    # Android test job runs in parallel
+    android-test:
+        name: Android Test
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup JDK
+              uses: actions/setup-java@v4
+              with:
+                  distribution: 'temurin'
+                  java-version: ${{ env.JAVA_VERSION }}
+                  cache: 'gradle'
+
+            - name: Grant execute permission for gradlew
+              working-directory: apps/android
+              run: chmod +x gradlew
+
+            - name: Run unit tests
+              working-directory: apps/android
+              run: ./gradlew testDebugUnitTest
+
+            - name: Upload test results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: android-test-results
+                  path: |
+                      apps/android/app/build/reports/tests/
+                      apps/android/app/build/test-results/
+                  retention-days: 7
+
     # Build job - only runs after lint, typecheck, and test pass
     build:
         name: Build
         runs-on: ubuntu-latest
-        needs: [lint, typecheck, test]
+        needs: [lint, typecheck, test, android-lint, android-test]
         timeout-minutes: 15
         steps:
             - name: Checkout
@@ -148,4 +215,36 @@ jobs:
                   path: |
                       apps/web/.next/
                       !apps/web/.next/cache
+                  retention-days: 7
+
+    # Android build job - only runs after Android checks pass
+    android-build:
+        name: Android Build
+        runs-on: ubuntu-latest
+        needs: [android-lint, android-test]
+        timeout-minutes: 15
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup JDK
+              uses: actions/setup-java@v4
+              with:
+                  distribution: 'temurin'
+                  java-version: ${{ env.JAVA_VERSION }}
+                  cache: 'gradle'
+
+            - name: Grant execute permission for gradlew
+              working-directory: apps/android
+              run: chmod +x gradlew
+
+            - name: Build debug APK
+              working-directory: apps/android
+              run: ./gradlew assembleDebug
+
+            - name: Upload APK artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: android-debug-apk
+                  path: apps/android/app/build/outputs/apk/debug/app-debug.apk
                   retention-days: 7
