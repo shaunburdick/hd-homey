@@ -14,11 +14,11 @@ This document captures research conducted for Phase 2 technology decisions. Each
 
 ### Version Selection
 
-**Chosen**: `androidx.media3:media3-exoplayer:1.9.0`
+**Chosen**: `androidx.media3:media3-exoplayer:1.4.1`
 
-**Latest Stable**: 1.9.0 (Released December 2024)
+**Latest Stable**: 1.4.1 (Released September 2024)
 
-**Why 1.9.0**:
+**Why 1.4.1**:
 - Latest stable release with HLS improvements
 - Critical bug fixes for adaptive bitrate streaming
 - Better Android TV remote control support
@@ -33,7 +33,7 @@ This document captures research conducted for Phase 2 technology decisions. Each
 | **VideoView** | Simple API | Wrapper around MediaPlayer, same limitations | ❌ Rejected |
 | **libVLC (VLC SDK)** | Wide codec support | Large library (~30MB), GPL license concerns | ❌ Rejected |
 | **ExoPlayer 2.x (deprecated)** | Mature, familiar | Deprecated, no updates | ❌ Rejected |
-| **Media3 1.9.0** | Modern, actively maintained, excellent HLS | Moderate learning curve | ✅ **Selected** |
+| **Media3 1.4.1** | Modern, actively maintained, excellent HLS | Moderate learning curve | ✅ **Selected** |
 
 ### Key Features
 
@@ -48,9 +48,9 @@ This document captures research conducted for Phase 2 technology decisions. Each
 ```kotlin
 // Basic setup
 dependencies {
-    implementation("androidx.media3:media3-exoplayer:1.9.0")
-    implementation("androidx.media3:media3-ui:1.9.0")
-    implementation("androidx.media3:media3-exoplayer-hls:1.9.0") // HLS support
+    implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-ui:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.4.1") // HLS support
 }
 
 // Usage pattern
@@ -595,7 +595,7 @@ coroutines = "1.10.1"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
 kotlinx-serialization = "1.7.3"
-media3 = "1.9.0"
+media3 = "1.4.1"
 coil = "2.7.0"
 datastore = "1.1.1"
 hilt = "2.52"
@@ -704,7 +704,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 
 | Technology | Version | Rationale | Phase 1 Change |
 |------------|---------|-----------|----------------|
-| **Media3** | 1.9.0 | Modern ExoPlayer, HLS support | NEW |
+| **Media3** | 1.4.1 | Modern ExoPlayer, HLS support | NEW |
 | **Retrofit** | 2.11.0 | Type-safe API, coroutines support | Replaces raw OkHttp |
 | **Coil** | 2.7.0 | Kotlin-first image loading | NEW |
 | **DataStore** | 1.1.1 | Async preferences storage | Replaces SharedPreferences |

@@ -37,7 +37,7 @@ coil = "2.7.0"
 datastore = "1.1.1"
 
 # Media & Video
-media3 = "1.9.0"
+media3 = "1.4.1"
 
 # Security
 securityCrypto = "1.1.0-alpha06"
