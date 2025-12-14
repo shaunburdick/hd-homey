@@ -1,21 +1,42 @@
 # Phase 1.5 Progress: Polish & Testing
 
 **Date**: 2025-01-13  
-**Status**: 🚧 In Progress
+**Status**: 🚧 In Progress - 70 Tests Passing ✅
 
 ## Summary
 
 Phase 1.5 focuses on testing and polishing the Android app before Phase 2. Current progress:
 - ✅ Unit tests for UrlValidator (22 tests)
 - ✅ Unit tests for AppPreferences (13 tests)
-- ⏳ ServerRepository tests (next)
+- ✅ Unit tests for ServerRepository (35 tests) **NEW!**
 - ⏳ DeviceCodeService tests (next)
 - ⏳ Manual testing scenarios
 - ⏳ UI polish (loading states, error handling, app icon)
 
 ## Test Results
 
-### Current Test Coverage: 35 Tests Passing ✅
+### Current Test Coverage: 70 Tests Passing ✅
+
+#### ServerRepositoryTest (35 tests) **NEW!**
+**File**: `apps/android/app/src/test/java/com/hdhomey/app/data/repository/ServerRepositoryTest.kt`
+
+Tests covering:
+- ✅ **addServer**: Create server, persist, trim whitespace (3 tests)
+- ✅ **addServer validation**: Duplicate detection case-insensitive (3 tests)
+- ✅ **removeServer**: Delete, clear active if removed, not found handling (4 tests)
+- ✅ **getAllServers**: Empty list, sorted by lastConnected (2 tests)
+- ✅ **getServerById**: Find by ID, return null (2 tests)
+- ✅ **updateServer**: Modify existing, preserve ID, not found (3 tests)
+- ✅ **setActiveServer**: Set active, update timestamp, not found (3 tests)
+- ✅ **getActiveServer**: Return active or null, deleted server edge case (2 tests)
+- ✅ **clearActiveServer**: Clear without deleting (1 test)
+- ✅ **updateServerAuthentication**: Set JWT/username/role, not found (2 tests)
+- ✅ **clearServerAuthentication**: Remove auth fields, not found (2 tests)
+- ✅ **hasServers**: Check existence (2 tests)
+- ✅ **getServerCount**: Count servers (1 test)
+- ✅ **isServerNameExists**: Case-insensitive, with excludeId (5 tests)
+
+**All 35 tests passing** - comprehensive coverage of all CRUD operations, active server management, and authentication handling.
 
 #### UrlValidatorTest (22 tests)
 **File**: `apps/android/app/src/test/java/com/hdhomey/app/util/UrlValidatorTest.kt`
@@ -93,13 +114,14 @@ testImplementation(libs.androidx.test.core)
 
 **Result**: 
 ```
-✅ BUILD SUCCESSFUL in 36s
-57 actionable tasks: 49 executed, 8 from cache
+✅ BUILD SUCCESSFUL in 5s
+57 actionable tasks: 6 executed, 51 up-to-date
 ```
 
 **Test Execution Time**:
-- AppPreferencesTest: ~8.2 seconds (includes Robolectric initialization)
-- UrlValidatorTest: ~0.006 seconds (pure Kotlin, no Android APIs)
+- ServerRepositoryTest: ~1.6 seconds (Robolectric + CRUD operations)
+- AppPreferencesTest: ~0.06 seconds (Robolectric initialized)
+- UrlValidatorTest: ~0.007 seconds (pure Kotlin, no Android APIs)
 
 ## Next Steps
 
@@ -182,9 +204,9 @@ specs/013-android-app-phase1/PHASE1.5-PROGRESS.md (this file)
 |-----------|-------|--------|----------|
 | UrlValidator | 22 | ✅ Passing | 100% (all methods covered) |
 | AppPreferences | 13 | ✅ Passing | 100% (all methods covered) |
-| ServerRepository | 0 | ⏳ Todo | 0% |
+| ServerRepository | 35 | ✅ Passing | 100% (all methods covered) |
 | DeviceCodeService | 0 | ⏳ Todo | 0% |
-| **Total** | **35** | **✅** | **~40%** |
+| **Total** | **70** | **✅** | **~70%** |
 
 ## Build Commands
 
@@ -205,12 +227,11 @@ open apps/android/app/build/reports/tests/testDebugUnitTest/index.html
 
 ## Conclusion
 
-Phase 1.5 is progressing well with 35 tests passing and solid test infrastructure in place. The remaining work focuses on testing the more complex components (ServerRepository, DeviceCodeService) and manual testing scenarios that require an emulator.
+Phase 1.5 is progressing excellently with 70 tests passing and comprehensive coverage of core data layer components. The test infrastructure is solid and development velocity is high. The remaining work focuses on testing the async/network components (DeviceCodeService) and manual testing scenarios.
 
 **Next Immediate Tasks**:
-1. Write ServerRepository tests (8-10 tests)
-2. Write DeviceCodeService tests (10-12 tests)
-3. Run manual testing scenarios
-4. Add UI polish (loading/error states)
+1. Write DeviceCodeService tests (10-12 tests) - requires MockK for OkHttp mocking
+2. Run manual testing scenarios (requires emulator)
+3. Add UI polish (loading/error states)
 
-**Status**: 🚧 In Progress | ✅ 35/~60 tests complete (~58%)
+**Status**: 🚧 In Progress | ✅ 70/~80 tests complete (~88%)
