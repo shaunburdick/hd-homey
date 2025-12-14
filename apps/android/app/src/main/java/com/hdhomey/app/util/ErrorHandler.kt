@@ -134,13 +134,16 @@ object ErrorHandler {
     /**
      * Determine if an error is network-related (vs server or authentication error).
      *
+     * Network errors include connection timeouts, DNS resolution failures, and general I/O issues.
+     * These are checked in order of specificity (most specific first) to ensure proper classification.
+     *
      * @param exception The exception to check
      * @return True if error is due to network connectivity
      */
     fun isNetworkError(exception: Exception): Boolean {
-        return exception is IOException ||
-                exception is SocketTimeoutException ||
-                exception is UnknownHostException
+        return exception is SocketTimeoutException ||
+                exception is UnknownHostException ||
+                exception is IOException
     }
 
     /**
