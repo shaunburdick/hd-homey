@@ -1,6 +1,9 @@
 package com.hdhomey.app.data.repository
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.test.core.app.ApplicationProvider
 import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.storage.AppPreferences
@@ -24,11 +27,14 @@ class ServerRepositoryTest {
     private lateinit var repository: ServerRepository
     private lateinit var appPreferences: AppPreferences
     private lateinit var context: Context
+    private val Context.testDataStore: DataStore<Preferences> by preferencesDataStore(
+        name = "test_server_repo_prefs"
+    )
 
     @Before
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
-        appPreferences = AppPreferences(context)
+        appPreferences = AppPreferences(context.testDataStore)
         appPreferences.clearAll() // Clean slate for each test
         repository = ServerRepository(appPreferences)
     }

@@ -48,16 +48,18 @@ object NetworkModule {
      * - 60s read timeout (HLS manifest/segment downloads)
      * - 30s write timeout (POST requests)
      *
-     * Note: AuthInterceptor and ErrorInterceptor will be added in T016-T017
-     *
+     * @param authInterceptor Injects JWT tokens into requests
+     * @param errorInterceptor Handles 401/403 authentication errors
      * @return Configured OkHttpClient singleton
      */
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: com.hdhomey.app.api.interceptors.AuthInterceptor,
+        errorInterceptor: com.hdhomey.app.api.interceptors.ErrorInterceptor
+    ): OkHttpClient {
         return OkHttpClient.Builder()
-            // TODO T016: Add AuthInterceptor here
-            // TODO T017: Add ErrorInterceptor here
+            .addInterceptor(authInterceptor)
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = if (BuildConfig.DEBUG) {
@@ -67,6 +69,7 @@ object NetworkModule {
                     }
                 }
             )
+            .addInterceptor(errorInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

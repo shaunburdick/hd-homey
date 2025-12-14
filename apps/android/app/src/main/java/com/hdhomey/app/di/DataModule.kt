@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.hdhomey.app.storage.AppPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -58,8 +59,56 @@ object DataModule {
         return context.preferencesDataStore
     }
 
-    // TODO T014: Add TokenDataStore provider here
-    // TODO T015: Add TokenRepository provider here
+    /**
+     * Provides AppPreferences with DataStore backend.
+     *
+     * Replaces Phase 1 SharedPreferences implementation.
+     * Provides both sync (backward compatible) and async (Flow) APIs.
+     *
+     * @param dataStore DataStore for preferences
+     * @return AppPreferences singleton
+     */
+    @Provides
+    @Singleton
+    fun provideAppPreferences(
+        dataStore: DataStore<Preferences>
+    ): AppPreferences {
+        return AppPreferences(dataStore)
+    }
+
+    /**
+     * Provides TokenDataStore for JWT token storage.
+     *
+     * Separate DataStore instance from app preferences for security.
+     * Used by TokenRepository for authentication operations.
+     *
+     * @param context Application context
+     * @return TokenDataStore singleton
+     */
+    @Provides
+    @Singleton
+    fun provideTokenDataStore(
+        @ApplicationContext context: Context
+    ): com.hdhomey.app.storage.TokenDataStore {
+        return com.hdhomey.app.storage.TokenDataStore(context)
+    }
+
+    /**
+     * Provides TokenRepository for JWT token operations.
+     *
+     * Used by AuthInterceptor and authentication-related use cases.
+     *
+     * @param tokenDataStore TokenDataStore for token storage
+     * @return TokenRepository singleton
+     */
+    @Provides
+    @Singleton
+    fun provideTokenRepository(
+        tokenDataStore: com.hdhomey.app.storage.TokenDataStore
+    ): com.hdhomey.app.data.repository.TokenRepository {
+        return com.hdhomey.app.data.repository.TokenRepository(tokenDataStore)
+    }
+
     // TODO T029: Add ChannelRepository provider here
     // TODO T030: Add PreferencesRepository provider here
     // TODO T031: Wire up all repositories with @Singleton scope

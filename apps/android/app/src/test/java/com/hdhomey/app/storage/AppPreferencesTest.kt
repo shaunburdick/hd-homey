@@ -1,6 +1,9 @@
 package com.hdhomey.app.storage
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.test.core.app.ApplicationProvider
 import com.hdhomey.app.data.model.Server
 import org.junit.Before
@@ -13,7 +16,8 @@ import org.robolectric.annotation.Config
 /**
  * Unit tests for AppPreferences.
  *
- * Uses Robolectric for Android SharedPreferences testing.
+ * Uses Robolectric for Android DataStore testing.
+ * Tests both synchronous (backward compatible) and async APIs.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28]) // API 28 (Android 9.0) - minSdk
@@ -21,11 +25,14 @@ class AppPreferencesTest {
 
     private lateinit var appPreferences: AppPreferences
     private lateinit var context: Context
+    private val Context.testDataStore: DataStore<Preferences> by preferencesDataStore(
+        name = "test_hd_homey_prefs"
+    )
 
     @Before
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
-        appPreferences = AppPreferences(context)
+        appPreferences = AppPreferences(context.testDataStore)
         // Clear any existing data
         appPreferences.clearAll()
     }
