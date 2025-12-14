@@ -1,7 +1,7 @@
 # Phase 1.5 Progress: Polish & Testing
 
 **Date**: 2025-01-13  
-**Status**: ✅ Unit Testing Complete - 86 Tests Passing!
+**Status**: ✅ Phase 1.5A Critical Fixes COMPLETE!
 
 ## Summary
 
@@ -9,9 +9,69 @@ Phase 1.5 focuses on testing and polishing the Android app before Phase 2. Curre
 - ✅ Unit tests for UrlValidator (22 tests)
 - ✅ Unit tests for AppPreferences (13 tests)
 - ✅ Unit tests for ServerRepository (35 tests)
-- ✅ Unit tests for DeviceCodeService (16 tests) **COMPLETE!**
+- ✅ Unit tests for DeviceCodeService (16 tests)
+- ✅ **Phase 1.5A: Critical UI Fixes (15 tasks)** - Authentication retry/cancel, server delete/edit, health check retry
+- ⏳ Phase 1.5B: High Priority Fixes (in progress)
 - ⏳ Manual testing scenarios (deferred)
-- ⏳ UI polish (deferred to later phases)
+
+## Phase 1.5A: Critical UI Fixes ✅ COMPLETE
+
+### Task 1.5.21-1.5.25: AuthenticationFragment Retry/Cancel ✅
+**Commit**: `b64c539` - feat(android): add retry/cancel buttons to AuthenticationFragment
+
+**Problem**: Users stuck in authentication flow with no way to recover from errors or cancel.
+
+**Solution**:
+- Added retry button that stops polling, resets UI, and restarts auth flow
+- Added cancel button that stops polling and returns to server list
+- Improved error messages with actionable guidance
+- Preserved device code visibility on errors (don't replace with "ERROR")
+
+**Files Modified**:
+- `apps/android/app/src/main/res/layout/fragment_authentication.xml`
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/auth/AuthenticationFragment.kt`
+
+### Task 1.5.26-1.5.31: ServerListFragment Delete/Edit ✅
+**Commit**: `9bc9cbb` - feat(android): add delete/edit functionality to ServerListFragment
+
+**Problem**: No way to remove servers from list after adding them.
+
+**Solution**:
+- Added swipe-to-delete (left or right) using ItemTouchHelper
+- Added context menu (long-press) with Edit/Delete options
+- Added confirmation dialog showing server name and auth data warning
+- Used `bindingAdapterPosition` (not deprecated `adapterPosition`)
+
+**Files Modified**:
+- `apps/android/app/src/main/res/menu/server_context_menu.xml` (new)
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/ServerListAdapter.kt`
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/ServerListFragment.kt`
+
+### Task 1.5.32-1.5.35: AddServerFragment Retry Button ✅
+**Commit**: `ab822f7` - feat(android): add retry button to AddServerFragment health check
+
+**Problem**: After health check failure, users must navigate away to retry.
+
+**Solution**:
+- Connect button becomes "Try Again" after health check failure
+- Added `setRetryState(retry: Boolean)` to change button text
+- Updated `performHealthCheck()` to call `setRetryState(true)` on failure
+- Improved error messages with actionable guidance (e.g., "Cannot reach server. Check the URL and your network connection, then try again.")
+
+**Files Modified**:
+- `apps/android/app/src/main/java/com/hdhomey/app/ui/servers/AddServerFragment.kt`
+
+### Impact
+
+**Before Phase 1.5A**: Users had 3 critical "dead-ends" where they got stuck with no recovery option:
+1. Authentication errors → Must restart app
+2. Wrong server added → Stuck with it forever
+3. Health check fails → Must clear form and re-enter everything
+
+**After Phase 1.5A**: All dead-ends eliminated:
+1. ✅ Authentication errors → Retry/Cancel buttons
+2. ✅ Wrong server added → Swipe or context menu to delete
+3. ✅ Health check fails → "Try Again" button
 
 ## Test Results
 

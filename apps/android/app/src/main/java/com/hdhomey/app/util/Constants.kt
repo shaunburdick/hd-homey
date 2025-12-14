@@ -72,14 +72,45 @@ object Constants {
     }
 
     /**
-     * Error messages.
+     * User-facing error messages with actionable guidance.
+     *
+     * Guidelines:
+     * - Explain WHAT went wrong in simple terms
+     * - Suggest WHAT TO DO to fix it
+     * - Keep under 2 sentences
+     * - Avoid technical jargon (DNS, HTTP codes, etc.)
      */
     object Errors {
-        const val NETWORK_ERROR = "Network error. Please check your connection."
-        const val SERVER_UNREACHABLE = "Server is unreachable. Please check the URL."
-        const val INVALID_URL = "Invalid URL format."
-        const val DUPLICATE_NAME = "A server with this name already exists."
-        const val AUTH_FAILED = "Authentication failed. Please try again."
+        // Network errors
+        const val NETWORK_ERROR = "Cannot connect to the network. Check your WiFi or mobile data connection and try again."
+        const val CONNECTION_TIMEOUT = "Connection timed out. The server might be slow or offline. Try again in a moment."
+        const val NO_INTERNET = "No internet connection. Check your network settings and try again."
+
+        // Server errors
+        const val SERVER_UNREACHABLE = "Cannot reach server. Check the URL and your network connection, then try again."
+        const val SERVER_ERROR = "Server returned an error. The server might be temporarily down. Try again later."
+        const val SERVER_NOT_RESPONDING = "Server is not responding. Check if the server is running and try again."
+
+        // URL validation errors
+        const val INVALID_URL = "Invalid URL format. Use http:// or https:// and include the port (e.g., http://192.168.1.100:3000)."
+        const val UNSUPPORTED_PROTOCOL = "Unsupported protocol. Use http:// or https:// only."
+        const val EMPTY_URL = "Please enter a server URL (e.g., http://192.168.1.100:3000)."
+
+        // Server management errors
+        const val DUPLICATE_NAME = "A server with this name already exists. Choose a different name."
+        const val DUPLICATE_URL = "This server URL is already in your list."
+        const val SERVER_NOT_FOUND = "Server not found in your list."
+
+        // Authentication errors
+        const val AUTH_FAILED = "Authentication failed. Check your credentials and try again."
+        const val AUTH_DENIED = "Authorization was denied. Try generating a new code or check with your server administrator."
+        const val AUTH_EXPIRED = "Code expired. Click 'Try Again' to generate a new code."
         const val TOKEN_EXPIRED = "Your session has expired. Please sign in again."
+        const val CODE_GENERATION_FAILED = "Could not generate device code. Check your connection and try again."
+        const val POLLING_FAILED = "Lost connection while checking authorization. Your network might be unstable. Try again."
+
+        // Generic fallback
+        const val UNKNOWN_ERROR = "Something went wrong. Check your connection and try again."
+        const val TRY_AGAIN = "Please try again in a moment. If the problem persists, check your network and server settings."
     }
 }

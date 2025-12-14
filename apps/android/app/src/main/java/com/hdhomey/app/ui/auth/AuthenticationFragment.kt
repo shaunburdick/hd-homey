@@ -20,6 +20,7 @@ import com.hdhomey.app.api.models.DeviceCodeResponse
 import com.hdhomey.app.data.repository.ServerRepository
 import com.hdhomey.app.storage.AppPreferences
 import com.hdhomey.app.util.Constants
+import com.hdhomey.app.util.ErrorHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -153,7 +154,7 @@ class AuthenticationFragment : Fragment() {
                 
             } catch (e: Exception) {
                 Log.e(Constants.Tags.AUTH, "Failed to start authentication", e)
-                showError("Failed to connect to server. Check your network connection and try again.")
+                showError(ErrorHandler.getCodeGenerationError(e))
                 showActionButtons(showRetry = true, showCancel = true)
             } finally {
                 showLoading(false)
@@ -194,7 +195,7 @@ class AuthenticationFragment : Fragment() {
             override fun onFinish() {
                 countdownText.text = getString(R.string.code_expired)
                 stopPolling()
-                showError("Code expired. Click 'Try Again' to generate a new code.")
+                showError(Constants.Errors.AUTH_EXPIRED)
                 showActionButtons(showRetry = true, showCancel = true)
             }
         }.start()
@@ -228,14 +229,14 @@ class AuthenticationFragment : Fragment() {
                         "expired" -> {
                             Log.d(Constants.Tags.AUTH, "Authorization expired")
                             countDownTimer?.cancel()
-                            showError("Code expired. Click 'Try Again' to generate a new code.")
+                            showError(Constants.Errors.AUTH_EXPIRED)
                             showActionButtons(showRetry = true, showCancel = true)
                             break
                         }
                         "denied" -> {
                             Log.d(Constants.Tags.AUTH, "Authorization denied")
                             countDownTimer?.cancel()
-                            showError("Authorization denied. Click 'Try Again' or 'Cancel'.")
+                            showError(Constants.Errors.AUTH_DENIED)
                             showActionButtons(showRetry = true, showCancel = true)
                             break
                         }
@@ -247,7 +248,7 @@ class AuthenticationFragment : Fragment() {
             } catch (e: Exception) {
                 Log.e(Constants.Tags.AUTH, "Polling error", e)
                 countDownTimer?.cancel()
-                showError("Connection lost. Check your network and try again.")
+                showError(ErrorHandler.getPollingError(e))
                 showActionButtons(showRetry = true, showCancel = true)
             }
         }

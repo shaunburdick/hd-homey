@@ -19,6 +19,7 @@ import com.hdhomey.app.R
 import com.hdhomey.app.data.repository.ServerRepository
 import com.hdhomey.app.storage.AppPreferences
 import com.hdhomey.app.util.Constants
+import com.hdhomey.app.util.ErrorHandler
 import com.hdhomey.app.util.UrlValidator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -178,7 +179,8 @@ class AddServerFragment : Fragment() {
                     if (isHealthy) {
                         onHealthCheckSuccess(name, url)
                     } else {
-                        showError("Cannot reach server. Check the URL and your network connection, then try again.")
+                        // Server returned non-200 status
+                        showError(Constants.Errors.SERVER_NOT_RESPONDING)
                         setRetryState(true)
                     }
                 }
@@ -186,7 +188,7 @@ class AddServerFragment : Fragment() {
                 Log.e(Constants.Tags.ADD_SERVER, "Health check failed", e)
                 withContext(Dispatchers.Main) {
                     setLoadingState(false)
-                    showError("Network error. Check your connection and try again.")
+                    showError(ErrorHandler.getHealthCheckError(e))
                     setRetryState(true)
                 }
             }
