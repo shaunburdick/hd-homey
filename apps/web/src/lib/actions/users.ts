@@ -113,8 +113,10 @@ export async function createUser(prevState: unknown, formData: FormData) {
         const db = await getDb();
 
         // Check if username already exists to prevent race conditions
+        // Note: Normalize to lowercase for comparison to match Better-Auth behavior
+        const normalizedUsernameCheck = (username as string).toLowerCase();
         const existingUser = await db.query.user.findFirst({
-            where: eq(user.username, username as string)
+            where: eq(user.username, normalizedUsernameCheck)
         });
 
         if (existingUser !== undefined) {
@@ -126,10 +128,14 @@ export async function createUser(prevState: unknown, formData: FormData) {
         const accountId = crypto.randomUUID();
 
         // Create user record
+        // Note: Better-Auth username plugin normalizes usernames to lowercase
+        // We store the normalized version in username and original in displayUsername
+        const normalizedUsername = (username as string).toLowerCase();
         await db.insert(user).values({
             id: userId,
-            username: username as string,
-            email: `${username}@local.hdhomey.app`, // Username plugin requires email
+            username: normalizedUsername,
+            displayUsername: username as string, // Preserve original case
+            email: `${normalizedUsername}@local.hdhomey.app`, // Username plugin requires email
             emailVerified: false,
             name: name as string,
             role: role as AuthRoles,

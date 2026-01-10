@@ -167,6 +167,63 @@ describe('User Actions', () => {
             // Better-Auth uses scrypt with format: salt:hash (both hex strings)
             expect(userAccount?.password).toMatch(/^[0-9a-f]+:[0-9a-f]+$/i);
         });
+
+        it('should normalize username to lowercase and preserve original in displayUsername', async () => {
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
+
+            const formData = new FormData();
+            formData.append('username', 'MixedCase123'); // Mixed case input
+            formData.append('name', 'Test User');
+            formData.append('password', 'password123');
+            formData.append('role', AuthRoles.Viewer);
+
+            try {
+                await createUser(null, formData);
+            } catch {
+                // Expected redirect
+            }
+
+            // Verify username is normalized to lowercase
+            const { user } = await import('@/lib/database/schema');
+            const { eq } = await import('drizzle-orm');
+            const createdUser = testDb.select().from(user).where(eq(user.username, 'mixedcase123')).get();
+
+            expect(createdUser).toBeDefined();
+            expect(createdUser?.username).toBe('mixedcase123'); // Normalized
+            expect(createdUser?.displayUsername).toBe('MixedCase123'); // Original case preserved
+            expect(createdUser?.email).toBe('mixedcase123@local.hdhomey.app'); // Email uses normalized
+        });
+
+        it('should prevent duplicate usernames (case-insensitive)', async () => {
+            vi.spyOn(authModule, 'requireAdmin').mockResolvedValue(createMockSession());
+
+            // Create first user with lowercase
+            const formData1 = new FormData();
+            formData1.append('username', 'testuser');
+            formData1.append('name', 'Test User 1');
+            formData1.append('password', 'password123');
+            formData1.append('role', AuthRoles.Viewer);
+
+            try {
+                await createUser(null, formData1);
+            } catch {
+                // Expected redirect
+            }
+
+            // Try to create second user with same username but different case
+            const formData2 = new FormData();
+            formData2.append('username', 'TestUser'); // Different case
+            formData2.append('name', 'Test User 2');
+            formData2.append('password', 'password456');
+            formData2.append('role', AuthRoles.Viewer);
+
+            const result = await createUser(null, formData2);
+
+            // Should return error about duplicate username
+            expect(result).toEqual([
+                { path: 'username', message: 'Username already exists' }
+            ]);
+        });
     });
 
     describe('updateUser', () => {
