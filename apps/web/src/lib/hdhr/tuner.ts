@@ -74,18 +74,18 @@ export class HDTuner {
                     fk_tuner: id,
                     guideNumber: c.GuideNumber,
                     guideName: c.GuideName,
-                    audioCodec: c.AudioCodec,
-                    videoCodec: c.VideoCodec,
+                    audioCodec: c.AudioCodec ?? '',
+                    videoCodec: c.VideoCodec ?? '',
                     hd: c.HD ?? 0,
                     url: c.URL
                 }))).onConflictDoUpdate({
                     target: [channels.fk_tuner, channels.guideNumber],
                     set: {
-                        guideName: sql`excluded.GuideName`,
-                        audioCodec: sql`excluded.AudioCodec`,
-                        videoCodec: sql`excluded.VideoCodec`,
-                        hd: sql`excluded.HD || 0`,
-                        url: sql`excluded.URL`
+                        guideName: sql`excluded.guideName`,
+                        audioCodec: sql`excluded.audioCodec`,
+                        videoCodec: sql`excluded.videoCodec`,
+                        hd: sql`excluded.hd`,
+                        url: sql`excluded.url`
                     }
                 }).returning().all();
 
