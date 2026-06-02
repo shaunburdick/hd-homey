@@ -21,11 +21,13 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Dependency Review
-              uses: actions/dependency-review-action@v4
+              uses: actions/dependency-review-action@v5
               with:
-                  # Fail on critical or high severity vulnerabilities
+                  # Fail on moderate or higher severity vulnerabilities
                   fail-on-severity: moderate
-                  # Deny licenses that are restrictive or incompatible
-                  # Note: AGPL-3.0 (project license) is compatible with most OSS licenses
-                  deny-licenses: GPL-2.0, LGPL-2.0, LGPL-2.1
+                  # Allowlist of permissive licenses common in the Node.js ecosystem.
+                  # Using allow-licenses (allowlist) instead of deny-licenses (denylist)
+                  # since an allowlist is harder to accidentally circumvent with new
+                  # copyleft variants (deny-licenses was also deprecated in v4).
+                  allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, CC0-1.0, CC-BY-3.0, CC-BY-4.0, BlueOak-1.0.0, 0BSD, Unlicense, Python-2.0
                   comment-summary-in-pr: always
