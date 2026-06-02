@@ -9,18 +9,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import styles from './transcoding-status.module.css';
 import type { SessionStats } from '@/lib/transcoding/types';
+import { BASE_PATH } from '@/lib/client-config';
 
 interface StatusResponse {
     sessions: SessionStats[];
     count: number;
 }
-
-/**
- * The sub-path prefix for API calls (e.g. "/hd-homey").
- * NEXT_PUBLIC_BASE_PATH is injected at build time from HD_HOMEY_BASE_PATH.
- * Empty string for root-path deployments.
- */
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
 export default function TranscodingStatus() {
     const [status, setStatus] = useState<StatusResponse | null>(null);

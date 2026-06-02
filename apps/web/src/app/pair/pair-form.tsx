@@ -4,13 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Logger from '@/lib/logger';
 import { Button, Card } from '@/components';
-
-/**
- * The sub-path prefix for API calls (e.g. "/hd-homey").
- * NEXT_PUBLIC_BASE_PATH is injected at build time from HD_HOMEY_BASE_PATH.
- * Empty string for root-path deployments.
- */
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+import { BASE_PATH } from '@/lib/client-config';
 
 interface PairDeviceFormProps {
     code?: string;

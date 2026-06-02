@@ -20,22 +20,25 @@ import { createAuthClient } from 'better-auth/react';
 /**
  * Get the base URL for auth endpoints, including any sub-path prefix.
  *
- * - Client-side: Use window.location.origin + NEXT_PUBLIC_BASE_PATH (works for any domain)
- * - Server-side: Use environment variable (for SSR/build time)
+ * - Browser: use window.location.origin + window.__HD_HOMEY_BASE_PATH__
+ *   The prefix comes from the value injected at request time by the root
+ *   layout (a Server Component reading HD_HOMEY_BASE_PATH from the env).
+ * - SSR: fall back to BETTER_AUTH_URL / NEXTAUTH_URL + the raw env var.
  *
- * The basePath must be included here because the auth client runs in the browser
- * where the full external URL (including the basePath prefix) is visible. This is
- * different from server-side Better-Auth which receives requests with the basePath
- * already stripped by Next.js.
- *
- * NEXT_PUBLIC_BASE_PATH is injected at build time from HD_HOMEY_BASE_PATH via
- * the Next.js public env var convention (NEXT_PUBLIC_ prefix).
+ * The basePath must be included here because the auth client runs in the
+ * browser where the full external URL (including the prefix) is visible.
+ * Server-side Better-Auth does NOT need it — the reverse proxy strips the
+ * prefix before requests reach Next.js.
  */
 const getAuthBaseURL = (): string => {
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
     if (typeof window !== 'undefined') {
-        return `${window.location.origin}${basePath}`;
+        return `${window.location.origin}${window.__HD_HOMEY_BASE_PATH__ ?? ''}`;
     }
+
+    // SSR fallback: normalize the env var the same way Config.BASE_PATH does
+    const raw = process.env.HD_HOMEY_BASE_PATH ?? '';
+    const basePath = raw === '' ? '' : (raw.startsWith('/') ? raw : `/${raw}`).replace(/\/$/, '');
+
     return (process.env.BETTER_AUTH_URL
         ?? process.env.NEXTAUTH_URL
         ?? 'http://localhost:3000') + basePath;
