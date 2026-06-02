@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import styles from './transcoding-status.module.css';
 import type { SessionStats } from '@/lib/transcoding/types';
 
@@ -14,6 +15,13 @@ interface StatusResponse {
     count: number;
 }
 
+/**
+ * The sub-path prefix for API calls (e.g. "/hd-homey").
+ * NEXT_PUBLIC_BASE_PATH is injected at build time from HD_HOMEY_BASE_PATH.
+ * Empty string for root-path deployments.
+ */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
 export default function TranscodingStatus() {
     const [status, setStatus] = useState<StatusResponse | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -21,7 +29,7 @@ export default function TranscodingStatus() {
 
     const fetchStatus = async () => {
         try {
-            const response = await fetch('/api/transcode/status');
+            const response = await fetch(`${BASE_PATH}/api/transcode/status`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch status');
@@ -50,7 +58,7 @@ export default function TranscodingStatus() {
 
         try {
             const response = await fetch(
-                `/api/transcode/status?sessionId=${encodeURIComponent(stoppingSession)}`,
+                `${BASE_PATH}/api/transcode/status?sessionId=${encodeURIComponent(stoppingSession)}`,
                 { method: 'DELETE' }
             );
 
@@ -179,12 +187,12 @@ export default function TranscodingStatus() {
                 {status.sessions.map((session) => (
                     <div key={session.sessionId} className={styles.sessionCard}>
                         <div className={styles.sessionHeader}>
-                            <a
+                            <Link
                                 href={`/tuners/${session.tunerId}/channel/${session.channelId}`}
                                 className={styles.sessionChannel}
                             >
                                 {session.channelName}
-                            </a>
+                            </Link>
                             {getStatusBadge(session.status)}
                         </div>
                         <div className={styles.sessionDetails}>

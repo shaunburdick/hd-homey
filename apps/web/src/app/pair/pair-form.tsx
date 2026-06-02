@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import Logger from '@/lib/logger';
 import { Button, Card } from '@/components';
 
+/**
+ * The sub-path prefix for API calls (e.g. "/hd-homey").
+ * NEXT_PUBLIC_BASE_PATH is injected at build time from HD_HOMEY_BASE_PATH.
+ * Empty string for root-path deployments.
+ */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
 interface PairDeviceFormProps {
     code?: string;
     user: {
@@ -42,7 +49,7 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
             }
 
             // Validate code with server
-            const response = await fetch(`/api/auth/device/validate?code=${cleanCode}`);
+            const response = await fetch(`${BASE_PATH}/api/auth/device/validate?code=${cleanCode}`);
 
             if (!response.ok) {
                 const data = await response.json().catch(() => ({ error: 'Failed to validate code' }));
@@ -76,7 +83,7 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
         setError(null);
 
         try {
-            const response = await fetch('/api/auth/device/authorize', {
+            const response = await fetch(`${BASE_PATH}/api/auth/device/authorize`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

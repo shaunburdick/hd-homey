@@ -8,6 +8,7 @@ import { getTranscodingSettings } from '@/lib/settings';
 import VideoPlayer from '@/components/video-player';
 import { Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
+import Config from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,9 +60,11 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
         );
     }
 
-    // Generate signed stream URL for HLS playlist
+    // Generate signed stream URL for HLS playlist.
+    // Include the basePath prefix so the HLS player fetches segments from the correct path
+    // when the app is deployed under a sub-path (e.g., /hd-homey/api/transcode/...).
     const token = await generateStreamToken(parseInt(id, 10), parseInt(channel_id, 10));
-    const playlistUrl = `/api/transcode/${id}/${channel_id}/playlist.m3u8?token=${token}`;
+    const playlistUrl = `${Config.BASE_PATH}/api/transcode/${id}/${channel_id}/playlist.m3u8?token=${token}`;
 
     return (
         <PageContainer>
