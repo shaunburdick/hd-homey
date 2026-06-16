@@ -28,6 +28,7 @@ HD_HOMEY_TRANSCODE_DIR=./data/transcoding         # Defaults to ${HD_HOMEY_DB_PA
 HD_HOMEY_STREAM_TOKEN_EXPIRY=43200                # 12 hours
 FFMPEG_PATH=ffmpeg                                # Auto-detected from PATH
 BETTER_AUTH_URL=http://localhost:3000             # Auto-detected if not set
+AUTH_SECURE_COOKIES=                              # Defaults to true in production
 LOG_LEVEL=info
 NODE_ENV=production
 ```
@@ -498,6 +499,37 @@ LOG_LEVEL=warn
 - **Development**: `debug`
 - **Production**: `info` or `warn`
 - **Troubleshooting**: `debug` or `trace`
+
+### AUTH_SECURE_COOKIES
+
+**Purpose**: Controls the `Secure` flag on Better-Auth session cookies.
+
+**Format**: Boolean (`true`, `false`)
+
+**Default**: `true` when `NODE_ENV=production`, `false` otherwise
+
+**Example**:
+```bash
+# Disable secure cookies (for local HTTP access)
+AUTH_SECURE_COOKIES=false
+
+# Force secure cookies (even in development)
+AUTH_SECURE_COOKIES=true
+```
+
+**When to set to `false`**:
+- Accessing HD Homey over HTTP on a local network
+- Login keeps redirecting to sign-in page via HTTP but works via HTTPS
+- Running without a TLS-terminating reverse proxy
+
+**When to leave at default**:
+- Accessing HD Homey exclusively over HTTPS
+- Behind a reverse proxy with TLS termination (HAProxy, nginx, Caddy)
+- Development environment (defaults to `false` automatically)
+
+::: warning Security Note
+Setting `AUTH_SECURE_COOKIES=false` allows the session cookie to be transmitted over unencrypted HTTP. Only do this on trusted networks. Your session token can be intercepted by anyone on the same network.
+:::
 
 ### AUTH_TRUST_HOST
 

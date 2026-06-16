@@ -43,6 +43,7 @@ Before diving into specific issues, check these basics:
 2. Clear browser cookies for the site
 3. Check that `BETTER_AUTH_URL` matches your access URL (or leave blank for auto-detection)
 4. Ensure system time is correct (JWT tokens are time-sensitive)
+5. **If accessing over HTTP** (e.g., local LAN without HTTPS): Set `AUTH_SECURE_COOKIES=false` (see below)
 
 ```bash
 # Verify AUTH_SECRET is set
@@ -51,6 +52,41 @@ docker exec hd-homey env | grep AUTH_SECRET
 # Regenerate if needed
 openssl rand -base64 32
 ```
+
+#### Login works via HTTPS but redirects to login over HTTP
+
+**Symptoms**: You can sign in when accessing HD Homey through your reverse proxy (HTTPS), but when you access it directly over HTTP (e.g., `http://192.168.1.100:3000`) the login redirects back to the sign-in page. Wrong credentials still show "invalid credentials" correctly.
+
+**Cause**: HD Homey sets `Secure` cookies in production mode (`NODE_ENV=production`). When running in Docker, `NODE_ENV=production` is set by default. Modern browsers **reject** `Secure` cookies on HTTP connections, so the session cookie is silently dropped and the app redirects you back to sign-in.
+
+When accessing through a reverse proxy (like HAProxy, nginx, or Caddy) that terminates TLS, your browser sees an HTTPS connection and accepts the cookies — which is why external access works.
+
+**Solution**: Disable secure cookies for the session cookie by setting `AUTH_SECURE_COOKIES=false`:
+
+```bash
+# Option 1: Add to your .env file
+AUTH_SECURE_COOKIES=false
+
+# Option 2: Pass directly to Docker Compose
+docker compose run -e AUTH_SECURE_COOKIES=false ...
+
+# Option 3: Docker run
+docker run -e AUTH_SECURE_COOKIES=false ...
+```
+
+Then restart HD Homey:
+```bash
+docker compose restart
+```
+
+::: warning Security Consideration
+Disabling secure cookies means the session cookie can be sent over unencrypted HTTP connections. Only do this if:
+- You are accessing HD Homey only on a trusted local network
+- You understand the security implications of transmitting session tokens over HTTP
+- Your reverse proxy (for external access) still uses HTTPS
+
+If you need both secure external access (via HTTPS proxy) and local HTTP access, you may need to run two instances or use a local proxy that provides TLS.
+:::
 
 #### "Forbidden" or "Unauthorized" errors
 **Symptoms**: Can access some pages but not others
