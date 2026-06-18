@@ -1,19 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { requireAdmin, requireRole, AuthRoles } from './auth/helpers';
-import { auth } from './auth/auth';
+import { auth, resolveUseSecureCookies } from './auth/auth';
 import { createMockSession } from '@/test-utils/mock-auth';
 
 // Test constants
 const NOT_AUTHENTICATED_ERROR = 'Not authenticated';
 
-// Mock the auth module
-vi.mock('./auth/auth', () => ({
-    auth: {
-        api: {
-            getSession: vi.fn()
-        }
-    },
-}));
+// Mock the auth module — we only mock `auth` for the helper tests,
+// but keep the actual `resolveUseSecureCookies` function for unit testing
+vi.mock('./auth/auth', async (importOriginal) => {
+    const mod = await importOriginal() as object;
+    return {
+        ...mod,
+        auth: {
+            api: {
+                getSession: vi.fn()
+            }
+        },
+    };
+});
 
 describe('Authorization Helpers', () => {
     beforeEach(() => {
@@ -167,6 +172,70 @@ describe('Authorization Helpers', () => {
         it('should have string role values', () => {
             expect(typeof AuthRoles.Admin).toBe('string');
             expect(typeof AuthRoles.Viewer).toBe('string');
+        });
+    });
+
+});
+
+describe('resolveUseSecureCookies', () => {
+    describe('default behavior (no AUTH_SECURE_COOKIES override)', () => {
+        it('should return true when NODE_ENV is production', () => {
+            expect(resolveUseSecureCookies(undefined, 'production')).toBe(true);
+        });
+
+        it('should return false when NODE_ENV is development', () => {
+            expect(resolveUseSecureCookies(undefined, 'development')).toBe(false);
+        });
+
+        it('should return false when NODE_ENV is test', () => {
+            expect(resolveUseSecureCookies(undefined, 'test')).toBe(false);
+        });
+
+        it('should return false when NODE_ENV is undefined', () => {
+            expect(resolveUseSecureCookies(undefined, undefined)).toBe(false);
+        });
+
+        it('should treat empty string as unset and fall back to NODE_ENV', () => {
+            expect(resolveUseSecureCookies('', 'production')).toBe(true);
+            expect(resolveUseSecureCookies('', 'development')).toBe(false);
+        });
+    });
+
+    describe('with AUTH_SECURE_COOKIES override', () => {
+        it('should return false when AUTH_SECURE_COOKIES is "false" in production', () => {
+            // This is the fix for Issue #35
+            expect(resolveUseSecureCookies('false', 'production')).toBe(false);
+        });
+
+        it('should return false when AUTH_SECURE_COOKIES is "false" in development', () => {
+            expect(resolveUseSecureCookies('false', 'development')).toBe(false);
+        });
+
+        it('should return true when AUTH_SECURE_COOKIES is "true" in development', () => {
+            expect(resolveUseSecureCookies('true', 'development')).toBe(true);
+        });
+
+        it('should return true when AUTH_SECURE_COOKIES is "true" in production', () => {
+            expect(resolveUseSecureCookies('true', 'production')).toBe(true);
+        });
+    });
+
+    describe('edge cases', () => {
+        it('should treat unknown values as false (case-sensitive)', () => {
+            expect(resolveUseSecureCookies('TRUE', 'production')).toBe(false);
+            expect(resolveUseSecureCookies('FALSE', 'production')).toBe(false);
+            expect(resolveUseSecureCookies('yes', 'production')).toBe(false);
+            expect(resolveUseSecureCookies('1', 'production')).toBe(false);
+            expect(resolveUseSecureCookies('invalid', 'production')).toBe(false);
+        });
+
+        it('should handle undefined NODE_ENV when override is absent', () => {
+            expect(resolveUseSecureCookies(undefined, undefined)).toBe(false);
+        });
+
+        it('should handle undefined NODE_ENV when override is set', () => {
+            expect(resolveUseSecureCookies('false', undefined)).toBe(false);
+            expect(resolveUseSecureCookies('true', undefined)).toBe(true);
         });
     });
 });

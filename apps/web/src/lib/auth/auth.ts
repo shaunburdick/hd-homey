@@ -19,6 +19,27 @@ import { AuthRoles } from '@/lib/auth-roles';
 import Config from '@/lib/config';
 
 /**
+ * Resolve the `useSecureCookies` setting based on environment variables.
+ *
+ * The `AUTH_SECURE_COOKIES` env var explicitly overrides the behavior.
+ * When not set (or empty), falls back to `NODE_ENV === 'production'`.
+ *
+ * This is extracted as a pure function for testability.
+ *
+ * @param authSecureCookies - Value of the AUTH_SECURE_COOKIES env var (or undefined)
+ * @param nodeEnv - Value of NODE_ENV (or undefined)
+ * @returns `true` if auth cookies should use the Secure flag
+ */
+export function resolveUseSecureCookies(
+    authSecureCookies: string | undefined,
+    nodeEnv: string | undefined,
+): boolean {
+    return authSecureCookies !== undefined && authSecureCookies !== ''
+        ? authSecureCookies === 'true'
+        : nodeEnv === 'production';
+}
+
+/**
  * Better-Auth instance for HD Homey
  *
  * Configured with:
@@ -58,7 +79,27 @@ export const auth = betterAuth({
 
     // Advanced configuration
     advanced: {
-        useSecureCookies: process.env.NODE_ENV === 'production',
+        /**
+         * Controls the `Secure` flag on auth cookies.
+         *
+         * - When `true`: cookies get the `Secure` flag and `__Secure-` prefix.
+         *   Browser will only send them over HTTPS connections.
+         * - When `false`: cookies work over both HTTP and HTTPS.
+         *
+         * Default behavior (when env var is not set):
+         *   - `true` in production (NODE_ENV=production)
+         *   - `false` in development
+         *
+         * Override with AUTH_SECURE_COOKIES env var:
+         *   - Set to "false" to allow login over HTTP (e.g., local LAN access)
+         *   - Set to "true" to force secure cookies even in development
+         *
+         * @see https://www.better-auth.com/docs/reference/options#advanced--usesecurecookies
+         */
+        useSecureCookies: resolveUseSecureCookies(
+            process.env.AUTH_SECURE_COOKIES,
+            process.env.NODE_ENV,
+        ),
         crossSubDomainCookies: {
             enabled: false,
         },
@@ -109,7 +150,25 @@ export const auth = betterAuth({
     // Server-side uses the base URL WITHOUT the basePath because Next.js strips
     // the basePath from incoming requests before they reach the route handler.
     baseURL: Config.AUTH_BASE_URL,
-    trustedOrigins: [Config.AUTH_BASE_URL],
+    /**
+     * Dynamically resolve trusted origins to handle multi-host access.
+     *
+     * Always includes the configured AUTH_BASE_URL. Additionally, when a
+     * request is being processed, adds the request's Origin header so that
+     * access from any IP or domain (e.g., local LAN IP) is accepted.
+     *
+     * @see https://www.better-auth.com/docs/reference/security#configure-dynamic-trusted-origins
+     */
+    trustedOrigins: async (request: Request | undefined) => {
+        const origins = [Config.AUTH_BASE_URL];
+        if (request !== undefined) {
+            const origin = request.headers.get('origin');
+            if (origin !== null && !origins.includes(origin)) {
+                origins.push(origin);
+            }
+        }
+        return origins;
+    },
 });
 
 /**
