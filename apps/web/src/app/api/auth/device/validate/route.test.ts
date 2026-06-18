@@ -19,31 +19,34 @@ vi.mock('@/lib/logger', () => ({
     },
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
 
 // Test constants
 const TEST_API_BASE_URL = 'http://localhost:3000/api/auth/device/validate';
 
+/** Five minutes in milliseconds */
+const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+async function createDeviceCode(overrides: Record<string, unknown> = {}) {
+    const { deviceCodes } = await import('@/lib/database/schema');
+    const [code] = await testDb.insert(deviceCodes).values({
+        code: 'VALID1',
+        deviceName: 'Test TV',
+        deviceType: 'tv',
+        status: 'pending',
+        expiresAt: new Date(Date.now() + FIVE_MINUTES_MS),
+        ipAddress: '192.168.1.100',
+        userAgent: 'TestAgent/1.0',
+        ...overrides,
+    }).returning();
+    return code;
+}
+
 describe('GET /api/auth/device/validate', () => {
     beforeEach(async () => {
-        testDb = await refreshDb({ seed: true }); // Need seed for user references
+        testDb = await testDatabase.refreshDb({ seed: true }); // Need seed for user references
         vi.clearAllMocks();
     });
-
-    async function createDeviceCode(overrides: Record<string, unknown> = {}) {
-        const { deviceCodes } = await import('@/lib/database/schema');
-        const [code] = await testDb.insert(deviceCodes).values({
-            code: 'VALID1',
-            deviceName: 'Test TV',
-            deviceType: 'tv',
-            status: 'pending',
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-            ipAddress: '192.168.1.100',
-            userAgent: 'TestAgent/1.0',
-            ...overrides,
-        }).returning();
-        return code;
-    }
 
     it('should validate and return device info for valid pending code', async () => {
         await createDeviceCode({
@@ -98,8 +101,10 @@ describe('GET /api/auth/device/validate', () => {
     });
 
     it('should return 410 for expired code', async () => {
+        /** One second in milliseconds */
+        const ONE_SECOND_MS = 1000;
         await createDeviceCode({
-            expiresAt: new Date(Date.now() - 1000), // Expired
+            expiresAt: new Date(Date.now() - ONE_SECOND_MS), // Expired
         });
 
         const { NextRequest } = await import('next/server');
@@ -198,7 +203,7 @@ describe('GET /api/auth/device/validate', () => {
     });
 
     it('should return ISO8601 formatted expiresAt timestamp', async () => {
-        const expiryDate = new Date(Date.now() + 5 * 60 * 1000);
+        const expiryDate = new Date(Date.now() + FIVE_MINUTES_MS);
         await createDeviceCode({
             expiresAt: expiryDate,
         });

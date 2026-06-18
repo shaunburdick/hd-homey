@@ -13,6 +13,9 @@ import { ChannelOrganizer } from '@/components/ChannelOrganizer';
 import { auth } from '@/lib/auth/auth';
 import type { Session } from '@/lib/auth/types';
 
+/** Radix for parsing integer route parameters */
+const DECIMAL_RADIX = 10;
+
 interface PageParams {
     id: string
 }
@@ -30,6 +33,69 @@ const styles = {
     warningText: warningColor,
 };
 
+/** Renders the tuner header with name, status and edit link */
+function TunerHeader({ tuner }: { tuner: { id: number; name: string; path: string; is_active: boolean } }) {
+    return (
+        <div className="mb-6">
+            <Link
+                href="/tuners"
+                className="text-secondary no-underline text-sm inline-flex items-center gap-2 mb-4"
+            >
+                ← Back to Tuners
+            </Link>
+
+            <div className="flex justify-between items-start flex-wrap gap-4">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <h1 className="m-0">{tuner.name}</h1>
+                        {!tuner.is_active && (
+                            <span className="text-sm" style={styles.warningBadge}>
+                                ⚠️ Inactive
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-secondary text-sm m-0">
+                        {tuner.path}
+                    </p>
+                    {!tuner.is_active && (
+                        <p className="text-sm mt-2 mb-0" style={styles.warningText}>
+                            This tuner is inactive and unavailable for streaming
+                        </p>
+                    )}
+                </div>
+                <AdminLink href={`/tuners/${tuner.id}/edit`}>
+                    <Button variant="secondary">✏️ Edit Tuner</Button>
+                </AdminLink>
+            </div>
+        </div>
+    );
+}
+
+/** Renders the channels panel header with count and refresh button */
+function ChannelsPanelHeader({ tunerId, totalChannels }: { tunerId: number; totalChannels: number }) {
+    return (
+        <Card className="mb-6">
+            <div className="flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <h2 className="mt-0 mb-1">
+                        Channels
+                    </h2>
+                    <p className="text-secondary text-sm m-0">
+                        {totalChannels} channel{totalChannels !== 1 ? 's' : ''} available
+                    </p>
+                </div>
+                <RoleGuard allowedRoles={[AuthRoles.Admin]}>
+                    <form action={`/tuners/${tunerId}/poll`} method="POST">
+                        <Button type="submit" variant="secondary">
+                            🔄 Refresh Channels
+                        </Button>
+                    </form>
+                </RoleGuard>
+            </div>
+        </Card>
+    );
+}
+
 export default async function Page(props: { params: Promise<PageParams> }) {
     const params = await props.params;
     const db = await getDb();
@@ -46,7 +112,7 @@ export default async function Page(props: { params: Promise<PageParams> }) {
 
     const tuner = await db.query.tuners.findFirst({
         where: and(
-            eq(tuners.id, parseInt(params.id, 10)),
+            eq(tuners.id, parseInt(params.id, DECIMAL_RADIX)),
             isNull(tuners.deleted_at)
         ),
         with: {
@@ -63,65 +129,13 @@ export default async function Page(props: { params: Promise<PageParams> }) {
         notFound();
     }
 
-    const sortedChannels = tuner.channels
-        .sort((a, b) => parseFloat(a.guideNumber) - parseFloat(b.guideNumber));
-
-    const totalChannels = sortedChannels.length;
+    const totalChannels = tuner.channels.length;
 
     return (
         <PageContainer>
-            <div className="mb-6">
-                <Link
-                    href="/tuners"
-                    className="text-secondary no-underline text-sm inline-flex items-center gap-2 mb-4"
-                >
-                    ← Back to Tuners
-                </Link>
+            <TunerHeader tuner={tuner} />
 
-                <div className="flex justify-between items-start flex-wrap gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <h1 className="m-0">{tuner.name}</h1>
-                            {!tuner.is_active && (
-                                <span className="text-sm" style={styles.warningBadge}>
-                                    ⚠️ Inactive
-                                </span>
-                            )}
-                        </div>
-                        <p className="text-secondary text-sm m-0">
-                            {tuner.path}
-                        </p>
-                        {!tuner.is_active && (
-                            <p className="text-sm mt-2 mb-0" style={styles.warningText}>
-                                This tuner is inactive and unavailable for streaming
-                            </p>
-                        )}
-                    </div>
-                    <AdminLink href={`/tuners/${tuner.id}/edit`}>
-                        <Button variant="secondary">✏️ Edit Tuner</Button>
-                    </AdminLink>
-                </div>
-            </div>
-
-            <Card className="mb-6">
-                <div className="flex justify-between items-center flex-wrap gap-4">
-                    <div>
-                        <h2 className="mt-0 mb-1">
-                            Channels
-                        </h2>
-                        <p className="text-secondary text-sm m-0">
-                            {totalChannels} channel{totalChannels !== 1 ? 's' : ''} available
-                        </p>
-                    </div>
-                    <RoleGuard allowedRoles={[AuthRoles.Admin]}>
-                        <form action={`/tuners/${tuner.id}/poll`} method="POST">
-                            <Button type="submit" variant="secondary">
-                                🔄 Refresh Channels
-                            </Button>
-                        </form>
-                    </RoleGuard>
-                </div>
-            </Card>
+            <ChannelsPanelHeader tunerId={tuner.id} totalChannels={totalChannels} />
 
             {totalChannels === 0 ? (
                 <EmptyState

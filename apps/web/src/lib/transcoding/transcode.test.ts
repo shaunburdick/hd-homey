@@ -173,8 +173,10 @@ describe('transcode module - race condition fix', () => {
 
             // Should have been killed twice (SIGTERM, then SIGKILL after timeout)
             expect(killCount).toBe(2);
-            expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
-            expect(mockProcess.kill).toHaveBeenCalledWith('SIGKILL');
+            // Access mock.calls directly to avoid unbound-method lint issues with class methods
+            const killCalls = vi.mocked(mockProcess).kill.mock.calls;
+            expect(killCalls.some(callArgs => callArgs[0] === 'SIGTERM')).toBe(true);
+            expect(killCalls.some(callArgs => callArgs[0] === 'SIGKILL')).toBe(true);
         }, 10000); // 10 second timeout for this test
     });
 

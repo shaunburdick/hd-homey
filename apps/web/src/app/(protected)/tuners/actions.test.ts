@@ -55,7 +55,7 @@ describe('deleteTuner', () => {
         vi.clearAllMocks();
 
         // Setup mock database chain
-        mockWhere = vi.fn().mockResolvedValue(undefined);
+        mockWhere = vi.fn().mockResolvedValue(null);
         mockSet = vi.fn().mockReturnValue({ where: mockWhere });
         mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
 
@@ -150,8 +150,11 @@ describe('deleteTuner', () => {
 
         try {
             await deleteTuner(null, formData);
-        } catch {
-            // Expected redirect error
+        } catch (error) {
+            // Expected redirect error thrown by Next.js - not a real error condition
+            if (!(error instanceof Error && error.message.includes('NEXT_REDIRECT'))) {
+                throw error;
+            }
         }
 
         expect(revalidatePath).toHaveBeenCalledWith('/tuners');
@@ -164,22 +167,29 @@ describe('deleteTuner', () => {
 
         try {
             await deleteTuner(null, formData);
-        } catch {
-            // Expected
+        } catch (error) {
+            // Expected redirect error thrown by Next.js - not a real error condition
+            if (!(error instanceof Error && error.message.includes('NEXT_REDIRECT'))) {
+                throw error;
+            }
         }
 
         expect(redirect).toHaveBeenCalledWith('/tuners');
     });
 
     it('should log deletion with tuner ID', async () => {
-        const Logger = (await import('@/lib/logger')).default;
+        const loggerModule = await import('@/lib/logger');
+        const Logger = loggerModule.default;
         const formData = new FormData();
         formData.append('id', '1');
 
         try {
             await deleteTuner(null, formData);
-        } catch {
-            // Expected redirect error
+        } catch (error) {
+            // Expected redirect error thrown by Next.js - not a real error condition
+            if (!(error instanceof Error && error.message.includes('NEXT_REDIRECT'))) {
+                throw error;
+            }
         }
 
         expect(Logger.info).toHaveBeenCalledWith(

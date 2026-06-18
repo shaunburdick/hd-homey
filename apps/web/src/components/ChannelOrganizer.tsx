@@ -10,25 +10,60 @@ interface ChannelOrganizerProps {
     userId: string;
 }
 
+interface ChannelGroups {
+    favorites: ChannelWithPreference[];
+    regular: ChannelWithPreference[];
+    hidden: ChannelWithPreference[];
+}
+
 /**
- * Server Component: Fetches channels with user preferences and organizes them into sections
- *
- * Displays channels in three groups:
- * - Favorites: Channels marked as favorite
- * - Regular: Channels with no preferences or neutral preferences
- * - Hidden: Channels marked as hidden
- *
- * @param tunerId - The tuner ID to fetch channels for
- * @param userId - The user ID to fetch preferences for
+ * Compares two channels numerically by their guide number string.
+ * Used as the comparator for Array.sort.
  */
-export async function ChannelOrganizer({ tunerId, userId }: ChannelOrganizerProps) {
+function compareByGuideNumber(
+    channelA: ChannelWithPreference,
+    channelB: ChannelWithPreference
+): number {
+    return parseFloat(channelA.guideNumber) - parseFloat(channelB.guideNumber);
+}
+
+/**
+ * Groups a flat list of channels into favorites, regular, and hidden buckets.
+ */
+function groupChannels(channelList: ChannelWithPreference[]): ChannelGroups {
+    const favorites: ChannelWithPreference[] = [];
+    const hidden: ChannelWithPreference[] = [];
+    const regular: ChannelWithPreference[] = [];
+
+    for (const channel of channelList) {
+        if (channel.isFavorite === true) {
+            favorites.push(channel);
+        } else if (channel.isHidden === true) {
+            hidden.push(channel);
+        } else {
+            // null or false for both preferences
+            regular.push(channel);
+        }
+    }
+
+    return { favorites, regular, hidden };
+}
+
+/**
+ * Fetches all active channels for the given tuner, joined with the user's
+ * channel preferences (LEFT JOIN so all channels are included).
+ */
+async function fetchChannelsWithPreferences({
+    tunerId,
+    userId,
+}: {
+    tunerId: number;
+    userId: string;
+}): Promise<ChannelWithPreference[]> {
     const db = await getDb();
 
-    // Fetch channels with their preferences using LEFT JOIN
-    // This ensures we get all channels, even those without preferences
-    const channelsWithPrefs = await db
+    return db
         .select({
-            // All channel fields
             id: channels.id,
             guideNumber: channels.guideNumber,
             guideName: channels.guideName,
@@ -37,7 +72,6 @@ export async function ChannelOrganizer({ tunerId, userId }: ChannelOrganizerProp
             videoCodec: channels.videoCodec,
             audioCodec: channels.audioCodec,
             fk_tuner: channels.fk_tuner,
-            // Preference fields (may be null)
             isFavorite: userChannelPreferences.isFavorite,
             isHidden: userChannelPreferences.isHidden,
         })
@@ -58,25 +92,26 @@ export async function ChannelOrganizer({ tunerId, userId }: ChannelOrganizerProp
         )
         .orderBy(asc(channels.guideNumber))
         .all();
+}
+
+/**
+ * Server Component: Fetches channels with user preferences and organizes them into sections.
+ *
+ * Displays channels in three groups:
+ * - Favorites: Channels marked as favorite
+ * - Regular: Channels with no preferences or neutral preferences
+ * - Hidden: Channels marked as hidden
+ *
+ * @param tunerId - The tuner ID to fetch channels for
+ * @param userId - The user ID to fetch preferences for
+ */
+export async function ChannelOrganizer({ tunerId, userId }: ChannelOrganizerProps) {
+    const channelsWithPrefs = await fetchChannelsWithPreferences({ tunerId, userId });
 
     // Sort channels numerically by guide number
-    const sortedChannels = channelsWithPrefs.sort((a, b) => parseFloat(a.guideNumber) - parseFloat(b.guideNumber));
+    const sortedChannels = channelsWithPrefs.sort(compareByGuideNumber);
 
-    // Group channels by preference state
-    const favorites: ChannelWithPreference[] = [];
-    const hidden: ChannelWithPreference[] = [];
-    const regular: ChannelWithPreference[] = [];
-
-    for (const channel of sortedChannels) {
-        if (channel.isFavorite === true) {
-            favorites.push(channel);
-        } else if (channel.isHidden === true) {
-            hidden.push(channel);
-        } else {
-            // null or false for both preferences
-            regular.push(channel);
-        }
-    }
+    const { favorites, regular, hidden } = groupChannels(sortedChannels);
 
     return (
         <section aria-label="Channel organizer">

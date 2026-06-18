@@ -6,6 +6,20 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     children: React.ReactNode;
 }
 
+/**
+ * Returns the CSS class name for a given button variant.
+ * Primary variant has no extra class (handled by default styles).
+ */
+function getVariantClass(variant: ButtonProps['variant']): string {
+    if (variant === 'secondary') {
+        return 'secondary';
+    }
+    if (variant === 'danger') {
+        return 'danger';
+    }
+    return '';
+}
+
 export function Button({
     variant = 'primary',
     loading = false,
@@ -17,7 +31,7 @@ export function Button({
 }: ButtonProps) {
     const isDisabled = disabled || loading;
 
-    const variantClass = variant === 'secondary' ? 'secondary' : variant === 'danger' ? 'danger' : '';
+    const variantClass = getVariantClass(variant);
     const combinedClassName = `${variantClass} ${className}`.trim();
 
     return (

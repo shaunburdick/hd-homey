@@ -39,8 +39,8 @@ describe('TranscodingSessionManager', () => {
             getStderr: () => '',
         });
         vi.mocked(transcode.waitForPlaylist).mockResolvedValue(true);
-        vi.mocked(transcode.stopTranscode).mockResolvedValue(undefined);
-        vi.mocked(transcode.cleanupTranscodeFiles).mockResolvedValue(undefined);
+        vi.mocked(transcode.stopTranscode).mockResolvedValue();
+        vi.mocked(transcode.cleanupTranscodeFiles).mockResolvedValue();
     });
 
     afterEach(async () => {
@@ -54,13 +54,13 @@ describe('TranscodingSessionManager', () => {
         it('should create a new session', async () => {
             const manager = getSessionManager();
 
-            const session = await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            const session = await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
             expect(session).toBeDefined();
             expect(session.sessionId).toBe(TEST_SESSION_ID);
@@ -75,21 +75,21 @@ describe('TranscodingSessionManager', () => {
         it('should reuse existing session', async () => {
             const manager = getSessionManager();
 
-            const session1 = await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            const session1 = await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
-            const session2 = await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            const session2 = await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
             expect(session1.sessionId).toBe(session2.sessionId);
             expect(transcode.startTranscode).toHaveBeenCalledTimes(1);
@@ -99,22 +99,22 @@ describe('TranscodingSessionManager', () => {
             const manager = getSessionManager();
             const settings = { ...DEFAULT_SETTINGS, maxSessions: 1 };
 
-            await manager.getOrCreateSession(
-                1,
-                42,
-                'Channel 1',
-                TEST_SOURCE_URL,
-                settings
-            );
+            await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: 'Channel 1',
+                sourceUrl: TEST_SOURCE_URL,
+                settings,
+            });
 
             await expect(
-                manager.getOrCreateSession(
-                    1,
-                    43,
-                    'Channel 2',
-                    'http://tuner:5004/auto/v11.1',
-                    settings
-                )
+                manager.getOrCreateSession({
+                    tunerId: 1,
+                    channelId: 43,
+                    channelName: 'Channel 2',
+                    sourceUrl: 'http://tuner:5004/auto/v11.1',
+                    settings,
+                })
             ).rejects.toThrow('Maximum concurrent sessions');
         });
 
@@ -123,13 +123,13 @@ describe('TranscodingSessionManager', () => {
             vi.mocked(transcode.waitForPlaylist).mockResolvedValue(false);
 
             await expect(
-                manager.getOrCreateSession(
-                    1,
-                    42,
-                    TEST_CHANNEL_NAME,
-                    TEST_SOURCE_URL,
-                    DEFAULT_SETTINGS
-                )
+                manager.getOrCreateSession({
+                    tunerId: 1,
+                    channelId: 42,
+                    channelName: TEST_CHANNEL_NAME,
+                    sourceUrl: TEST_SOURCE_URL,
+                    settings: DEFAULT_SETTINGS,
+                })
             ).rejects.toThrow('Playlist not created within timeout');
         });
     });
@@ -138,21 +138,21 @@ describe('TranscodingSessionManager', () => {
         it('should increment viewer count', async () => {
             const manager = getSessionManager();
 
-            const session = await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            const session = await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
             expect(session.viewers.size).toBe(0);
 
-            manager.addViewer(TEST_SESSION_ID, TEST_VIEWER_1);
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: TEST_VIEWER_1 });
             const updated = manager.getSession(TEST_SESSION_ID);
             expect(updated?.viewers.size).toBe(1);
 
-            manager.addViewer(TEST_SESSION_ID, 'viewer-2');
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: 'viewer-2' });
             const updated2 = manager.getSession(TEST_SESSION_ID);
             expect(updated2?.viewers.size).toBe(2);
         });
@@ -160,16 +160,16 @@ describe('TranscodingSessionManager', () => {
         it('should update viewer activity', async () => {
             const manager = getSessionManager();
 
-            await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
-            manager.addViewer(TEST_SESSION_ID, TEST_VIEWER_1);
-            manager.addViewer(TEST_SESSION_ID, 'viewer-2');
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: TEST_VIEWER_1 });
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: 'viewer-2' });
 
             const session = manager.getSession(TEST_SESSION_ID);
             expect(session?.viewers.size).toBe(2);
@@ -186,16 +186,16 @@ describe('TranscodingSessionManager', () => {
         it('should get session viewers', async () => {
             const manager = getSessionManager();
 
-            await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
-            manager.addViewer(TEST_SESSION_ID, TEST_VIEWER_1);
-            manager.addViewer(TEST_SESSION_ID, 'viewer-2');
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: TEST_VIEWER_1 });
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: 'viewer-2' });
 
             const viewers = manager.getSessionViewers(TEST_SESSION_ID);
             expect(viewers).toHaveLength(2);
@@ -208,13 +208,13 @@ describe('TranscodingSessionManager', () => {
         it('should stop a session', async () => {
             const manager = getSessionManager();
 
-            await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
             await manager.stopSession(TEST_SESSION_ID);
 
@@ -234,23 +234,23 @@ describe('TranscodingSessionManager', () => {
         it('should return stats for active sessions', async () => {
             const manager = getSessionManager();
 
-            await manager.getOrCreateSession(
-                1,
-                42,
-                'Channel 1',
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: 'Channel 1',
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
-            await manager.getOrCreateSession(
-                1,
-                43,
-                'Channel 2',
-                'http://tuner:5004/auto/v11.1',
-                DEFAULT_SETTINGS
-            );
+            await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 43,
+                channelName: 'Channel 2',
+                sourceUrl: 'http://tuner:5004/auto/v11.1',
+                settings: DEFAULT_SETTINGS,
+            });
 
-            manager.addViewer(TEST_SESSION_ID, TEST_VIEWER_1);
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: TEST_VIEWER_1 });
 
             const stats = manager.getActiveSessions();
             expect(stats).toHaveLength(2);
@@ -276,15 +276,15 @@ describe('TranscodingSessionManager', () => {
         it('should not cleanup sessions with viewers', async () => {
             const manager = getSessionManager();
 
-            await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
-            manager.addViewer(TEST_SESSION_ID, TEST_VIEWER_1);
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: TEST_VIEWER_1 });
 
             await manager.cleanupInactiveSessions();
 
@@ -295,16 +295,16 @@ describe('TranscodingSessionManager', () => {
         it('should cleanup inactive viewers and stop session when all gone', async () => {
             const manager = getSessionManager();
 
-            const session = await manager.getOrCreateSession(
-                1,
-                42,
-                TEST_CHANNEL_NAME,
-                TEST_SOURCE_URL,
-                DEFAULT_SETTINGS
-            );
+            const session = await manager.getOrCreateSession({
+                tunerId: 1,
+                channelId: 42,
+                channelName: TEST_CHANNEL_NAME,
+                sourceUrl: TEST_SOURCE_URL,
+                settings: DEFAULT_SETTINGS,
+            });
 
             // Add a viewer
-            manager.addViewer(TEST_SESSION_ID, TEST_VIEWER_1);
+            manager.addViewer({ sessionId: TEST_SESSION_ID, viewerId: TEST_VIEWER_1 });
 
             // Get the viewer and simulate 31 seconds passing
             const viewer = session.viewers.get(TEST_VIEWER_1);

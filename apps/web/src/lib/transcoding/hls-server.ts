@@ -6,13 +6,31 @@ import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import Logger from '@/lib/logger';
 
+interface ServePlaylistOptions {
+    outputDir: string;
+    token?: string;
+    viewerId?: string;
+}
+
+/**
+ * Append token and optional viewer ID to a segment line
+ */
+function appendTokenToSegment(
+    { line, token, viewerId }: { line: string; token: string; viewerId?: string }
+): string {
+    let modifiedLine = `${line}?token=${token}`;
+    if (viewerId !== undefined && viewerId !== '') {
+        modifiedLine += `&viewer_id=${viewerId}`;
+    }
+    Logger.debug({ original: line, modified: modifiedLine }, 'Modified segment URL');
+    return modifiedLine;
+}
+
 /**
  * Serve an HLS playlist file with token and viewer session ID
  */
 export async function servePlaylist(
-    outputDir: string,
-    token?: string,
-    viewerId?: string
+    { outputDir, token, viewerId }: ServePlaylistOptions
 ): Promise<Response> {
     const playlistPath = join(outputDir, 'playlist.m3u8');
 
@@ -25,17 +43,12 @@ export async function servePlaylist(
             const modifiedLines = lines.map(line => {
                 // Add token and viewer_id to .ts segment files
                 if (line.trim().endsWith('.ts')) {
-                    let modifiedLine = `${line}?token=${token}`;
-                    if (viewerId !== undefined && viewerId !== '') {
-                        modifiedLine += `&viewer_id=${viewerId}`;
-                    }
-                    Logger.debug({ original: line, modified: modifiedLine }, 'Modified segment URL');
-                    return modifiedLine;
+                    return appendTokenToSegment({ line, token, viewerId });
                 }
                 return line;
             });
             content = modifiedLines.join('\n');
-            const segmentCount = modifiedLines.filter(l => l.includes('.ts')).length;
+            const segmentCount = modifiedLines.filter(line => line.includes('.ts')).length;
             Logger.debug({ segmentCount, viewerId }, 'Playlist modified with token and viewer ID');
         }
 

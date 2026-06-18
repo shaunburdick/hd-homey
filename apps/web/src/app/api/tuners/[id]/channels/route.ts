@@ -6,16 +6,21 @@ import { getDb } from '@/lib/database/db';
 
 export const dynamic = 'force-dynamic';
 
+/** Radix for parsing integer route parameters */
+const DECIMAL_RADIX = 10;
+
 interface Params {
     id: string;
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<Params> }) {
+    const { id } = await context.params;
+    const tunerId = parseInt(id, DECIMAL_RADIX);
     const db = await getDb();
 
     const tuner = await db.query.tuners.findFirst({
         where: and(
-            eq(tuners.id, parseInt((await context.params).id, 10)),
+            eq(tuners.id, tunerId),
             isNull(tuners.deleted_at)
         )
     });
@@ -26,7 +31,7 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
 
     const data = await db.query.channels.findMany({
         where: and(
-            eq(channels.fk_tuner, parseInt((await context.params).id, 10)),
+            eq(channels.fk_tuner, tunerId),
             isNull(channels.deleted_at)
         )
     });

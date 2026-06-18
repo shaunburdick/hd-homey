@@ -11,10 +11,78 @@ import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
+/** Milliseconds per second, for converting to Unix timestamp */
+const MS_PER_SECOND = 1000;
+
 const streamTokenRequestSchema = z.object({
     tunerId: z.number().int().positive(),
     channelId: z.number().int().positive(),
 });
+
+type ValidatedRequest = z.infer<typeof streamTokenRequestSchema>;
+
+/**
+ * Verify that a tuner exists and is not soft-deleted.
+ * Returns the tuner record or null if not found.
+ */
+async function findActiveTuner(tunerId: number) {
+    const db = await getDb();
+    return await db.query.tuners.findFirst({
+        where: and(
+            eq(tuners.id, tunerId),
+            isNull(tuners.deleted_at)
+        ),
+    });
+}
+
+/**
+ * Verify that a channel exists for the given tuner and is not soft-deleted.
+ * Returns the channel record or null if not found.
+ */
+async function findActiveChannel(channelId: number, tunerId: number) {
+    const db = await getDb();
+    return await db.query.channels.findFirst({
+        where: and(
+            eq(channels.id, channelId),
+            eq(channels.fk_tuner, tunerId),
+            isNull(channels.deleted_at)
+        ),
+    });
+}
+
+/**
+ * Build the stream token response after validating tuner and channel.
+ */
+async function buildStreamTokenResponse(validated: ValidatedRequest): Promise<NextResponse> {
+    const tuner = await findActiveTuner(validated.tunerId);
+    if (tuner === null || tuner === undefined) {
+        return NextResponse.json(
+            { error: 'Not Found', message: `Tuner ${validated.tunerId} not found` },
+            { status: 404 }
+        );
+    }
+
+    const channel = await findActiveChannel(validated.channelId, validated.tunerId);
+    if (channel === null || channel === undefined) {
+        return NextResponse.json(
+            {
+                error: 'Not Found',
+                message: `Channel ${validated.channelId} not found on tuner ${validated.tunerId}`
+            },
+            { status: 404 }
+        );
+    }
+
+    const token = await generateStreamToken(validated.tunerId, validated.channelId);
+    const expiresAt = Math.floor(Date.now() / MS_PER_SECOND) + Config.streamTokenExpiry;
+
+    return NextResponse.json({
+        token,
+        expiresAt,
+        tunerId: validated.tunerId,
+        channelId: validated.channelId,
+    });
+}
 
 /**
  * POST /api/stream-token
@@ -40,7 +108,6 @@ const streamTokenRequestSchema = z.object({
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
-        // Require authentication
         const session = await auth.api.getSession({
             headers: await import('next/headers').then((mod) => mod.headers()),
         });
@@ -52,57 +119,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             );
         }
 
-        // Parse and validate request body
         const body = await request.json();
         const validated = streamTokenRequestSchema.parse(body);
 
-        const db = await getDb();
-
-        // Verify tuner exists and is not deleted
-        const tuner = await db.query.tuners.findFirst({
-            where: and(
-                eq(tuners.id, validated.tunerId),
-                isNull(tuners.deleted_at)
-            ),
-        });
-
-        if (tuner === null || tuner === undefined) {
-            return NextResponse.json(
-                { error: 'Not Found', message: `Tuner ${validated.tunerId} not found` },
-                { status: 404 }
-            );
-        }
-
-        // Verify channel exists for this tuner and is not deleted
-        const channel = await db.query.channels.findFirst({
-            where: and(
-                eq(channels.id, validated.channelId),
-                eq(channels.fk_tuner, validated.tunerId),
-                isNull(channels.deleted_at)
-            ),
-        });
-
-        if (channel === null || channel === undefined) {
-            return NextResponse.json(
-                {
-                    error: 'Not Found',
-                    message: `Channel ${validated.channelId} not found on tuner ${validated.tunerId}`
-                },
-                { status: 404 }
-            );
-        }
-
-        // Generate stream token
-        const token = await generateStreamToken(validated.tunerId, validated.channelId);
-        // Calculate expiry timestamp (uses Config.streamTokenExpiry)
-        const expiresAt = Math.floor(Date.now() / 1000) + Config.streamTokenExpiry;
-
-        return NextResponse.json({
-            token,
-            expiresAt,
-            tunerId: validated.tunerId,
-            channelId: validated.channelId,
-        });
+        return await buildStreamTokenResponse(validated);
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(

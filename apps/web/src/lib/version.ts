@@ -16,8 +16,9 @@ export interface BuildMetadata {
  */
 export function getVersionMetadata(): BuildMetadata {
     try {
-        // Using require instead of import for dynamic loading
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        // Using require instead of import for dynamic loading at runtime;
+        // version.json may not exist at build time so a static import would fail.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- dynamic load
         const versionData = require('../../version.json');
         return versionData as BuildMetadata;
     } catch {

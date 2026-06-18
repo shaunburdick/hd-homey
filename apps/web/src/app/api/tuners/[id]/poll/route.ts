@@ -10,6 +10,9 @@ import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
+/** Radix for parsing integer route parameters */
+const DECIMAL_RADIX = 10;
+
 interface Params {
     id: string;
 }
@@ -27,11 +30,12 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
         );
     }
 
+    const { id } = await context.params;
     const db = await getDb();
 
     const tuner = await db.query.tuners.findFirst({
         where: and(
-            eq(tuners.id, parseInt((await context.params).id, 10)),
+            eq(tuners.id, parseInt(id, DECIMAL_RADIX)),
             isNull(tuners.deleted_at)
         )
     });

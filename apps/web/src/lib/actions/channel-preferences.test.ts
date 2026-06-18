@@ -22,7 +22,8 @@ vi.mock('@/lib/auth/auth', () => ({
     },
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
+const refreshDb = (opts?: { seed?: boolean }) => testDatabase.refreshDb(opts);
 
 describe('Channel Preferences Actions', () => {
     let testUserId: string;

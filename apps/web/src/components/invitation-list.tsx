@@ -15,13 +15,17 @@ interface InvitationListProps {
     invitations: InvitationDisplay[];
 }
 
-export default function InvitationList({ invitations }: InvitationListProps) {
-    const handleRevoke = async (id: number) => {
-        await revokeInvitation(id);
-        // Trigger page refresh to show updated invitation list
-        window.location.reload();
-    };
+/**
+ * Revokes an invitation by ID and reloads the page to reflect the updated list.
+ * Extracted to module scope to satisfy consistent-function-scoping.
+ */
+async function handleRevoke(invitationId: number): Promise<void> {
+    await revokeInvitation(invitationId);
+    // Trigger page refresh to show updated invitation list
+    window.location.reload();
+}
 
+export default function InvitationList({ invitations }: InvitationListProps) {
     if (invitations.length === 0) {
         return (
             <p style={{ color: 'var(--color-text-secondary)' }}>

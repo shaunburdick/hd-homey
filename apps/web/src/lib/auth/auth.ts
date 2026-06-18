@@ -2,13 +2,13 @@
 // properly resolve with moduleResolution: "bundler". This is a known TypeScript limitation.
 // Next.js bundler handles these correctly. We use @ts-ignore for compatibility with both.
 // See: https://github.com/microsoft/TypeScript/issues/54102
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- Required for .d.mts resolution bug
 // @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
 import { betterAuth } from 'better-auth';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- Required for .d.mts resolution bug
 // @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- Required for .d.mts resolution bug
 // @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
 import { username } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/better-sqlite3';

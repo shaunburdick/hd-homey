@@ -7,7 +7,8 @@ export async function register() {
 
     if (process.env.NEXT_RUNTIME === 'nodejs') {
         try {
-            await (await import('./instrumentation-node')).run();
+            const instrumentationModule = await import('./instrumentation-node');
+            await instrumentationModule.run();
         } catch (error) {
             // Silently fail during build if database doesn't exist
             if (error instanceof Error && error.message.includes('directory does not exist')) {

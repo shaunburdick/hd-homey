@@ -24,7 +24,7 @@ export function createMockFetch(response: unknown, status = 200): ReturnType<typ
         statusText: status === 200 ? 'OK' : 'Error',
         // Other Response properties that might be accessed
         redirected: false,
-        type: 'basic' as ResponseType,
+        type: 'basic',
         url: '',
         clone: vi.fn(),
         body: null,
@@ -33,7 +33,7 @@ export function createMockFetch(response: unknown, status = 200): ReturnType<typ
         blob: vi.fn(),
         formData: vi.fn(),
         bytes: vi.fn()
-    } as Response));
+    }));
 }
 
 /**
@@ -73,14 +73,22 @@ export function createMockStream(statusCode = 200) {
 import type { expect as Expect } from 'vitest';
 
 /**
+ * Options for expectToThrow
+ */
+export interface ExpectToThrowOptions {
+    /** The async function expected to throw */
+    fn: () => Promise<unknown>;
+    /** Optional error message substring to assert */
+    errorMessage?: string;
+    /** The vitest expect function (required when asserting on error message) */
+    expectFn?: typeof Expect;
+}
+
+/**
  * Assert that an error was thrown
  * Note: Import expect from vitest in your test file before using this
  */
-export async function expectToThrow(
-    fn: () => Promise<unknown>,
-    errorMessage?: string,
-    expectFn?: typeof Expect
-) {
+export async function expectToThrow({ fn, errorMessage, expectFn }: ExpectToThrowOptions) {
     try {
         await fn();
         throw new Error('Expected function to throw, but it did not');

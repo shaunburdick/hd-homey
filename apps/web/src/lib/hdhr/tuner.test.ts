@@ -13,7 +13,7 @@ vi.mock('@/lib/database/db', () => ({
     connection: vi.fn(() => ({})), // Required for auth.ts
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
 
 describe('HDTuner', () => {
     let tuner: HDTuner;
@@ -21,7 +21,7 @@ describe('HDTuner', () => {
     const TEST_AUTO_PATH = '/auto/v3.1';
 
     beforeEach(async () => {
-        testDb = await refreshDb({ seed: true });
+        testDb = await testDatabase.refreshDb({ seed: true });
         tuner = new HDTuner(testAddress);
         vi.restoreAllMocks();
     });
@@ -146,13 +146,13 @@ describe('HDTuner', () => {
 
             // Check that 2 channels from the first update were deactivated
             const allChannels = testDb.select().from(channels).where(eq(channels.fk_tuner, tunerId)).all();
-            const activeChannels = allChannels.filter((c): c is typeof c => c.is_active === true);
-            const inactiveChannels = allChannels.filter((c): c is typeof c => c.is_active === false);
+            const activeChannels = allChannels.filter((ch): ch is typeof ch => ch.is_active === true);
+            const inactiveChannels = allChannels.filter((ch): ch is typeof ch => ch.is_active === false);
 
             // Should have 1 active (from second update) and at least 2 inactive (from first update)
             expect(activeChannels).toHaveLength(1);
             expect(inactiveChannels.length).toBeGreaterThanOrEqual(2);
-            expect(inactiveChannels.some(c => c.deleted_at !== null && c.deleted_at !== undefined)).toBe(true);
+            expect(inactiveChannels.some(ch => ch.deleted_at !== null && ch.deleted_at !== undefined)).toBe(true);
         });
 
         it('should update last_scanned timestamp on tuner', async () => {
@@ -204,7 +204,7 @@ describe('HDTuner', () => {
             // Should deactivate all previous channels
             const { channels } = await import('@/lib/database/schema');
             const allChannels = testDb.select().from(channels).where(eq(channels.fk_tuner, tunerId)).all();
-            const activeChannels = allChannels.filter((c): c is typeof c => c.is_active === true);
+            const activeChannels = allChannels.filter((ch): ch is typeof ch => ch.is_active === true);
             expect(activeChannels).toHaveLength(0);
         });
 

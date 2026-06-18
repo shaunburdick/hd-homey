@@ -7,6 +7,8 @@ import * as authModule from '@/lib/auth/helpers';
 
 // Mock Next.js functions
 const REDIRECT_ERROR_CODE = 'NEXT_REDIRECT';
+/** Session expiry duration in milliseconds (24 hours) */
+const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000;
 vi.mock('next/navigation', () => ({
     redirect: vi.fn((url: string) => {
         const error = new Error(`${REDIRECT_ERROR_CODE}: ${url}`) as Error & { digest: string };
@@ -32,7 +34,8 @@ vi.mock('@/lib/database/db', () => ({
     connection: vi.fn(() => ({})), // Mock connection for auth.ts
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
+const refreshDb = (opts?: { seed?: boolean }) => testDatabase.refreshDb(opts);
 
 // Helper to create a mock session
 function createMockSession(overrides?: Record<string, unknown>) {
@@ -52,13 +55,13 @@ function createMockSession(overrides?: Record<string, unknown>) {
         session: {
             id: 'session-1',
             userId: 'test-admin-uuid',
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            expiresAt: new Date(Date.now() + SESSION_EXPIRY_MS),
             token: 'test-token',
             createdAt: new Date(),
             updatedAt: new Date(),
             ...((overrides?.session as Record<string, unknown> | undefined) ?? {}),
         },
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        expires: new Date(Date.now() + SESSION_EXPIRY_MS).toISOString(),
         ...overrides,
     };
 }
@@ -147,8 +150,11 @@ describe('User Actions', () => {
 
             try {
                 await createUser(null, formData);
-            } catch {
-                // Expected redirect
+            } catch (redirectError) {
+                // Expected: Next.js redirect throws NEXT_REDIRECT after successful operation
+                if (!(redirectError instanceof Error && redirectError.message.startsWith('NEXT_REDIRECT'))) {
+                    throw redirectError;
+                }
             }
 
             // Password is stored in account table (Better-Auth pattern)
@@ -179,8 +185,11 @@ describe('User Actions', () => {
 
             try {
                 await createUser(null, formData);
-            } catch {
-                // Expected redirect
+            } catch (redirectError) {
+                // Expected: Next.js redirect throws NEXT_REDIRECT after successful operation
+                if (!(redirectError instanceof Error && redirectError.message.startsWith('NEXT_REDIRECT'))) {
+                    throw redirectError;
+                }
             }
 
             // Verify username is normalized to lowercase
@@ -206,8 +215,11 @@ describe('User Actions', () => {
 
             try {
                 await createUser(null, formData1);
-            } catch {
-                // Expected redirect
+            } catch (redirectError) {
+                // Expected: Next.js redirect throws NEXT_REDIRECT after successful create
+                if (!(redirectError instanceof Error && redirectError.message.startsWith('NEXT_REDIRECT'))) {
+                    throw redirectError;
+                }
             }
 
             // Try to create second user with same username but different case
@@ -305,8 +317,11 @@ describe('User Actions', () => {
 
             try {
                 await updateUser(null, formData1);
-            } catch {
-                // Expected redirect
+            } catch (redirectError) {
+                // Expected: Next.js redirect throws NEXT_REDIRECT after successful operation
+                if (!(redirectError instanceof Error && redirectError.message.startsWith('NEXT_REDIRECT'))) {
+                    throw redirectError;
+                }
             }
 
             const afterUpdate1 = testDb.select().from(account)
@@ -323,8 +338,11 @@ describe('User Actions', () => {
 
             try {
                 await updateUser(null, formData2);
-            } catch {
-                // Expected redirect
+            } catch (redirectError) {
+                // Expected: Next.js redirect throws NEXT_REDIRECT after successful operation
+                if (!(redirectError instanceof Error && redirectError.message.startsWith('NEXT_REDIRECT'))) {
+                    throw redirectError;
+                }
             }
 
             const afterUpdate2 = testDb.select().from(account)
@@ -353,8 +371,11 @@ describe('User Actions', () => {
 
             try {
                 await updateUser(null, formData);
-            } catch {
-                // Expected redirect
+            } catch (redirectError) {
+                // Expected: Next.js redirect throws NEXT_REDIRECT after successful operation
+                if (!(redirectError instanceof Error && redirectError.message.startsWith('NEXT_REDIRECT'))) {
+                    throw redirectError;
+                }
             }
 
             const updatedUser = testDb.select().from(user).where(eq(user.id, existingUser.id)).get();

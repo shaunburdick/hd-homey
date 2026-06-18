@@ -159,6 +159,43 @@ export const ERROR_MESSAGES: Record<string, ErrorInfo> = {
 };
 
 /**
+ * Pattern-to-error-key mapping for common error messages
+ */
+const ERROR_PATTERN_MAP: { patterns: string[]; key: string }[] = [
+    { patterns: ['unauthorized', 'not authenticated'], key: 'UNAUTHORIZED' },
+    { patterns: ['forbidden', 'permission'], key: 'FORBIDDEN' },
+    { patterns: ['not found'], key: 'NOT_FOUND' },
+    { patterns: ['inactive'], key: 'TUNER_INACTIVE' },
+    { patterns: ['timeout', 'timed out'], key: 'TIMEOUT' },
+    { patterns: ['network', 'econnrefused', 'enotfound'], key: 'NETWORK_ERROR' },
+    { patterns: ['database', 'sqlite'], key: 'DATABASE_ERROR' },
+    { patterns: ['transcode', 'ffmpeg'], key: 'TRANSCODING_ERROR' },
+];
+
+/**
+ * Map an error message string to a known ErrorInfo entry
+ */
+function getErrorInfoFromMessage(rawMessage: string): ErrorInfo {
+    const message = rawMessage.toLowerCase();
+
+    // Token errors require two-pattern matching
+    if (message.includes('token') && message.includes('expired')) {
+        return ERROR_MESSAGES.STREAM_TOKEN_EXPIRED;
+    }
+    if (message.includes('token') && message.includes('invalid')) {
+        return ERROR_MESSAGES.STREAM_TOKEN_INVALID;
+    }
+
+    for (const { patterns, key } of ERROR_PATTERN_MAP) {
+        if (patterns.some(pattern => message.includes(pattern))) {
+            return ERROR_MESSAGES[key] ?? ERROR_MESSAGES.SERVER_ERROR;
+        }
+    }
+
+    return ERROR_MESSAGES.SERVER_ERROR;
+}
+
+/**
  * Get user-friendly error info from an error object
  */
 export function getErrorInfo(error: Error | string): ErrorInfo {
@@ -167,51 +204,7 @@ export function getErrorInfo(error: Error | string): ErrorInfo {
         return ERROR_MESSAGES[error] ?? ERROR_MESSAGES.SERVER_ERROR;
     }
 
-    // Check error message for known patterns
-    const message = error.message.toLowerCase();
-
-    if (message.includes('unauthorized') ||
-        message.includes('not authenticated')) {
-        return ERROR_MESSAGES.UNAUTHORIZED;
-    }
-    if (message.includes('forbidden') ||
-        message.includes('permission')) {
-        return ERROR_MESSAGES.FORBIDDEN;
-    }
-    if (message.includes('not found')) {
-        return ERROR_MESSAGES.NOT_FOUND;
-    }
-    if (message.includes('token') &&
-        message.includes('expired')) {
-        return ERROR_MESSAGES.STREAM_TOKEN_EXPIRED;
-    }
-    if (message.includes('token') &&
-        message.includes('invalid')) {
-        return ERROR_MESSAGES.STREAM_TOKEN_INVALID;
-    }
-    if (message.includes('inactive')) {
-        return ERROR_MESSAGES.TUNER_INACTIVE;
-    }
-    if (message.includes('timeout') ||
-        message.includes('timed out')) {
-        return ERROR_MESSAGES.TIMEOUT;
-    }
-    if (message.includes('network') ||
-        message.includes('econnrefused') ||
-        message.includes('enotfound')) {
-        return ERROR_MESSAGES.NETWORK_ERROR;
-    }
-    if (message.includes('database') ||
-        message.includes('sqlite')) {
-        return ERROR_MESSAGES.DATABASE_ERROR;
-    }
-    if (message.includes('transcode') ||
-        message.includes('ffmpeg')) {
-        return ERROR_MESSAGES.TRANSCODING_ERROR;
-    }
-
-    // Default to generic server error
-    return ERROR_MESSAGES.SERVER_ERROR;
+    return getErrorInfoFromMessage(error.message);
 }
 
 /**

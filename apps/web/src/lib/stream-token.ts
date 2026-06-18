@@ -8,12 +8,21 @@ export interface StreamTokenData {
     expiresAt: number;
 }
 
+/** Number of hex characters to use from the HMAC digest (16 bytes = 32 hex chars) */
+const SIGNATURE_HEX_CHARS = 32;
+
+/** Milliseconds per second, used to convert Date.now() to Unix timestamp */
+const MS_PER_SECOND = 1000;
+
+/** Radix for decimal integer parsing */
+const DECIMAL_RADIX = 10;
+
 /**
  * Generate a signed token for streaming
  */
 export async function generateStreamToken(tunerId: number, channelId: number): Promise<string> {
     const secret = await getStreamSecret();
-    const expiresAt = Math.floor(Date.now() / 1000) + Config.streamTokenExpiry;
+    const expiresAt = Math.floor(Date.now() / MS_PER_SECOND) + Config.streamTokenExpiry;
 
     // Create signature (truncated to 16 bytes / 128 bits for shorter tokens)
     const data = `${tunerId}:${channelId}:${expiresAt}`;
@@ -21,7 +30,7 @@ export async function generateStreamToken(tunerId: number, channelId: number): P
         .createHmac('sha256', secret)
         .update(data)
         .digest('hex')
-        .slice(0, 32); // 16 bytes = 32 hex chars
+        .slice(0, SIGNATURE_HEX_CHARS); // 16 bytes = 32 hex chars
 
     // Combine and encode
     const token = `${tunerId}:${channelId}:${expiresAt}:${signature}`;
@@ -40,8 +49,8 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
         const [tunerId, channelId, expiresAt, signature] = decoded.split(':');
 
         // Check expiration
-        const now = Math.floor(Date.now() / 1000);
-        const expiresAtNum = parseInt(expiresAt, 10);
+        const now = Math.floor(Date.now() / MS_PER_SECOND);
+        const expiresAtNum = parseInt(expiresAt, DECIMAL_RADIX);
         if (expiresAtNum < now) {
             return null; // Expired
         }
@@ -52,7 +61,7 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
             .createHmac('sha256', secret)
             .update(data)
             .digest('hex')
-            .slice(0, 32); // 16 bytes = 32 hex chars
+            .slice(0, SIGNATURE_HEX_CHARS); // 16 bytes = 32 hex chars
 
         // Use timing-safe comparison
         if (!crypto.timingSafeEqual(
@@ -63,8 +72,8 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
         }
 
         return {
-            tunerId: parseInt(tunerId, 10),
-            channelId: parseInt(channelId, 10),
+            tunerId: parseInt(tunerId, DECIMAL_RADIX),
+            channelId: parseInt(channelId, DECIMAL_RADIX),
             expiresAt: expiresAtNum
         };
     } catch {

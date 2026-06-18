@@ -7,6 +7,9 @@ import { PageContainer } from '@/components/layouts';
 
 export const dynamic = 'force-dynamic';
 
+/** Size in pixels for the HD Homey app icon */
+const APP_ICON_SIZE = 64;
+
 interface PairPageProps {
     searchParams: Promise<{ code?: string }>;
 }
@@ -14,7 +17,6 @@ interface PairPageProps {
 export default async function PairPage(props: PairPageProps) {
     const searchParams = await props.searchParams;
 
-    // Require authentication
     const session = await auth.api.getSession({
         headers: await import('next/headers').then((mod) => mod.headers()),
     });
@@ -30,8 +32,8 @@ export default async function PairPage(props: PairPageProps) {
                     <Image
                         src="/icon.png"
                         alt="HD Homey"
-                        width={64}
-                        height={64}
+                        width={APP_ICON_SIZE}
+                        height={APP_ICON_SIZE}
                         className="rounded-lg"
                     />
                     <h1 className="mb-2" style={{ marginTop: 'var(--space-4)' }}>

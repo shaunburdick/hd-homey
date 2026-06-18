@@ -10,7 +10,7 @@ vi.mock('@/lib/database/db', () => ({
     connection: vi.fn(() => ({})), // Required for auth.ts
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
@@ -38,7 +38,7 @@ describe('GET /api/tuners/[id]', () => {
     let tunerId: number;
 
     beforeEach(async () => {
-        testDb = await refreshDb({ seed: true });
+        testDb = await testDatabase.refreshDb({ seed: true });
 
         // Get a test tuner ID
         const { tuners } = await import('@/lib/database/schema');
@@ -109,7 +109,7 @@ describe('POST /api/tuners/[id]', () => {
     let tunerId: number;
 
     beforeEach(async () => {
-        await refreshDb({ seed: true });
+        await testDatabase.refreshDb({ seed: true });
 
         const { tuners } = await import('@/lib/database/schema');
         const tuner = testDb.select().from(tuners).limit(1).get();

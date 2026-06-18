@@ -14,6 +14,21 @@ import {
 } from './transcode';
 import Logger from '@/lib/logger';
 
+/** Interval between cleanup checks in milliseconds */
+const CLEANUP_INTERVAL_MS = 10000;
+/** How long a viewer can be inactive before being removed (milliseconds) */
+const INACTIVE_TIMEOUT_MS = 30000;
+/** Timeout for waiting on the HLS playlist during session startup (milliseconds) */
+const PLAYLIST_WAIT_TIMEOUT_MS = 30000;
+/** Number of characters to show for viewer ID display */
+const VIEWER_ID_DISPLAY_LENGTH = 8;
+/** Number of characters to include from the end of stderr for error messages */
+const STDERR_TAIL_LENGTH = 500;
+/** Number of characters to include from the end of stderr for exit error messages */
+const STDERR_EXIT_TAIL_LENGTH = 200;
+/** Divisor to convert milliseconds to seconds */
+const MS_PER_SECOND = 1000;
+
 interface TranscodingSession {
     sessionId: string;
     tunerId: number;
@@ -31,14 +46,126 @@ interface TranscodingSession {
     error?: string;
 }
 
+interface CreateSessionOptions {
+    tunerId: number;
+    channelId: number;
+    channelName: string;
+    sourceUrl: string;
+    settings: TranscodeSettings;
+    codecs?: { videoCodec: string; audioCodec: string };
+}
+
+interface AddViewerOptions {
+    sessionId: string;
+    viewerId: string;
+    metadata?: { userAgent?: string };
+}
+
+/**
+ * Determine the transcoding output directory
+ */
+function resolveTranscodeDir(sessionId: string): string {
+    const transcodeDirEnv = process.env.HD_HOMEY_TRANSCODE_DIR;
+    const transcodeDir = (transcodeDirEnv !== undefined && transcodeDirEnv !== '')
+        ? transcodeDirEnv
+        : join('./data', 'transcoding');
+    return join(transcodeDir, sessionId.replace(':', '-'));
+}
+
+/**
+ * Build the initial session object before the transcode process is started
+ */
+function buildInitialSession(
+    { sessionId, tunerId, channelId, channelName, settings }: CreateSessionOptions & { sessionId: string }
+): TranscodingSession {
+    const outputDir = resolveTranscodeDir(sessionId);
+    const playlistPath = join(outputDir, 'playlist.m3u8');
+
+    return {
+        sessionId,
+        tunerId,
+        channelId,
+        channelName,
+        viewers: new Map<string, ViewerSession>(),
+        transcodeProcess: null as unknown as TranscodeProcess, // Set after process starts
+        process: null as unknown as ChildProcess, // Set after process starts
+        pid: 0,
+        outputDir,
+        playlistPath,
+        startTime: Date.now(),
+        settings,
+        status: 'starting',
+    };
+}
+
+/**
+ * Attach the transcode process to a session and set its PID
+ */
+function attachProcessToSession(session: TranscodingSession, transcodeProcess: TranscodeProcess): void {
+    session.transcodeProcess = transcodeProcess;
+    const { process } = transcodeProcess;
+    session.process = process;
+    const { pid } = process;
+    session.pid = (pid !== undefined && !isNaN(pid) && pid !== 0) ? pid : 0;
+}
+
+/**
+ * Register an exit handler on the transcode process
+ */
+function registerExitHandler(session: TranscodingSession, transcodeProcess: TranscodeProcess): void {
+    transcodeProcess.process.on('exit', (code: number | null) => {
+        Logger.info({ sessionId: session.sessionId, code }, 'Transcode process exited');
+        session.status = code === 0 ? 'stopping' : 'error';
+        if (code !== 0) {
+            const stderr = transcodeProcess.getStderr();
+            session.error = `Process exited with code ${code}. Last error: ${stderr.slice(-STDERR_EXIT_TAIL_LENGTH)}`;
+        }
+    });
+}
+
+interface StartTranscodeForSessionOptions {
+    session: TranscodingSession;
+    sourceUrl: string;
+    settings: TranscodeSettings;
+    codecs?: { videoCodec: string; audioCodec: string };
+}
+
+/**
+ * Start and configure the transcode process for a session
+ */
+async function startTranscodeForSession(
+    { session, sourceUrl, settings, codecs }: StartTranscodeForSessionOptions
+): Promise<void> {
+    const transcodeProcess = await startTranscode({
+        sourceUrl,
+        outputDir: session.outputDir,
+        settings,
+        codecs,
+    });
+
+    attachProcessToSession(session, transcodeProcess);
+
+    // Wait for playlist to be created (longer timeout for HEVC+AC4)
+    const playlistReady = await waitForPlaylist(session.playlistPath, PLAYLIST_WAIT_TIMEOUT_MS);
+    if (!playlistReady) {
+        const stderr = transcodeProcess.getStderr();
+        const errorMsg = stderr.length > 0
+            ? stderr.slice(-STDERR_TAIL_LENGTH)
+            : 'Unknown error - check FFmpeg logs';
+        throw new Error(`Playlist not created within timeout. FFmpeg: ${errorMsg}`);
+    }
+
+    registerExitHandler(session, transcodeProcess);
+}
+
 /**
  * Singleton session manager
  */
 class TranscodingSessionManager {
     private readonly sessions = new Map<string, TranscodingSession>();
     private cleanupTimer: NodeJS.Timeout | null = null;
-    private readonly CLEANUP_INTERVAL = 10000; // Check every 10 seconds
-    private readonly INACTIVE_TIMEOUT = 30000; // 30 seconds of inactivity
+    private readonly CLEANUP_INTERVAL = CLEANUP_INTERVAL_MS;
+    private readonly INACTIVE_TIMEOUT = INACTIVE_TIMEOUT_MS;
 
     public constructor() {
         this.startCleanupTimer();
@@ -47,14 +174,8 @@ class TranscodingSessionManager {
     /**
      * Get or create a transcoding session
      */
-    public async getOrCreateSession(
-        tunerId: number,
-        channelId: number,
-        channelName: string,
-        sourceUrl: string,
-        settings: TranscodeSettings,
-        codecs?: { videoCodec: string; audioCodec: string }
-    ): Promise<TranscodingSession> {
+    public async getOrCreateSession(options: CreateSessionOptions): Promise<TranscodingSession> {
+        const { tunerId, channelId, sourceUrl, settings, codecs } = options;
         const sessionId = `${tunerId}:${channelId}`;
 
         // Check if session already exists
@@ -71,68 +192,17 @@ class TranscodingSessionManager {
             );
         }
 
-        // Create new session
-        const transcodeDirEnv = process.env.HD_HOMEY_TRANSCODE_DIR;
-        const transcodeDir = (transcodeDirEnv !== undefined && transcodeDirEnv !== '')
-            ? transcodeDirEnv
-            : join('./data', 'transcoding');
-        const outputDir = join(transcodeDir, sessionId.replace(':', '-'));
-        const playlistPath = join(outputDir, 'playlist.m3u8');
-
         Logger.info(
-            { sessionId, sourceUrl, outputDir, settings },
+            { sessionId, sourceUrl, settings },
             'Creating new transcoding session'
         );
 
-        const session: TranscodingSession = {
-            sessionId,
-            tunerId,
-            channelId,
-            channelName,
-            viewers: new Map<string, ViewerSession>(),
-            transcodeProcess: null as unknown as TranscodeProcess, // Will be set below
-            process: null as unknown as ChildProcess, // Will be set below
-            pid: 0,
-            outputDir,
-            playlistPath,
-            startTime: Date.now(),
-            settings,
-            status: 'starting',
-        };
+        const session = buildInitialSession({ ...options, sessionId });
 
         try {
-            // Start the transcode process
-            const transcodeProcess = await startTranscode(sourceUrl, outputDir, settings, codecs);
-            session.transcodeProcess = transcodeProcess;
-            const { process } = transcodeProcess;
-            session.process = process;
-            const { pid } = process;
-            session.pid = (pid !== undefined && !isNaN(pid) && pid !== 0) ? pid : 0;
-
-            // Wait for playlist to be created (longer timeout for HEVC+AC4)
-            const playlistReady = await waitForPlaylist(playlistPath, 30000);
-            if (!playlistReady) {
-                // Get stderr output for better error reporting
-                const stderr = transcodeProcess.getStderr();
-                const errorMsg = stderr.length > 0
-                    ? stderr.slice(-500)
-                    : 'Unknown error - check FFmpeg logs';
-                const msg = `Playlist not created within timeout. FFmpeg: ${errorMsg}`;
-                throw new Error(msg);
-            }
-
+            await startTranscodeForSession({ session, sourceUrl, settings, codecs });
             session.status = 'running';
             this.sessions.set(sessionId, session);
-
-            // Handle process exit
-            transcodeProcess.process.on('exit', (code: number | null) => {
-                Logger.info({ sessionId, code }, 'Transcode process exited');
-                session.status = code === 0 ? 'stopping' : 'error';
-                if (code !== 0) {
-                    const stderr = transcodeProcess.getStderr();
-                    session.error = `Process exited with code ${code}. Last error: ${stderr.slice(-200)}`;
-                }
-            });
 
             Logger.info({ sessionId, pid: session.pid }, 'Transcoding session started');
             return session;
@@ -147,11 +217,7 @@ class TranscodingSessionManager {
     /**
      * Add a viewer to a session
      */
-    public addViewer(
-        sessionId: string,
-        viewerId: string,
-        metadata?: { userAgent?: string }
-    ): void {
+    public addViewer({ sessionId, viewerId, metadata }: AddViewerOptions): void {
         const session = this.sessions.get(sessionId);
         if (session === undefined) {
             throw new Error(`Session ${sessionId} not found`);
@@ -282,12 +348,12 @@ class TranscodingSessionManager {
             channelId: session.channelId,
             channelName: session.channelName,
             viewerCount: session.viewers.size,
-            uptime: Math.floor((now - session.startTime) / 1000),
+            uptime: Math.floor((now - session.startTime) / MS_PER_SECOND),
             status: session.status,
             viewers: Array.from(session.viewers.values()).map((viewer) => ({
-                id: viewer.viewerId.substring(0, 8),
-                watching: Math.floor((now - viewer.startTime) / 1000),
-                lastActivity: Math.floor((now - viewer.lastAccess) / 1000),
+                id: viewer.viewerId.substring(0, VIEWER_ID_DISPLAY_LENGTH),
+                watching: Math.floor((now - viewer.startTime) / MS_PER_SECOND),
+                lastActivity: Math.floor((now - viewer.lastAccess) / MS_PER_SECOND),
             })),
         }));
     }
@@ -308,11 +374,13 @@ class TranscodingSessionManager {
      * Stop the cleanup timer
      */
     public stopCleanupTimer(): void {
-        if (this.cleanupTimer !== null) {
-            clearInterval(this.cleanupTimer);
-            this.cleanupTimer = null;
-            Logger.debug('Session cleanup timer stopped');
+        if (this.cleanupTimer === null) {
+            return;
         }
+
+        clearInterval(this.cleanupTimer);
+        this.cleanupTimer = null;
+        Logger.debug('Session cleanup timer stopped');
     }
 
     /**

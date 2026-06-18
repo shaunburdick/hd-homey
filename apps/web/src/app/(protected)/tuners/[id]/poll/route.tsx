@@ -9,6 +9,9 @@ import { HDTuner } from '@/lib/hdhr/tuner';
 
 export const dynamic = 'force-dynamic';
 
+/** Radix for parsing integer route parameters */
+const DECIMAL_RADIX = 10;
+
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -32,7 +35,7 @@ export async function POST(
         // Verify tuner exists
         const tuner = await db.query.tuners.findFirst({
             where: and(
-                eq(tuners.id, parseInt(id, 10)),
+                eq(tuners.id, parseInt(id, DECIMAL_RADIX)),
                 isNull(tuners.deleted_at)
             )
         });

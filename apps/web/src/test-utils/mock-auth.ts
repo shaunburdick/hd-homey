@@ -7,6 +7,17 @@ import { AuthRoles } from '@/lib/auth-roles';
 const MOCK_IP_ADDRESS = '127.0.0.1';
 const MOCK_USER_AGENT = 'test-agent';
 
+/** Number of hours in one day */
+const HOURS_PER_DAY = 24;
+/** Number of minutes in one hour */
+const MINUTES_PER_HOUR = 60;
+/** Number of seconds in one minute */
+const SECONDS_PER_MINUTE = 60;
+/** Number of milliseconds in one second */
+const MS_PER_SECOND = 1000;
+/** Session expiry duration in milliseconds (24 hours) */
+const SESSION_EXPIRY_MS = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND;
+
 /**
  * Mock Better-Auth session type
  * Matches the return type of auth.api.getSession()
@@ -42,7 +53,7 @@ export const mockAdminSession: MockSession = {
     session: {
         id: 'session-1',
         userId: 'test-admin-uuid-1',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + SESSION_EXPIRY_MS),
         token: 'mock-token-1',
         ipAddress: MOCK_IP_ADDRESS,
         userAgent: MOCK_USER_AGENT,
@@ -68,7 +79,7 @@ export const mockViewerSession: MockSession = {
     session: {
         id: 'session-2',
         userId: 'test-viewer-uuid-2',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + SESSION_EXPIRY_MS),
         token: 'mock-token-2',
         ipAddress: MOCK_IP_ADDRESS,
         userAgent: MOCK_USER_AGENT,
@@ -94,7 +105,7 @@ export const mockInactiveSession: MockSession = {
     session: {
         id: 'session-3',
         userId: 'test-inactive-uuid-3',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + SESSION_EXPIRY_MS),
         token: 'mock-token-3',
         ipAddress: MOCK_IP_ADDRESS,
         userAgent: MOCK_USER_AGENT,
@@ -122,7 +133,7 @@ export function createMockSession(overrides: Partial<MockSession['user']> = {}):
         session: {
             id: 'session-99',
             userId,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            expiresAt: new Date(Date.now() + SESSION_EXPIRY_MS),
             token: 'mock-token-99',
             ipAddress: MOCK_IP_ADDRESS,
             userAgent: MOCK_USER_AGENT,

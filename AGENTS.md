@@ -395,7 +395,7 @@ npm run docs:build       # Build docs site
 ## Releases
 
 ### Current Version
-**1.0.0-beta.5** - Channel organization and preferences release! Channel favorites and hiding (SPEC-012), persistent section expand/collapse states per tuner, optimistic UI updates, and full accessibility support. All 340 tests passing.
+**1.0.0-beta.6** - Dependency upgrades and code quality release! All dependencies updated to latest versions including TypeScript 6.0, ESLint 10, and React 19.2. GitHub Actions pinned by commit SHA for supply chain security. 375+ lint errors resolved across the entire codebase for improved code quality and maintainability. All 401 tests passing.
 
 ### Release Process
 

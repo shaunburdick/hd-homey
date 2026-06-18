@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-import type { RedeemFormState } from './actions';
 import { redeemInvitation } from './actions';
 import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import type { DB } from '@/lib/database/db';
@@ -16,18 +15,17 @@ vi.mock('@/lib/database/db', () => ({
     connection: vi.fn(() => ({})),
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
 
 
 // Test constants
 const TEST_ADMIN_ID = 'test-admin-uuid';
-const INITIAL_FORM_STATE: RedeemFormState = { errors: {} };
 const VALID_PASSWORD = 'testpass123';
 const FUTURE_EXPIRY = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
 describe('redeemInvitation()', () => {
     beforeEach(async () => {
-        testDb = await refreshDb({ seed: true });
+        testDb = await testDatabase.refreshDb({ seed: true });
     });
 
     it('should successfully redeem valid invitation', async () => {
@@ -48,7 +46,7 @@ describe('redeemInvitation()', () => {
         formData.set('passwordConfirm', VALID_PASSWORD);
 
         // Should return success (no credentials for security)
-        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation(invitation.token, formData);
 
         expect(result.success).toBe(true);
         expect(Object.keys(result.errors)).toHaveLength(0);
@@ -80,7 +78,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.name).toBeDefined();
@@ -94,7 +92,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.name).toBeDefined();
@@ -108,7 +106,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.name).toBeDefined();
@@ -121,7 +119,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.username).toBeDefined();
@@ -135,7 +133,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.username).toBeDefined();
@@ -149,7 +147,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.username).toBeDefined();
@@ -163,7 +161,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.username).toBeDefined();
@@ -176,7 +174,7 @@ describe('redeemInvitation()', () => {
         formData.set('username', 'newuser');
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.password).toBeDefined();
@@ -190,7 +188,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', 'short'); // Too short
         formData.set('passwordConfirm', 'short');
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.password).toBeDefined();
@@ -205,7 +203,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', longPassword);
         formData.set('passwordConfirm', longPassword);
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.password).toBeDefined();
@@ -219,7 +217,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         // No passwordConfirm
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.passwordConfirm).toBeDefined();
@@ -233,7 +231,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', 'different-password');
 
-        const result = await redeemInvitation('any-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('any-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.passwordConfirm).toBeDefined();
@@ -247,7 +245,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation('invalid-token', INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation('invalid-token', formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.invitation).toBeDefined();
@@ -271,7 +269,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation(invitation.token, formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.invitation).toBeDefined();
@@ -297,7 +295,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation(invitation.token, formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.invitation).toBeDefined();
@@ -323,7 +321,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation(invitation.token, formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.invitation).toBeDefined();
@@ -347,7 +345,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation(invitation.token, formData);
 
         expect(result.success).toBe(false);
         expect(result.errors.username).toBeDefined();
@@ -371,7 +369,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation(invitation.token, formData);
 
         expect(result.success).toBe(true);
 
@@ -401,7 +399,7 @@ describe('redeemInvitation()', () => {
         formData.set('password', VALID_PASSWORD);
         formData.set('passwordConfirm', VALID_PASSWORD);
 
-        const result = await redeemInvitation(invitation.token, INITIAL_FORM_STATE, formData);
+        const result = await redeemInvitation(invitation.token, formData);
 
         expect(result.success).toBe(true);
 

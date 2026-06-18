@@ -15,11 +15,12 @@ vi.mock('./database/db', () => ({
     getDb: vi.fn(() => Promise.resolve(testDb)),
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
+// refreshDb is safely called with an arrow function wrapper below to avoid unbound-method issues
 
 describe('Settings', () => {
     beforeEach(async () => {
-        testDb = await refreshDb();
+        testDb = await testDatabase.refreshDb();
     });
 
     describe('generateStreamSecret', () => {
@@ -114,9 +115,11 @@ describe('Settings', () => {
     describe('setSettings', () => {
         it('should do nothing for empty object', async () => {
             const {  settings: settingsTable } = await import('./database/schema');
-            const beforeCount = (await testDb.select().from(settingsTable)).length;
+            const beforeRows = await testDb.select().from(settingsTable);
+            const beforeCount = beforeRows.length;
             await setSettings({});
-            const afterCount = (await testDb.select().from(settingsTable)).length;
+            const afterRows = await testDb.select().from(settingsTable);
+            const afterCount = afterRows.length;
             expect(afterCount).toBe(beforeCount);
         });
 

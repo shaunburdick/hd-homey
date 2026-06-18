@@ -1,6 +1,6 @@
 {
   "name": "@hd-homey/web",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "license": "AGPL-3.0-only",
   "private": true,
   "scripts": {
@@ -38,27 +38,27 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@next/eslint-plugin-next": "^16.2.9",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/better-sqlite3": "^7.6.12",
-    "@types/hls.js": "^0.13.3",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.9.3",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-v8": "^4.0.10",
     "drizzle-kit": "^0.31.7",
-    "eslint": "^9.19.0",
+    "eslint": "^10.5.0",
     "eslint-config-next": "^16.0.3",
-    "eslint-config-shaunburdick": "^5.0.0",
+    "eslint-config-shaunburdick": "^8.0.0",
     "eslint-import-resolver-typescript": "^4.4.4",
-    "jsdom": "^27.2.0",
+    "jsdom": "^29.1.1",
     "msw": "^2.12.2",
     "pa11y": "^9.0.1",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.1",
     "tsx": "^4.19.2",
-    "typescript": "^5",
+    "typescript": "^6.0.0",
     "vitest": "^4.0.10"
   }
 }

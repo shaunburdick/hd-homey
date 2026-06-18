@@ -6,6 +6,12 @@ import Logger from './logger';
 import type { TranscodeSettings } from './transcoding/types';
 import { DEFAULT_SETTINGS } from './transcoding/types';
 
+/** Number of random bytes used for generating the stream secret */
+const STREAM_SECRET_BYTES = 32;
+
+/** Radix for decimal integer parsing */
+const DECIMAL_RADIX = 10;
+
 /**
  * In-memory cache for stream secret
  * Reduces database queries from ~350/min to <1/min for token validation
@@ -44,7 +50,7 @@ export async function getSettings(keys: string[]): Promise<Record<string, string
 
         const settingsMap: Record<string, string | null> = {};
         for (const key of keys) {
-            settingsMap[key] = results.find(s => s.key === key)?.value ?? null;
+            settingsMap[key] = results.find(setting => setting.key === key)?.value ?? null;
         }
 
         return settingsMap;
@@ -106,7 +112,7 @@ export async function setSettings(kvPairs: Record<string, string>): Promise<void
  * Generate a random stream secret
  */
 export function generateStreamSecret(): string {
-    return crypto.randomBytes(32).toString('hex');
+    return crypto.randomBytes(STREAM_SECRET_BYTES).toString('hex');
 }
 
 /**
@@ -158,7 +164,7 @@ function isValidSetting(value: string | null): boolean {
  * Parse string setting as integer with fallback
  */
 function parseIntSetting(value: string | null, fallback: number): number {
-    return isValidSetting(value) ? parseInt(value as string, 10) : fallback;
+    return isValidSetting(value) ? parseInt(value as string, DECIMAL_RADIX) : fallback;
 }
 
 /**

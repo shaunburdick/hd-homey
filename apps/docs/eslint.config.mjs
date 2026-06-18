@@ -21,7 +21,7 @@ export default [
             // VitePress uses path strings like '/getting-started/' as object keys in config
             '@typescript-eslint/naming-convention': 'off',
             // VitePress module resolution handled by build system
-            'import/no-unresolved': ['error', { ignore: ['^vitepress'] }],
+            'import-x/no-unresolved': ['error', { ignore: ['^vitepress'] }],
         },
     },
     {

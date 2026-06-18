@@ -10,6 +10,30 @@ import { getDb } from '@/lib/database/db';
 import { user as userTable } from '@/lib/database/schema';
 import { AuthRoles } from '@/lib/auth-roles';
 
+/** Renders the devices section allowing users to pair new devices */
+function DevicesCard() {
+    return (
+        <Card>
+            <h2 className="mt-0 mb-3">Devices</h2>
+            <p className="text-secondary text-sm mb-4">
+                Pair devices like Android TV apps, tablets, or phones to access HD Homey
+            </p>
+            <Link
+                href="/pair"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded
+                    no-underline text-primary transition"
+                style={{
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    border: '1px solid var(--color-border)',
+                }}
+            >
+                <span>📱</span>
+                <span>Pair a Device</span>
+            </Link>
+        </Card>
+    );
+}
+
 export default async function ProfilePage() {
     const rawSession = await auth.api.getSession({
         headers: await headers()
@@ -52,24 +76,7 @@ export default async function ProfilePage() {
                     ]}
                 />
 
-                <Card>
-                    <h2 className="mt-0 mb-3">Devices</h2>
-                    <p className="text-secondary text-sm mb-4">
-                        Pair devices like Android TV apps, tablets, or phones to access HD Homey
-                    </p>
-                    <Link
-                        href="/pair"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded
-                            no-underline text-primary transition"
-                        style={{
-                            backgroundColor: 'var(--color-bg-secondary)',
-                            border: '1px solid var(--color-border)',
-                        }}
-                    >
-                        <span>📱</span>
-                        <span>Pair a Device</span>
-                    </Link>
-                </Card>
+                <DevicesCard />
 
                 <Card>
                     <h2 className="mt-0 mb-3">Change Password</h2>

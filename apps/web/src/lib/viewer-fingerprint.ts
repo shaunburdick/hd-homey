@@ -6,6 +6,12 @@
 import crypto from 'node:crypto';
 import type { NextRequest } from 'next/server';
 
+/** Number of hex characters to use from the SHA-256 digest for fingerprints */
+const FINGERPRINT_HEX_LENGTH = 16;
+
+/** Maximum User-Agent string length to include in log output */
+const USER_AGENT_LOG_MAX_LENGTH = 50;
+
 /**
  * Generate a viewer fingerprint from request headers
  * Uses IP address + User-Agent to create a stable identifier
@@ -33,7 +39,7 @@ export function generateViewerFingerprint(req: NextRequest): string {
         .createHash('sha256')
         .update(`${ip}:${userAgent}`)
         .digest('hex')
-        .substring(0, 16); // Use first 16 chars for brevity
+        .substring(0, FINGERPRINT_HEX_LENGTH); // Use first 16 chars for brevity
 
     return fingerprint;
 }
@@ -52,6 +58,6 @@ export function getViewerInfo(req: NextRequest) {
 
     return {
         ip,
-        userAgent: userAgent.substring(0, 50), // Truncate for logging
+        userAgent: userAgent.substring(0, USER_AGENT_LOG_MAX_LENGTH), // Truncate for logging
     };
 }

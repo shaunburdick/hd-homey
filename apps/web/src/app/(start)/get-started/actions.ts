@@ -10,15 +10,31 @@ import { generateHashPassword } from '@/lib/user';
 import { AuthRoles } from '@/lib/auth-roles';
 import logger from '@/lib/logger';
 
-export async function createFirstUser(prevState: unknown, formData: FormData) {
-    const username = formData.get('username')?.toString();
-    const name = formData.get('name')?.toString();
-    const password = formData.get('password')?.toString();
+/** Minimum username length */
+const MIN_USERNAME_LENGTH = 3;
 
-    // Validation
-    const errors: { path: string; message: string }[] = [];
+/** Minimum password length */
+const MIN_PASSWORD_LENGTH = 8;
 
-    if ((username?.length ?? 0) < 3) {
+interface ValidationError {
+    path: string;
+    message: string;
+}
+
+interface FirstUserFormInputs {
+    username: string | undefined;
+    name: string | undefined;
+    password: string | undefined;
+}
+
+/**
+ * Validate the form inputs for first-user creation.
+ * Returns a list of validation errors (empty if valid).
+ */
+function validateFirstUserInputs({ username, name, password }: FirstUserFormInputs): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    if ((username?.length ?? 0) < MIN_USERNAME_LENGTH) {
         errors.push({ path: 'username', message: 'Username must be at least 3 characters' });
     }
 
@@ -26,10 +42,65 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
         errors.push({ path: 'name', message: 'Name is required' });
     }
 
-    if ((password?.length ?? 0) < 8) {
+    if ((password?.length ?? 0) < MIN_PASSWORD_LENGTH) {
         errors.push({ path: 'password', message: 'Password must be at least 8 characters' });
     }
 
+    return errors;
+}
+
+interface FirstUserData {
+    username: string;
+    name: string;
+    password: string;
+}
+
+/**
+ * Persist a new admin user account to the database.
+ * Both the user and credential account records are created together.
+ */
+async function persistFirstUser({ username, name, password }: FirstUserData): Promise<void> {
+    const db = await getDb();
+    const normalizedUsername = username.toLowerCase();
+
+    const existingUser = await db.query.user.findFirst({
+        where: eq(user.username, normalizedUsername)
+    });
+
+    if (existingUser !== undefined) {
+        throw new Error('USERNAME_EXISTS');
+    }
+
+    const userId = crypto.randomUUID();
+    const accountId = crypto.randomUUID();
+
+    await db.insert(user).values({
+        id: userId,
+        username: normalizedUsername,
+        displayUsername: username,
+        email: `${normalizedUsername}@local.hdhomey.app`,
+        emailVerified: false,
+        name,
+        role: AuthRoles.Admin,
+        isActive: true,
+    });
+
+    const hashedPassword = await generateHashPassword(password);
+    await db.insert(account).values({
+        id: accountId,
+        userId,
+        accountId: userId,
+        providerId: 'credential',
+        password: hashedPassword,
+    });
+}
+
+export async function createFirstUser(prevState: unknown, formData: FormData) {
+    const username = formData.get('username')?.toString();
+    const name = formData.get('name')?.toString();
+    const password = formData.get('password')?.toString();
+
+    const errors = validateFirstUserInputs({ username, name, password });
     if (errors.length > 0) {
         return errors;
     }
@@ -40,54 +111,15 @@ export async function createFirstUser(prevState: unknown, formData: FormData) {
     const validPassword = password as string;
 
     try {
-        const db = await getDb();
-
-        // Check if username already exists to prevent race conditions
-        // Note: Normalize to lowercase for comparison to match Better-Auth behavior
-        const normalizedUsernameCheck = validUsername.toLowerCase();
-        const existingUser = await db.query.user.findFirst({
-            where: eq(user.username, normalizedUsernameCheck)
-        });
-
-        if (existingUser !== undefined) {
-            return [{ path: 'username', message: 'Username already exists' }];
-        }
-
-        // Generate Better-Auth compatible user ID
-        const userId = crypto.randomUUID();
-        const accountId = crypto.randomUUID();
-
-        // Create user record
-        // Note: Better-Auth username plugin normalizes usernames to lowercase
-        // We store the normalized version in username and original in displayUsername
-        const normalizedUsername = validUsername.toLowerCase();
-        await db.insert(user).values({
-            id: userId,
-            username: normalizedUsername,
-            displayUsername: validUsername, // Preserve original case
-            email: `${normalizedUsername}@local.hdhomey.app`, // Username plugin requires email
-            emailVerified: false,
-            name: validName,
-            role: AuthRoles.Admin, // First user is always admin
-            isActive: true,
-        });
-
-        // Create account record with password
-        const hashedPassword = await generateHashPassword(validPassword);
-        await db.insert(account).values({
-            id: accountId,
-            userId,
-            accountId: userId,
-            providerId: 'credential',
-            password: hashedPassword,
-        });
-
-        // Redirect to signin page after successful creation
+        await persistFirstUser({ username: validUsername, name: validName, password: validPassword });
         redirect('/users/signin');
     } catch (error) {
-        // Re-throw redirect errors (this is expected behavior)
         if (isRedirectError(error)) {
             throw error;
+        }
+
+        if (error instanceof Error && error.message === 'USERNAME_EXISTS') {
+            return [{ path: 'username', message: 'Username already exists' }];
         }
 
         logger.error({ error }, 'Error creating first user');

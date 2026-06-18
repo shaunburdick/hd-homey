@@ -11,6 +11,33 @@ interface StreamSecretManagerProps {
 
 const initialState: FormState = { errors: {} };
 
+/** Inline banner listing form-level or auth error messages. */
+function ErrorBanner({ messages }: { messages: string[] }) {
+    return (
+        <div className="p-3 rounded mb-4 bg-error">
+            {messages.join(', ')}
+        </div>
+    );
+}
+
+/** Expandable section explaining what happens when the secret is regenerated. */
+function RegenerateExplanation() {
+    return (
+        <details className="mt-4">
+            <summary style={{ cursor: 'pointer' }} className="font-medium">
+                What happens when I regenerate?
+            </summary>
+            <ul className="mt-3 text-sm text-secondary">
+                <li>A new random 64-character secret is generated</li>
+                <li>The new secret is stored in the database</li>
+                <li>All existing stream URLs become invalid immediately</li>
+                <li>Users must visit channel pages again to get new URLs</li>
+                <li>This does not affect user authentication</li>
+            </ul>
+        </details>
+    );
+}
+
 export default function StreamSecretManager({
     secretPreview,
     regenerateAction
@@ -49,17 +76,8 @@ export default function StreamSecretManager({
                 </div>
             )}
 
-            {state.errors.form && (
-                <div className="p-3 rounded mb-4 bg-error">
-                    {state.errors.form.join(', ')}
-                </div>
-            )}
-
-            {state.errors.auth && (
-                <div className="p-3 rounded mb-4 bg-error">
-                    {state.errors.auth.join(', ')}
-                </div>
-            )}
+            {state.errors.form && <ErrorBanner messages={state.errors.form} />}
+            {state.errors.auth && <ErrorBanner messages={state.errors.auth} />}
 
             <form action={action}>
                 <Button type="submit" variant="danger" loading={pending} disabled={pending}>
@@ -67,18 +85,7 @@ export default function StreamSecretManager({
                 </Button>
             </form>
 
-            <details className="mt-4">
-                <summary style={{ cursor: 'pointer' }} className="font-medium">
-                    What happens when I regenerate?
-                </summary>
-                <ul className="mt-3 text-sm text-secondary">
-                    <li>A new random 64-character secret is generated</li>
-                    <li>The new secret is stored in the database</li>
-                    <li>All existing stream URLs become invalid immediately</li>
-                    <li>Users must visit channel pages again to get new URLs</li>
-                    <li>This does not affect user authentication</li>
-                </ul>
-            </details>
+            <RegenerateExplanation />
         </Card>
     );
 }

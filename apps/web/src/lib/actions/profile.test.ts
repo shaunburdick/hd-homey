@@ -22,7 +22,8 @@ vi.mock('@/lib/auth/auth', () => ({
     },
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
+const refreshDb = (opts?: { seed?: boolean }) => testDatabase.refreshDb(opts);
 
 describe('Profile Actions', () => {
     const TEST_USER_ID = 'test-viewer-uuid'; // Use seeded viewer user

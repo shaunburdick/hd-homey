@@ -57,7 +57,8 @@ beforeAll(async () => {
 });
 
 test('Page', async () => {
-    const Page = (await import('./page')).default;
+    const pageModule = await import('./page');
+    const Page = pageModule.default;
     render(await Page());
     expect(screen.getByRole('heading', { level: 1, name: /Welcome back, Test User/i })).toBeDefined();
 });

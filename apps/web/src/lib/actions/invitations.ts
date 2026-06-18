@@ -18,6 +18,9 @@ import {
     getAllInvitationsWithCreators,
 } from '@/lib/invitations/invitations';
 
+/** Maximum length for invitation notes */
+const MAX_NOTE_LENGTH = 200;
+
 /**
  * Form state for invitation actions
  */
@@ -47,8 +50,8 @@ function validateCreateInvitation(
         errors.push({ path: 'role', message: 'Invalid role. Must be admin or viewer.' });
     }
 
-    if (note !== undefined && note.length > 200) {
-        errors.push({ path: 'note', message: 'Note must be 200 characters or less.' });
+    if (note !== undefined && note.length > MAX_NOTE_LENGTH) {
+        errors.push({ path: 'note', message: `Note must be ${MAX_NOTE_LENGTH} characters or less.` });
     }
 
     return errors;
@@ -70,6 +73,49 @@ function errorsToFormState(errors: { path: string; message: string }[]): Invitat
 }
 
 /**
+ * Persist a new invitation to the database and return the invitation URL
+ *
+ * @param options - role, note, and createdBy
+ * @returns Form state with invitation token and URL
+ */
+async function persistInvitation({
+    role,
+    note,
+    createdBy,
+}: {
+    role: AuthRoles;
+    note: string | undefined;
+    createdBy: string;
+}): Promise<InvitationFormState> {
+    const db = await getDb();
+    const token = await generateUniqueToken(db);
+    const expiresAt = calculateExpirationDate();
+
+    const [invitation] = await db.insert(invitations).values({
+        token,
+        role,
+        note: note !== undefined && note.length > 0 ? note : null,
+        createdBy,
+        createdAt: new Date(),
+        expiresAt,
+    }).returning();
+
+    const baseUrl = process.env.BETTER_AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+    const invitationUrl = `${baseUrl}/invite/${token}`;
+
+    revalidatePath('/settings/invitations');
+
+    return {
+        errors: {},
+        success: true,
+        invitation: {
+            token: invitation.token,
+            url: invitationUrl,
+        },
+    };
+}
+
+/**
  * Create a new invitation
  * Admin only
  *
@@ -82,8 +128,9 @@ export async function createInvitation(
     formData: FormData
 ): Promise<InvitationFormState> {
     // 1. Verify admin session
+    let adminSession: Awaited<ReturnType<typeof requireAdmin>>;
     try {
-        await requireAdmin();
+        adminSession = await requireAdmin();
     } catch (error) {
         return {
             errors: {
@@ -104,40 +151,7 @@ export async function createInvitation(
 
     // 3. Generate secure token and create invitation
     try {
-        const db = await getDb();
-        const session = await requireAdmin(); // Get session again for user ID
-
-        // Generate unique token
-        const token = await generateUniqueToken(db);
-
-        // Calculate expiration (30 days from now)
-        const expiresAt = calculateExpirationDate();
-
-        // Insert invitation
-        const [invitation] = await db.insert(invitations).values({
-            token,
-            role: role as AuthRoles,
-            note: note !== undefined && note.length > 0 ? note : null,
-            createdBy: session.user.id,
-            createdAt: new Date(),
-            expiresAt,
-        }).returning();
-
-        // 4. Build full invitation URL
-        const baseUrl = process.env.BETTER_AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
-        const invitationUrl = `${baseUrl}/invite/${token}`;
-
-        // 5. Revalidate the invitations page
-        revalidatePath('/settings/invitations');
-
-        return {
-            errors: {},
-            success: true,
-            invitation: {
-                token: invitation.token,
-                url: invitationUrl
-            }
-        };
+        return await persistInvitation({ role: role as AuthRoles, note, createdBy: adminSession.user.id });
     } catch (error) {
         return {
             errors: {

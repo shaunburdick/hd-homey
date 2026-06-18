@@ -8,6 +8,49 @@ import { Card, Button } from '@/components';
 import { PageContainer, PageHeader, EmptyState } from '@/components/layouts';
 import { AuthRoles } from '@/lib/auth-roles';
 
+/** Renders a single user row card inside the user list */
+function UserCard({ user }: { user: User }) {
+    return (
+        <Link
+            key={user.id}
+            href={`/users/${user.id}`}
+            className="no-underline"
+        >
+            <Card className="channel-card transition p-4" style={{ cursor: 'pointer' }}>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                        <div className="font-medium text-primary mb-1 text-lg">
+                            {user.name}
+                        </div>
+                        <div className="text-sm text-secondary">
+                            @{user.email}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span
+                            className="inline-block rounded text-sm font-semibold"
+                            style={{
+                                backgroundColor: user.role === AuthRoles.Admin
+                                    ? 'var(--color-info-bg)'
+                                    : 'var(--color-bg-primary)',
+                                color: user.role === AuthRoles.Admin
+                                    ? 'var(--color-info)'
+                                    : 'var(--color-text-secondary)',
+                                padding: 'var(--space-1) var(--space-3)',
+                            }}
+                        >
+                            {user.role === AuthRoles.Admin ? '👑 Admin' : '👤 Viewer'}
+                        </span>
+                        <span className="text-sm text-tertiary">
+                            →
+                        </span>
+                    </div>
+                </div>
+            </Card>
+        </Link>
+    );
+}
+
 export default async function Page() {
     const db = await getDb();
     const userList = await db.query.user.findMany({
@@ -34,43 +77,7 @@ export default async function Page() {
             ) : (
                 <div className="grid gap-3">
                     {userList.map(user => (
-                        <Link
-                            key={user.id}
-                            href={`/users/${user.id}`}
-                            className="no-underline"
-                        >
-                            <Card className="channel-card transition p-4" style={{ cursor: 'pointer' }}>
-                                <div className="flex items-center justify-between gap-4">
-                                    <div className="flex-1">
-                                        <div className="font-medium text-primary mb-1 text-lg">
-                                            {user.name}
-                                        </div>
-                                        <div className="text-sm text-secondary">
-                                            @{user.email}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span
-                                            className="inline-block rounded text-sm font-semibold"
-                                            style={{
-                                                backgroundColor: user.role === AuthRoles.Admin
-                                                    ? 'var(--color-info-bg)'
-                                                    : 'var(--color-bg-primary)',
-                                                color: user.role === AuthRoles.Admin
-                                                    ? 'var(--color-info)'
-                                                    : 'var(--color-text-secondary)',
-                                                padding: 'var(--space-1) var(--space-3)',
-                                            }}
-                                        >
-                                            {user.role === AuthRoles.Admin ? '👑 Admin' : '👤 Viewer'}
-                                        </span>
-                                        <span className="text-sm text-tertiary">
-                                            →
-                                        </span>
-                                    </div>
-                                </div>
-                            </Card>
-                        </Link>
+                        <UserCard key={user.id} user={user} />
                     ))}
                 </div>
             )}

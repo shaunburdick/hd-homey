@@ -432,7 +432,7 @@ describe(TEST_DESCRIBE, () => {
             const activeChannels = db.select().from(channels)
                 .where(eq(channels.fk_tuner, tuner.id))
                 .all()
-                .filter(c => c.is_active);
+                .filter(channel => channel.is_active);
 
             expect(activeChannels.length).toBe(0);
         });

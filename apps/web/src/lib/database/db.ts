@@ -43,13 +43,6 @@ export function connection() {
 
     const db = new Database(Config.DB_PATH);
 
-    // For debugging SQL queries, uncomment the verbose option:
-    // const db = new Database(Config.DB_PATH, {
-    //     verbose: (query, ...params) => {
-    //         Logger.info({ query, params }, 'SQL Query');
-    //     },
-    // });
-
     globalThis.__hdHomeyDbConnection = db;
     return globalThis.__hdHomeyDbConnection;
 }
