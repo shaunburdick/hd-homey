@@ -1,6 +1,6 @@
 # HD Homey Feature Status
 
-**Last Updated**: 2025-06-18  
+**Last Updated**: 2026-06-18  
 **Version**: 1.0.0-beta.6 (Dependency Updates and Code Quality)
 
 This document provides a quick overview of all features and their implementation status.
