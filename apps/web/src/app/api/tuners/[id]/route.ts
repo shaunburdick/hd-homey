@@ -12,10 +12,6 @@ import { AuthRoles } from '@/lib/auth-roles';
 import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
-
-/** Radix for parsing integer route parameters */
-const DECIMAL_RADIX = 10;
-
 interface Params {
     id: string;
 }
@@ -70,7 +66,7 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
 
     const data = await db.query.tuners.findFirst({
         where: and(
-            eq(tuners.id, parseInt(id, DECIMAL_RADIX)),
+            eq(tuners.id, parseInt(id, 10)),
             isNull(tuners.deleted_at)
         )
     });
@@ -104,7 +100,7 @@ export async function POST(
 
         const tuner = await db.query.tuners.findFirst({
             where: and(
-                eq(tuners.id, parseInt(id, DECIMAL_RADIX)),
+                eq(tuners.id, parseInt(id, 10)),
                 isNull(tuners.deleted_at)
             )
         });

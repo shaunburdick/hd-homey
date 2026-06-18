@@ -9,9 +9,6 @@ import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-/** Minimum valid tuner ID value */
-const MIN_TUNER_ID = 1;
-
 /**
  * Parse and validate the optional tunerId query parameter.
  * Returns the numeric ID, null if absent, or a NextResponse error if invalid.
@@ -24,7 +21,7 @@ function parseTunerIdParam(
         return { tunerId: null };
     }
 
-    const tunerId = parseInt(tunerIdParam, MIN_TUNER_ID);
+    const tunerId = parseInt(tunerIdParam, 10);
     if (isNaN(tunerId) || tunerId <= 0) {
         return {
             error: NextResponse.json(

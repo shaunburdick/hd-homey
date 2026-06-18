@@ -11,10 +11,6 @@ import { PageContainer, InfoCard } from '@/components/layouts';
 import Config from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
-
-/** Radix for parsing integer route parameters */
-const DECIMAL_RADIX = 10;
-
 interface PageParams {
     id: string;
     channel_id: string;
@@ -110,8 +106,8 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
     // Get channel info from database
     const channel = await db.query.channels.findFirst({
         where: and(
-            eq(channels.id, parseInt(channel_id, DECIMAL_RADIX)),
-            eq(channels.fk_tuner, parseInt(id, DECIMAL_RADIX)),
+            eq(channels.id, parseInt(channel_id, 10)),
+            eq(channels.fk_tuner, parseInt(id, 10)),
             isNull(channels.deleted_at)
         ),
     });
@@ -137,7 +133,7 @@ export default async function WatchPage({ params }: { params: Promise<PageParams
     // Generate signed stream URL for HLS playlist.
     // Include the basePath prefix so the HLS player fetches segments from the correct path
     // when the app is deployed under a sub-path (e.g., /hd-homey/api/transcode/...).
-    const token = await generateStreamToken(parseInt(id, DECIMAL_RADIX), parseInt(channel_id, DECIMAL_RADIX));
+    const token = await generateStreamToken(parseInt(id, 10), parseInt(channel_id, 10));
     const playlistUrl = `${Config.BASE_PATH}/api/transcode/${id}/${channel_id}/playlist.m3u8?token=${token}`;
 
     return (

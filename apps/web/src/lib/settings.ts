@@ -8,10 +8,6 @@ import { DEFAULT_SETTINGS } from './transcoding/types';
 
 /** Number of random bytes used for generating the stream secret */
 const STREAM_SECRET_BYTES = 32;
-
-/** Radix for decimal integer parsing */
-const DECIMAL_RADIX = 10;
-
 /**
  * In-memory cache for stream secret
  * Reduces database queries from ~350/min to <1/min for token validation
@@ -164,7 +160,7 @@ function isValidSetting(value: string | null): boolean {
  * Parse string setting as integer with fallback
  */
 function parseIntSetting(value: string | null, fallback: number): number {
-    return isValidSetting(value) ? parseInt(value as string, DECIMAL_RADIX) : fallback;
+    return isValidSetting(value) ? parseInt(value as string, 10) : fallback;
 }
 
 /**

@@ -18,7 +18,7 @@ const MAX_CONCURRENT_SESSIONS = 20;
 
 /**
  * Parses a string from a number input element to an integer.
- * Using Number() avoids the magic-number radix in parseInt(val, 10).
+ * Using Number() instead of parseInt for cleaner integer parsing.
  */
 export function parseIntegerInput(value: string): number {
     return Math.trunc(Number(value));

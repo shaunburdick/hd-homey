@@ -13,10 +13,6 @@ const SIGNATURE_HEX_CHARS = 32;
 
 /** Milliseconds per second, used to convert Date.now() to Unix timestamp */
 const MS_PER_SECOND = 1000;
-
-/** Radix for decimal integer parsing */
-const DECIMAL_RADIX = 10;
-
 /**
  * Generate a signed token for streaming
  */
@@ -50,7 +46,7 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
 
         // Check expiration
         const now = Math.floor(Date.now() / MS_PER_SECOND);
-        const expiresAtNum = parseInt(expiresAt, DECIMAL_RADIX);
+        const expiresAtNum = parseInt(expiresAt, 10);
         if (expiresAtNum < now) {
             return null; // Expired
         }
@@ -72,8 +68,8 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
         }
 
         return {
-            tunerId: parseInt(tunerId, DECIMAL_RADIX),
-            channelId: parseInt(channelId, DECIMAL_RADIX),
+            tunerId: parseInt(tunerId, 10),
+            channelId: parseInt(channelId, 10),
             expiresAt: expiresAtNum
         };
     } catch {

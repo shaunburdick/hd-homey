@@ -12,10 +12,6 @@ import { PageContainer, EmptyState } from '@/components/layouts';
 import { ChannelOrganizer } from '@/components/ChannelOrganizer';
 import { auth } from '@/lib/auth/auth';
 import type { Session } from '@/lib/auth/types';
-
-/** Radix for parsing integer route parameters */
-const DECIMAL_RADIX = 10;
-
 interface PageParams {
     id: string
 }
@@ -112,7 +108,7 @@ export default async function Page(props: { params: Promise<PageParams> }) {
 
     const tuner = await db.query.tuners.findFirst({
         where: and(
-            eq(tuners.id, parseInt(params.id, DECIMAL_RADIX)),
+            eq(tuners.id, parseInt(params.id, 10)),
             isNull(tuners.deleted_at)
         ),
         with: {

@@ -7,10 +7,6 @@ import { channels } from '@/lib/database/schema';
 import { verifyStreamToken } from '@/lib/stream-token';
 import Logger from '@/lib/logger';
 import { HDTuner } from '@/lib/hdhr/tuner';
-
-/** Radix for parsing integer route parameters */
-const DECIMAL_RADIX = 10;
-
 /**
  * Force dynamic rendering for this route
  */
@@ -54,8 +50,8 @@ async function validateToken({ token, id, channel_id }: TokenValidationOptions) 
         return null;
     }
 
-    if (tokenData.tunerId !== parseInt(id, DECIMAL_RADIX) ||
-        tokenData.channelId !== parseInt(channel_id, DECIMAL_RADIX)) {
+    if (tokenData.tunerId !== parseInt(id, 10) ||
+        tokenData.channelId !== parseInt(channel_id, 10)) {
         Logger.warn({
             requested: { tunerId: id, channelId: channel_id },
             token: tokenData

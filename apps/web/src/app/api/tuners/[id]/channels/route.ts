@@ -5,17 +5,13 @@ import { channels, tuners } from '@/lib/database/schema';
 import { getDb } from '@/lib/database/db';
 
 export const dynamic = 'force-dynamic';
-
-/** Radix for parsing integer route parameters */
-const DECIMAL_RADIX = 10;
-
 interface Params {
     id: string;
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<Params> }) {
     const { id } = await context.params;
-    const tunerId = parseInt(id, DECIMAL_RADIX);
+    const tunerId = parseInt(id, 10);
     const db = await getDb();
 
     const tuner = await db.query.tuners.findFirst({

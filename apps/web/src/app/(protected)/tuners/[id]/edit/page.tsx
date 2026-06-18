@@ -3,10 +3,6 @@ import { notFound } from 'next/navigation';
 import EditTunerForm from './EditTunerForm';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
-
-/** Radix for parsing integer route parameters */
-const DECIMAL_RADIX = 10;
-
 interface PageParams {
     id: string
 };
@@ -17,7 +13,7 @@ export default async function EditTunerPage(props: { params: Promise<PageParams>
 
     const tuner = await db.query.tuners.findFirst({
         where: and(
-            eq(tuners.id, parseInt(params.id, DECIMAL_RADIX)),
+            eq(tuners.id, parseInt(params.id, 10)),
             isNull(tuners.deleted_at)
         )
     });

@@ -9,10 +9,6 @@ import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
 import { requireAdmin } from '@/lib/auth/helpers';
 import { HDTuner } from '@/lib/hdhr/tuner';
 import Logger from '@/lib/logger';
-
-/** Radix for parsing integer form values */
-const DECIMAL_RADIX = 10;
-
 /** Timeout in milliseconds for tuner connection test */
 const CONNECTION_TIMEOUT_MS = 5000;
 
@@ -62,7 +58,7 @@ export async function updateTuner(prevState: unknown, formData: FormData) {
     }
 
     const db = await getDb();
-    const id = parseInt(formData.get('id') as string, DECIMAL_RADIX);
+    const id = parseInt(formData.get('id') as string, 10);
 
     if (isNaN(id) || id === 0) {
         return [{ path: 'id', message: 'Invalid tuner ID' }];
@@ -100,7 +96,7 @@ export async function deleteTuner(prevState: unknown, formData: FormData) {
     }
 
     const db = await getDb();
-    const id = parseInt(formData.get('id') as string, DECIMAL_RADIX);
+    const id = parseInt(formData.get('id') as string, 10);
 
     if (isNaN(id) || id === 0) {
         return [{ path: 'id', message: 'Invalid tuner ID' }];

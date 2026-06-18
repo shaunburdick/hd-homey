@@ -1,6 +1,3 @@
-/** Radix for decimal integer parsing */
-const DECIMAL_RADIX = 10;
-
 export default {
     /**
      * Path to the Database
@@ -54,6 +51,6 @@ export default {
      * Stream token expiration in seconds (default: 12 hours)
      */
     get streamTokenExpiry(): number {
-        return parseInt(process.env.HD_HOMEY_STREAM_TOKEN_EXPIRY ?? '43200', DECIMAL_RADIX);
+        return parseInt(process.env.HD_HOMEY_STREAM_TOKEN_EXPIRY ?? '43200', 10);
     }
 };

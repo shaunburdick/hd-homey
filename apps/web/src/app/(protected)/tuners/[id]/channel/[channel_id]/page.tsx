@@ -10,10 +10,6 @@ import ChannelStream from '@/components/channel-stream';
 import { Card, Button } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
 import Config from '@/lib/config';
-
-/** Radix for parsing integer route parameters */
-const DECIMAL_RADIX = 10;
-
 interface PageParams {
     id: string;
     channel_id: string;
@@ -165,8 +161,8 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
 
     const channel = await db.query.channels.findFirst({
         where: and(
-            eq(channels.id, parseInt(channel_id, DECIMAL_RADIX)),
-            eq(channels.fk_tuner, parseInt(id, DECIMAL_RADIX)),
+            eq(channels.id, parseInt(channel_id, 10)),
+            eq(channels.fk_tuner, parseInt(id, 10)),
             isNull(channels.deleted_at)
         )
     });
@@ -175,7 +171,7 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
         notFound();
     }
 
-    const token = await generateStreamToken(parseInt(id, DECIMAL_RADIX), parseInt(channel_id, DECIMAL_RADIX));
+    const token = await generateStreamToken(parseInt(id, 10), parseInt(channel_id, 10));
     // Include the basePath prefix so the URL works when served under a sub-path
     // (e.g., https://example.com/hd-homey/tuners/.../stream?token=...).
     // External media players (VLC, Plex) need the full URL path including the prefix.

@@ -10,10 +10,6 @@ import { generateViewerFingerprint } from '@/lib/viewer-fingerprint';
 import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
-
-/** Radix for parsing integer route parameters */
-const DECIMAL_RADIX = 10;
-
 interface SegmentParams {
     tunerId: string;
     channelId: string;
@@ -38,8 +34,8 @@ async function validateToken({ tunerId, channelId, segment, token }: TokenValida
         return new Response('Invalid or expired token', { status: 403 });
     }
 
-    if (tokenData.tunerId !== parseInt(tunerId, DECIMAL_RADIX) ||
-        tokenData.channelId !== parseInt(channelId, DECIMAL_RADIX)) {
+    if (tokenData.tunerId !== parseInt(tunerId, 10) ||
+        tokenData.channelId !== parseInt(channelId, 10)) {
         Logger.warn({
             requested: { tunerId, channelId },
             token: tokenData,

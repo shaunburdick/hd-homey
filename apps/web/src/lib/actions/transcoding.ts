@@ -15,10 +15,6 @@ import { validateSettings , detectFFmpeg } from '@/lib/transcoding/ffmpeg';
 import type { TranscodeSettings } from '@/lib/transcoding/types';
 import { PRESET_SETTINGS } from '@/lib/transcoding/types';
 import type { FormState } from '@/lib/errors';
-
-/** Radix for decimal integer parsing */
-const DECIMAL_RADIX = 10;
-
 /**
  * Parse transcoding settings from FormData
  *
@@ -29,13 +25,13 @@ function parseTranscodeSettingsForm(formData: FormData): TranscodeSettings {
     const enabled = formData.get('enabled') === 'on';
     const preset = formData.get('preset') as TranscodeSettings['preset'];
     const videoCodec = formData.get('videoCodec') as TranscodeSettings['videoCodec'];
-    const videoBitrate = parseInt(formData.get('videoBitrate') as string, DECIMAL_RADIX);
-    const audioBitrate = parseInt(formData.get('audioBitrate') as string, DECIMAL_RADIX);
+    const videoBitrate = parseInt(formData.get('videoBitrate') as string, 10);
+    const audioBitrate = parseInt(formData.get('audioBitrate') as string, 10);
     const resolution = formData.get('resolution') as TranscodeSettings['resolution'];
-    const framerate = parseInt(formData.get('framerate') as string, DECIMAL_RADIX) as TranscodeSettings['framerate'];
-    const maxSessions = parseInt(formData.get('maxSessions') as string, DECIMAL_RADIX);
-    const segmentDuration = parseInt(formData.get('segmentDuration') as string, DECIMAL_RADIX);
-    const playlistSize = parseInt(formData.get('playlistSize') as string, DECIMAL_RADIX);
+    const framerate = parseInt(formData.get('framerate') as string, 10) as TranscodeSettings['framerate'];
+    const maxSessions = parseInt(formData.get('maxSessions') as string, 10);
+    const segmentDuration = parseInt(formData.get('segmentDuration') as string, 10);
+    const playlistSize = parseInt(formData.get('playlistSize') as string, 10);
     const hardwareAccel = formData.get('hardwareAccel') as TranscodeSettings['hardwareAccel'];
 
     return {
