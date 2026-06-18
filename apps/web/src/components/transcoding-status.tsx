@@ -69,13 +69,17 @@ export default function TranscodingStatus() {
     };
 
     useEffect(() => {
-        void fetchStatus();
+        // Defer initial fetch to avoid synchronous setState in effect body
+        const initialTimer = setTimeout(() => {
+            void fetchStatus();
+        }, 0);
 
         const interval = setInterval(() => {
             void fetchStatus();
         }, 5000);
 
         return () => {
+            clearTimeout(initialTimer);
             clearInterval(interval);
         };
     }, []);
