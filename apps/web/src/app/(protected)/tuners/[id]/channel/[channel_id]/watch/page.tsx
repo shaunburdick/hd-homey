@@ -2,7 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getDb } from '@/lib/database/db';
-import { channels } from '@/lib/database/schema';
+import { channels, type Channel } from '@/lib/database/schema';
 import { generateStreamToken } from '@/lib/stream-token';
 import { getTranscodingSettings } from '@/lib/settings';
 import VideoPlayer from '@/components/video-player';
@@ -49,14 +49,6 @@ function TranscodingDisabledCard({ id, channel_id, guideNumber, guideName }: {
     );
 }
 
-interface ChannelInfo {
-    guideNumber: string;
-    guideName: string;
-    videoCodec: string;
-    audioCodec: string;
-    hd: number | null;
-}
-
 /** Renders the video player section with channel info details and navigation links */
 function WatchPlayerView({
     channel,
@@ -64,7 +56,7 @@ function WatchPlayerView({
     channel_id,
     playlistUrl,
 }: {
-    channel: ChannelInfo;
+    channel: Channel;
     id: string;
     channel_id: string;
     playlistUrl: string;
