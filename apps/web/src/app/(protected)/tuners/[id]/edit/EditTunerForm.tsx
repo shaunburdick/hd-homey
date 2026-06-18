@@ -168,7 +168,6 @@ interface TunerSettingsFormProps {
     setPathValue: (value: string) => void;
 }
 
-/** Renders the tuner name/path/active settings form */
 /** Renders the submit, test, and cancel buttons for the tuner settings form */
 function TunerFormActions({
     tunerId,

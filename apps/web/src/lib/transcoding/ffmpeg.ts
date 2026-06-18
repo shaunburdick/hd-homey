@@ -5,7 +5,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { cpus } from 'node:os';
-import type { FFmpegInfo, TranscodeSettings } from './types';
+import type { FFmpegInfo, Resolution, TranscodeSettings } from './types';
 import Logger from '@/lib/logger';
 
 const execFileAsync = promisify(execFile);
@@ -299,12 +299,15 @@ function addVideoEncoding(
 
     // Resolution
     if (settings.resolution !== 'source') {
-        const resolutionMap: Record<string, string> = {
+        const resolutionMap: Partial<Record<Resolution, string>> = {
             '480p': '854x480',
             '720p': '1280x720',
             '1080p': '1920x1080',
         };
-        args.push('-s', resolutionMap[settings.resolution]);
+        const resolution = resolutionMap[settings.resolution];
+        if (resolution !== undefined) {
+            args.push('-s', resolution);
+        }
     }
 
     // Framerate

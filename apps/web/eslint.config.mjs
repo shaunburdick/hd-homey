@@ -84,6 +84,7 @@ export default [
     {
         ignores: [
             '.next/**/*',
+            'coverage/**/*',
             'data/**/*',
             'next-env.d.ts',
             // Docs directory has its own ESLint config
