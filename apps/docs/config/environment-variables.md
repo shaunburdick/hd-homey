@@ -326,7 +326,7 @@ See [FFmpeg Compilation Guide](https://trac.ffmpeg.org/wiki/CompilationGuide)
 
 **Purpose**: Base URL for Better-Auth endpoints and authentication redirects.
 
-**Format**: Full URL including protocol
+**Format**: Full URL including protocol (origin only, no path)
 
 **Default**: Auto-detected from request headers or falls back to `NEXTAUTH_URL`
 
@@ -352,6 +352,7 @@ BETTER_AUTH_URL=https://tuner.example.com
 - Better-Auth authentication redirects fail
 - Need explicit control over authentication URLs
 - Multiple domains pointing to same instance
+- Required when using `HD_HOMEY_BASE_PATH` — set this to the origin only (e.g., `https://example.com`)
 
 **When to leave blank (auto-detect)**:
 - Simple reverse proxy configurations
@@ -360,6 +361,77 @@ BETTER_AUTH_URL=https://tuner.example.com
 
 ::: tip Relationship to HD_HOMEY_PROXY_HOST
 In most configurations, you don't need to set `BETTER_AUTH_URL` if `HD_HOMEY_PROXY_HOST` is configured correctly. Auto-detection will use the same URL as your stream proxy host.
+:::
+
+### HD_HOMEY_BASE_PATH
+
+**Purpose**: URL path prefix for sub-path deployments behind a reverse proxy.
+
+**Format**: Path starting with `/`, no trailing slash (e.g., `/hd-homey`)
+
+**Default**: Empty (root path — serves from `/`)
+
+**Required**: No - only needed for sub-path deployments
+
+**Example**:
+```bash
+# Root deployment (default - leave unset or empty)
+# HD_HOMEY_BASE_PATH=
+
+# Sub-path deployment at /hd-homey
+HD_HOMEY_BASE_PATH=/hd-homey
+
+# Nested sub-path
+HD_HOMEY_BASE_PATH=/media/hd-homey
+```
+
+**When to use**:
+- Reverse proxying HD Homey at a sub-path (e.g., `https://example.com/hd-homey/`)
+- Sharing a domain with other applications
+
+**Required companion variables**:
+
+When `HD_HOMEY_BASE_PATH` is set, you should also set:
+- `BETTER_AUTH_URL` — set to the **origin only** (e.g., `https://example.com`), NOT including the path
+
+**Important**:
+- Must start with `/`
+- Must NOT end with `/`
+- Is applied at build time via Next.js `basePath` — **requires rebuilding the image when changed**
+- When using Docker, rebuild with `docker compose build` after changing this variable
+
+**Reverse proxy configuration**:
+
+When serving HD Homey at a sub-path, configure your reverse proxy to strip the prefix before forwarding to HD Homey, OR pass it through (Next.js handles either case). For Nginx, a typical config:
+
+```nginx
+location /hd-homey/ {
+    proxy_pass http://localhost:3000/hd-homey/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+For Caddy:
+```
+example.com/hd-homey/* {
+    reverse_proxy localhost:3000
+}
+```
+
+::: warning Build-Time Variable
+`HD_HOMEY_BASE_PATH` is applied at **build time** by Next.js. If you change this value, you must **rebuild the Docker image** (or restart from source). Changing it in `.env` without rebuilding will have no effect on the application.
+:::
+
+::: tip Full Sub-Path Example
+```bash
+# .env for sub-path deployment at https://example.com/hd-homey
+HD_HOMEY_BASE_PATH=/hd-homey
+BETTER_AUTH_URL=https://example.com
+AUTH_TRUST_HOST=true
+AUTH_SECRET=your-secret-key
+```
 :::
 
 ### NEXTAUTH_URL
@@ -530,6 +602,34 @@ FFMPEG_THREADS=4
 LOG_LEVEL=warn
 NODE_ENV=production
 ```
+
+### Sub-Path Reverse Proxy
+
+For deployments at a URL prefix (e.g., `https://example.com/hd-homey`):
+
+```bash
+# .env
+AUTH_SECRET=xK8fN2mP9vQ7wR5tY3uI6oL1nM4bV0cZ
+
+# Sub-path prefix (must match your reverse proxy config)
+HD_HOMEY_BASE_PATH=/hd-homey
+
+# Origin without the sub-path (required with HD_HOMEY_BASE_PATH)
+BETTER_AUTH_URL=https://example.com
+
+# Trust proxy headers so HD Homey can detect the external URL
+AUTH_TRUST_HOST=true
+
+LOG_LEVEL=info
+NODE_ENV=production
+```
+
+::: warning Rebuild Required
+After setting or changing `HD_HOMEY_BASE_PATH`, rebuild the Docker image:
+```bash
+docker compose build && docker compose up -d
+```
+:::
 
 ## Environment Variable Priority
 

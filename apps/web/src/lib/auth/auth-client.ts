@@ -18,17 +18,30 @@ import { createAuthClient } from 'better-auth/react';
  * - signUp.email() - Create new user account
  */
 /**
- * Get the base URL for auth endpoints
- * - Client-side: Use window.location.origin (works for any domain)
- * - Server-side: Use environment variable (for SSR/build time)
+ * Get the base URL for auth endpoints, including any sub-path prefix.
+ *
+ * - Browser: use window.location.origin + window.__HD_HOMEY_BASE_PATH__
+ *   The prefix comes from the value injected at request time by the root
+ *   layout (a Server Component reading HD_HOMEY_BASE_PATH from the env).
+ * - SSR: fall back to BETTER_AUTH_URL / NEXTAUTH_URL + the raw env var.
+ *
+ * The basePath must be included here because the auth client runs in the
+ * browser where the full external URL (including the prefix) is visible.
+ * Server-side Better-Auth does NOT need it — the reverse proxy strips the
+ * prefix before requests reach Next.js.
  */
 const getAuthBaseURL = (): string => {
     if (typeof window !== 'undefined') {
-        return window.location.origin;
+        return `${window.location.origin}${window.__HD_HOMEY_BASE_PATH__ ?? ''}`;
     }
-    return process.env.BETTER_AUTH_URL
+
+    // SSR fallback: normalize the env var the same way Config.BASE_PATH does
+    const raw = process.env.HD_HOMEY_BASE_PATH ?? '';
+    const basePath = raw === '' ? '' : (raw.startsWith('/') ? raw : `/${raw}`).replace(/\/$/, '');
+
+    return (process.env.BETTER_AUTH_URL
         ?? process.env.NEXTAUTH_URL
-        ?? 'http://localhost:3000';
+        ?? 'http://localhost:3000') + basePath;
 };
 
 export const authClient = createAuthClient({

@@ -36,6 +36,13 @@ services:
             
             # Logging level
             - LOG_LEVEL=${LOG_LEVEL:-info}
+            
+            # Sub-path deployment (optional).
+            # Uncomment and set if serving HD Homey from a URL prefix
+            # (e.g., https://example.com/hd-homey). Requires a Docker image rebuild.
+            # Also set BETTER_AUTH_URL to the origin (e.g., https://example.com).
+            # - HD_HOMEY_BASE_PATH=${HD_HOMEY_BASE_PATH:-}
+            # - BETTER_AUTH_URL=${BETTER_AUTH_URL:-}
         
         # Health check for Docker orchestration
         healthcheck:

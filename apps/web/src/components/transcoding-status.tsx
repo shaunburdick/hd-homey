@@ -6,8 +6,10 @@
  */
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import styles from './transcoding-status.module.css';
 import type { SessionStats } from '@/lib/transcoding/types';
+import { BASE_PATH } from '@/lib/client-config';
 
 interface StatusResponse {
     sessions: SessionStats[];
@@ -21,7 +23,7 @@ export default function TranscodingStatus() {
 
     const fetchStatus = async () => {
         try {
-            const response = await fetch('/api/transcode/status');
+            const response = await fetch(`${BASE_PATH}/api/transcode/status`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch status');
@@ -50,7 +52,7 @@ export default function TranscodingStatus() {
 
         try {
             const response = await fetch(
-                `/api/transcode/status?sessionId=${encodeURIComponent(stoppingSession)}`,
+                `${BASE_PATH}/api/transcode/status?sessionId=${encodeURIComponent(stoppingSession)}`,
                 { method: 'DELETE' }
             );
 
@@ -179,12 +181,12 @@ export default function TranscodingStatus() {
                 {status.sessions.map((session) => (
                     <div key={session.sessionId} className={styles.sessionCard}>
                         <div className={styles.sessionHeader}>
-                            <a
+                            <Link
                                 href={`/tuners/${session.tunerId}/channel/${session.channelId}`}
                                 className={styles.sessionChannel}
                             >
                                 {session.channelName}
-                            </a>
+                            </Link>
                             {getStatusBadge(session.status)}
                         </div>
                         <div className={styles.sessionDetails}>

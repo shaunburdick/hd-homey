@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Logger from '@/lib/logger';
 import { Button, Card } from '@/components';
+import { BASE_PATH } from '@/lib/client-config';
 
 interface PairDeviceFormProps {
     code?: string;
@@ -42,7 +43,7 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
             }
 
             // Validate code with server
-            const response = await fetch(`/api/auth/device/validate?code=${cleanCode}`);
+            const response = await fetch(`${BASE_PATH}/api/auth/device/validate?code=${cleanCode}`);
 
             if (!response.ok) {
                 const data = await response.json().catch(() => ({ error: 'Failed to validate code' }));
@@ -76,7 +77,7 @@ export function PairDeviceForm({ code: initialCode, user }: PairDeviceFormProps)
         setError(null);
 
         try {
-            const response = await fetch('/api/auth/device/authorize', {
+            const response = await fetch(`${BASE_PATH}/api/auth/device/authorize`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

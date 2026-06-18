@@ -35,6 +35,13 @@ import Config from '@/lib/config';
  *
  * Important: When using drizzleAdapter with a schema, do NOT manually map field names
  * in the configuration. The adapter reads field mappings directly from the Drizzle schema.
+ *
+ * Sub-path deployment note:
+ * When HD_HOMEY_BASE_PATH is set, Next.js strips the basePath from the URL before
+ * passing requests to route handlers. Therefore, the server-side baseURL must NOT
+ * include the basePath — Next.js handles that transparently. The client-side auth
+ * client (auth-client.ts) uses the full URL with basePath because the browser sees
+ * the full external URL.
  */
 const db = drizzle(connection());
 
@@ -99,6 +106,8 @@ export const auth = betterAuth({
 
     // Security
     secret: Config.AUTH_SECRET,
+    // Server-side uses the base URL WITHOUT the basePath because Next.js strips
+    // the basePath from incoming requests before they reach the route handler.
     baseURL: Config.AUTH_BASE_URL,
     trustedOrigins: [Config.AUTH_BASE_URL],
 });

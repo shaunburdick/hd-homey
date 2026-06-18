@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import './nav.css';
 import { authClient } from '@/lib/auth/auth-client';
 import type { Session } from '@/lib/auth/types';
@@ -12,6 +12,7 @@ import { AuthRoles } from '@/lib/auth-roles';
 export default function Nav() {
 
     const pathname = usePathname();
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [lastPathname, setLastPathname] = useState(pathname);
     const { data: rawSession } = authClient.useSession();
@@ -39,7 +40,8 @@ export default function Nav() {
         e.preventDefault();
         setIsOpen(false);
         await authClient.signOut();
-        window.location.href = '/users/signin';
+        // Use router.push so Next.js applies the basePath automatically
+        router.push('/users/signin');
     };
 
     const isAdmin = session?.user?.role === AuthRoles.Admin;

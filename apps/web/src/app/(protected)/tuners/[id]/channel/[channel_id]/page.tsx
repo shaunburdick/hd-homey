@@ -8,6 +8,7 @@ import { getTranscodingSettings } from '@/lib/settings';
 import ChannelStream from '@/components/channel-stream';
 import { Card, Button } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
+import Config from '@/lib/config';
 
 interface PageParams {
     id: string;
@@ -39,7 +40,10 @@ export default async function Page({ params }: { params: Promise<PageParams> }) 
     }
 
     const token = await generateStreamToken(parseInt(id, 10), parseInt(channel_id, 10));
-    const streamUrl = `/tuners/${id}/channel/${channel_id}/stream?token=${token}`;
+    // Include the basePath prefix so the URL works when served under a sub-path
+    // (e.g., https://example.com/hd-homey/tuners/.../stream?token=...).
+    // External media players (VLC, Plex) need the full URL path including the prefix.
+    const streamUrl = `${Config.BASE_PATH}/tuners/${id}/channel/${channel_id}/stream?token=${token}`;
     const settings = await getTranscodingSettings();
 
     return (

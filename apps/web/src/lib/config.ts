@@ -27,6 +27,27 @@ export default {
     },
 
     /**
+     * URL path prefix for sub-path deployments behind a reverse proxy.
+     *
+     * When set, HD Homey will be served from a sub-path (e.g., "/hd-homey").
+     * This is used by Next.js basePath and by Better-Auth for constructing URLs.
+     *
+     * Must start with "/" and must NOT end with "/" (e.g., "/hd-homey", not "/hd-homey/").
+     * Leave empty (default) for root-path deployments.
+     *
+     * Example: HD_HOMEY_BASE_PATH=/hd-homey
+     */
+    get BASE_PATH(): string {
+        const raw = process.env.HD_HOMEY_BASE_PATH ?? '';
+        // Normalize: ensure it starts with "/" if non-empty, strip trailing slash
+        if (raw === '') {
+            return '';
+        }
+        const normalized = raw.startsWith('/') ? raw : `/${raw}`;
+        return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
+    },
+
+    /**
      * Stream token expiration in seconds (default: 12 hours)
      */
     get streamTokenExpiry(): number {
