@@ -6,11 +6,7 @@ import { auth } from '@/lib/auth/auth';
 import { getDb } from '@/lib/database/db';
 import { account } from '@/lib/database/schema';
 import { generateHashPassword, verifyPassword } from '@/lib/user';
-
-export interface FormState {
-    errors: Record<string, string[]>;
-    success?: boolean;
-}
+import type { FormState } from '@/lib/errors';
 
 /** Minimum password length */
 const MIN_PASSWORD_LENGTH = 8;

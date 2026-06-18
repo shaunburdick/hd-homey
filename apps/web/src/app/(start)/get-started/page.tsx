@@ -5,29 +5,9 @@ import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { createFirstUser } from './actions';
 import { Input, Button, Card } from '@/components';
 import { PageContainer } from '@/components/layouts';
-
-interface ValidationError {
-    path: string;
-    message: string;
-}
+import { buildFieldErrors } from '@/lib/errors';
 
 type FormErrors = Record<string, string[]> | undefined;
-
-/**
- * Build a field-keyed errors map from the raw validation error array.
- */
-function buildFieldErrors(state: unknown): FormErrors {
-    if (!state || !Array.isArray(state)) {
-        return undefined;
-    }
-    return state.reduce((accumulator: Record<string, string[]>, err: ValidationError) => {
-        if (!accumulator[err.path]) {
-            accumulator[err.path] = [];
-        }
-        accumulator[err.path].push(err.message);
-        return accumulator;
-    }, {});
-}
 
 /**
  * Render the global error summary from all validation errors.

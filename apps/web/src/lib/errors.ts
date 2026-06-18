@@ -3,6 +3,55 @@
  * Provides user-friendly error messages and recovery suggestions
  */
 
+/**
+ * A single validation error with the field path and message
+ */
+export interface ValidationError {
+    path: string;
+    message: string;
+}
+
+/**
+ * Form action state returned by server actions to client components
+ * Includes per-field error messages and an optional success indicator
+ */
+export interface FormState {
+    errors: Record<string, string[]>;
+    success?: boolean;
+}
+
+/**
+ * Build a field → messages map from an array of validation errors
+ *
+ * @param errors - Array of validation error objects
+ * @returns Record mapping field names to arrays of error messages
+ */
+export function buildErrorMap(errors: ValidationError[]): Record<string, string[]> {
+    return errors.reduce((acc: Record<string, string[]>, err: ValidationError) => {
+        acc[err.path] ??= [];
+        acc[err.path].push(err.message);
+        return acc;
+    }, {});
+}
+
+/**
+ * Build a field → messages map from raw unknown state.
+ * Safely handles non-array payloads (e.g. when the action returns an empty state).
+ *
+ * @param state - Raw action state, expected to be an array of ValidationError
+ * @returns Field map or undefined if state is not an array of ValidationErrors
+ */
+export function buildFieldErrors(state: unknown): Record<string, string[]> | undefined {
+    if (state === null || state === undefined || !Array.isArray(state)) {
+        return undefined;
+    }
+    return state.reduce((acc: Record<string, string[]>, err: ValidationError) => {
+        acc[err.path] ??= [];
+        acc[err.path].push(err.message);
+        return acc;
+    }, {});
+}
+
 export interface ErrorInfo {
     title: string;
     message: string;

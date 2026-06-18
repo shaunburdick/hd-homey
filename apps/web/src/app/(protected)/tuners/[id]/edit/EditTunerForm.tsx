@@ -7,11 +7,7 @@ import { updateTuner, deleteTuner, validateTunerConnection, type ValidationResul
 import { Input, Button, Card } from '@/components';
 import { PageContainer, InfoCard } from '@/components/layouts';
 import type { Tuner } from '@/lib/database/schema';
-
-interface ValidationError {
-    path: string;
-    message: string;
-}
+import { buildErrorMap } from '@/lib/errors';
 
 /** Date format options for displaying tuner timestamps */
 const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
@@ -30,17 +26,6 @@ function formatTunerDate(date: Date | string | null | undefined, fallback = 'Nev
         return fallback;
     }
     return new Date(date).toLocaleString('en-US', DATE_FORMAT_OPTIONS);
-}
-
-/** Builds a field → messages map from an array of validation errors */
-function buildErrorMap(errors: ValidationError[]): Record<string, string[]> {
-    return errors.reduce((acc: Record<string, string[]>, err: ValidationError) => {
-        if (!acc[err.path]) {
-            acc[err.path] = [];
-        }
-        acc[err.path].push(err.message);
-        return acc;
-    }, {});
 }
 
 /** Displays a list of form validation errors */

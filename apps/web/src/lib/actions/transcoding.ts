@@ -14,14 +14,10 @@ import { getTranscodingSettings, updateTranscodingSettings } from '@/lib/setting
 import { validateSettings , detectFFmpeg } from '@/lib/transcoding/ffmpeg';
 import type { TranscodeSettings } from '@/lib/transcoding/types';
 import { PRESET_SETTINGS } from '@/lib/transcoding/types';
+import type { FormState } from '@/lib/errors';
 
 /** Radix for decimal integer parsing */
 const DECIMAL_RADIX = 10;
-
-export interface FormState {
-    errors: Record<string, string[]>;
-    success?: boolean;
-}
 
 /**
  * Parse transcoding settings from FormData

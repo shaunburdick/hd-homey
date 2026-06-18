@@ -6,22 +6,7 @@ import Link from 'next/link';
 import { createTuner, validateTunerConnection, type ValidationResult } from '../actions';
 import { Input, Button, Card } from '@/components';
 import { PageContainer } from '@/components/layouts';
-
-interface ValidationError {
-    path: string;
-    message: string;
-}
-
-/** Builds a field → messages map from an array of validation errors */
-function buildErrorMap(errors: ValidationError[]): Record<string, string[]> {
-    return errors.reduce((acc: Record<string, string[]>, err: ValidationError) => {
-        if (!acc[err.path]) {
-            acc[err.path] = [];
-        }
-        acc[err.path].push(err.message);
-        return acc;
-    }, {});
-}
+import { buildErrorMap } from '@/lib/errors';
 
 /** Displays a list of form validation errors */
 function ErrorAlert({ errors }: { errors: Record<string, string[]> }) {

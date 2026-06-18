@@ -11,14 +11,12 @@ import { user, account } from '@/lib/database/schema';
 import { requireAdmin } from '@/lib/auth/helpers';
 import { generateHashPassword } from '@/lib/user';
 import { AuthRoles } from '@/lib/auth-roles';
+import type { ValidationError } from '@/lib/errors';
 
 /** Minimum length for usernames and names */
 const MIN_NAME_LENGTH = 3;
 /** Minimum length for passwords */
 const MIN_PASSWORD_LENGTH = 8;
-
-/** Validation error shape */
-interface ValidationError { path: string; message: string; }
 
 /**
  * Update user password in account table

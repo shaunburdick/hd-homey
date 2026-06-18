@@ -3,7 +3,8 @@
 import { useActionState, useTransition } from 'react';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { Input, Button, FormErrors } from '@/components';
-import { changePassword, type FormState } from '@/lib/actions/profile';
+import type { FormState } from '@/lib/errors';
+import { changePassword } from '@/lib/actions/profile';
 
 const initialState: FormState = { errors: {} };
 

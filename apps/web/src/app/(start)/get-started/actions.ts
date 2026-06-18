@@ -9,17 +9,13 @@ import { user, account } from '@/lib/database/schema';
 import { generateHashPassword } from '@/lib/user';
 import { AuthRoles } from '@/lib/auth-roles';
 import logger from '@/lib/logger';
+import type { ValidationError } from '@/lib/errors';
 
 /** Minimum username length */
 const MIN_USERNAME_LENGTH = 3;
 
 /** Minimum password length */
 const MIN_PASSWORD_LENGTH = 8;
-
-interface ValidationError {
-    path: string;
-    message: string;
-}
 
 interface FirstUserFormInputs {
     username: string | undefined;

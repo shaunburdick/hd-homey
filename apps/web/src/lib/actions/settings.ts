@@ -7,11 +7,7 @@ import type { Session } from '@/lib/auth/types';
 import { AuthRoles } from '@/lib/auth-roles';
 import { regenerateStreamSecret, getStreamSecret } from '@/lib/settings';
 import Logger from '@/lib/logger';
-
-export interface FormState {
-    errors: Record<string, string[]>;
-    success?: boolean;
-}
+import type { FormState } from '@/lib/errors';
 
 /** Number of preview characters to show at start and end of secret */
 const SECRET_PREVIEW_CHARS = 8;

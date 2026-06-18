@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import { Button, Card } from '@/components';
-import type { FormState } from '@/lib/actions/settings';
+import type { FormState } from '@/lib/errors';
 
 interface StreamSecretManagerProps {
     secretPreview: string;

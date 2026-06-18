@@ -10,7 +10,7 @@ import {
     PresetHiddenFields,
     AdvancedSettingsFields,
 } from './transcoding-fields';
-import type { FormState } from '@/lib/actions/transcoding';
+import type { FormState } from '@/lib/errors';
 import { updateTranscodingSettingsAction, applyPreset } from '@/lib/actions/transcoding';
 import type { TranscodeSettings, FFmpegInfo } from '@/lib/transcoding/types';
 import { InfoCard } from '@/components/layouts';

@@ -7,29 +7,14 @@ import { updateUser } from '@/lib/actions/users';
 import type { User } from '@/lib/auth/types';
 import RoleGuard from '@/components/RoleGuard';
 import { AuthRoles } from '@/lib/auth-roles';
+import { buildErrorMap } from '@/lib/errors';
 
 interface UserEditFormProps {
     user: User;
 }
 
-interface ValidationError {
-    path: string;
-    message: string;
-}
-
 /** Pixel size for the is_active checkbox to provide a comfortable touch target */
 const CHECKBOX_SIZE_PX = 20;
-
-/** Builds a field → messages map from an array of validation errors */
-function buildErrorMap(errors: ValidationError[]): Record<string, string[]> {
-    return errors.reduce((acc: Record<string, string[]>, err: ValidationError) => {
-        if (!acc[err.path]) {
-            acc[err.path] = [];
-        }
-        acc[err.path].push(err.message);
-        return acc;
-    }, {});
-}
 
 /** Renders a validation error list alert */
 function ErrorAlert({ errors }: { errors: Record<string, string[]> }) {
