@@ -42,7 +42,7 @@ function isActivePath(pathname: string, href: string): boolean {
     return pathname.startsWith(href);
 }
 
-/** Desktop and mobile sign-in/sign-out list item. */
+/** Desktop and mobile sign-in/sign-out link. Rendered without <li> wrapper — the parent owns list-item markup. */
 function AuthNavItem({
     session,
     onSignOut,
@@ -51,9 +51,9 @@ function AuthNavItem({
     onSignOut: (event: React.MouseEvent<HTMLAnchorElement>) => Promise<void>;
 }) {
     if (session) {
-        return <li><Link href="#" onClick={onSignOut}>Sign Out</Link></li>;
+        return <Link href="#" onClick={onSignOut}>Sign Out</Link>;
     }
-    return <li><Link href="/users/signin">Sign In</Link></li>;
+    return <Link href="/users/signin">Sign In</Link>;
 }
 
 /** Renders the list of nav links for a given menu context (desktop or mobile). */
