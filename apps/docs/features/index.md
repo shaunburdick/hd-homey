@@ -70,6 +70,19 @@ Generate secure invitation links for easy user onboarding without sharing creden
 - Expiration management
 - Invitation tracking
 
+### 📡 Signal Monitoring
+Real-time RF signal diagnostics and antenna alignment tool with live gauges and rolling graphs for all configured tuners.
+
+[Learn More →](/features/signal-monitoring)
+
+**Key capabilities:**
+- Live Signal Strength, SNR Quality, and Symbol Quality gauges
+- Color-coded thresholds for instant visual feedback
+- Antenna Tuning Mode — all tuners on one screen simultaneously
+- Rolling 2-minute line graphs (SS and SNQ)
+- ATSC 3.0 / NextGen TV PLP and L1 details (Flex 4K and compatible devices)
+- Program and PID listing for the currently tuned channel
+
 ### 🔐 Stream Security
 Token-based authentication ensures only authorized users can access your streams.
 
@@ -136,6 +149,7 @@ All core features are complete and tested:
 | User Invitations | ✅ Complete | ✅ 100% |
 | Stream Security | ✅ Complete | ✅ 100% |
 | Authentication | ✅ Complete | ✅ 100% |
+| Signal Monitoring | ✅ Complete | ✅ 97%+ |
 
 **Current Version**: v1.0.0-beta.5
 

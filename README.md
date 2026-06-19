@@ -56,6 +56,7 @@ Access HD Homey at **http://localhost:3000** and create your first admin account
 - 🔄 **Video Transcoding** - Real-time MPEG-2 to H.264/HLS conversion with shared session management
 - 👥 **User Management** - Role-based access control with admin and viewer roles
 - 🔐 **Secure Authentication** - Better-Auth powered with scrypt password hashing and JWT sessions
+- 📡 **Signal Monitoring** - Real-time RF signal gauges and antenna tuning mode for all tuners simultaneously
 - ⚙️ **Easy Configuration** - Simple environment variables with Docker Compose support
 
 **[📖 View All Features](https://shaunburdick.github.io/hd-homey/features/)**
