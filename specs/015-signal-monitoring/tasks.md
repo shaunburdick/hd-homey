@@ -19,7 +19,7 @@
 
 ## Wave 0 — Project Setup (Blocker for everything)
 
-- [ ] **T-001** `[S]` — Add `recharts` dependency to `@hd-homey/web` workspace and verify it resolves without peer-dep conflicts
+- [x] **T-001** `[S]` — Add `recharts` dependency to `@hd-homey/web` workspace and verify it resolves without peer-dep conflicts
   - `npm install recharts -w @hd-homey/web`
   - Verify `recharts` appears in `apps/web/package.json` under `dependencies`
   - Run `npm run build -w @hd-homey/web` to confirm no import errors
@@ -30,12 +30,12 @@
 
 All Wave 1 tasks are parallel-safe after T-001.
 
-- [ ] **T-002** `[P]` `[M]` `[DEPENDS: T-001]` — Add new signal types to `apps/web/src/lib/hdhr/types.ts`
+- [x] **T-002** `[P]` `[M]` `[DEPENDS: T-001]` — Add new signal types to `apps/web/src/lib/hdhr/types.ts`
   - Add `TunerStatusEntry`, `TunerStatusResponse`, `StreamInfoPid`, `ParsedProgram`, `Atsc3PlpInfo`, `Atsc3L1Info`, `TunerLockStatus`
   - All types from `data-model.md` Section 1
   - No behavior changes to existing exports
 
-- [ ] **T-003** `[P]` `[L]` `[DEPENDS: T-001]` — Create `apps/web/src/lib/hdhr/signal-parsers.ts` with all pure parsing functions
+- [x] **T-003** `[P]` `[L]` `[DEPENDS: T-001]` — Create `apps/web/src/lib/hdhr/signal-parsers.ts` with all pure parsing functions
   - `parseStatusJson(json: TunerStatusResponse, resource: string): TunerStatusEntry | null`
   - `parseStreamInfo(rawText: string): StreamInfoPid[]`
   - `groupStreamInfoByProgram(pids: StreamInfoPid[], vctName?: string): ParsedProgram[]`
@@ -48,7 +48,7 @@ All Wave 1 tasks are parallel-safe after T-001.
   - Export `SignalSseEvent`, `StreamInfoSseEvent`, `Atsc3PlpSseEvent`, `Atsc3L1SseEvent`, `PingSseEvent`, `SignalStreamEvent` union types (from `data-model.md` Section 2)
   - Export `SignalDataPoint`, `TunerSignalState` client-side state types (from `data-model.md` Section 3)
 
-- [ ] **T-004** `[P]` `[L]` `[DEPENDS: T-003]` — Write unit tests `apps/web/src/lib/hdhr/signal-parsers.test.ts`
+- [x] **T-004** `[P]` `[L]` `[DEPENDS: T-003]` — Write unit tests `apps/web/src/lib/hdhr/signal-parsers.test.ts`
   - `parseStatusJson`: active tuner, idle tuner, malformed JSON, missing resource
   - `parseStreamInfo`: standard multi-program output, single PID, empty string, malformed lines
   - `groupStreamInfoByProgram`: groups correctly, handles empty pids array
@@ -63,7 +63,7 @@ All Wave 1 tasks are parallel-safe after T-001.
 
 ## Wave 2 — Polling Manager (Server Core)
 
-- [ ] **T-005** `[M]` `[DEPENDS: T-002, T-003]` — Create `apps/web/src/lib/hdhr/signal-poller.ts` — Singleton polling manager
+- [x] **T-005** `[M]` `[DEPENDS: T-002, T-003]` — Create `apps/web/src/lib/hdhr/signal-poller.ts` — Singleton polling manager
   - Define `SseSubscriber` and `DevicePollEntry` internal types
   - Implement `SignalPollingManager` class:
     - `subscribe(deviceUrl, tunerDbId, resource, controller): string` — returns subscriberId
@@ -83,7 +83,7 @@ All Wave 1 tasks are parallel-safe after T-001.
   - 3 s device fetch timeout; emits `error: 'timeout'` or `error: 'unreachable'` on failure
   - ping interval: 30 s
 
-- [ ] **T-006** `[M]` `[DEPENDS: T-005]` — Write unit tests `apps/web/src/lib/hdhr/signal-poller.test.ts`
+- [x] **T-006** `[M]` `[DEPENDS: T-005]` — Write unit tests `apps/web/src/lib/hdhr/signal-poller.test.ts`
   - Mock `fetch` globally; test `subscribe` + poll cycle dispatches correct SSE events
   - Test subscriber deduplication (2 subscribers → 1 poll call per cycle)
   - Test `unsubscribe` clears interval when count reaches 0
@@ -98,7 +98,7 @@ All Wave 1 tasks are parallel-safe after T-001.
 
 ## Wave 3 — API Route Handlers (Parallel after Wave 2)
 
-- [ ] **T-007** `[P]` `[L]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/[tunerId]/stream/route.ts` — Single-tuner SSE endpoint
+- [x] **T-007** `[P]` `[L]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/[tunerId]/stream/route.ts` — Single-tuner SSE endpoint
   - `export const runtime = 'nodejs'`
   - `export const dynamic = 'force-dynamic'`
   - `GET` handler:
@@ -111,7 +111,7 @@ All Wave 1 tasks are parallel-safe after T-001.
   - Listen to `request.signal` abort to close stream
   - **Note on tuner resource**: The `tuners.path` stores the device base URL. To map DB tuner `id` to HDHomeRun `tunerN`, query the DB for all tuners with the same `path` and use the sort-order index. See plan.md for rationale.
 
-- [ ] **T-008** `[P]` `[L]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/antenna/stream/route.ts` — Antenna SSE endpoint
+- [x] **T-008** `[P]` `[L]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/antenna/stream/route.ts` — Antenna SSE endpoint
   - Same runtime exports as T-007
   - `GET` handler:
     1. Validate session → 401
@@ -122,7 +122,7 @@ All Wave 1 tasks are parallel-safe after T-001.
     6. Return SSE `ReadableStream` Response
     7. On abort: unsubscribe all device subscriptions
 
-- [ ] **T-009** `[P]` `[M]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/[tunerId]/tune/route.ts` — Tune channel (admin)
+- [x] **T-009** `[P]` `[M]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/[tunerId]/tune/route.ts` — Tune channel (admin)
   - `POST` handler:
     1. Validate session → 401; check `role === 'admin'` → 403
     2. Parse `tunerId` → DB lookup → 404
@@ -132,14 +132,14 @@ All Wave 1 tasks are parallel-safe after T-001.
     6. Send `GET {devicePath}/tuner{N}/set?channel=v{guideNumber}` with 3 s timeout
     7. Return `{ success: true, resource: "tuner0" }` on success
 
-- [ ] **T-010** `[P]` `[M]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/[tunerId]/clear/route.ts` — Clear tuner (admin)
+- [x] **T-010** `[P]` `[M]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/[tunerId]/clear/route.ts` — Clear tuner (admin)
   - `POST` handler:
     1. Validate session → 401; check `role === 'admin'` → 403
     2. Parse `tunerId` → DB lookup → 404
     3. Send `GET {devicePath}/tuner{N}/set?channel=none` with 3 s timeout
     4. Return `{ success: true, resource: "tuner0" }` on success
 
-- [ ] **T-011** `[P]` `[M]` `[DEPENDS: T-007, T-008]` — Write route handler tests
+- [x] **T-011** `[P]` `[M]` `[DEPENDS: T-007, T-008]` — Write route handler tests
   - `stream/route.test.ts`: mock `getSignalPoller`, verify SSE headers on 200; verify 401 on no session; verify 404 on unknown tunerId
   - `antenna/stream/route.test.ts`: verify 401; verify no-tuners event + stream close; verify multi-device subscription
   - `tune/route.test.ts`: verify 403 for viewer role; verify 409 conflict response; verify 404 for unknown channel
@@ -150,7 +150,7 @@ All Wave 1 tasks are parallel-safe after T-001.
 
 ## Wave 4 — UI Components (Parallel after Wave 1; no dependency on Wave 2/3 for pure UI)
 
-- [ ] **T-012** `[P]` `[M]` `[DEPENDS: T-003]` — Create `apps/web/src/components/signal/SignalGauge.tsx`
+- [x] **T-012** `[P]` `[M]` `[DEPENDS: T-003]` — Create `apps/web/src/components/signal/SignalGauge.tsx`
   - Props: `label: string`, `value: number | null`, `metric: 'SS' | 'SNQ' | 'SEQ'`, `unit?: string`
   - Renders:
     - Numeric display: `{value ?? '--'}{unit ?? '%'}`
@@ -158,7 +158,7 @@ All Wave 1 tasks are parallel-safe after T-001.
     - `aria-label={`${label} ${value !== null ? `${value} percent` : 'not available'}`}`
   - Export `SignalQuality` color class mapping as `const QUALITY_STYLES`
 
-- [ ] **T-013** `[P]` `[M]` `[DEPENDS: T-012]` — Write `apps/web/src/components/signal/SignalGauge.test.tsx`
+- [x] **T-013** `[P]` `[M]` `[DEPENDS: T-012]` — Write `apps/web/src/components/signal/SignalGauge.test.tsx`
   - Verify green badge renders when SEQ = 100
   - Verify yellow badge renders when SS = 55
   - Verify red badge renders when SNQ = 30
@@ -166,7 +166,7 @@ All Wave 1 tasks are parallel-safe after T-001.
   - Verify `aria-label` contains numeric value and "percent"
   - Verify text label not absent (not color-only)
 
-- [ ] **T-014** `[P]` `[M]` `[DEPENDS: T-001, T-003]` — Create `apps/web/src/components/signal/SignalGraph.tsx`
+- [x] **T-014** `[P]` `[M]` `[DEPENDS: T-001, T-003]` — Create `apps/web/src/components/signal/SignalGraph.tsx`
   - Props: `title: string`, `data: SignalDataPoint[]`, `dataKey: 'ss' | 'snq'`, `color: string`, `ariaLabel: string`
   - Wraps `recharts` `ResponsiveContainer` > `LineChart` > `Line`
   - Reads `window.matchMedia('(prefers-reduced-motion: reduce)')` in `useEffect` to disable `isAnimationActive`
@@ -174,19 +174,19 @@ All Wave 1 tasks are parallel-safe after T-001.
   - XAxis: `dataKey="timestamp"` with formatted time label; YAxis: 0–100; 60-point max (enforced by parent)
   - Displays `recharts` `Tooltip` with value + timestamp
 
-- [ ] **T-015** `[P]` `[M]` `[DEPENDS: T-014]` — Write `apps/web/src/components/signal/SignalGraph.test.tsx`
+- [x] **T-015** `[P]` `[M]` `[DEPENDS: T-014]` — Write `apps/web/src/components/signal/SignalGraph.test.tsx`
   - Verify `role="img"` attribute on wrapper
   - Verify `aria-label` prop is rendered
   - Verify animation is disabled when `prefers-reduced-motion` media query is matched (mock `matchMedia`)
   - Verify component renders without crashing with empty data array
   - Verify component renders without crashing with 60 data points
 
-- [ ] **T-016** `[P]` `[M]` `[DEPENDS: T-012, T-014]` — Create `apps/web/src/components/signal/SignalStatusCard.tsx`
+- [x] **T-016** `[P]` `[M]` `[DEPENDS: T-012, T-014]` — Create `apps/web/src/components/signal/SignalStatusCard.tsx`
   - Props: `state: TunerSignalState`
   - Renders: tuner name + current channel (or "Idle"), compact `SignalGauge` row (SS/SNQ/SEQ), two `SignalGraph` (SS + SNQ), error banner if `state.error`
   - Used exclusively by antenna page
 
-- [ ] **T-017** `[P]` `[M]` `[DEPENDS: T-003]` — Create `apps/web/src/components/signal/ProgramList.tsx` (P2)
+- [x] **T-017** `[P]` `[M]` `[DEPENDS: T-003]` — Create `apps/web/src/components/signal/ProgramList.tsx` (P2)
   - Props: `programs: ParsedProgram[]`, `idle: boolean`, `tunerId: number`
   - Renders collapsible `<details>/<summary>` section: "Programs on this channel"
   - When idle: "No channel tuned"
@@ -194,7 +194,7 @@ All Wave 1 tasks are parallel-safe after T-001.
   - For each program: program number, name, PID table (pid | codec | type columns)
   - Each program has "Watch" link → `/tuners/{tunerId}/channel/{program.programNumber}/watch` (guideNumber lookup needed — pass as prop)
 
-- [ ] **T-018** `[P]` `[M]` `[DEPENDS: T-003]` — Create `apps/web/src/components/signal/Atsc3Details.tsx` (P2)
+- [x] **T-018** `[P]` `[M]` `[DEPENDS: T-003]` — Create `apps/web/src/components/signal/Atsc3Details.tsx` (P2)
   - Props: `plp: Atsc3PlpSseEvent | null`, `l1: Atsc3L1SseEvent | null`
   - Returns `null` when both props are null (hidden by default)
   - Renders two sub-sections: "PLP Info" (plpId, plpType, snrDb, fecType) and "L1 Signaling" (fftSize, gi, pp, l1bMod, l1dMod)
@@ -204,7 +204,7 @@ All Wave 1 tasks are parallel-safe after T-001.
 
 ## Wave 5 — Pages (Parallel; depend on Wave 4 components + Wave 3 routes)
 
-- [ ] **T-019** `[P]` `[L]` `[DEPENDS: T-012, T-014, T-016, T-017, T-018, T-007]` — Create `apps/web/src/app/(protected)/tuners/[id]/signal/page.tsx` — Single-tuner signal page
+- [x] **T-019** `[P]` `[L]` `[DEPENDS: T-012, T-014, T-016, T-017, T-018, T-007]` — Create `apps/web/src/app/(protected)/tuners/[id]/signal/page.tsx` — Single-tuner signal page
   - `'use client'`
   - Page params: `{ id: string }`
   - On mount: open `EventSource('/api/signal/{id}/stream')`
@@ -222,7 +222,7 @@ All Wave 1 tasks are parallel-safe after T-001.
   - Loading skeleton while awaiting first event
   - **Note**: Tuner name can be loaded server-side if using a hybrid Server/Client component pattern; or fetched client-side from `/api/tuners/{id}`. Use client-only fetch for simplicity (aligned with spec FR-026 requiring 'use client').
 
-- [ ] **T-020** `[P]` `[L]` `[DEPENDS: T-012, T-014, T-016, T-008]` — Create `apps/web/src/app/(protected)/signal/antenna/page.tsx` — Antenna tuning mode page
+- [x] **T-020** `[P]` `[L]` `[DEPENDS: T-012, T-014, T-016, T-008]` — Create `apps/web/src/app/(protected)/signal/antenna/page.tsx` — Antenna tuning mode page
   - `'use client'`
   - On mount: open `EventSource('/api/signal/antenna/stream')`
   - Maintain `useState<Record<number, TunerSignalState>>` keyed by tunerId
@@ -234,7 +234,7 @@ All Wave 1 tasks are parallel-safe after T-001.
     - Empty state when no events received yet
   - Respect `prefers-reduced-motion` (passed to `SignalGraph` via context or prop drilling)
 
-- [ ] **T-021** `[S]` `[DEPENDS: T-007]` — Modify `apps/web/src/app/(protected)/tuners/[id]/page.tsx` — Add "Signal Monitor" link
+- [x] **T-021** `[S]` `[DEPENDS: T-007]` — Modify `apps/web/src/app/(protected)/tuners/[id]/page.tsx` — Add "Signal Monitor" link
   - Add `<Link href={`/tuners/${tuner.id}/signal`}><Button variant="secondary">📡 Signal Monitor</Button></Link>` in the `TunerHeader` component's action area, alongside the existing "Edit Tuner" link
   - Keep in same `flex` row as Edit button
 
@@ -242,7 +242,7 @@ All Wave 1 tasks are parallel-safe after T-001.
 
 ## Wave 6 — Integration & Documentation
 
-- [ ] **T-022** `[P]` `[M]` `[DEPENDS: T-019, T-020, T-021]` — End-to-end manual verification checklist
+- [x] **T-022** `[P]` `[M]` `[DEPENDS: T-019, T-020, T-021]` — End-to-end manual verification checklist
   - AC-001: Verify `GET /api/signal/[tunerId]/stream` returns `Content-Type: text/event-stream`
   - AC-002: First `signal` event arrives within 3 s
   - AC-003: Events arrive ~every 2 s
@@ -254,17 +254,17 @@ All Wave 1 tasks are parallel-safe after T-001.
   - AC-013: All gauges have `aria-label` attributes
   - AC-014: Reduced-motion disables graph animation
 
-- [ ] **T-023** `[P]` `[M]` `[DEPENDS: T-019, T-020]` — Update VitePress documentation
+- [x] **T-023** `[P]` `[M]` `[DEPENDS: T-019, T-020]` — Update VitePress documentation
   - Create `apps/docs/features/signal-monitoring.md` — full feature documentation
     - Overview, usage guide, signal quality thresholds table, antenna mode instructions
     - ATSC 3.0 section explanation (conditional display)
   - Update `apps/docs/features/index.md` — add Signal Monitoring to feature list
   - Verify `npm run docs:build` passes with no dead links
 
-- [ ] **T-024** `[P]` `[S]` `[DEPENDS: T-019, T-020]` — Update `README.md`
+- [x] **T-024** `[P]` `[S]` `[DEPENDS: T-019, T-020]` — Update `README.md`
   - Add "📡 Signal Monitoring" to the feature highlights list (one line with link to docs)
 
-- [ ] **T-025** `[P]` `[S]` `[DEPENDS: all]` — Run full quality gate
+- [x] **T-025** `[P]` `[S]` `[DEPENDS: all]` — Run full quality gate
   - `npm test -w @hd-homey/web` — all tests pass
   - `npm run lint -w @hd-homey/web` — zero warnings
   - `npm run build -w @hd-homey/web` — build succeeds
