@@ -187,6 +187,10 @@ class TranscodingSessionManager {
 
         // Check if we've reached max sessions
         if (this.sessions.size >= settings.maxSessions) {
+            Logger.warn(
+                { sessionId, maxSessions: settings.maxSessions, currentSessions: this.sessions.size },
+                'Maximum concurrent transcoding sessions reached'
+            );
             throw new Error(
                 `Maximum concurrent sessions (${settings.maxSessions}) reached`
             );

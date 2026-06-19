@@ -101,8 +101,10 @@ export async function serveSegment(
             },
         });
     } catch (error) {
-        // Segment might not be ready yet, return 404
-        Logger.debug({ error, segmentPath }, 'Segment not found');
+        // Segment might not be ready yet, return 404.
+        // Log at warn level since repeated 404s indicate ffmpeg production failure
+        // and is the most common symptom of streaming issues.
+        Logger.warn({ error, segmentPath }, 'Segment not found');
         return new Response('Segment not found', { status: 404 });
     }
 }

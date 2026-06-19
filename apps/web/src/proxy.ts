@@ -19,6 +19,7 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth/auth';
+import Logger from '@/lib/logger';
 
 /**
  * Routes that require no authentication at all
@@ -110,6 +111,7 @@ export async function proxy(req: NextRequest) {
     });
 
     if (session?.user === undefined) {
+        Logger.warn({ pathname }, 'Unauthenticated request blocked by proxy');
         return buildUnauthenticatedResponse(pathname, req.url);
     }
 

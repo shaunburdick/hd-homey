@@ -125,6 +125,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         return await buildStreamTokenResponse(validated);
     } catch (error) {
         if (error instanceof z.ZodError) {
+            logger.warn({ issues: error.issues }, 'Stream token request validation failed');
             return NextResponse.json(
                 {
                     error: 'Bad Request',

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import Config from './config';
 import { getStreamSecret } from './settings';
+import Logger from './logger';
 
 export interface StreamTokenData {
     tunerId: number;
@@ -48,6 +49,10 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
         const now = Math.floor(Date.now() / MS_PER_SECOND);
         const expiresAtNum = parseInt(expiresAt, 10);
         if (expiresAtNum < now) {
+            Logger.warn(
+                { tunerId, channelId, expiresAt: expiresAtNum, now },
+                'Stream token expired'
+            );
             return null; // Expired
         }
 
@@ -64,6 +69,10 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
             Buffer.from(signature),
             Buffer.from(expectedSignature)
         )) {
+            Logger.warn(
+                { tunerId, channelId, expiresAt: expiresAtNum },
+                'Stream token signature mismatch — secret may have changed'
+            );
             return null; // Invalid signature
         }
 
@@ -72,7 +81,8 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
             channelId: parseInt(channelId, 10),
             expiresAt: expiresAtNum
         };
-    } catch {
+    } catch (error) {
+        Logger.warn({ error }, 'Failed to decode stream token — invalid format');
         return null; // Invalid token format
     }
 }

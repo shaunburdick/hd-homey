@@ -7,8 +7,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import Hls, { type HlsConfig } from 'hls.js';
+import Hls, { type HlsConfig, type ErrorData } from 'hls.js';
 import styles from './video-player.module.css';
+import Logger from '@/lib/logger';
 
 /** Minimum duration (ms) to show the loading overlay to avoid a flash on fast loads. */
 const MIN_LOADING_DISPLAY_MS = 300;
@@ -158,6 +159,53 @@ function setupNativeHls({
 }
 
 /**
+ * Handle an hls.js error event: log it, then recover or destroy.
+ * - NETWORK_ERROR: restart loading
+ * - MEDIA_ERROR: attempt recovery
+ * - Other fatal errors: show error UI and destroy
+ * - Non-fatal errors: already logged, no further action
+ */
+function handleHlsError({
+    hls,
+    data,
+    setShowLoading,
+    setError,
+}: {
+    hls: Hls;
+    data: ErrorData;
+    setShowLoading: (value: boolean) => void;
+    setError: (message: string | null) => void;
+}): void {
+    // Log ALL errors (fatal and non-fatal) so we can diagnose playback issues.
+    // With debug: false in config, hls.js itself won't log anything.
+    const logData = {
+        type: data.type,
+        details: data.details,
+        reason: data.reason ?? '',
+    };
+    if (data.fatal) {
+        Logger.error(logData, 'hls.js fatal error');
+    } else {
+        Logger.warn(logData, 'hls.js non-fatal error');
+    }
+
+    if (!data.fatal) {
+        return;
+    }
+    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        setError(null);
+        hls.startLoad();
+    } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        setError(null);
+        hls.recoverMediaError();
+    } else {
+        setError(`Playback error: ${data.details ?? 'Unknown error'}`);
+        setShowLoading(false);
+        hls.destroy();
+    }
+}
+
+/**
  * Wires up HLS.js for non-Safari browsers.
  * Returns a cleanup function.
  */
@@ -192,20 +240,7 @@ function setupHlsJs({
     });
 
     hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (!data.fatal) {
-            return;
-        }
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            setError(null);
-            hls.startLoad();
-        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            setError(null);
-            hls.recoverMediaError();
-        } else {
-            setError(`Playback error: ${data.details ?? 'Unknown error'}`);
-            setShowLoading(false);
-            hls.destroy();
-        }
+        handleHlsError({ hls, data, setShowLoading, setError });
     });
 
     return () => {
