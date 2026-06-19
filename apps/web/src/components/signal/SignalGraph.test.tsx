@@ -14,9 +14,9 @@ import type { SignalDataPoint } from '@/lib/hdhr/signal-parsers';
 
 // Recharts uses ResizeObserver — polyfill for jsdom
 global.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe(): void { /* test polyfill */ }
+    unobserve(): void { /* test polyfill */ }
+    disconnect(): void { /* test polyfill */ }
 };
 
 // =============================================================================
@@ -123,7 +123,6 @@ describe('SignalGraph', () => {
         // We mock matchMedia to return matches: true for 'prefers-reduced-motion: reduce'.
         mockMatchMedia(true);
 
-        // Render — should not throw. The animation state will be set via useEffect.
         const { container } = render(
             <SignalGraph
                 title="SNR Quality"
@@ -134,10 +133,10 @@ describe('SignalGraph', () => {
             />,
         );
 
-        // Verify the component rendered the role="img" wrapper (graph is present)
+        // Component should render with the role="img" wrapper
         expect(container.querySelector('[role="img"]')).toBeTruthy();
 
-        // Verify matchMedia was called with the correct query
+        // matchMedia should have been called with the reduced-motion query
         expect(window.matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
     });
 

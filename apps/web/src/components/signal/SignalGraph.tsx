@@ -9,7 +9,7 @@
  * @module components/signal/SignalGraph
  */
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import {
     ResponsiveContainer,
     LineChart,
@@ -20,37 +20,54 @@ import {
 } from 'recharts';
 import type { SignalDataPoint } from '@/lib/hdhr/signal-parsers';
 
+/** Chart margins in pixels */
+const CHART_MARGIN = { top: 5, right: 5, left: -20, bottom: 5 } as const;
+
+/** Minimum gap between XAxis tick labels in pixels */
+const TICK_GAP_PX = 40;
+
+/** Font size for axis tick labels */
+const AXIS_TICK_FONT_SIZE = 10;
+
+/** YAxis domain maximum (signal values are 0-100%) */
+const YAXIS_MAX = 100;
+
+// =============================================================================
+// Reduced-motion external store
+// =============================================================================
+
+function getReducedMotionSnapshot(): boolean {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function getServerSnapshot(): boolean {
+    return false; // SSR default: no animation preference
+}
+
+function subscribeToReducedMotion(callback: () => void): () => void {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    mq.addEventListener('change', callback);
+    return () => mq.removeEventListener('change', callback);
+}
+
 // =============================================================================
 // Types
 // =============================================================================
 
 interface SignalGraphProps {
-    /** Chart title, displayed as heading above the graph */
     title: string;
-    /** Rolling data buffer (max 60 entries) */
     data: SignalDataPoint[];
-    /** Which field to graph from SignalDataPoint */
     dataKey: 'ss' | 'snq';
-    /** Line stroke color, e.g. "steelblue" */
     color: string;
-    /** ARIA label for the graph wrapper (for screen readers) */
     ariaLabel: string;
 }
 
 // =============================================================================
-// Tooltip Formatter
+// Formatters
 // =============================================================================
 
-/**
- * Format a timestamp value for the XAxis tick display.
- * Shows HH:MM:SS from a Unix millisecond timestamp.
- */
 function formatTime(ts: number): string {
-    return new Date(ts).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-    });
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 // =============================================================================
@@ -62,42 +79,30 @@ function formatTime(ts: number): string {
  *
  * Accessibility:
  * - Wrapping div has `role="img"` and `aria-label` for screen readers
- * - Animation is disabled when `prefers-reduced-motion: reduce` is set
+ * - Animation is disabled when `prefers-reduced-motion: reduce` is active
  *
  * @param props - Graph display props
  */
 export function SignalGraph({ title, data, dataKey, color, ariaLabel }: SignalGraphProps) {
-    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-    useEffect(() => {
-        const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-        setPrefersReducedMotion(mq.matches);
-
-        const handler = (event: MediaQueryListEvent) => {
-            setPrefersReducedMotion(event.matches);
-        };
-
-        mq.addEventListener('change', handler);
-        return () => mq.removeEventListener('change', handler);
-    }, []);
+    const prefersReducedMotion = useSyncExternalStore(
+        subscribeToReducedMotion,
+        getReducedMotionSnapshot,
+        getServerSnapshot,
+    );
 
     return (
         <div className="signal-graph">
-            {title && <div className="signal-graph-title">{title}</div>}
-            <div
-                role="img"
-                aria-label={ariaLabel}
-                className="signal-graph-chart"
-            >
+            {title !== '' && <div className="signal-graph-title">{title}</div>}
+            <div role="img" aria-label={ariaLabel} className="signal-graph-chart">
                 <ResponsiveContainer width="100%" height={120}>
-                    <LineChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <LineChart data={data} margin={CHART_MARGIN}>
                         <XAxis
                             dataKey="timestamp"
                             tickFormatter={formatTime}
-                            tick={{ fontSize: 10 }}
-                            minTickGap={40}
+                            tick={{ fontSize: AXIS_TICK_FONT_SIZE }}
+                            minTickGap={TICK_GAP_PX}
                         />
-                        <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+                        <YAxis domain={[0, YAXIS_MAX]} tick={{ fontSize: AXIS_TICK_FONT_SIZE }} />
                         <Tooltip
                             labelFormatter={(ts: number) => formatTime(ts)}
                             formatter={(value: number) => [`${value}%`, dataKey.toUpperCase()]}

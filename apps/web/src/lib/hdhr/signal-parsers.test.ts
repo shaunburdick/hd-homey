@@ -165,7 +165,7 @@ describe('groupStreamInfoByProgram', () => {
             { pid: 483, codec: 'mpeg2video', type: 'video' as const, program: 2 },
         ];
         const result = groupStreamInfoByProgram(pids);
-        expect(result.map((p) => p.programNumber)).toEqual([1, 2, 3]);
+        expect(result.map((prog) => prog.programNumber)).toEqual([1, 2, 3]);
     });
 });
 

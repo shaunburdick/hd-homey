@@ -9,6 +9,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 // =============================================================================
+// Test constants
+// =============================================================================
+
+const VIEWER_ROLE = { user: { id: 'u1', role: 'viewer' } };
+const ADMIN_ROLE = { user: { id: 'u1', role: 'admin' } };
+const DEVICE_URL = 'http://192.168.1.100';
+const SSE_PATH = 'http://localhost/api/signal/1/stream';
+const TUNE_PATH = 'http://localhost/api/signal/1/tune';
+const CLEAR_PATH = 'http://localhost/api/signal/1/clear';
+
+/** Reusable 401 description */
+const NOT_AUTH = 'returns 401 when not authenticated';
+
+/** Reusable 403 description */
+const VIEWER_FORBIDDEN = 'returns 403 for viewer role';
+
+// =============================================================================
 // Shared mock instances (created before vi.mock factories run)
 // =============================================================================
 
@@ -17,8 +34,6 @@ const mockPoller = {
     subscribeAll: vi.fn().mockReturnValue('sub-id-antenna'),
     unsubscribe: vi.fn(),
 };
-
-const mockActiveSessions: object[] = [];
 
 // =============================================================================
 // Mocks — factories must not reference outer variables (hoisting)
@@ -52,14 +67,14 @@ vi.mock('next/headers', () => ({
 // Imports (after mocks)
 // =============================================================================
 
-import { auth } from '@/lib/auth/auth';
-import { getDb } from '@/lib/database/db';
-import { getSignalPoller } from '@/lib/hdhr/signal-poller';
-import { getSessionManager } from '@/lib/transcoding/session-manager';
 import { GET as streamGET } from '../[tunerId]/stream/route';
 import { GET as antennaGET } from '../antenna/stream/route';
 import { POST as tunePOST } from '../[tunerId]/tune/route';
 import { POST as clearPOST } from '../[tunerId]/clear/route';
+import { auth } from '@/lib/auth/auth';
+import { getDb } from '@/lib/database/db';
+import { getSignalPoller } from '@/lib/hdhr/signal-poller';
+import { getSessionManager } from '@/lib/transcoding/session-manager';
 
 // =============================================================================
 // Helper types for mocking
@@ -68,37 +83,34 @@ import { POST as clearPOST } from '../[tunerId]/clear/route';
 type MockedFn = ReturnType<typeof vi.fn>;
 
 function getMockGetSession(): MockedFn {
-    return (auth.api.getSession as unknown) as MockedFn;
+    return auth.api.getSession;
 }
 
 function getMockGetDb(): MockedFn {
     return (getDb as unknown) as MockedFn;
 }
 
-// =============================================================================
-// Helper: Build mock params
-// =============================================================================
-
 function makeParams(id: string): { params: Promise<{ tunerId: string }> } {
     return { params: Promise.resolve({ tunerId: id }) };
 }
 
-/** Build a Drizzle-like query mock for the tuners table */
-function makeDbMock(tuner: object | null, extraTuners: object[] = [], channel: object | null = null) {
-    const tunerFindFirst = vi.fn().mockResolvedValue(tuner);
-    const tunerFindMany = vi.fn().mockResolvedValue(
-        tuner ? [tuner, ...extraTuners] : [],
-    );
-    const channelFindFirst = vi.fn().mockResolvedValue(channel);
+interface DbMockOptions {
+    tuner?: object;
+    extraTuners?: object[];
+    channel?: object;
+}
 
+/** Build a Drizzle-like query mock */
+function makeDbMock(options: DbMockOptions = {}) {
+    const { tuner, extraTuners = [], channel } = options;
     return {
         query: {
             tuners: {
-                findFirst: tunerFindFirst,
-                findMany: tunerFindMany,
+                findFirst: vi.fn().mockResolvedValue(tuner),
+                findMany: vi.fn().mockResolvedValue(tuner !== undefined ? [tuner, ...extraTuners] : []),
             },
             channels: {
-                findFirst: channelFindFirst,
+                findFirst: vi.fn().mockResolvedValue(channel),
             },
         },
     };
@@ -115,43 +127,37 @@ describe('GET /api/signal/[tunerId]/stream', () => {
         (getSignalPoller as MockedFn).mockReturnValue(mockPoller);
     });
 
-    it('returns 401 when not authenticated', async () => {
+    it(NOT_AUTH, async () => {
         getMockGetSession().mockResolvedValue(null);
 
-        const response = await streamGET(
-            new NextRequest('http://localhost/api/signal/1/stream'),
-            makeParams('1'),
-        );
-
+        const response = await streamGET(new NextRequest(SSE_PATH), makeParams('1'));
         expect(response.status).toBe(401);
     });
 
     it('returns 404 for unknown tunerId', async () => {
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'viewer' } });
-        getMockGetDb().mockResolvedValue(makeDbMock(null));
+        getMockGetSession().mockResolvedValue(VIEWER_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock());
 
         const response = await streamGET(
             new NextRequest('http://localhost/api/signal/999/stream'),
             makeParams('999'),
         );
-
         expect(response.status).toBe(404);
     });
 
     it('returns 400 for non-numeric tunerId', async () => {
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'viewer' } });
+        getMockGetSession().mockResolvedValue(VIEWER_ROLE);
 
         const response = await streamGET(
             new NextRequest('http://localhost/api/signal/abc/stream'),
             makeParams('not-a-number'),
         );
-
         expect(response.status).toBe(400);
     });
 
     it('returns 200 with SSE Content-Type for valid tuner', async () => {
-        const mockTuner = { id: 1, name: 'Test Tuner', path: 'http://192.168.1.100', is_active: true };
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'viewer' } });
+        const mockTuner = { id: 1, name: 'Test Tuner', path: DEVICE_URL, is_active: true };
+        getMockGetSession().mockResolvedValue(VIEWER_ROLE);
         getMockGetDb().mockResolvedValue({
             query: {
                 tuners: {
@@ -161,11 +167,7 @@ describe('GET /api/signal/[tunerId]/stream', () => {
             },
         });
 
-        const response = await streamGET(
-            new NextRequest('http://localhost/api/signal/1/stream'),
-            makeParams('1'),
-        );
-
+        const response = await streamGET(new NextRequest(SSE_PATH), makeParams('1'));
         expect(response.status).toBe(200);
         expect(response.headers.get('Content-Type')).toBe('text/event-stream');
         expect(response.headers.get('Cache-Control')).toBe('no-cache');
@@ -183,24 +185,23 @@ describe('GET /api/signal/antenna/stream', () => {
         (getSignalPoller as MockedFn).mockReturnValue(mockPoller);
     });
 
-    it('returns 401 when not authenticated', async () => {
+    it(NOT_AUTH, async () => {
         getMockGetSession().mockResolvedValue(null);
 
         const response = await antennaGET(
             new NextRequest('http://localhost/api/signal/antenna/stream'),
         );
-
         expect(response.status).toBe(401);
     });
 
     it('returns 200 SSE stream when tuners exist', async () => {
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'viewer' } });
+        getMockGetSession().mockResolvedValue(VIEWER_ROLE);
         getMockGetDb().mockResolvedValue({
             query: {
                 tuners: {
                     findMany: vi.fn().mockResolvedValue([
-                        { id: 1, path: 'http://192.168.1.100', is_active: true, name: 'T1' },
-                        { id: 2, path: 'http://192.168.1.100', is_active: true, name: 'T2' },
+                        { id: 1, path: DEVICE_URL, is_active: true, name: 'T1' },
+                        { id: 2, path: DEVICE_URL, is_active: true, name: 'T2' },
                     ]),
                 },
             },
@@ -209,11 +210,19 @@ describe('GET /api/signal/antenna/stream', () => {
         const response = await antennaGET(
             new NextRequest('http://localhost/api/signal/antenna/stream'),
         );
-
         expect(response.status).toBe(200);
         expect(response.headers.get('Content-Type')).toBe('text/event-stream');
     });
 });
+
+/** Build a tune POST request */
+function makeTuneRequest(path = TUNE_PATH, body = { guideNumber: '5.1' }): NextRequest {
+    return new NextRequest(path, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+    });
+}
 
 // =============================================================================
 // POST /api/signal/[tunerId]/tune
@@ -223,88 +232,54 @@ describe('POST /api/signal/[tunerId]/tune', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (getSignalPoller as MockedFn).mockReturnValue(mockPoller);
-        (getSessionManager as MockedFn).mockReturnValue({
-            getActiveSessions: vi.fn().mockReturnValue(mockActiveSessions),
-        });
+        (getSessionManager as MockedFn).mockReturnValue({ getActiveSessions: vi.fn().mockReturnValue([]) });
     });
 
-    it('returns 401 when not authenticated', async () => {
+    it(NOT_AUTH, async () => {
         getMockGetSession().mockResolvedValue(null);
-
-        const response = await tunePOST(
-            new NextRequest('http://localhost/api/signal/1/tune', {
-                method: 'POST',
-                body: JSON.stringify({ guideNumber: '5.1' }),
-                headers: { 'Content-Type': 'application/json' },
-            }),
-            makeParams('1'),
-        );
-
+        const response = await tunePOST(makeTuneRequest(), makeParams('1'));
         expect(response.status).toBe(401);
     });
 
-    it('returns 403 for viewer role', async () => {
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'viewer' } });
-
-        const response = await tunePOST(
-            new NextRequest('http://localhost/api/signal/1/tune', {
-                method: 'POST',
-                body: JSON.stringify({ guideNumber: '5.1' }),
-                headers: { 'Content-Type': 'application/json' },
-            }),
-            makeParams('1'),
-        );
-
+    it(VIEWER_FORBIDDEN, async () => {
+        getMockGetSession().mockResolvedValue(VIEWER_ROLE);
+        const response = await tunePOST(makeTuneRequest(), makeParams('1'));
         expect(response.status).toBe(403);
     });
 
     it('returns 404 when tuner not found', async () => {
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'admin' } });
-        getMockGetDb().mockResolvedValue(makeDbMock(null));
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock());
 
         const response = await tunePOST(
-            new NextRequest('http://localhost/api/signal/999/tune', {
-                method: 'POST',
-                body: JSON.stringify({ guideNumber: '5.1' }),
-                headers: { 'Content-Type': 'application/json' },
-            }),
+            makeTuneRequest('http://localhost/api/signal/999/tune'),
             makeParams('999'),
         );
-
         expect(response.status).toBe(404);
     });
 
     it('returns 409 when active viewers present and force not set', async () => {
-        const mockTuner = { id: 1, path: 'http://192.168.1.100', is_active: true };
+        const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
         const mockChannel = { id: 5, guideNumber: '5.1', guideName: 'KPIX', fk_tuner: 1, is_active: true };
 
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'admin' } });
-        getMockGetDb().mockResolvedValue({
-            query: {
-                tuners: {
-                    findFirst: vi.fn().mockResolvedValue(mockTuner),
-                    findMany: vi.fn().mockResolvedValue([mockTuner]),
-                },
-                channels: {
-                    findFirst: vi.fn().mockResolvedValue(mockChannel),
-                },
-            },
-        });
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock({ tuner: mockTuner, channel: mockChannel }));
         (getSessionManager as MockedFn).mockReturnValue({
             getActiveSessions: vi.fn().mockReturnValue([
-                { tunerId: 1, viewerCount: 2, sessionId: 'abc', channelId: 5, channelName: 'KPIX', uptime: 10, status: 'running', viewers: [] },
+                {
+                    tunerId: 1,
+                    viewerCount: 2,
+                    sessionId: 'abc',
+                    channelId: 5,
+                    channelName: 'KPIX',
+                    uptime: 10,
+                    status: 'running',
+                    viewers: [],
+                },
             ]),
         });
 
-        const response = await tunePOST(
-            new NextRequest('http://localhost/api/signal/1/tune', {
-                method: 'POST',
-                body: JSON.stringify({ guideNumber: '5.1' }),
-                headers: { 'Content-Type': 'application/json' },
-            }),
-            makeParams('1'),
-        );
-
+        const response = await tunePOST(makeTuneRequest(), makeParams('1'));
         expect(response.status).toBe(409);
         const body = await response.json() as { conflict: boolean; viewers: number };
         expect(body.conflict).toBe(true);
@@ -312,30 +287,15 @@ describe('POST /api/signal/[tunerId]/tune', () => {
     });
 
     it('returns 404 when channel not found', async () => {
-        const mockTuner = { id: 1, path: 'http://192.168.1.100', is_active: true };
+        const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
 
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'admin' } });
-        getMockGetDb().mockResolvedValue({
-            query: {
-                tuners: {
-                    findFirst: vi.fn().mockResolvedValue(mockTuner),
-                    findMany: vi.fn().mockResolvedValue([mockTuner]),
-                },
-                channels: {
-                    findFirst: vi.fn().mockResolvedValue(null),
-                },
-            },
-        });
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock({ tuner: mockTuner }));
 
         const response = await tunePOST(
-            new NextRequest('http://localhost/api/signal/1/tune', {
-                method: 'POST',
-                body: JSON.stringify({ guideNumber: '999.1' }),
-                headers: { 'Content-Type': 'application/json' },
-            }),
+            makeTuneRequest(TUNE_PATH, { guideNumber: '999.1' }),
             makeParams('1'),
         );
-
         expect(response.status).toBe(404);
     });
 });
@@ -350,44 +310,32 @@ describe('POST /api/signal/[tunerId]/clear', () => {
         (getSignalPoller as MockedFn).mockReturnValue(mockPoller);
     });
 
-    it('returns 401 when not authenticated', async () => {
+    it(NOT_AUTH, async () => {
         getMockGetSession().mockResolvedValue(null);
-
         const response = await clearPOST(
-            new NextRequest('http://localhost/api/signal/1/clear', { method: 'POST' }),
+            new NextRequest(CLEAR_PATH, { method: 'POST' }),
             makeParams('1'),
         );
-
         expect(response.status).toBe(401);
     });
 
-    it('returns 403 for viewer role', async () => {
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'viewer' } });
-
+    it(VIEWER_FORBIDDEN, async () => {
+        getMockGetSession().mockResolvedValue(VIEWER_ROLE);
         const response = await clearPOST(
-            new NextRequest('http://localhost/api/signal/1/clear', { method: 'POST' }),
+            new NextRequest(CLEAR_PATH, { method: 'POST' }),
             makeParams('1'),
         );
-
         expect(response.status).toBe(403);
     });
 
     it('returns 404 for unknown tunerId', async () => {
-        getMockGetSession().mockResolvedValue({ user: { id: 'u1', role: 'admin' } });
-        getMockGetDb().mockResolvedValue({
-            query: {
-                tuners: {
-                    findFirst: vi.fn().mockResolvedValue(null),
-                    findMany: vi.fn().mockResolvedValue([]),
-                },
-            },
-        });
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock());
 
         const response = await clearPOST(
             new NextRequest('http://localhost/api/signal/999/clear', { method: 'POST' }),
             makeParams('999'),
         );
-
         expect(response.status).toBe(404);
     });
 });

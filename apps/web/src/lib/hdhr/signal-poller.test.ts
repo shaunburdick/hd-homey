@@ -16,18 +16,21 @@ import { SignalPollingManager } from './signal-poller';
 function makeController(): ReadableStreamDefaultController<Uint8Array> {
     const chunks: Uint8Array[] = [];
     return {
-        enqueue: vi.fn((chunk: Uint8Array) => { chunks.push(chunk); }),
+        enqueue: vi.fn((chunk: Uint8Array) => {
+            chunks.push(chunk);
+        }),
         close: vi.fn(),
         error: vi.fn(),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test stub
+
         desiredSize: null,
-    } as unknown as ReadableStreamDefaultController<Uint8Array>;
+    };
 }
 
 /** Decode all enqueued chunks from a controller mock into a string */
 function decodeChunks(controller: ReadableStreamDefaultController<Uint8Array>): string {
-    const mockEnqueue = controller.enqueue as ReturnType<typeof vi.fn>;
-    return mockEnqueue.mock.calls
+    interface MockFn { mock: { calls: unknown[][] } }
+    const enqueueMock = (controller.enqueue as unknown as MockFn).mock;
+    return enqueueMock.calls
         .map((call: unknown[]) => new TextDecoder().decode(call[0] as Uint8Array))
         .join('');
 }
@@ -51,6 +54,12 @@ const IDLE_STATUS_JSON = JSON.stringify([{ Resource: 'tuner0' }]);
 
 /** Device base URL */
 const DEVICE_URL = 'http://192.168.1.100';
+
+/** SSE signal event prefix for assertions */
+const SIGNAL_EVENT = 'event: signal';
+
+/** SSE streaminfo event prefix for assertions */
+const STREAMINFO_EVENT = 'event: streaminfo';
 
 // =============================================================================
 // Tests
@@ -85,8 +94,8 @@ describe('SignalPollingManager', () => {
             const controller = makeController();
             fetchMock.mockResolvedValue(new Response(IDLE_STATUS_JSON, { status: 200 }));
 
-            const id1 = manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
-            const id2 = manager.subscribe(DEVICE_URL, 2, 'tuner1', controller);
+            const id1 = manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+            const id2 = manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 2, resource: 'tuner1', controller });
 
             expect(id1).toBeTruthy();
             expect(id2).toBeTruthy();
@@ -98,9 +107,9 @@ describe('SignalPollingManager', () => {
             fetchMock.mockResolvedValue(new Response(IDLE_STATUS_JSON, { status: 200 }));
 
             expect(manager.getSubscriberCount(DEVICE_URL)).toBe(0);
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             expect(manager.getSubscriberCount(DEVICE_URL)).toBe(1);
-            manager.subscribe(DEVICE_URL, 2, 'tuner1', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 2, resource: 'tuner1', controller });
             expect(manager.getSubscriberCount(DEVICE_URL)).toBe(2);
         });
     });
@@ -110,7 +119,7 @@ describe('SignalPollingManager', () => {
             const controller = makeController();
             fetchMock.mockResolvedValue(new Response(IDLE_STATUS_JSON, { status: 200 }));
 
-            const id = manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            const id = manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             expect(manager.getSubscriberCount(DEVICE_URL)).toBe(1);
 
             manager.unsubscribe(DEVICE_URL, id);
@@ -139,7 +148,7 @@ describe('SignalPollingManager', () => {
                 .mockResolvedValueOnce(new Response(ACTIVE_STATUS_JSON, { status: 200 }))
                 .mockResolvedValueOnce(new Response('lock=atsc1-t\nss=83\n', { status: 200 }));
 
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
 
             // Flush the immediate poll promise (started with void in startPolling)
             await vi.advanceTimersByTimeAsync(0);
@@ -147,7 +156,7 @@ describe('SignalPollingManager', () => {
             await Promise.resolve(); // extra tick for nested await chains
 
             const output = decodeChunks(controller);
-            expect(output).toContain('event: signal');
+            expect(output).toContain(SIGNAL_EVENT);
             expect(output).toContain('"idle":false');
             expect(output).toContain('"ss":83');
             expect(output).toContain('"snq":90');
@@ -159,7 +168,7 @@ describe('SignalPollingManager', () => {
             const controller = makeController();
             fetchMock.mockResolvedValue(new Response(IDLE_STATUS_JSON, { status: 200 }));
 
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);
             await Promise.resolve();
             await Promise.resolve();
@@ -175,8 +184,8 @@ describe('SignalPollingManager', () => {
 
             fetchMock.mockResolvedValue(new Response(ACTIVE_STATUS_JSON, { status: 200 }));
 
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller1);
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller2);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller: controller1 });
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller: controller2 });
 
             // Allow immediate poll
             await vi.advanceTimersByTimeAsync(0);
@@ -184,8 +193,8 @@ describe('SignalPollingManager', () => {
             await Promise.resolve();
 
             // Both subscribers should receive signal events
-            expect(decodeChunks(controller1)).toContain('event: signal');
-            expect(decodeChunks(controller2)).toContain('event: signal');
+            expect(decodeChunks(controller1)).toContain(SIGNAL_EVENT);
+            expect(decodeChunks(controller2)).toContain(SIGNAL_EVENT);
 
             // Reset call count and run one interval cycle
             fetchMock.mockClear();
@@ -195,7 +204,7 @@ describe('SignalPollingManager', () => {
 
             // Only one status.json fetch per poll cycle
             const statusCalls = fetchMock.mock.calls.filter(
-                (c: unknown[]) => typeof c[0] === 'string' && (c[0] as string).endsWith('/status.json'),
+                (call: unknown[]) => typeof call[0] === 'string' && (call[0]).endsWith('/status.json'),
             );
             expect(statusCalls.length).toBe(1);
         });
@@ -206,7 +215,7 @@ describe('SignalPollingManager', () => {
             // Mock: fetch rejects with an AbortError (simulates timeout)
             fetchMock.mockRejectedValue(Object.assign(new Error('timeout'), { name: 'AbortError' }));
 
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);
             await Promise.resolve();
             await Promise.resolve();
@@ -219,7 +228,7 @@ describe('SignalPollingManager', () => {
             const controller = makeController();
             fetchMock.mockRejectedValue(new Error('Network unreachable'));
 
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);
             await Promise.resolve();
             await Promise.resolve();
@@ -238,7 +247,7 @@ describe('SignalPollingManager', () => {
             const controller = makeController();
             fetchMock.mockResolvedValue(new Response(IDLE_STATUS_JSON, { status: 200 }));
 
-            const id = manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            const id = manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);
             await Promise.resolve();
             await Promise.resolve();
@@ -280,13 +289,15 @@ describe('SignalPollingManager', () => {
                 .mockResolvedValueOnce(new Response('lock=atsc1-t\nss=83\nsnq=90\nseq=100\n', { status: 200 }))
                 .mockResolvedValueOnce(new Response('481: mpeg2video v 1\n482: ac3 a 1', { status: 200 }));
 
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);
             // Multiple ticks for nested async chains
-            for (let i = 0; i < 5; i++) await Promise.resolve();
+            for (let i = 0; i < 5; i++) {
+                await Promise.resolve();
+            }
 
             const output = decodeChunks(controller);
-            expect(output).toContain('event: streaminfo');
+            expect(output).toContain(STREAMINFO_EVENT);
             expect(output).toContain('"programs"');
         });
     });
@@ -323,9 +334,11 @@ describe('SignalPollingManager', () => {
                 .mockResolvedValueOnce(new Response('plpid=0\nsnr=32.5\nfectype=ldpc\n', { status: 200 }))
                 .mockResolvedValueOnce(new Response('fftsize=16K\ngi=1/192\npp=PP4\n', { status: 200 }));
 
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);
-            for (let i = 0; i < 10; i++) await Promise.resolve();
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
 
             const output = decodeChunks(controller);
             expect(output).toContain('event: atsc3plp');
@@ -353,13 +366,15 @@ describe('SignalPollingManager', () => {
                 .mockRejectedValueOnce(new Error('404 not found')) // l1info fails
                 .mockResolvedValueOnce(new Response('481: mpeg2video v 1\n', { status: 200 })); // streaminfo
 
-            manager.subscribe(DEVICE_URL, 1, 'tuner0', controller);
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);
-            for (let i = 0; i < 10; i++) await Promise.resolve();
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
 
             // Should still emit signal event — the ATSC 3.0 failure is silent
             const output = decodeChunks(controller);
-            expect(output).toContain('event: signal');
+            expect(output).toContain(SIGNAL_EVENT);
             expect(output).not.toContain('event: atsc3plp');
         });
     });
@@ -393,14 +408,14 @@ describe('SignalPollingManager', () => {
 
             fetchMock.mockResolvedValue(new Response(multiTunerStatus, { status: 200 }));
 
-            manager.subscribeAll(
-                DEVICE_URL,
-                [
+            manager.subscribeAll({
+                deviceUrl: DEVICE_URL,
+                tunersToTrack: [
                     { tunerId: 1, resource: 'tuner0' },
                     { tunerId: 2, resource: 'tuner1' },
                 ],
                 controller,
-            );
+            });
 
             await vi.advanceTimersByTimeAsync(0);
             await Promise.resolve();

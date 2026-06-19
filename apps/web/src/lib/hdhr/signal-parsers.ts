@@ -179,7 +179,7 @@ export function parseStatusJson(
     json: TunerStatusResponse,
     resource: string,
 ): TunerStatusEntry | null {
-    if (!Array.isArray(json)) {
+    if (!Array.isArray(json) || json.length === 0) {
         return null;
     }
 
@@ -199,52 +199,82 @@ const STREAMINFO_CODEC_OFFSET = 2;
  * @param rawText - Raw plain-text response from the device
  * @returns Array of parsed PID entries. Empty array on empty/malformed input.
  */
+/** Maps streaminfo type token to normalized PID type */
+const TYPE_TOKEN_MAP = new Map<string, StreamInfoPid['type']>([
+    ['v', 'video'],
+    ['a', 'audio'],
+]);
+
+/**
+ * Determine the PID type and program number from the rest-of-line parts array.
+ */
+function parsePidTypeParts(
+    codec: string,
+    parts: string[],
+): { type: StreamInfoPid['type']; programStr: string } {
+    const token = parts[1];
+
+    // Named type token ('v' or 'a')
+    if (token !== undefined && TYPE_TOKEN_MAP.has(token)) {
+        const type = TYPE_TOKEN_MAP.get(token) as StreamInfoPid['type'];
+        return { type, programStr: parts[2] ?? '0' };
+    }
+
+    // Data: codec is 'data' or parts[1] is numeric program number
+    const isNumericToken = token !== undefined && !isNaN(parseInt(token, 10));
+    if (codec === 'data' || isNumericToken) {
+        return { type: 'data', programStr: token ?? '0' };
+    }
+
+    return { type: 'other', programStr: parts[2] ?? token ?? '0' };
+}
+
+/**
+ * Parse a single streaminfo line into a StreamInfoPid.
+ * Returns null when the line is malformed or missing required fields.
+ */
+function parseStreamInfoLine(line: string): StreamInfoPid | null {
+    const trimmed = line.trim();
+    if (trimmed === '') {
+        return null;
+    }
+
+    const colonIdx = trimmed.indexOf(':');
+    if (colonIdx === -1) {
+        return null;
+    }
+
+    const pidStr = trimmed.slice(0, colonIdx).trim();
+    const pid = parseInt(pidStr, 10);
+    if (isNaN(pid)) {
+        return null;
+    }
+
+    const rest = trimmed.slice(colonIdx + STREAMINFO_CODEC_OFFSET).trim();
+    const parts = rest.split(/\s+/);
+    if (parts.length < 2) {
+        return null;
+    }
+
+    const codec = parts[0] ?? '';
+    const { type, programStr } = parsePidTypeParts(codec, parts);
+    const program = parseInt(programStr, 10);
+
+    return { pid, codec, type, program: isNaN(program) ? 0 : program };
+}
+
 export function parseStreamInfo(rawText: string): StreamInfoPid[] {
-    if (!rawText || rawText.trim() === '') {
+    if (rawText.trim() === '') {
         return [];
     }
 
     const pids: StreamInfoPid[] = [];
 
     for (const line of rawText.split('\n')) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-
-        // Expected format: "481: mpeg2video v 1" or "484: data 1 0x100"
-        const colonIdx = trimmed.indexOf(':');
-        if (colonIdx === -1) continue;
-
-        const pidStr = trimmed.slice(0, colonIdx).trim();
-        const pid = parseInt(pidStr, 10);
-        if (isNaN(pid)) continue;
-
-        const rest = trimmed.slice(colonIdx + STREAMINFO_CODEC_OFFSET).trim();
-        const parts = rest.split(/\s+/);
-        if (parts.length < 2) continue;
-
-        const codec = parts[0] ?? '';
-        let type: StreamInfoPid['type'];
-        let programStr: string;
-
-        // Detect type token: 'v' = video, 'a' = audio, otherwise data
-        if (parts[1] === 'v') {
-            type = 'video';
-            programStr = parts[2] ?? '0';
-        } else if (parts[1] === 'a') {
-            type = 'audio';
-            programStr = parts[2] ?? '0';
-        } else if (codec === 'data' || parts[1] !== undefined && !isNaN(parseInt(parts[1], 10))) {
-            type = 'data';
-            // When there's no type token, program number is parts[1]
-            programStr = parts[1] ?? '0';
-        } else {
-            type = 'other';
-            programStr = parts[2] ?? parts[1] ?? '0';
+        const pid = parseStreamInfoLine(line);
+        if (pid !== null) {
+            pids.push(pid);
         }
-
-        const program = parseInt(programStr, 10);
-
-        pids.push({ pid, codec, type, program: isNaN(program) ? 0 : program });
     }
 
     return pids;
@@ -280,7 +310,9 @@ export function groupStreamInfoByProgram(
         }
     }
 
-    return Array.from(programMap.values()).sort((a, b) => a.programNumber - b.programNumber);
+    return Array.from(programMap.values()).sort(
+        (progA, progB) => progA.programNumber - progB.programNumber,
+    );
 }
 
 /**
@@ -293,16 +325,18 @@ export function groupStreamInfoByProgram(
 function parseKeyValueText(rawText: string): Map<string, string> {
     const map = new Map<string, string>();
 
-    if (!rawText || rawText.trim() === '') {
+    if (rawText === '' || rawText.trim() === '') {
         return map;
     }
 
     for (const line of rawText.split('\n')) {
         const eqIdx = line.indexOf('=');
-        if (eqIdx === -1) continue;
+        if (eqIdx === -1) {
+            continue;
+        }
         const key = line.slice(0, eqIdx).trim();
         const value = line.slice(eqIdx + 1).trim();
-        if (key) {
+        if (key !== '') {
             map.set(key, value);
         }
     }
