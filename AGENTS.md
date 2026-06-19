@@ -58,6 +58,7 @@ specs/               # Spec-kit: implementation plans (created during planning p
 3. **User Authentication** (SPEC-003) - Role-based access (admin/viewer)
 4. **User Management** (SPEC-004) - CRUD operations for user accounts
 5. **Stream Proxying** - Transparent video stream relay with URL rewriting
+6. **Signal Monitoring** (SPEC-015) - Real-time signal gauges, antenna tuning mode, program/PID listing, ATSC 3.0 details
 
 ## Development Practices
 
