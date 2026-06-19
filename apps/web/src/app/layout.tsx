@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
 import { Fira_Code } from 'next/font/google';
 import './globals.css';
 import { Footer } from '@/components/Footer';
@@ -24,24 +23,20 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     /*
-     * Inject the base path into the page at request time so client components
-     * can read it from window.__HD_HOMEY_BASE_PATH__ without a build-time bake.
-     * JSON.stringify safely escapes the value for inline script use.
+     * Store the base path in a meta tag so client components can read
+     * window.__HD_HOMEY_BASE_PATH__ without a build-time bake.
+     * Using a meta tag avoids React 19's warning about <script> elements
+     * inside React components.
      */
-    const basePathScript = `window.__HD_HOMEY_BASE_PATH__=${JSON.stringify(Config.BASE_PATH)};`;
+    const basePath = Config.BASE_PATH;
 
     return (
         <html lang="en" style={{ height: '100%' }}>
             <head>
-                {/* Must run before any client JS so window.__HD_HOMEY_BASE_PATH__ is available */}
-                <Script
-                    id="hd-homey-base-path"
-                    strategy="beforeInteractive"
-                    dangerouslySetInnerHTML={{ __html: basePathScript }}
-                />
                 <meta name="theme-color" content="var(--color-bg-primary)" />
                 <link rel="apple-touch-icon" href="/icon.png" />
                 <link rel="manifest" href="/manifest.json" />
+                <meta name="hd-homey-base-path" content={basePath} />
             </head>
             <body className={fira.className}>
                 <a href="#main-content" className="sr-only">Skip to main content</a>

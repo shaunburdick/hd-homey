@@ -6,20 +6,9 @@
  * image does not need to be rebuilt when changing deployment configuration
  * such as HD_HOMEY_BASE_PATH.
  *
- * In the browser:  reads from window.__HD_HOMEY_BASE_PATH__ (set by layout.tsx)
+ * In the browser:  reads from a <meta name="hd-homey-base-path"> tag set by layout.tsx
  * During SSR:      reads from process.env.HD_HOMEY_BASE_PATH (server env var)
  */
-
-declare global {
-    interface Window {
-        /**
-         * The URL prefix for sub-path deployments (e.g., "/hd-homey").
-         * Injected by the root layout server component at request time.
-         * Empty string for root deployments.
-         */
-        __HD_HOMEY_BASE_PATH__: string | undefined;
-    }
-}
 
 /**
  * Normalize a raw base path string.
@@ -37,6 +26,16 @@ function normalizeBasePath(raw: string | undefined): string {
 }
 
 /**
+ * Read the base path from the <meta name="hd-homey-base-path"> tag
+ * injected by the root layout at request time.
+ * Falls back to an SSR-compatible value if the element is missing.
+ */
+function readBasePathMeta(): string {
+    const meta = document.querySelector('meta[name="hd-homey-base-path"]');
+    return meta?.getAttribute('content') ?? '';
+}
+
+/**
  * The URL prefix for HD Homey when deployed at a sub-path (e.g., "/hd-homey").
  * Empty string for root deployments.
  *
@@ -46,5 +45,5 @@ function normalizeBasePath(raw: string | undefined): string {
  */
 export const BASE_PATH: string =
     typeof window !== 'undefined'
-        ? (window.__HD_HOMEY_BASE_PATH__ ?? '')
+        ? readBasePathMeta()
         : normalizeBasePath(process.env.HD_HOMEY_BASE_PATH);

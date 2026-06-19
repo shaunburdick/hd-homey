@@ -20,9 +20,8 @@ import { createAuthClient } from 'better-auth/react';
 /**
  * Get the base URL for auth endpoints, including any sub-path prefix.
  *
- * - Browser: use window.location.origin + window.__HD_HOMEY_BASE_PATH__
- *   The prefix comes from the value injected at request time by the root
- *   layout (a Server Component reading HD_HOMEY_BASE_PATH from the env).
+ * - Browser: read the base path from a <meta name="hd-homey-base-path"> tag
+ *   injected by the root layout at request time.
  * - SSR: fall back to BETTER_AUTH_URL / NEXTAUTH_URL + the raw env var.
  *
  * The basePath must be included here because the auth client runs in the
@@ -30,9 +29,14 @@ import { createAuthClient } from 'better-auth/react';
  * Server-side Better-Auth does NOT need it — the reverse proxy strips the
  * prefix before requests reach Next.js.
  */
+function readBasePathMeta(): string {
+    const meta = document.querySelector('meta[name="hd-homey-base-path"]');
+    return meta?.getAttribute('content') ?? '';
+}
+
 const getAuthBaseURL = (): string => {
     if (typeof window !== 'undefined') {
-        return `${window.location.origin}${window.__HD_HOMEY_BASE_PATH__ ?? ''}`;
+        return `${window.location.origin}${readBasePathMeta()}`;
     }
 
     // SSR fallback: normalize the env var the same way Config.BASE_PATH does
