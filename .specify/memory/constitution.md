@@ -1,9 +1,9 @@
 # HD Homey Constitution
 
 **Project**: HD Homey - HD HomeRun Proxy Application  
-**Version**: 1.0.0  
+**Version**: 1.1.0  
 **Ratified**: 2025-11-15  
-**Last Amended**: 2025-12-02
+**Last Amended**: 2026-06-19
 
 ## Project Purpose
 
@@ -199,7 +199,7 @@ These features are intentionally not part of HD Homey's mission:
 ❌ **Mobile Applications** - Web-first, mobile-responsive  
 ❌ **Adaptive Bitrate Streaming** - Single quality transcoding only  
 ❌ **Closed Captioning Support** - Future enhancement  
-❌ **Video Quality Analytics** - Future enhancement  
+~~❌ **Video Quality Analytics** - Future enhancement~~ *(now in-scope via Signal Monitoring feature)*  
 ❌ **Multi-Language Support** - English only for v1.0
 
 ## Decision Log
@@ -275,6 +275,6 @@ These features are intentionally not part of HD Homey's mission:
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-15 | **Last Amended**: 2025-12-02
+**Version**: 1.1.0 | **Ratified**: 2025-11-15 | **Last Amended**: 2026-06-19
 
 *This constitution guides all development decisions. When in doubt, refer to these principles. Simplicity, security, and user experience are our north stars.*
