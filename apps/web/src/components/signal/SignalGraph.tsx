@@ -104,8 +104,8 @@ export function SignalGraph({ title, data, dataKey, color, ariaLabel }: SignalGr
                         />
                         <YAxis domain={[0, YAXIS_MAX]} tick={{ fontSize: AXIS_TICK_FONT_SIZE }} />
                         <Tooltip
-                            labelFormatter={(ts: number) => formatTime(ts)}
-                            formatter={(value: number) => [`${value}%`, dataKey.toUpperCase()]}
+                            labelFormatter={(label) => typeof label === 'number' ? formatTime(label) : String(label)}
+                            formatter={(value) => [`${String(value)}%`, dataKey.toUpperCase()]}
                         />
                         <Line
                             type="monotone"
