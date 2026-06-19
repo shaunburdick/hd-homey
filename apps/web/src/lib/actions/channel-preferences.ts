@@ -87,7 +87,7 @@ export async function toggleFavoriteAction(
         const { userId, db } = context;
 
         // Toggle favorite status
-        const preference = toggleFavorite(db, userId, channelId);
+        const preference = toggleFavorite({ db, userId, channelId });
 
         Logger.info(
             { userId, channelId, isFavorite: preference.isFavorite },
@@ -129,7 +129,7 @@ export async function toggleHiddenAction(
         const { userId, db } = context;
 
         // Toggle hidden status
-        const preference = toggleHidden(db, userId, channelId);
+        const preference = toggleHidden({ db, userId, channelId });
 
         Logger.info(
             { userId, channelId, isHidden: preference.isHidden },

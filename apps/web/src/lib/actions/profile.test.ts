@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { changePassword  } from './profile';
-import type { FormState } from './profile';
+import type { FormState } from '@/lib/errors';
 import { setupTestDatabase } from '@/test-utils/setup-test-db';
 import { AuthRoles } from '@/lib/auth-roles';
 import type { DB } from '@/lib/database/db';
@@ -22,7 +22,8 @@ vi.mock('@/lib/auth/auth', () => ({
     },
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
+const refreshDb = (opts?: { seed?: boolean }) => testDatabase.refreshDb(opts);
 
 describe('Profile Actions', () => {
     const TEST_USER_ID = 'test-viewer-uuid'; // Use seeded viewer user

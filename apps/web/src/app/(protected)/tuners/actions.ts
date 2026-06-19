@@ -9,6 +9,8 @@ import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
 import { requireAdmin } from '@/lib/auth/helpers';
 import { HDTuner } from '@/lib/hdhr/tuner';
 import Logger from '@/lib/logger';
+/** Timeout in milliseconds for tuner connection test */
+const CONNECTION_TIMEOUT_MS = 5000;
 
 export async function createTuner(prevState: unknown, formData: FormData) {
     // Check authorization
@@ -128,6 +130,58 @@ export interface ValidationResult {
     error?: string;
 }
 
+/** Maps a network error message to a user-friendly ValidationResult */
+function mapConnectionError(errorMessage: string): ValidationResult {
+    if (errorMessage.includes('timeout')) {
+        return {
+            success: false,
+            message: 'Connection timeout',
+            error: 'Could not reach the tuner. Please check the URL and your network connection.'
+        };
+    }
+
+    if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ECONNREFUSED')) {
+        return {
+            success: false,
+            message: 'Connection failed',
+            error: 'Could not connect to the tuner. Please verify the URL is correct and the device is powered on.'
+        };
+    }
+
+    return {
+        success: false,
+        message: 'Connection test failed',
+        error: errorMessage
+    };
+}
+
+/** Attempts to fetch the channel lineup from a tuner path with a timeout */
+async function probeLineup(path: string): Promise<ValidationResult> {
+    const tuner = new HDTuner(path);
+    const timeoutPromise = new Promise<never>((_resolve, reject) => {
+        setTimeout(() => reject(new Error('Connection timeout')), CONNECTION_TIMEOUT_MS);
+    });
+
+    const lineup = await Promise.race([
+        tuner.lineup(),
+        timeoutPromise
+    ]);
+
+    if (!Array.isArray(lineup)) {
+        return {
+            success: false,
+            message: 'Invalid response from device',
+            error: 'Device did not return a valid channel lineup'
+        };
+    }
+
+    return {
+        success: true,
+        message: `Successfully connected! Found ${lineup.length} channel${lineup.length !== 1 ? 's' : ''}`,
+        channelCount: lineup.length
+    };
+}
+
 export async function validateTunerConnection(prevState: unknown, formData: FormData): Promise<ValidationResult> {
     try {
         await requireAdmin();
@@ -151,7 +205,9 @@ export async function validateTunerConnection(prevState: unknown, formData: Form
 
     try {
         new URL(path);
-    } catch {
+    } catch (urlError) {
+        // URL constructor throws when the string is not a valid URL
+        Logger.debug({ path, urlError }, 'Invalid URL provided for tuner connection test');
         return {
             success: false,
             message: 'Invalid URL format',
@@ -160,52 +216,9 @@ export async function validateTunerConnection(prevState: unknown, formData: Form
     }
 
     try {
-        const tuner = new HDTuner(path);
-        const timeoutPromise = new Promise<never>((_resolve, reject) => {
-            setTimeout(() => reject(new Error('Connection timeout')), 5000);
-        });
-
-        const lineup = await Promise.race([
-            tuner.lineup(),
-            timeoutPromise
-        ]);
-
-        if (!Array.isArray(lineup)) {
-            return {
-                success: false,
-                message: 'Invalid response from device',
-                error: 'Device did not return a valid channel lineup'
-            };
-        }
-
-        return {
-            success: true,
-            message: `Successfully connected! Found ${lineup.length} channel${lineup.length !== 1 ? 's' : ''}`,
-            channelCount: lineup.length
-        };
+        return await probeLineup(path);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-        if (errorMessage.includes('timeout')) {
-            return {
-                success: false,
-                message: 'Connection timeout',
-                error: 'Could not reach the tuner. Please check the URL and your network connection.'
-            };
-        }
-
-        if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ECONNREFUSED')) {
-            return {
-                success: false,
-                message: 'Connection failed',
-                error: 'Could not connect to the tuner. Please verify the URL is correct and the device is powered on.'
-            };
-        }
-
-        return {
-            success: false,
-            message: 'Connection test failed',
-            error: errorMessage
-        };
+        return mapConnectionError(errorMessage);
     }
 }

@@ -1,9 +1,10 @@
 'use server';
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - TS2305: Module has no exported member (false positive with standalone tsc)
 import { hashPassword as betterAuthHashPassword, verifyPassword as betterAuthVerifyPassword } from 'better-auth/crypto';
 import Logger from './logger';
+
+/** Minimum acceptable password length */
+const MIN_PASSWORD_LENGTH = 8;
 
 /**
  * Generates a hashed password using Better-Auth's scrypt implementation
@@ -16,7 +17,7 @@ import Logger from './logger';
  * @throws {Error} If password is invalid or hashing fails
  */
 export async function generateHashPassword(password: string): Promise<string> {
-    if (password === '' || password.length < 8) {
+    if (password === '' || password.length < MIN_PASSWORD_LENGTH) {
         throw new Error('Password must be at least 8 characters');
     }
 
@@ -24,7 +25,7 @@ export async function generateHashPassword(password: string): Promise<string> {
         return await betterAuthHashPassword(password);
     } catch (error) {
         Logger.error({ error }, 'Failed to hash password');
-        throw new Error('Failed to hash password');
+        throw new Error('Failed to hash password', { cause: error });
     }
 }
 

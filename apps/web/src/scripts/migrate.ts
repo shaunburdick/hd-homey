@@ -14,7 +14,7 @@ async function runMigrations() {
 
         // Migrations are at ./migrations relative to apps/web working directory
         const migrationsPath = resolve(process.cwd(), './migrations');
-        await migrate(db, { migrationsFolder: migrationsPath });
+        migrate(db, { migrationsFolder: migrationsPath });
 
         Logger.info('Database migrations completed successfully');
         process.exit(0);

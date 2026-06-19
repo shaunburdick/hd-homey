@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Dependency Upgrades**: Updated all dependencies to latest major versions
+  - TypeScript 5 → 6.0.3 (with `baseUrl` migration)
+  - ESLint 9 → 10.5.0 with `eslint-config-shaunburdick` 5 → 8
+  - React 19 → 19.2.7
+  - Next.js 15 → 16.2.9
+  - Various other packages to latest versions
+- **GitHub Actions Security**: All marketplace actions pinned by commit SHA with version comments for supply chain security
+- **Code Quality**: 375+ lint errors resolved across the codebase using eslint-config-shaunburdick v8 rules (llm-core plugin)
+  - Extracted magic numbers to named constants (~146 instances)
+  - Extracted helper functions from long functions (~64 instances)
+  - Reduced function complexity by extracting branching logic (~31 instances)
+  - Converted multi-parameter functions to options objects (~15 instances)
+  - Fixed `@typescript-eslint/unbound-method` in tests (~15 instances)
+  - Resolved await-thenable, no-empty-catch, prefer-early-return, no-commented-out-code, and many other quality issues
+
 ### Fixed
 
 - **Database Migrations in Docker**: Fixed database path resolution to prevent "no such table" errors when redeploying with latest images. The monorepo structure caused working directory ambiguity where relative paths resolved differently for migration script vs. Next.js app. The entrypoint script now normalizes relative paths to absolute paths while maintaining full backwards compatibility with existing `HD_HOMEY_DB_PATH` configurations.

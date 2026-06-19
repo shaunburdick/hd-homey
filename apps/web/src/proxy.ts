@@ -19,87 +19,100 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth/auth';
+import Logger from '@/lib/logger';
 
-export async function proxy(req: NextRequest) {
-    const { pathname } = req.nextUrl;
+/**
+ * Routes that require no authentication at all
+ */
+const PUBLIC_ROUTES = [
+    '/users/signin',      // Login page
+    '/get-started',       // Initial setup wizard
+    '/invite/',           // Invitation redemption pages
+    '/api/auth',          // Better-Auth API routes
+    '/api/health',        // Health check endpoint (for Docker/monitoring)
+];
 
-    // ==========================================
-    // PUBLIC ROUTES (No authentication required)
-    // ==========================================
-    const publicRoutes = [
-        '/users/signin',      // Login page
-        '/get-started',       // Initial setup wizard
-        '/invite/',           // Invitation redemption pages
-        '/api/auth',          // Better-Auth API routes
-        '/api/health',        // Health check endpoint (for Docker/monitoring)
-    ];
+/**
+ * Routes that validate HMAC tokens in their own handlers — pass them through here
+ */
+const TOKEN_AUTHENTICATED_ROUTES = [
+    '/api/transcode/',  // HLS playlists and segments
+];
 
-    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-    if (isPublicRoute) {
-        return NextResponse.next();
-    }
+/**
+ * Check if the request targets a statically served asset
+ */
+function isStaticAsset(pathname: string): boolean {
+    return (
+        pathname.startsWith('/_next/') ||
+        pathname.startsWith('/icons/') ||
+        pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/) !== null
+    );
+}
 
-    // ==========================================
-    // TOKEN-AUTHENTICATED ROUTES
-    // ==========================================
-    // These routes validate HMAC tokens in their handlers.
-    // We let them through here and they handle auth themselves.
-
-    const tokenAuthenticatedRoutes = [
-        '/api/transcode/',  // HLS playlists and segments
-    ];
-
-    const isTokenRoute = tokenAuthenticatedRoutes.some(route => pathname.startsWith(route));
-    if (isTokenRoute) {
-        // Token validation happens in route handler
-        return NextResponse.next();
+/**
+ * Check if the route uses HMAC token authentication handled by the route handler itself
+ */
+function isTokenAuthenticatedRoute(pathname: string): boolean {
+    if (TOKEN_AUTHENTICATED_ROUTES.some(route => pathname.startsWith(route))) {
+        return true;
     }
 
     // Stream route under (protected) directory also uses token auth
     // Path pattern: /tuners/[id]/channel/[channel_id]/stream
-    if (pathname.includes('/channel/') && pathname.includes('/stream')) {
-        // Token validation happens in route handler
+    return pathname.includes('/channel/') && pathname.includes('/stream');
+}
+
+/**
+ * Build the redirect or JSON response for unauthenticated requests
+ */
+function buildUnauthenticatedResponse(pathname: string, requestUrl: string): Response {
+    // For API routes, return 401 JSON
+    if (pathname.startsWith('/api/')) {
+        return Response.json(
+            {
+                error: 'Unauthorized',
+                message: 'Authentication required. Please sign in.'
+            },
+            { status: 401 }
+        );
+    }
+
+    // For page routes, redirect to get-started (which will redirect to signin if setup is complete)
+    // This allows the initial setup flow to work when there are no users yet
+    const getStartedUrl = new URL('/get-started', requestUrl);
+    getStartedUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(getStartedUrl);
+}
+
+export async function proxy(req: NextRequest) {
+    const { pathname } = req.nextUrl;
+
+    // Public routes — no authentication required
+    if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
         return NextResponse.next();
     }
 
-    // ==========================================
-    // STATIC ASSETS (Always allow)
-    // ==========================================
-    // These are handled by Next.js directly
-    if (pathname.startsWith('/_next/') ||
-        pathname.startsWith('/icons/') ||
-        pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/) !== null) {
+    // Token-authenticated routes — token validation happens in the route handler
+    if (isTokenAuthenticatedRoute(pathname)) {
         return NextResponse.next();
     }
 
-    // ==========================================
-    // SESSION-AUTHENTICATED ROUTES
-    // ==========================================
-    // All other routes require a valid Better-Auth session
+    // Static assets — handled by Next.js directly
+    if (isStaticAsset(pathname)) {
+        return NextResponse.next();
+    }
 
-    // Note: getSession() works on Edge Runtime because Better-Auth uses JWT sessions.
+    // All other routes require a valid Better-Auth session.
+    // getSession() works on Edge Runtime because Better-Auth uses JWT sessions.
     // It only needs to verify the JWT signature (crypto API), no database access.
     const session = await auth.api.getSession({
         headers: await headers()
     });
 
     if (session?.user === undefined) {
-        // For API routes, return 401 JSON
-        if (pathname.startsWith('/api/')) {
-            return Response.json(
-                {
-                    error: 'Unauthorized',
-                    message: 'Authentication required. Please sign in.'
-                },
-                { status: 401 }
-            );
-        }
-
-        // For page routes, redirect to get-started (which will redirect to signin if setup is complete)
-        // This allows the initial setup flow to work when there are no users yet
-        const getStartedUrl = new URL('/get-started', req.url);
-        getStartedUrl.searchParams.set('callbackUrl', pathname);
-        return NextResponse.redirect(getStartedUrl);
+        Logger.warn({ pathname }, 'Unauthenticated request blocked by proxy');
+        return buildUnauthenticatedResponse(pathname, req.url);
     }
 
     // User is authenticated, allow request to proceed

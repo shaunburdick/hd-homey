@@ -127,7 +127,7 @@ describe('User Channel Preferences', () => {
 
     describe('getPreference', () => {
         it('should return null when preference does not exist', () => {
-            const pref = getPreference(db, testUserId, testChannelId);
+            const pref = getPreference({ db, userId: testUserId, channelId: testChannelId });
             expect(pref).toBeNull();
         });
 
@@ -139,7 +139,7 @@ describe('User Channel Preferences', () => {
                 isHidden: false,
             }).run();
 
-            const pref = getPreference(db, testUserId, testChannelId);
+            const pref = getPreference({ db, userId: testUserId, channelId: testChannelId });
             expect(pref).not.toBeNull();
             expect(pref?.isFavorite).toBe(true);
             expect(pref?.isHidden).toBe(false);
@@ -148,9 +148,11 @@ describe('User Channel Preferences', () => {
 
     describe('upsertPreference', () => {
         it('should create new preference when none exists', () => {
-            const result = upsertPreference(db, testUserId, testChannelId, {
-                isFavorite: true,
-                isHidden: false,
+            const result = upsertPreference({
+                db,
+                userId: testUserId,
+                channelId: testChannelId,
+                preference: { isFavorite: true, isHidden: false },
             });
 
             expect(result).toBeDefined();
@@ -158,7 +160,7 @@ describe('User Channel Preferences', () => {
             expect(result.isHidden).toBe(false);
 
             // Verify it was saved
-            const pref = getPreference(db, testUserId, testChannelId);
+            const pref = getPreference({ db, userId: testUserId, channelId: testChannelId });
             expect(pref?.isFavorite).toBe(true);
         });
 
@@ -172,25 +174,29 @@ describe('User Channel Preferences', () => {
             }).run();
 
             // Update it
-            const result = upsertPreference(db, testUserId, testChannelId, {
-                isFavorite: true,
-                isHidden: false,
+            const result = upsertPreference({
+                db,
+                userId: testUserId,
+                channelId: testChannelId,
+                preference: { isFavorite: true, isHidden: false },
             });
 
             expect(result.isFavorite).toBe(true);
         });
 
         it('should reject favorite+hidden combination', () => {
-            expect(() => upsertPreference(db, testUserId, testChannelId, {
-                isFavorite: true,
-                isHidden: true,
+            expect(() => upsertPreference({
+                db,
+                userId: testUserId,
+                channelId: testChannelId,
+                preference: { isFavorite: true, isHidden: true },
             })).toThrow();
         });
     });
 
     describe('toggleFavorite', () => {
         it('should create favorite preference when none exists', () => {
-            const result = toggleFavorite(db, testUserId, testChannelId);
+            const result = toggleFavorite({ db, userId: testUserId, channelId: testChannelId });
 
             expect(result.isFavorite).toBe(true);
             expect(result.isHidden).toBe(false);
@@ -206,7 +212,7 @@ describe('User Channel Preferences', () => {
             }).run();
 
             // Toggle it
-            const result = toggleFavorite(db, testUserId, testChannelId);
+            const result = toggleFavorite({ db, userId: testUserId, channelId: testChannelId });
             expect(result.isFavorite).toBe(false);
         });
 
@@ -220,7 +226,7 @@ describe('User Channel Preferences', () => {
             }).run();
 
             // Toggle it
-            const result = toggleFavorite(db, testUserId, testChannelId);
+            const result = toggleFavorite({ db, userId: testUserId, channelId: testChannelId });
             expect(result.isFavorite).toBe(true);
         });
 
@@ -234,7 +240,7 @@ describe('User Channel Preferences', () => {
             }).run();
 
             // Favorite it (should auto-unhide)
-            const result = toggleFavorite(db, testUserId, testChannelId);
+            const result = toggleFavorite({ db, userId: testUserId, channelId: testChannelId });
             expect(result.isFavorite).toBe(true);
             expect(result.isHidden).toBe(false);
         });
@@ -242,7 +248,7 @@ describe('User Channel Preferences', () => {
 
     describe('toggleHidden', () => {
         it('should create hidden preference when none exists', () => {
-            const result = toggleHidden(db, testUserId, testChannelId);
+            const result = toggleHidden({ db, userId: testUserId, channelId: testChannelId });
 
             expect(result.isFavorite).toBe(false);
             expect(result.isHidden).toBe(true);
@@ -258,7 +264,7 @@ describe('User Channel Preferences', () => {
             }).run();
 
             // Toggle it
-            const result = toggleHidden(db, testUserId, testChannelId);
+            const result = toggleHidden({ db, userId: testUserId, channelId: testChannelId });
             expect(result.isHidden).toBe(false);
         });
 
@@ -272,7 +278,7 @@ describe('User Channel Preferences', () => {
             }).run();
 
             // Toggle it
-            const result = toggleHidden(db, testUserId, testChannelId);
+            const result = toggleHidden({ db, userId: testUserId, channelId: testChannelId });
             expect(result.isHidden).toBe(true);
         });
 
@@ -286,7 +292,7 @@ describe('User Channel Preferences', () => {
             }).run();
 
             // Hide it (should auto-unfavorite)
-            const result = toggleHidden(db, testUserId, testChannelId);
+            const result = toggleHidden({ db, userId: testUserId, channelId: testChannelId });
             expect(result.isFavorite).toBe(false);
             expect(result.isHidden).toBe(true);
         });

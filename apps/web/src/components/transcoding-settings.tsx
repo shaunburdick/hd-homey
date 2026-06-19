@@ -5,15 +5,40 @@
  */
 
 import { useActionState, useEffect, useState } from 'react';
-import type { FormState } from '@/lib/actions/transcoding';
+import {
+    CustomSettingsFields,
+    PresetHiddenFields,
+    AdvancedSettingsFields,
+} from './transcoding-fields';
+import type { FormState } from '@/lib/errors';
 import { updateTranscodingSettingsAction, applyPreset } from '@/lib/actions/transcoding';
 import type { TranscodeSettings, FFmpegInfo } from '@/lib/transcoding/types';
 import { InfoCard } from '@/components/layouts';
+
+/** Minimum recommended-max-sessions count for the "High" quality preset. */
+const HIGH_PRESET_MIN_SESSIONS = 8;
+
+/** Minimum recommended-max-sessions count for the "Medium" quality preset. */
+const MEDIUM_PRESET_MIN_SESSIONS = 4;
 
 interface TranscodingSettingsProps {
     initialSettings: TranscodeSettings;
     ffmpegInfo: FFmpegInfo;
     recommendedMaxSessions: number;
+}
+
+/**
+ * Derives a human-readable quality preset recommendation label based on the
+ * number of recommended concurrent sessions.
+ */
+function getRecommendedPresetLabel(recommendedMaxSessions: number): string {
+    if (recommendedMaxSessions >= HIGH_PRESET_MIN_SESSIONS) {
+        return 'High';
+    }
+    if (recommendedMaxSessions >= MEDIUM_PRESET_MIN_SESSIONS) {
+        return 'Medium';
+    }
+    return 'Low';
 }
 
 export function FFmpegStatusCard({ ffmpegInfo }: { ffmpegInfo: FFmpegInfo }) {
@@ -49,6 +74,199 @@ export function FFmpegStatusCard({ ffmpegInfo }: { ffmpegInfo: FFmpegInfo }) {
     );
 }
 
+
+function SettingsErrorBanners({ state }: { state: FormState }) {
+    return (
+        <>
+            {state.errors.auth && (
+                <div className="p-4 mb-4 bg-error">
+                    {state.errors.auth.map((errorMessage) => (
+                        <p key={errorMessage}>{errorMessage}</p>
+                    ))}
+                </div>
+            )}
+
+            {state.errors.validation && (
+                <div className="p-4 mb-4 bg-error">
+                    <strong>Validation Errors:</strong>
+                    <ul>
+                        {state.errors.validation.map((errorMessage) => (
+                            <li key={errorMessage}>{errorMessage}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </>
+    );
+}
+
+/** Enable-transcoding checkbox and quality preset selector. */
+function BasicSettingsFields({
+    settings,
+    recommendedLabel,
+    onSettingsChange,
+    onPresetChange,
+}: {
+    settings: TranscodeSettings;
+    recommendedLabel: string;
+    onSettingsChange: (updated: TranscodeSettings) => void;
+    onPresetChange: (preset: TranscodeSettings['preset']) => void;
+}) {
+    return (
+        <>
+            <p>
+                <label>
+                    <input
+                        type="checkbox"
+                        name="enabled"
+                        checked={settings.enabled}
+                        onChange={(changeEvent) =>
+                            onSettingsChange({ ...settings, enabled: changeEvent.target.checked })
+                        }
+                    />
+                    {' '}
+                    Enable Transcoding
+                </label>
+            </p>
+
+            <p>
+                <label htmlFor="preset">Quality Preset:</label>
+                <select
+                    id="preset"
+                    name="preset"
+                    value={settings.preset}
+                    onChange={(changeEvent) =>
+                        onPresetChange(changeEvent.target.value as TranscodeSettings['preset'])
+                    }
+                >
+                    <option value="low">Low (720p, 1000kbps)</option>
+                    <option value="medium">Medium (1080p, 2000kbps)</option>
+                    <option value="high">High (1080p, 4000kbps)</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <small> Recommended: {recommendedLabel}</small>
+            </p>
+        </>
+    );
+}
+
+/**
+ * Handles a preset selection change.
+ * Returns the new showCustom flag and triggers an async preset application for non-custom presets.
+ * Extracted to module scope to satisfy consistent-function-scoping.
+ */
+function applyPresetChange({
+    preset,
+    currentSettings,
+    setShowCustom,
+    setSettings,
+}: {
+    preset: TranscodeSettings['preset'];
+    currentSettings: TranscodeSettings;
+    setShowCustom: (value: boolean) => void;
+    setSettings: (value: TranscodeSettings) => void;
+}): void {
+    if (preset === 'custom') {
+        setShowCustom(true);
+        setSettings({ ...currentSettings, preset });
+        return;
+    }
+    setShowCustom(false);
+    void applyPreset(currentSettings, preset).then((newSettings) => {
+        setSettings(newSettings);
+        return newSettings;
+    });
+}
+
+/** Quality preset row and optional custom/advanced fields. */
+function PresetAndAdvancedSection({
+    settings,
+    ffmpegInfo,
+    recommendedMaxSessions,
+    showCustom,
+    onSettingsChange,
+    onPresetChange,
+}: {
+    settings: TranscodeSettings;
+    ffmpegInfo: FFmpegInfo;
+    recommendedMaxSessions: number;
+    showCustom: boolean;
+    onSettingsChange: (updated: TranscodeSettings) => void;
+    onPresetChange: (preset: TranscodeSettings['preset']) => void;
+}) {
+    const recommendedLabel = getRecommendedPresetLabel(recommendedMaxSessions);
+
+    return (
+        <>
+            <BasicSettingsFields
+                settings={settings}
+                recommendedLabel={recommendedLabel}
+                onSettingsChange={onSettingsChange}
+                onPresetChange={onPresetChange}
+            />
+            {showCustom ? (
+                <CustomSettingsFields settings={settings} ffmpegInfo={ffmpegInfo} onSettingsChange={onSettingsChange} />
+            ) : (
+                <PresetHiddenFields settings={settings} />
+            )}
+            <AdvancedSettingsFields
+                settings={settings}
+                recommendedMaxSessions={recommendedMaxSessions}
+                onSettingsChange={onSettingsChange}
+            />
+        </>
+    );
+}
+
+/** The complete transcoding settings form body. */
+function TranscodingSettingsForm({
+    state,
+    formAction,
+    isPending,
+    settings,
+    ffmpegInfo,
+    recommendedMaxSessions,
+    showCustom,
+    onSettingsChange,
+    onPresetChange,
+}: {
+    state: FormState;
+    formAction: (formData: FormData) => void;
+    isPending: boolean;
+    settings: TranscodeSettings;
+    ffmpegInfo: FFmpegInfo;
+    recommendedMaxSessions: number;
+    showCustom: boolean;
+    onSettingsChange: (updated: TranscodeSettings) => void;
+    onPresetChange: (preset: TranscodeSettings['preset']) => void;
+}) {
+    return (
+        <form action={formAction} style={{
+            padding: 'var(--space-4)',
+            backgroundColor: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-lg)',
+        }}>
+            <h3 style={{ marginTop: 0 }}>Transcoding Settings</h3>
+            <SettingsErrorBanners state={state} />
+            <PresetAndAdvancedSection
+                settings={settings}
+                ffmpegInfo={ffmpegInfo}
+                recommendedMaxSessions={recommendedMaxSessions}
+                showCustom={showCustom}
+                onSettingsChange={onSettingsChange}
+                onPresetChange={onPresetChange}
+            />
+            <input type="hidden" name="hardwareAccel" value={settings.hardwareAccel} />
+            <div style={{ marginTop: 'var(--space-6)' }}>
+                <button type="submit" disabled={isPending}>
+                    {isPending ? 'Saving...' : '💾 Save Settings'}
+                </button>
+            </div>
+        </form>
+    );
+}
+
 const initialState: FormState = { errors: {} };
 
 export default function TranscodingSettings({
@@ -63,18 +281,8 @@ export default function TranscodingSettings({
     const [settings, setSettings] = useState<TranscodeSettings>(initialSettings);
     const [showCustom, setShowCustom] = useState(initialSettings.preset === 'custom');
 
-    // Handle preset change
     const handlePresetChange = (preset: TranscodeSettings['preset']) => {
-        if (preset === 'custom') {
-            setShowCustom(true);
-            setSettings({ ...settings, preset });
-        } else {
-            setShowCustom(false);
-            void applyPreset(settings, preset).then((newSettings) => {
-                setSettings(newSettings);
-                return newSettings;
-            });
-        }
+        applyPresetChange({ preset, currentSettings: settings, setShowCustom, setSettings });
     };
 
     useEffect(() => {
@@ -84,273 +292,16 @@ export default function TranscodingSettings({
     }, [state.success]);
 
     return (
-        <form action={formAction} style={{
-            padding: 'var(--space-4)',
-            backgroundColor: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-lg)',
-        }}>
-            <h3 style={{ marginTop: 0 }}>Transcoding Settings</h3>
-
-            {state.errors.auth && (
-                <div className="p-4 mb-4 bg-error">
-                    {state.errors.auth.map((error) => (
-                        <p key={error}>{error}</p>
-                    ))}
-                </div>
-            )}
-
-            {state.errors.validation && (
-                <div className="p-4 mb-4 bg-error">
-                    <strong>Validation Errors:</strong>
-                    <ul>
-                        {state.errors.validation.map((error) => (
-                            <li key={error}>{error}</li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            <p>
-                <label>
-                    <input
-                        type="checkbox"
-                        name="enabled"
-                        checked={settings.enabled}
-                        onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
-                    />
-                    {' '}
-                    Enable Transcoding
-                </label>
-            </p>
-
-            <p>
-                <label htmlFor="preset">
-                    Quality Preset:
-                </label>
-                <select
-                    id="preset"
-                    name="preset"
-                    value={settings.preset}
-                    onChange={(e) =>
-                        handlePresetChange(e.target.value as TranscodeSettings['preset'])
-                    }
-                >
-                    <option value="low">Low (720p, 1000kbps)</option>
-                    <option value="medium">Medium (1080p, 2000kbps)</option>
-                    <option value="high">High (1080p, 4000kbps)</option>
-                    <option value="custom">Custom</option>
-                </select>
-                <small>
-                    {' '}
-                    Recommended:
-                    {' '}
-                    {recommendedMaxSessions >= 8 ? 'High' : recommendedMaxSessions >= 4 ? 'Medium' : 'Low'}
-                </small>
-            </p>
-
-            {showCustom && (
-                <>
-                    <h4>Custom Settings</h4>
-
-                    <p>
-                        <label htmlFor="videoCodec">
-                            Video Codec:
-                        </label>
-                        <select
-                            id="videoCodec"
-                            name="videoCodec"
-                            value={settings.videoCodec}
-                            onChange={(e) =>
-                                setSettings({
-                                    ...settings,
-                                    videoCodec: e.target.value as TranscodeSettings['videoCodec'],
-                                })
-                            }
-                        >
-                            <option value="libx264">libx264 (Software)</option>
-                            {ffmpegInfo.hwAccel.includes('videotoolbox') && (
-                                <option value="h264_videotoolbox">VideoToolbox (Hardware)</option>
-                            )}
-                            {ffmpegInfo.hwAccel.includes('qsv') && (
-                                <option value="h264_qsv">Quick Sync (Hardware)</option>
-                            )}
-                            {ffmpegInfo.hwAccel.includes('nvenc') && (
-                                <option value="h264_nvenc">NVENC (Hardware)</option>
-                            )}
-                            {ffmpegInfo.hwAccel.includes('vaapi') && (
-                                <option value="h264_vaapi">VA-API (Hardware)</option>
-                            )}
-                        </select>
-                    </p>
-
-                    <p>
-                        <label htmlFor="videoBitrate">
-                            Video Bitrate (kbps):
-                        </label>
-                        <input
-                            type="number"
-                            id="videoBitrate"
-                            name="videoBitrate"
-                            value={settings.videoBitrate}
-                            onChange={(e) =>
-                                setSettings({ ...settings, videoBitrate: parseInt(e.target.value, 10) })
-                            }
-                            min="500"
-                            max="10000"
-                        />
-                    </p>
-
-                    <p>
-                        <label htmlFor="audioBitrate">
-                            Audio Bitrate (kbps):
-                        </label>
-                        <input
-                            type="number"
-                            id="audioBitrate"
-                            name="audioBitrate"
-                            value={settings.audioBitrate}
-                            onChange={(e) =>
-                                setSettings({ ...settings, audioBitrate: parseInt(e.target.value, 10) })
-                            }
-                            min="64"
-                            max="320"
-                        />
-                    </p>
-
-                    <p>
-                        <label htmlFor="resolution">
-                            Maximum Resolution:
-                        </label>
-                        <select
-                            id="resolution"
-                            name="resolution"
-                            value={settings.resolution}
-                            onChange={(e) =>
-                                setSettings({
-                                    ...settings,
-                                    resolution: e.target.value as TranscodeSettings['resolution'],
-                                })
-                            }
-                        >
-                            <option value="480p">480p</option>
-                            <option value="720p">720p</option>
-                            <option value="1080p">1080p</option>
-                            <option value="source">Source (no scaling)</option>
-                        </select>
-                    </p>
-
-                    <p>
-                        <label htmlFor="framerate">
-                            Framerate:
-                        </label>
-                        <select
-                            id="framerate"
-                            name="framerate"
-                            value={settings.framerate}
-                            onChange={(e) =>
-                                setSettings({
-                                    ...settings,
-                                    framerate: parseInt(e.target.value, 10) as TranscodeSettings['framerate'],
-                                })
-                            }
-                        >
-                            <option value="24">24 fps</option>
-                            <option value="30">30 fps</option>
-                            <option value="60">60 fps</option>
-                            <option value="0">Source (no change)</option>
-                        </select>
-                    </p>
-                </>
-            )}
-
-            {!showCustom && (
-                <>
-                    <input type="hidden" name="videoCodec" value={settings.videoCodec} />
-                    <input type="hidden" name="videoBitrate" value={settings.videoBitrate} />
-                    <input type="hidden" name="audioBitrate" value={settings.audioBitrate} />
-                    <input type="hidden" name="resolution" value={settings.resolution} />
-                    <input type="hidden" name="framerate" value={settings.framerate} />
-                </>
-            )}
-
-            <h4>Advanced Settings</h4>
-
-            <p>
-                <label htmlFor="maxSessions">
-                    Maximum Concurrent Sessions:
-                </label>
-                <input
-                    type="number"
-                    id="maxSessions"
-                    name="maxSessions"
-                    value={settings.maxSessions}
-                    onChange={(e) =>
-                        setSettings({ ...settings, maxSessions: parseInt(e.target.value, 10) })
-                    }
-                    min="1"
-                    max="20"
-                />
-                <small>
-                    {' '}
-                    Recommended:
-                    {' '}
-                    {recommendedMaxSessions}
-                </small>
-            </p>
-
-            <p>
-                <label htmlFor="segmentDuration">
-                    HLS Segment Duration (seconds):
-                </label>
-                <input
-                    type="number"
-                    id="segmentDuration"
-                    name="segmentDuration"
-                    value={settings.segmentDuration}
-                    onChange={(e) =>
-                        setSettings({ ...settings, segmentDuration: parseInt(e.target.value, 10) })
-                    }
-                    min="1"
-                    max="10"
-                />
-                <small>
-                    {' '}
-                    Lower = less latency, higher = better compatibility
-                </small>
-            </p>
-
-            <p>
-                <label htmlFor="playlistSize">
-                    Playlist Size (segments):
-                </label>
-                <input
-                    type="number"
-                    id="playlistSize"
-                    name="playlistSize"
-                    value={settings.playlistSize}
-                    onChange={(e) =>
-                        setSettings({ ...settings, playlistSize: parseInt(e.target.value, 10) })
-                    }
-                    min="2"
-                    max="20"
-                />
-                <small>
-                    {' '}
-                    Recommended: 3-5 segments
-                </small>
-            </p>
-
-            <input type="hidden" name="hardwareAccel" value={settings.hardwareAccel} />
-
-            <div style={{ marginTop: 'var(--space-6)' }}>
-                <button
-                    type="submit"
-                    disabled={isPending}
-                >
-                    {isPending ? 'Saving...' : '💾 Save Settings'}
-                </button>
-            </div>
-        </form>
+        <TranscodingSettingsForm
+            state={state}
+            formAction={formAction}
+            isPending={isPending}
+            settings={settings}
+            ffmpegInfo={ffmpegInfo}
+            recommendedMaxSessions={recommendedMaxSessions}
+            showCustom={showCustom}
+            onSettingsChange={setSettings}
+            onPresetChange={handlePresetChange}
+        />
     );
 }

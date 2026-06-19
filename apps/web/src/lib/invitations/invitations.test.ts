@@ -25,7 +25,8 @@ vi.mock('@/lib/database/db', () => ({
     connection: vi.fn(() => ({})),
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
+const refreshDb = (opts?: { seed?: boolean }) => testDatabase.refreshDb(opts);
 
 // Test constants (must match seeded user IDs from setup-test-db.ts)
 const TEST_ADMIN_ID = 'test-admin-uuid';
@@ -104,7 +105,7 @@ describe('Invitation Business Logic', () => {
 
             // Insert ANY invitation to ensure a database query happens
             const { invitations } = await import('@/lib/database/schema');
-            await testDb.insert(invitations).values({
+            testDb.insert(invitations).values({
                 token: 'existing-token',
                 role: 'viewer',
                 createdBy: TEST_ADMIN_ID,
@@ -233,13 +234,13 @@ describe('Invitation Business Logic', () => {
             const { invitations } = await import('@/lib/database/schema');
             const token = 'valid-token-123';
 
-            await testDb.insert(invitations).values({
+            testDb.insert(invitations).values({
                 token,
                 role: 'viewer',
                 createdBy: TEST_ADMIN_ID,
                 createdAt: new Date(),
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            }).run();
+            }).returning().all();
 
             const result = await validateInvitation(testDb, token);
             expect(result.valid).toBe(true);
@@ -257,13 +258,13 @@ describe('Invitation Business Logic', () => {
             const { invitations } = await import('@/lib/database/schema');
             const token = 'expired-token';
 
-            await testDb.insert(invitations).values({
+            testDb.insert(invitations).values({
                 token,
                 role: 'viewer',
                 createdBy: TEST_ADMIN_ID,
                 createdAt: TEST_DATE_PAST,
                 expiresAt: TEST_DATE_PAST, // Past date
-            }).run();
+            }).returning().all();
 
             const result = await validateInvitation(testDb, token);
             expect(result.valid).toBe(false);
@@ -275,7 +276,7 @@ describe('Invitation Business Logic', () => {
             const { invitations } = await import('@/lib/database/schema');
             const token = 'used-token';
 
-            await testDb.insert(invitations).values({
+            testDb.insert(invitations).values({
                 token,
                 role: 'viewer',
                 createdBy: TEST_ADMIN_ID,
@@ -283,7 +284,7 @@ describe('Invitation Business Logic', () => {
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 usedAt: new Date(),
                 usedBy: TEST_USER_ID,
-            }).run();
+            }).returning().all();
 
             const result = await validateInvitation(testDb, token);
             expect(result.valid).toBe(false);
@@ -294,7 +295,7 @@ describe('Invitation Business Logic', () => {
             const { invitations } = await import('@/lib/database/schema');
             const token = 'revoked-token';
 
-            await testDb.insert(invitations).values({
+            testDb.insert(invitations).values({
                 token,
                 role: 'viewer',
                 createdBy: TEST_ADMIN_ID,
@@ -302,7 +303,7 @@ describe('Invitation Business Logic', () => {
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 revokedAt: new Date(),
                 revokedBy: TEST_ADMIN_ID,
-            }).run();
+            }).returning().all();
 
             const result = await validateInvitation(testDb, token);
             expect(result.valid).toBe(false);

@@ -4,23 +4,69 @@ import type { NextRequest } from 'next/server';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth/auth';
 import { tuners } from '@/lib/database/schema';
+import type { Tuner } from '@/lib/database/schema';
 import { getDb } from '@/lib/database/db';
+import type { DB } from '@/lib/database/db';
 import { getTunerErrors, isTunerValid } from '@/lib/database/validate';
 import { AuthRoles } from '@/lib/auth-roles';
 import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
-
 interface Params {
     id: string;
 }
 
+interface TunerUpdateOptions {
+    db: DB;
+    tuner: Tuner;
+    id: string;
+    formData: FormData;
+    request: Request;
+}
+
+/**
+ * Apply validated update to a tuner record.
+ * Returns a redirect on success or validation errors on failure.
+ */
+async function applyTunerUpdate({ db, tuner, id, formData, request }: TunerUpdateOptions) {
+    const nameValue = formData.get('name');
+    const pathValue = formData.get('path');
+
+    const updateData = {
+        name: (nameValue !== null && nameValue !== '') ? nameValue.toString() : tuner.name,
+        path: (pathValue !== null && pathValue !== '') ? pathValue.toString() : tuner.path,
+        is_active: formData.has('is_active'),
+        modified_at: new Date()
+    };
+
+    if (isTunerValid(updateData)) {
+        await db.update(tuners)
+            .set(updateData)
+            .where(eq(tuners.id, tuner.id));
+
+        return Response.redirect(new URL(`/tuners/${id}`, request.url));
+    }
+
+    const errors = getTunerErrors(updateData);
+    Logger.error('Invalid tuner data: %o', [...errors]);
+    return Response.json(
+        {
+            errors: [...errors].map((validationError) => ({
+                path: validationError.path,
+                message: validationError.message,
+            }))
+        },
+        { status: 400 }
+    );
+}
+
 export async function GET(request: NextRequest, context: { params: Promise<Params> }) {
+    const { id } = await context.params;
     const db = await getDb();
 
     const data = await db.query.tuners.findFirst({
         where: and(
-            eq(tuners.id, parseInt((await context.params).id, 10)),
+            eq(tuners.id, parseInt(id, 10)),
             isNull(tuners.deleted_at)
         )
     });
@@ -37,7 +83,6 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        // Require admin authorization for modifying tuners
         const session = await auth.api.getSession({
             headers: await headers()
         });
@@ -53,7 +98,6 @@ export async function POST(
         const { id } = await params;
         const formData = await request.formData();
 
-        // Get the tuner to update
         const tuner = await db.query.tuners.findFirst({
             where: and(
                 eq(tuners.id, parseInt(id, 10)),
@@ -68,30 +112,7 @@ export async function POST(
             );
         }
 
-        const nameValue = formData.get('name');
-        const pathValue = formData.get('path');
-
-        const updateData = {
-            name: (nameValue !== null && nameValue !== '') ? nameValue.toString() : tuner.name,
-            path: (pathValue !== null && pathValue !== '') ? pathValue.toString() : tuner.path,
-            is_active: formData.has('is_active'),
-            modified_at: new Date()
-        };
-
-        if (isTunerValid(updateData)) {
-            await db.update(tuners)
-                .set(updateData)
-                .where(eq(tuners.id, tuner.id));
-
-            return Response.redirect(new URL(`/tuners/${id}`, request.url));
-        } else {
-            const errors = getTunerErrors(updateData);
-            Logger.error('Invalid tuner data: %o', [...errors]);
-            return Response.json(
-                { errors: [...errors].map(e => ({ path: e.path, message: e.message })) },
-                { status: 400 }
-            );
-        }
+        return await applyTunerUpdate({ db, tuner, id, formData, request });
     } catch (error) {
         Logger.error('Error updating tuner: %s', error);
         return Response.json(

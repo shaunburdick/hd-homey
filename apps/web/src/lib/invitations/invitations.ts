@@ -16,6 +16,20 @@ import { invitations, user } from '@/lib/database/schema';
 import type { Invitation } from '@/lib/database/schema';
 import Logger from '@/lib/logger';
 
+/** Number of random bytes to use for token generation (256-bit entropy) */
+const TOKEN_BYTES = 32;
+
+/** Number of hours in one day */
+const HOURS_PER_DAY = 24;
+/** Number of minutes in one hour */
+const MINUTES_PER_HOUR = 60;
+/** Number of seconds in one minute */
+const SECONDS_PER_MINUTE = 60;
+/** Number of milliseconds in one second */
+const MS_PER_SECOND = 1000;
+/** Number of milliseconds in one day */
+const MS_PER_DAY = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND;
+
 /**
  * Generate a cryptographically secure invitation token
  * Uses 32 bytes (256 bits) of entropy, encoded as URL-safe base64
@@ -26,7 +40,7 @@ import Logger from '@/lib/logger';
 export function generateToken(): string {
     try {
         // Generate 32 bytes (256 bits) of cryptographically secure random data
-        const buffer = randomBytes(32);
+        const buffer = randomBytes(TOKEN_BYTES);
 
         // Convert to URL-safe base64: replace +/= with -_~ for URLs
         return buffer
@@ -36,7 +50,7 @@ export function generateToken(): string {
             .replace(/=/g, '~');
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        throw new Error(`Failed to generate invitation token: ${message}`);
+        throw new Error(`Failed to generate invitation token: ${message}`, { cause: error });
     }
 }
 
@@ -54,7 +68,7 @@ export async function generateUniqueToken(db: DB, maxRetries = 3): Promise<strin
         const token = generateToken();
 
         // Check if token already exists (extremely unlikely with 256-bit entropy)
-        const existing = await db
+        const existing = db
             .select({ id: invitations.id })
             .from(invitations)
             .where(eq(invitations.token, token))
@@ -124,7 +138,7 @@ export async function validateInvitation(
     token: string
 ): Promise<InvitationValidationResult> {
     // Find invitation by token
-    const invitation = await db
+    const invitation = db
         .select()
         .from(invitations)
         .where(eq(invitations.token, token))
@@ -174,20 +188,42 @@ export async function validateInvitation(
 }
 
 /**
- * Get all invitations with creator and redeemer information
- * Used for admin UI display
- *
- * @param db Database connection
- * @returns Array of invitations with creator/redeemer details and status
+ * Determine if an invitation row is "unused" (pending or expired but not acted on)
  */
-export async function getAllInvitationsWithCreators(db: DB) {
-    // Create aliases for the user table to join twice (creator and redeemer)
+function isUnusedInvitation(status: InvitationStatus): boolean {
+    return status === InvitationStatus.PENDING || status === InvitationStatus.EXPIRED;
+}
+
+/**
+ * Sort comparator: unused invitations first, then used/revoked, newest first within each group
+ */
+function compareInvitationsByUsage(
+    invitationA: { status: InvitationStatus },
+    invitationB: { status: InvitationStatus }
+): number {
+    const aIsUnused = isUnusedInvitation(invitationA.status);
+    const bIsUnused = isUnusedInvitation(invitationB.status);
+
+    if (aIsUnused && !bIsUnused) {
+        return -1;
+    }
+    if (!aIsUnused && bIsUnused) {
+        return 1;
+    }
+
+    // Both are same type — maintain existing DESC order from query
+    return 0;
+}
+
+/**
+ * Query all invitations with joined creator and redeemer data
+ */
+function queryInvitationsWithJoins(db: DB) {
     const creator = alias(user, 'creator');
     const redeemer = alias(user, 'redeemer');
 
-    const results = await db
+    return db
         .select({
-            // Invitation fields
             id: invitations.id,
             token: invitations.token,
             role: invitations.role,
@@ -199,12 +235,10 @@ export async function getAllInvitationsWithCreators(db: DB) {
             usedBy: invitations.usedBy,
             revokedAt: invitations.revokedAt,
             revokedBy: invitations.revokedBy,
-            // Creator info
             creatorId: creator.id,
             creatorUsername: creator.username,
             creatorName: creator.name,
             creatorDisplayUsername: creator.displayUsername,
-            // Redeemer info (who used the invitation)
             redeemerUsername: redeemer.username,
             redeemerName: redeemer.name,
             redeemerDisplayUsername: redeemer.displayUsername,
@@ -214,8 +248,18 @@ export async function getAllInvitationsWithCreators(db: DB) {
         .leftJoin(redeemer, eq(invitations.usedBy, redeemer.id))
         .orderBy(desc(invitations.createdAt))
         .all();
+}
 
-    // Transform to InvitationWithCreator format and add status
+/**
+ * Get all invitations with creator and redeemer information
+ * Used for admin UI display
+ *
+ * @param db Database connection
+ * @returns Array of invitations with creator/redeemer details and status
+ */
+export async function getAllInvitationsWithCreators(db: DB) {
+    const results = queryInvitationsWithJoins(db);
+
     const invitationsWithStatus = results.map((row) => ({
         id: row.id,
         token: row.token,
@@ -228,7 +272,6 @@ export async function getAllInvitationsWithCreators(db: DB) {
         usedBy: row.usedBy,
         revokedAt: row.revokedAt,
         revokedBy: row.revokedBy,
-        // Include usernames and display names for display
         creatorUsername: row.creatorUsername,
         creatorName: row.creatorName,
         usedByUsername: row.redeemerUsername,
@@ -241,24 +284,7 @@ export async function getAllInvitationsWithCreators(db: DB) {
         status: getInvitationStatus(row as Invitation),
     }));
 
-    // Sort: unused invitations first (pending/expired), then used/revoked
-    // Within each group, already sorted by createdAt DESC from query
-    return invitationsWithStatus.sort((a, b) => {
-        const aIsUnused = a.status === InvitationStatus.PENDING || a.status === InvitationStatus.EXPIRED;
-        const bIsUnused = b.status === InvitationStatus.PENDING || b.status === InvitationStatus.EXPIRED;
-
-        // If one is unused and the other isn't, unused comes first
-        if (aIsUnused && !bIsUnused) {
-            return -1;
-        }
-        if (!aIsUnused && bIsUnused) {
-            return 1;
-        }
-
-        // Both are same type (both unused or both used/revoked)
-        // Already sorted by createdAt DESC from query, maintain that order
-        return 0;
-    });
+    return invitationsWithStatus.sort(compareInvitationsByUsage);
 }
 
 /**
@@ -270,8 +296,7 @@ export async function getAllInvitationsWithCreators(db: DB) {
  */
 export function calculateExpirationDate(daysFromNow = 30): Date {
     const now = new Date();
-    const expiration = new Date(now.getTime() + daysFromNow * 24 * 60 * 60 * 1000);
-    return expiration;
+    return new Date(now.getTime() + daysFromNow * MS_PER_DAY);
 }
 
 /**

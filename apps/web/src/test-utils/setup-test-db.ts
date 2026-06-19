@@ -18,14 +18,13 @@ export function createTestDatabase(): DB {
 }
 
 /**
- * Seed test database with initial data
+ * Seed test users into the database
  */
-export async function seedTestDatabase(db: DB) {
-    const { user, account, tuners, channels } = schema;
+async function seedTestUsers(db: DB) {
+    const { user, account } = schema;
     const { AuthRoles } = await import('@/lib/auth-roles');
     const { generateHashPassword } = await import('@/lib/user');
 
-    // Insert test users (Better-Auth format with username)
     const [adminUser] = db.insert(user).values({
         id: 'test-admin-uuid',
         username: 'admin',
@@ -46,7 +45,6 @@ export async function seedTestDatabase(db: DB) {
         isActive: true
     }).returning().all();
 
-    // Insert account credentials for test users
     const testPassword = await generateHashPassword('testpassword123');
 
     db.insert(account).values([
@@ -66,14 +64,21 @@ export async function seedTestDatabase(db: DB) {
         }
     ]).run();
 
-    // Insert test tuner
+    return [adminUser, viewerUser] as const;
+}
+
+/**
+ * Seed test tuner and channels into the database
+ */
+function seedTestTunersAndChannels(db: DB) {
+    const { tuners, channels } = schema;
+
     const [tuner] = db.insert(tuners).values({
         name: 'Test HDHomeRun',
         path: 'http://192.168.20.25',
         is_active: true
     }).returning().all();
 
-    // Insert test channels
     const testChannels = db.insert(channels).values([
         {
             fk_tuner: tuner.id,
@@ -97,8 +102,18 @@ export async function seedTestDatabase(db: DB) {
         }
     ]).returning().all();
 
+    return { tuner, testChannels };
+}
+
+/**
+ * Seed test database with initial data
+ */
+export async function seedTestDatabase(db: DB) {
+    const users = await seedTestUsers(db);
+    const { tuner, testChannels } = seedTestTunersAndChannels(db);
+
     return {
-        users: [adminUser, viewerUser],
+        users: [...users],
         tuners: [tuner],
         channels: testChannels
     };

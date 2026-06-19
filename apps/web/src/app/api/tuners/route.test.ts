@@ -9,11 +9,11 @@ vi.mock('@/lib/database/db', () => ({
     getDb: vi.fn(() => Promise.resolve(testDb)),
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
 
 describe('GET /api/tuners', () => {
     beforeEach(async () => {
-        testDb = await refreshDb({ seed: true });
+        testDb = await testDatabase.refreshDb({ seed: true });
         vi.clearAllMocks();
     });
 
@@ -46,7 +46,7 @@ describe('GET /api/tuners', () => {
         const json = await response.json();
 
         // Verify deleted tuner is not in results
-        const deletedTunerInResults = json.data.find((t: { id: number }) => t.id === tuner.id);
+        const deletedTunerInResults = json.data.find((tunerItem: { id: number }) => tunerItem.id === tuner.id);
         expect(deletedTunerInResults).toBeUndefined();
     });
 

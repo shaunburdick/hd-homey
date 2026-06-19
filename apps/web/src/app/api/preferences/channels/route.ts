@@ -1,12 +1,81 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { and, eq, isNull, or } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import { getDb } from '@/lib/database/db';
 import { channels, userChannelPreferences } from '@/lib/database/schema';
 import { auth } from '@/lib/auth/auth';
 import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Parse and validate the optional tunerId query parameter.
+ * Returns the numeric ID, null if absent, or a NextResponse error if invalid.
+ */
+function parseTunerIdParam(
+    url: URL
+): { tunerId: number | null; error?: never } | { tunerId?: never; error: NextResponse } {
+    const tunerIdParam = url.searchParams.get('tunerId');
+    if (tunerIdParam === null) {
+        return { tunerId: null };
+    }
+
+    const tunerId = parseInt(tunerIdParam, 10);
+    if (isNaN(tunerId) || tunerId <= 0) {
+        return {
+            error: NextResponse.json(
+                { error: 'Bad Request', message: 'tunerId must be a positive integer' },
+                { status: 400 }
+            ),
+        };
+    }
+
+    return { tunerId };
+}
+
+/**
+ * Build the WHERE conditions for the preference query.
+ * Only includes channels where the user has an explicit preference set.
+ */
+function buildPreferenceConditions(userId: string, tunerId: number | null): SQL[] {
+    const conditions: SQL[] = [
+        eq(userChannelPreferences.userId, userId),
+        isNull(channels.deleted_at),
+        or(
+            eq(userChannelPreferences.isFavorite, true),
+            eq(userChannelPreferences.isHidden, true)
+        ) as SQL,
+    ];
+
+    if (tunerId !== null) {
+        conditions.push(eq(channels.fk_tuner, tunerId));
+    }
+
+    return conditions;
+}
+
+/**
+ * Fetch channel preferences for a user, optionally filtered by tuner.
+ */
+async function fetchChannelPreferences(userId: string, tunerId: number | null) {
+    const db = await getDb();
+    const conditions = buildPreferenceConditions(userId, tunerId);
+
+    return await db
+        .select({
+            channelId: channels.id,
+            tunerId: channels.fk_tuner,
+            guideNumber: channels.guideNumber,
+            guideName: channels.guideName,
+            isFavorite: userChannelPreferences.isFavorite,
+            isHidden: userChannelPreferences.isHidden,
+            updatedAt: userChannelPreferences.updatedAt,
+        })
+        .from(userChannelPreferences)
+        .innerJoin(channels, eq(userChannelPreferences.channelId, channels.id))
+        .where(and(...conditions));
+}
 
 /**
  * GET /api/preferences/channels
@@ -35,7 +104,6 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
     try {
-        // Require authentication
         const session = await auth.api.getSession({
             headers: await import('next/headers').then((mod) => mod.headers()),
         });
@@ -47,52 +115,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             );
         }
 
-        // Get optional tunerId query parameter
-        const url = new URL(request.url);
-        const tunerIdParam = url.searchParams.get('tunerId');
-        const tunerId = tunerIdParam !== null ? parseInt(tunerIdParam, 10) : null;
-
-        // Validate tunerId if provided
-        if (tunerId !== null && (isNaN(tunerId) || tunerId <= 0)) {
-            return NextResponse.json(
-                { error: 'Bad Request', message: 'tunerId must be a positive integer' },
-                { status: 400 }
-            );
+        const tunerIdResult = parseTunerIdParam(new URL(request.url));
+        if (tunerIdResult.error !== undefined) {
+            return tunerIdResult.error;
         }
 
-        const db = await getDb();
-
-        // Build WHERE conditions
-        const conditions = [
-            eq(userChannelPreferences.userId, session.user.id),
-            isNull(channels.deleted_at),
-            // Only include channels with at least one preference set
-            or(
-                eq(userChannelPreferences.isFavorite, true),
-                eq(userChannelPreferences.isHidden, true)
-            ),
-        ];
-
-        // Add tunerId filter if provided
-        if (tunerId !== null) {
-            conditions.push(eq(channels.fk_tuner, tunerId));
-        }
-
-        // Join channels with user preferences
-        // Only returns channels where user has explicit preferences
-        const preferences = await db
-            .select({
-                channelId: channels.id,
-                tunerId: channels.fk_tuner,
-                guideNumber: channels.guideNumber,
-                guideName: channels.guideName,
-                isFavorite: userChannelPreferences.isFavorite,
-                isHidden: userChannelPreferences.isHidden,
-                updatedAt: userChannelPreferences.updatedAt,
-            })
-            .from(userChannelPreferences)
-            .innerJoin(channels, eq(userChannelPreferences.channelId, channels.id))
-            .where(and(...conditions));
+        const preferences = await fetchChannelPreferences(
+            session.user.id,
+            tunerIdResult.tunerId
+        );
 
         return NextResponse.json({ data: preferences });
     } catch (error) {

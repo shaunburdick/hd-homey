@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import Config from './config';
 import { getStreamSecret } from './settings';
+import Logger from './logger';
 
 export interface StreamTokenData {
     tunerId: number;
@@ -8,12 +9,17 @@ export interface StreamTokenData {
     expiresAt: number;
 }
 
+/** Number of hex characters to use from the HMAC digest (16 bytes = 32 hex chars) */
+const SIGNATURE_HEX_CHARS = 32;
+
+/** Milliseconds per second, used to convert Date.now() to Unix timestamp */
+const MS_PER_SECOND = 1000;
 /**
  * Generate a signed token for streaming
  */
 export async function generateStreamToken(tunerId: number, channelId: number): Promise<string> {
     const secret = await getStreamSecret();
-    const expiresAt = Math.floor(Date.now() / 1000) + Config.streamTokenExpiry;
+    const expiresAt = Math.floor(Date.now() / MS_PER_SECOND) + Config.streamTokenExpiry;
 
     // Create signature (truncated to 16 bytes / 128 bits for shorter tokens)
     const data = `${tunerId}:${channelId}:${expiresAt}`;
@@ -21,7 +27,7 @@ export async function generateStreamToken(tunerId: number, channelId: number): P
         .createHmac('sha256', secret)
         .update(data)
         .digest('hex')
-        .slice(0, 32); // 16 bytes = 32 hex chars
+        .slice(0, SIGNATURE_HEX_CHARS); // 16 bytes = 32 hex chars
 
     // Combine and encode
     const token = `${tunerId}:${channelId}:${expiresAt}:${signature}`;
@@ -40,9 +46,13 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
         const [tunerId, channelId, expiresAt, signature] = decoded.split(':');
 
         // Check expiration
-        const now = Math.floor(Date.now() / 1000);
+        const now = Math.floor(Date.now() / MS_PER_SECOND);
         const expiresAtNum = parseInt(expiresAt, 10);
         if (expiresAtNum < now) {
+            Logger.warn(
+                { tunerId, channelId, expiresAt: expiresAtNum, now },
+                'Stream token expired'
+            );
             return null; // Expired
         }
 
@@ -52,13 +62,17 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
             .createHmac('sha256', secret)
             .update(data)
             .digest('hex')
-            .slice(0, 32); // 16 bytes = 32 hex chars
+            .slice(0, SIGNATURE_HEX_CHARS); // 16 bytes = 32 hex chars
 
         // Use timing-safe comparison
         if (!crypto.timingSafeEqual(
             Buffer.from(signature),
             Buffer.from(expectedSignature)
         )) {
+            Logger.warn(
+                { tunerId, channelId, expiresAt: expiresAtNum },
+                'Stream token signature mismatch — secret may have changed'
+            );
             return null; // Invalid signature
         }
 
@@ -67,7 +81,8 @@ export async function verifyStreamToken(token: string): Promise<StreamTokenData 
             channelId: parseInt(channelId, 10),
             expiresAt: expiresAtNum
         };
-    } catch {
+    } catch (error) {
+        Logger.warn({ error }, 'Failed to decode stream token — invalid format');
         return null; // Invalid token format
     }
 }

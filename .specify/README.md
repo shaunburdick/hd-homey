@@ -1,7 +1,7 @@
 # HD Homey Feature Status
 
-**Last Updated**: 2024-12-04  
-**Version**: 1.0.0-beta.5 (Channel Favorites and Organization Complete)
+**Last Updated**: 2026-06-18  
+**Version**: 1.0.0-beta.6 (Dependency Updates and Code Quality)
 
 This document provides a quick overview of all features and their implementation status.
 
@@ -237,7 +237,7 @@ Comprehensive documentation website hosted on GitHub Pages:
 
 ## 📊 Testing Status
 
-**Total Tests**: 295 passing (100%)  
+**Total Tests**: 401 passing (100%)  
 **Test Coverage**: Excellent (core features fully tested)  
 **Execution Time**: ~2.5s
 

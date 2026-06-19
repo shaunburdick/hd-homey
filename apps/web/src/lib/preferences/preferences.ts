@@ -29,18 +29,28 @@ export function getUserChannelPreferences(
 }
 
 /**
+ * Options for getPreference
+ */
+export interface GetPreferenceOptions {
+    /** Database connection */
+    db: DB;
+    /** User ID */
+    userId: string;
+    /** Channel ID */
+    channelId: number;
+}
+
+/**
  * Get a single channel preference for a user
  *
- * @param db Database connection
- * @param userId User ID
- * @param channelId Channel ID
+ * @param options - db, userId, and channelId
  * @returns User channel preference or null if doesn't exist
  */
-export function getPreference(
-    db: DB,
-    userId: string,
-    channelId: number
-): UserChannelPreference | null {
+export function getPreference({
+    db,
+    userId,
+    channelId,
+}: GetPreferenceOptions): UserChannelPreference | null {
     const result = db
         .select()
         .from(userChannelPreferences)
@@ -56,22 +66,33 @@ export function getPreference(
 }
 
 /**
+ * Options for upsertPreference
+ */
+export interface UpsertPreferenceOptions {
+    /** Database connection */
+    db: DB;
+    /** User ID */
+    userId: string;
+    /** Channel ID */
+    channelId: number;
+    /** Preference values */
+    preference: { isFavorite: boolean; isHidden: boolean };
+}
+
+/**
  * Create or update a channel preference
  * Uses INSERT OR REPLACE to handle both create and update
  *
- * @param db Database connection
- * @param userId User ID
- * @param channelId Channel ID
- * @param preference Preference values (isFavorite and/or isHidden)
+ * @param options - db, userId, channelId, and preference values
  * @returns Updated preference
  * @throws Error if favorite and hidden are both true (database CHECK constraint)
  */
-export function upsertPreference(
-    db: DB,
-    userId: string,
-    channelId: number,
-    preference: { isFavorite: boolean; isHidden: boolean }
-): UserChannelPreference {
+export function upsertPreference({
+    db,
+    userId,
+    channelId,
+    preference,
+}: UpsertPreferenceOptions): UserChannelPreference {
     // Check for invalid combination before attempting database operation
     if (preference.isFavorite && preference.isHidden) {
         throw new Error('Cannot be both favorite and hidden');
@@ -79,7 +100,7 @@ export function upsertPreference(
 
     try {
         // Check if preference exists
-        const existing = getPreference(db, userId, channelId);
+        const existing = getPreference({ db, userId, channelId });
 
         if (existing !== null) {
             // Update existing preference
@@ -122,35 +143,45 @@ export function upsertPreference(
 }
 
 /**
+ * Options for toggleFavorite
+ */
+export interface TogglePreferenceOptions {
+    /** Database connection */
+    db: DB;
+    /** User ID */
+    userId: string;
+    /** Channel ID */
+    channelId: number;
+}
+
+/**
  * Toggle favorite status for a channel
  * Intelligent behavior:
  * - If not favorite → set favorite=true, hidden=false (auto-unhide)
  * - If favorite → set favorite=false
  *
- * @param db Database connection
- * @param userId User ID
- * @param channelId Channel ID
+ * @param options - db, userId, and channelId
  * @returns Updated preference
  */
-export function toggleFavorite(
-    db: DB,
-    userId: string,
-    channelId: number
-): UserChannelPreference {
-    const existing = getPreference(db, userId, channelId);
+export function toggleFavorite({
+    db,
+    userId,
+    channelId,
+}: TogglePreferenceOptions): UserChannelPreference {
+    const existing = getPreference({ db, userId, channelId });
 
     if (existing !== null && existing.isFavorite === true) {
         // Currently favorite → unfavorite (keep hidden state)
-        return upsertPreference(db, userId, channelId, {
+        return upsertPreference({ db, userId, channelId, preference: {
             isFavorite: false,
             isHidden: existing.isHidden,
-        });
+        } });
     } else {
         // Not favorite → favorite (and auto-unhide if needed)
-        return upsertPreference(db, userId, channelId, {
+        return upsertPreference({ db, userId, channelId, preference: {
             isFavorite: true,
             isHidden: false,
-        });
+        } });
     }
 }
 
@@ -160,29 +191,27 @@ export function toggleFavorite(
  * - If not hidden → set hidden=true, favorite=false (auto-unfavorite)
  * - If hidden → set hidden=false
  *
- * @param db Database connection
- * @param userId User ID
- * @param channelId Channel ID
+ * @param options - db, userId, and channelId
  * @returns Updated preference
  */
-export function toggleHidden(
-    db: DB,
-    userId: string,
-    channelId: number
-): UserChannelPreference {
-    const existing = getPreference(db, userId, channelId);
+export function toggleHidden({
+    db,
+    userId,
+    channelId,
+}: TogglePreferenceOptions): UserChannelPreference {
+    const existing = getPreference({ db, userId, channelId });
 
     if (existing !== null && existing.isHidden === true) {
         // Currently hidden → unhide (keep favorite state)
-        return upsertPreference(db, userId, channelId, {
+        return upsertPreference({ db, userId, channelId, preference: {
             isFavorite: existing.isFavorite,
             isHidden: false,
-        });
+        } });
     } else {
         // Not hidden → hide (and auto-unfavorite if needed)
-        return upsertPreference(db, userId, channelId, {
+        return upsertPreference({ db, userId, channelId, preference: {
             isFavorite: false,
             isHidden: true,
-        });
+        } });
     }
 }

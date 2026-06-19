@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+/** Duration of the slide-in/out CSS animation in milliseconds. */
+const ANIMATION_DURATION_MS = 300;
 
 export interface ToastProps {
     message: string;
@@ -9,55 +12,91 @@ export interface ToastProps {
     onClose?: () => void;
 }
 
-export function Toast({ message, type = 'info', duration = 3000, onClose }: ToastProps) {
-    const [isVisible, setIsVisible] = useState(true);
-    const [isExiting, setIsExiting] = useState(false);
+interface ToastColorScheme {
+    bg: string;
+    border: string;
+    text: string;
+    icon: string;
+}
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsExiting(true);
-            setTimeout(() => {
-                setIsVisible(false);
-                onClose?.();
-            }, 300);
-        }, duration);
+const TOAST_COLORS: Record<NonNullable<ToastProps['type']>, ToastColorScheme> = {
+    success: {
+        bg: 'var(--color-success-bg)',
+        border: 'var(--color-success)',
+        text: 'var(--color-success)',
+        icon: '✓',
+    },
+    error: {
+        bg: 'var(--color-error-bg)',
+        border: 'var(--color-error)',
+        text: 'var(--color-error)',
+        icon: '✗',
+    },
+    warning: {
+        bg: 'var(--color-warning-bg)',
+        border: 'var(--color-warning)',
+        text: 'var(--color-warning)',
+        icon: '⚠',
+    },
+    info: {
+        bg: 'var(--color-info-bg)',
+        border: 'var(--color-info)',
+        text: 'var(--color-info)',
+        icon: 'ℹ',
+    },
+};
 
-        return () => clearTimeout(timer);
-    }, [duration, onClose]);
-
-    if (!isVisible) {
-        return null;
+const TOAST_KEYFRAMES = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to   { transform: translateX(0);    opacity: 1; }
     }
+    @keyframes slideOut {
+        from { transform: translateX(0);    opacity: 1; }
+        to   { transform: translateX(100%); opacity: 0; }
+    }
+`;
 
-    const colors = {
-        success: {
-            bg: 'var(--color-success-bg)',
-            border: 'var(--color-success)',
-            text: 'var(--color-success)',
-            icon: '✓',
-        },
-        error: {
-            bg: 'var(--color-error-bg)',
-            border: 'var(--color-error)',
-            text: 'var(--color-error)',
-            icon: '✗',
-        },
-        warning: {
-            bg: 'var(--color-warning-bg)',
-            border: 'var(--color-warning)',
-            text: 'var(--color-warning)',
-            icon: '⚠',
-        },
-        info: {
-            bg: 'var(--color-info-bg)',
-            border: 'var(--color-info)',
-            text: 'var(--color-info)',
-            icon: 'ℹ',
-        },
-    };
+/** Close button for the toast notification. */
+function ToastCloseButton({
+    colorText,
+    onClose,
+}: {
+    colorText: string;
+    onClose: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close notification"
+            style={{
+                background: 'none',
+                border: 'none',
+                color: colorText,
+                cursor: 'pointer',
+                padding: 'var(--space-1)',
+                fontSize: 'var(--font-size-lg)',
+                lineHeight: 1,
+            }}
+        >
+            ✕
+        </button>
+    );
+}
 
-    const colorScheme = colors[type];
-
+/** Main toast notification body. */
+function ToastBody({
+    message,
+    colorScheme,
+    isExiting,
+    onClose,
+}: {
+    message: string;
+    colorScheme: ToastColorScheme;
+    isExiting: boolean;
+    onClose: () => void;
+}) {
     return (
         <div
             role="alert"
@@ -77,64 +116,68 @@ export function Toast({ message, type = 'info', duration = 3000, onClose }: Toas
                 minWidth: '300px',
                 maxWidth: '500px',
                 zIndex: 'var(--z-tooltip)',
-                animation: isExiting ? 'slideOut 0.3s ease' : 'slideIn 0.3s ease',
+                animation: isExiting
+                    ? 'slideOut 0.3s ease'
+                    : 'slideIn 0.3s ease',
             }}
         >
-            <span
-                style={{
-                    fontSize: 'var(--font-size-xl)',
-                    color: colorScheme.text,
-                }}
-            >
+            <span style={{ fontSize: 'var(--font-size-xl)', color: colorScheme.text }}>
                 {colorScheme.icon}
             </span>
             <span style={{ flex: 1, color: colorScheme.text }}>
                 {message}
             </span>
-            <button
-                onClick={() => {
-                    setIsExiting(true);
-                    setTimeout(() => {
-                        setIsVisible(false);
-                        onClose?.();
-                    }, 300);
-                }}
-                aria-label="Close notification"
-                style={{
-                    background: 'none',
-                    border: 'none',
-                    color: colorScheme.text,
-                    cursor: 'pointer',
-                    padding: 'var(--space-1)',
-                    fontSize: 'var(--font-size-lg)',
-                    lineHeight: 1,
-                }}
-            >
-                ✕
-            </button>
-            <style>{`
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                @keyframes slideOut {
-                    from {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                    to {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                }
-            `}</style>
+            <ToastCloseButton colorText={colorScheme.text} onClose={onClose} />
+            <style>{TOAST_KEYFRAMES}</style>
         </div>
+    );
+}
+
+export function Toast({ message, type = 'info', duration = 3000, onClose }: ToastProps) {
+    const [isVisible, setIsVisible] = useState(true);
+    const [isExiting, setIsExiting] = useState(false);
+    const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    /**
+     * Triggers the exit animation and then hides the toast.
+     * Clears any in-flight exit timer before scheduling a new one.
+     * Wrapped in useCallback so it can safely appear in useEffect deps.
+     */
+    const startExit = useCallback(() => {
+        if (exitTimerRef.current) {
+            clearTimeout(exitTimerRef.current);
+        }
+        setIsExiting(true);
+        exitTimerRef.current = setTimeout(() => {
+            setIsVisible(false);
+            onClose?.();
+        }, ANIMATION_DURATION_MS);
+    }, [onClose]);
+
+    useEffect(() => {
+        const autoCloseTimer = setTimeout(startExit, duration);
+
+        return () => {
+            clearTimeout(autoCloseTimer);
+            if (exitTimerRef.current) {
+                clearTimeout(exitTimerRef.current);
+            }
+        };
+    }, [duration, startExit]);
+
+    if (!isVisible) {
+        return null;
+    }
+
+    const colorScheme = TOAST_COLORS[type];
+
+    return (
+        <ToastBody
+            message={message}
+            colorScheme={colorScheme}
+            isExiting={isExiting}
+            onClose={startExit}
+        />
     );
 }
 

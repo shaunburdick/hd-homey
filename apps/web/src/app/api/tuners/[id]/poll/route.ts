@@ -9,7 +9,6 @@ import { HDTuner } from '@/lib/hdhr/tuner';
 import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
-
 interface Params {
     id: string;
 }
@@ -27,11 +26,12 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
         );
     }
 
+    const { id } = await context.params;
     const db = await getDb();
 
     const tuner = await db.query.tuners.findFirst({
         where: and(
-            eq(tuners.id, parseInt((await context.params).id, 10)),
+            eq(tuners.id, parseInt(id, 10)),
             isNull(tuners.deleted_at)
         )
     });

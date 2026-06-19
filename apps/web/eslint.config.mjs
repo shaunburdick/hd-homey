@@ -1,5 +1,4 @@
 import shaunburdick from 'eslint-config-shaunburdick';
-// eslint-disable-next-line import/no-extraneous-dependencies -- Provided by eslint-config-next
 import nextPlugin from '@next/eslint-plugin-next';
 
 export default [
@@ -18,7 +17,7 @@ export default [
     },
     {
         settings: {
-            'import/resolver': {
+            'import-x/resolver': {
                 typescript: {
                     alwaysTryTypes: true,
                     project: './tsconfig.json',
@@ -85,10 +84,29 @@ export default [
     {
         ignores: [
             '.next/**/*',
+            'coverage/**/*',
             'data/**/*',
             'next-env.d.ts',
             // Docs directory has its own ESLint config
             'docs/**/*'
         ]
+    },
+    {
+        // Node.js script files need node globals (process, console, etc.)
+        files: ['src/scripts/*.mjs', 'src/scripts/*.js'],
+        languageOptions: {
+            globals: {
+                // Node.js built-in globals for script files
+                process: 'readonly',
+                console: 'readonly',
+                Buffer: 'readonly',
+                __dirname: 'readonly',
+                __filename: 'readonly',
+                URL: 'readonly',
+            },
+        },
+        rules: {
+            'no-console': 'off',
+        },
     }
 ];

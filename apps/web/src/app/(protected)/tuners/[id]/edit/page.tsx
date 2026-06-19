@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import EditTunerForm from './EditTunerForm';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
-
 interface PageParams {
     id: string
 };

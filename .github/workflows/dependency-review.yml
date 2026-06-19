@@ -18,10 +18,10 @@ jobs:
         timeout-minutes: 10
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
             - name: Dependency Review
-              uses: actions/dependency-review-action@v5
+              uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
               with:
                   # Fail on moderate or higher severity vulnerabilities
                   fail-on-severity: moderate
@@ -29,5 +29,5 @@ jobs:
                   # Using allow-licenses (allowlist) instead of deny-licenses (denylist)
                   # since an allowlist is harder to accidentally circumvent with new
                   # copyleft variants (deny-licenses was also deprecated in v4).
-                  allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, CC0-1.0, CC-BY-3.0, CC-BY-4.0, BlueOak-1.0.0, 0BSD, Unlicense, Python-2.0
+                  allow-licenses: MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, CC0-1.0, CC-BY-3.0, CC-BY-4.0, BlueOak-1.0.0, 0BSD, Unlicense, Python-2.0, MPL-2.0, MS-PL, Zlib, LGPL-2.0-only, LGPL-2.1-only, LGPL-3.0-only, LGPL-3.0-or-later
                   comment-summary-in-pr: always

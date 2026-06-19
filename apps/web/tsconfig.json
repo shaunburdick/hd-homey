@@ -18,7 +18,6 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "baseUrl": ".",
     "plugins": [
       {
         "name": "next"
@@ -41,7 +40,6 @@
     "**/*.tsx",
     "public/**/*",
     ".next/types/**/*.ts",
-    "vitest.config.mts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [

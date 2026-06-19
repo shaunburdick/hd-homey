@@ -35,14 +35,18 @@ vi.mock('next/headers', () => ({
     headers: vi.fn(() => new Headers()),
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
 
 // Test constants
 const TEST_ADMIN_USER_ID = 'test-admin-uuid';
 const TEST_API_URL = 'http://localhost:3000/api/auth/device/authorize';
 const JSON_CONTENT_TYPE = 'application/json';
+/** Five minutes in milliseconds */
+const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 function createMockSession(overrides?: Record<string, unknown>) {
+    /** 24 hours in milliseconds */
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
     return {
         user: {
             id: TEST_ADMIN_USER_ID,
@@ -59,7 +63,7 @@ function createMockSession(overrides?: Record<string, unknown>) {
         session: {
             id: 'session-1',
             userId: TEST_ADMIN_USER_ID,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            expiresAt: new Date(Date.now() + ONE_DAY_MS),
             token: 'test-token',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -68,27 +72,27 @@ function createMockSession(overrides?: Record<string, unknown>) {
     };
 }
 
+async function createDeviceCode(overrides: Record<string, unknown> = {}) {
+    const { deviceCodes } = await import('@/lib/database/schema');
+    const [code] = await testDb.insert(deviceCodes).values({
+        code: 'AUTH01',
+        deviceName: 'Test TV',
+        deviceType: 'tv',
+        status: 'pending',
+        expiresAt: new Date(Date.now() + FIVE_MINUTES_MS),
+        ipAddress: '192.168.1.100',
+        userAgent: 'TestAgent/1.0',
+        ...overrides,
+    }).returning();
+    return code;
+}
+
 describe('POST /api/auth/device/authorize', () => {
     beforeEach(async () => {
-        testDb = await refreshDb({ seed: true });
+        testDb = await testDatabase.refreshDb({ seed: true });
         vi.clearAllMocks();
         mockGetSessionImpl.mockResolvedValue(createMockSession());
     });
-
-    async function createDeviceCode(overrides: Record<string, unknown> = {}) {
-        const { deviceCodes } = await import('@/lib/database/schema');
-        const [code] = await testDb.insert(deviceCodes).values({
-            code: 'AUTH01',
-            deviceName: 'Test TV',
-            deviceType: 'tv',
-            status: 'pending',
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-            ipAddress: '192.168.1.100',
-            userAgent: 'TestAgent/1.0',
-            ...overrides,
-        }).returning();
-        return code;
-    }
 
     it('should authorize a valid pending code', async () => {
         await createDeviceCode();
@@ -213,8 +217,10 @@ describe('POST /api/auth/device/authorize', () => {
     });
 
     it('should return 410 for expired code', async () => {
+        /** One second in milliseconds */
+        const ONE_SECOND_MS = 1000;
         await createDeviceCode({
-            expiresAt: new Date(Date.now() - 1000),
+            expiresAt: new Date(Date.now() - ONE_SECOND_MS),
         });
 
         const { NextRequest } = await import('next/server');
@@ -342,9 +348,11 @@ describe('POST /api/auth/device/authorize', () => {
             where: eq(deviceCodes.code, 'AUTH01'),
         });
 
+        /** One second in milliseconds */
+        const ONE_SECOND_MS = 1000;
         const authorizedAt = updated?.authorizedAt?.getTime() ?? 0;
-        expect(authorizedAt).toBeGreaterThanOrEqual(beforeAuth - 1000);
-        expect(authorizedAt).toBeLessThanOrEqual(afterAuth + 1000);
+        expect(authorizedAt).toBeGreaterThanOrEqual(beforeAuth - ONE_SECOND_MS);
+        expect(authorizedAt).toBeLessThanOrEqual(afterAuth + ONE_SECOND_MS);
     });
 
     it('should not authorize code twice', async () => {

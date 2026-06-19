@@ -7,7 +7,6 @@ import { channels } from '@/lib/database/schema';
 import { verifyStreamToken } from '@/lib/stream-token';
 import Logger from '@/lib/logger';
 import { HDTuner } from '@/lib/hdhr/tuner';
-
 /**
  * Force dynamic rendering for this route
  */
@@ -32,6 +31,37 @@ class MessageResponse extends Response {
     }
 }
 
+interface TokenValidationOptions {
+    token: string | null;
+    id: string;
+    channel_id: string;
+}
+
+/** Validates the token and verifies it matches the requested tuner/channel */
+async function validateToken({ token, id, channel_id }: TokenValidationOptions) {
+    if (!token) {
+        Logger.warn({ tunerId: id, channelId: channel_id }, 'Stream request missing token');
+        return null;
+    }
+
+    const tokenData = await verifyStreamToken(token);
+    if (!tokenData) {
+        Logger.warn({ tunerId: id, channelId: channel_id }, 'Invalid or expired stream token');
+        return null;
+    }
+
+    if (tokenData.tunerId !== parseInt(id, 10) ||
+        tokenData.channelId !== parseInt(channel_id, 10)) {
+        Logger.warn({
+            requested: { tunerId: id, channelId: channel_id },
+            token: tokenData
+        }, 'Token resource mismatch');
+        return null;
+    }
+
+    return tokenData;
+}
+
 export async function GET(
     req: NextRequest,
     context: { params: Promise<{ id: string; channel_id: string }> }
@@ -40,26 +70,9 @@ export async function GET(
         const { id, channel_id } = await context.params;
         const token = req.nextUrl.searchParams.get('token');
 
-        if (!token) {
-            Logger.warn({ tunerId: id, channelId: channel_id }, 'Stream request missing token');
-            return new Response('Missing token', { status: 401 });
-        }
-
-        // Verify token (fetches secret from settings)
-        const tokenData = await verifyStreamToken(token);
+        const tokenData = await validateToken({ token, id, channel_id });
         if (!tokenData) {
-            Logger.warn({ tunerId: id, channelId: channel_id }, 'Invalid or expired stream token');
-            return new Response('Invalid or expired token', { status: 403 });
-        }
-
-        // Verify token matches requested resource
-        if (tokenData.tunerId !== parseInt(id, 10) ||
-            tokenData.channelId !== parseInt(channel_id, 10)) {
-            Logger.warn({
-                requested: { tunerId: id, channelId: channel_id },
-                token: tokenData
-            }, 'Token resource mismatch');
-            return new Response('Token does not match resource', { status: 403 });
+            return new Response('Unauthorized or invalid token', { status: token ? 403 : 401 });
         }
 
         // Get channel from database

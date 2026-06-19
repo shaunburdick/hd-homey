@@ -20,7 +20,8 @@ vi.mock('@/lib/database/db', () => ({
     connection: vi.fn(() => ({})),
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
+const refreshDb = (opts?: { seed?: boolean }) => testDatabase.refreshDb(opts);
 
 // Mock auth helpers
 const mockRequireAdmin = vi.fn();

@@ -9,6 +9,7 @@ const NOT_AUTHENTICATED_ERROR = 'Not authenticated';
 // Mock the auth module — we only mock `auth` for the helper tests,
 // but keep the actual `resolveUseSecureCookies` function for unit testing
 vi.mock('./auth/auth', async (importOriginal) => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- Needed to spread module
     const mod = await importOriginal() as object;
     return {
         ...mod,
@@ -137,6 +138,7 @@ describe('Authorization Helpers', () => {
                 user: null,
             };
 
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- mock type coercion
             vi.mocked(auth.api.getSession).mockResolvedValue(invalidSession as never);
 
             await expect(requireAdmin()).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
@@ -144,6 +146,7 @@ describe('Authorization Helpers', () => {
 
         it('should validate role matches exactly', async () => {
             const mockSession = createMockSession({
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- mock type coercion
                 role: 'invalid-role' as AuthRoles,
             });
 
@@ -153,6 +156,7 @@ describe('Authorization Helpers', () => {
         });
 
         it('should handle expired or missing session', async () => {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- mock type coercion
             vi.mocked(auth.api.getSession).mockResolvedValue(undefined as never);
 
             await expect(requireAdmin()).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
@@ -192,6 +196,7 @@ describe('resolveUseSecureCookies', () => {
         });
 
         it('should return false when NODE_ENV is undefined', () => {
+            // eslint-disable-next-line unicorn/no-useless-undefined -- Explicitly testing default param behavior
             expect(resolveUseSecureCookies(undefined, undefined)).toBe(false);
         });
 
@@ -230,11 +235,14 @@ describe('resolveUseSecureCookies', () => {
         });
 
         it('should handle undefined NODE_ENV when override is absent', () => {
+            // eslint-disable-next-line unicorn/no-useless-undefined -- Explicitly testing default param behavior
             expect(resolveUseSecureCookies(undefined, undefined)).toBe(false);
         });
 
         it('should handle undefined NODE_ENV when override is set', () => {
+            // eslint-disable-next-line unicorn/no-useless-undefined -- Explicitly testing default param behavior
             expect(resolveUseSecureCookies('false', undefined)).toBe(false);
+            // eslint-disable-next-line unicorn/no-useless-undefined -- Explicitly testing default param behavior
             expect(resolveUseSecureCookies('true', undefined)).toBe(true);
         });
     });

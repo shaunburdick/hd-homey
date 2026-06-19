@@ -33,7 +33,7 @@ jobs:
             version: ${{ steps.version.outputs.version }}
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
               with:
                   fetch-depth: 0
 
@@ -67,18 +67,9 @@ jobs:
                   # Save to file for multiline content
                   echo "$CHANGELOG" > /tmp/changelog.txt
 
-            - name: Create Release
-              id: create_release
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Build release body
               run: |
                   VERSION="${{ steps.version.outputs.version }}"
-                  PRERELEASE=""
-                  
-                  # Check if this is a prerelease
-                  if [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"rc"* ]]; then
-                    PRERELEASE="--prerelease"
-                  fi
                   
                   # Create release body with changelog and Docker instructions
                   cat /tmp/changelog.txt > /tmp/release-body.txt
@@ -96,11 +87,13 @@ jobs:
                   echo "## 📦 Installation" >> /tmp/release-body.txt
                   echo "" >> /tmp/release-body.txt
                   echo "See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for installation instructions." >> /tmp/release-body.txt
-                  
-                  # Create the release using GitHub CLI
-                  gh release create "$VERSION" \
-                    --title "Release $VERSION" \
-                    --notes-file /tmp/release-body.txt \
-                    $PRERELEASE
+
+            - name: Publish Release
+              uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+              with:
+                  tag_name: ${{ steps.version.outputs.version }}
+                  name: Release ${{ steps.version.outputs.version }}
+                  body_path: /tmp/release-body.txt
+                  prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
 
     # Build Docker images are handled by docker.yml workflow on tag push

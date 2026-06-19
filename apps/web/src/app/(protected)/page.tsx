@@ -12,19 +12,154 @@ import { Card } from '@/components';
 import { PageContainer } from '@/components/layouts';
 import { AuthRoles } from '@/lib/auth-roles';
 
+/** Size in pixels for the hero logo on the home dashboard */
+const HERO_IMAGE_SIZE_PX = 150;
+
+/** Fetches dashboard stats: tuner count, channel count, user count */
+async function getDashboardStats() {
+    const db = await getDb();
+    const [tunerRows, channelRows, userRows] = await Promise.all([
+        db.select().from(tuners).where(isNull(tuners.deleted_at)),
+        db.select().from(channels).where(isNull(channels.deleted_at)),
+        db.select().from(user).where(isNull(user.deletedAt)),
+    ]);
+    return {
+        tunerCount: tunerRows.length,
+        channelCount: channelRows.length,
+        userCount: userRows.length,
+    };
+}
+
+/** Renders a single stat card with value, label, and icon */
+function StatCard({
+    value,
+    label,
+    icon,
+    styleVariant,
+}: {
+    value: number;
+    label: string;
+    icon: string;
+    styleVariant: string;
+}) {
+    return (
+        <Card>
+            <div className={styles.statCard}>
+                <div>
+                    <div className={`${styles.statValue} ${styleVariant}`}>
+                        {value}
+                    </div>
+                    <div className={styles.statLabel}>
+                        {label}
+                    </div>
+                </div>
+                <div className={styles.statIcon}>
+                    {icon}
+                </div>
+            </div>
+        </Card>
+    );
+}
+
+/** Renders the stat cards for the dashboard */
+function StatCards({
+    tunerCount,
+    channelCount,
+    userCount,
+    isAdmin,
+}: {
+    tunerCount: number;
+    channelCount: number;
+    userCount: number;
+    isAdmin: boolean;
+}) {
+    return (
+        <div className="grid grid-auto-fit gap-4">
+            <StatCard
+                value={tunerCount}
+                label={tunerCount === 1 ? 'Tuner' : 'Tuners'}
+                icon="📡"
+                styleVariant={styles.statValueAccent}
+            />
+            <StatCard
+                value={channelCount}
+                label={channelCount === 1 ? 'Channel' : 'Channels'}
+                icon="📺"
+                styleVariant={styles.statValueSuccess}
+            />
+            {isAdmin && (
+                <StatCard
+                    value={userCount}
+                    label={userCount === 1 ? 'User' : 'Users'}
+                    icon="👥"
+                    styleVariant={styles.statValueInfo}
+                />
+            )}
+        </div>
+    );
+}
+
+/** Renders the quick action links for the dashboard */
+function QuickActions({ isAdmin }: { isAdmin: boolean }) {
+    return (
+        <div>
+            <h2 className="mb-4">Quick Actions</h2>
+            <div className="grid grid-auto-fit gap-4">
+                <Link href="/tuners" className={styles.quickLink}>
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">📡</span>
+                        <div>
+                            <div className={styles.quickLinkTitle}>
+                                Browse Tuners
+                            </div>
+                            <div className={styles.quickLinkDescription}>
+                                View and manage your HDHomeRun devices
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+
+                {isAdmin && (
+                    <Link href="/settings" className={styles.quickLink}>
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">⚙️</span>
+                            <div>
+                                <div className={styles.quickLinkTitle}>
+                                    Settings
+                                </div>
+                                <div className={styles.quickLinkDescription}>
+                                    Configure transcoding and manage users
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                )}
+
+                <Link href="/about" className={styles.quickLink}>
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">ℹ️</span>
+                        <div>
+                            <div className={styles.quickLinkTitle}>
+                                About
+                            </div>
+                            <div className={styles.quickLinkDescription}>
+                                Version info and documentation
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+            </div>
+        </div>
+    );
+}
+
 export default async function Home() {
     const rawSession = await auth.api.getSession({
         headers: await headers()
     });
     const session = rawSession as unknown as Session | null;
-    const db = await getDb();
 
-    const [tunerCount, channelCount, userCount] = await Promise.all([
-        db.select().from(tuners).where(isNull(tuners.deleted_at)).then(r => r.length),
-        db.select().from(channels).where(isNull(channels.deleted_at)).then(r => r.length),
-        db.select().from(user).where(isNull(user.deletedAt)).then(r => r.length),
-    ]);
-
+    const { tunerCount, channelCount, userCount } = await getDashboardStats();
     const isAdmin = session?.user?.role === AuthRoles.Admin;
 
     return (
@@ -34,8 +169,8 @@ export default async function Home() {
                     <Image
                         src={hdHomey}
                         alt="HD Homey"
-                        width={150}
-                        height={150}
+                        width={HERO_IMAGE_SIZE_PX}
+                        height={HERO_IMAGE_SIZE_PX}
                         priority
                         className="rounded-lg"
                     />
@@ -49,106 +184,14 @@ export default async function Home() {
                     </div>
                 </div>
 
-                <div className="grid grid-auto-fit gap-4">
-                    <Card>
-                        <div className={styles.statCard}>
-                            <div>
-                                <div className={`${styles.statValue} ${styles.statValueAccent}`}>
-                                    {tunerCount}
-                                </div>
-                                <div className={styles.statLabel}>
-                                    {tunerCount === 1 ? 'Tuner' : 'Tuners'}
-                                </div>
-                            </div>
-                            <div className={styles.statIcon}>
-                                📡
-                            </div>
-                        </div>
-                    </Card>
+                <StatCards
+                    tunerCount={tunerCount}
+                    channelCount={channelCount}
+                    userCount={userCount}
+                    isAdmin={isAdmin}
+                />
 
-                    <Card>
-                        <div className={styles.statCard}>
-                            <div>
-                                <div className={`${styles.statValue} ${styles.statValueSuccess}`}>
-                                    {channelCount}
-                                </div>
-                                <div className={styles.statLabel}>
-                                    {channelCount === 1 ? 'Channel' : 'Channels'}
-                                </div>
-                            </div>
-                            <div className={styles.statIcon}>
-                                📺
-                            </div>
-                        </div>
-                    </Card>
-
-                    {isAdmin && (
-                        <Card>
-                            <div className={styles.statCard}>
-                                <div>
-                                    <div className={`${styles.statValue} ${styles.statValueInfo}`}>
-                                        {userCount}
-                                    </div>
-                                    <div className={styles.statLabel}>
-                                        {userCount === 1 ? 'User' : 'Users'}
-                                    </div>
-                                </div>
-                                <div className={styles.statIcon}>
-                                    👥
-                                </div>
-                            </div>
-                        </Card>
-                    )}
-                </div>
-
-                <div>
-                    <h2 className="mb-4">Quick Actions</h2>
-                    <div className="grid grid-auto-fit gap-4">
-                        <Link href="/tuners" className={styles.quickLink}>
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl">📡</span>
-                                <div>
-                                    <div className={styles.quickLinkTitle}>
-                                        Browse Tuners
-                                    </div>
-                                    <div className={styles.quickLinkDescription}>
-                                        View and manage your HDHomeRun devices
-                                    </div>
-                                </div>
-                            </div>
-                        </Link>
-
-                        {isAdmin && (
-                            <Link href="/settings" className={styles.quickLink}>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-2xl">⚙️</span>
-                                    <div>
-                                        <div className={styles.quickLinkTitle}>
-                                            Settings
-                                        </div>
-                                        <div className={styles.quickLinkDescription}>
-                                            Configure transcoding and manage users
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
-                        )}
-
-                        <Link href="/about" className={styles.quickLink}>
-                            <div className="flex items-center gap-3">
-                                <span className="text-2xl">ℹ️</span>
-                                <div>
-                                    <div className={styles.quickLinkTitle}>
-                                        About
-                                    </div>
-                                    <div className={styles.quickLinkDescription}>
-                                        Version info and documentation
-                                    </div>
-                                </div>
-                            </div>
-                        </Link>
-                    </div>
-                </div>
+                <QuickActions isAdmin={isAdmin} />
             </div>
         </PageContainer>
     );

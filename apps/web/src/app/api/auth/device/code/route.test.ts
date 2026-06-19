@@ -19,7 +19,7 @@ vi.mock('@/lib/logger', () => ({
     },
 }));
 
-const { refreshDb } = setupTestDatabase();
+const testDatabase = setupTestDatabase();
 
 // Test constants
 const TEST_API_URL = 'http://localhost:3000/api/auth/device/code';
@@ -30,7 +30,7 @@ const INVALID_REQUEST_ERROR = 'Invalid request';
 
 describe('POST /api/auth/device/code', () => {
     beforeEach(async () => {
-        testDb = await refreshDb({ seed: false });
+        testDb = await testDatabase.refreshDb({ seed: false });
         vi.clearAllMocks();
     });
 
