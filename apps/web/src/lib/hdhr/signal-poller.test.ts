@@ -426,6 +426,88 @@ describe('SignalPollingManager', () => {
             expect(output).toContain('"tunerId":2');
         });
     });
+
+    // -------------------------------------------------------------------------
+    // Auto-discovery: poller discovers all tuners from /status.json
+    // -------------------------------------------------------------------------
+
+    describe('auto-discovery', () => {
+        const FOUR_TUNER_JSON = JSON.stringify([
+            { Resource: 'tuner0' },
+            { Resource: 'tuner1' },
+            { Resource: 'tuner2' },
+            { Resource: 'tuner3' },
+        ]);
+
+        it('subscriber only receives events for their subscribed resource', async () => {
+            const controller = makeController();
+
+            fetchMock.mockResolvedValue(new Response(FOUR_TUNER_JSON, { status: 200 }));
+
+            // Subscribe to tuner0 only (as happens with 1 DB record per device)
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+            await vi.advanceTimersByTimeAsync(0);
+            await Promise.resolve();
+            await Promise.resolve();
+
+            const output = decodeChunks(controller);
+            expect(output).toContain('"resource":"tuner0"');
+            expect(output).not.toContain('"resource":"tuner1"');
+            expect(output).not.toContain('"resource":"tuner2"');
+            expect(output).not.toContain('"resource":"tuner3"');
+        });
+
+        it('antenna wildcard subscriber receives events for auto-discovered tuners', async () => {
+            const controller = makeController();
+
+            // Scenario: 1 DB record for a 4-tuner device. Antenna mode
+            // subscribes using subscribeAll with only 1 tuner tracked.
+            fetchMock.mockResolvedValue(new Response(FOUR_TUNER_JSON, { status: 200 }));
+
+            manager.subscribeAll({
+                deviceUrl: DEVICE_URL,
+                tunersToTrack: [{ tunerId: 1, resource: 'tuner0' }],
+                controller,
+            });
+
+            await vi.advanceTimersByTimeAsync(0);
+            await Promise.resolve();
+            await Promise.resolve();
+
+            const output = decodeChunks(controller);
+            // Explicitly-tracked tuner uses DB tunerId
+            expect(output).toContain('"resource":"tuner0"');
+            expect(output).toMatch(/"tunerId":1/);
+            // Auto-discovered tuners use synthetic negative IDs
+            expect(output).toContain('"resource":"tuner1"');
+            expect(output).toContain('"resource":"tuner2"');
+            expect(output).toContain('"resource":"tuner3"');
+        });
+
+        it('synthetic IDs are negative and descend per discovery', async () => {
+            const controller = makeController();
+
+            fetchMock.mockResolvedValue(new Response(FOUR_TUNER_JSON, { status: 200 }));
+
+            manager.subscribeAll({
+                deviceUrl: DEVICE_URL,
+                tunersToTrack: [{ tunerId: 1, resource: 'tuner0' }],
+                controller,
+            });
+
+            await vi.advanceTimersByTimeAsync(0);
+            await Promise.resolve();
+            await Promise.resolve();
+
+            const output = decodeChunks(controller);
+            // tuner0 uses explicit DB ID 1
+            // tuner1, tuner2, tuner3 get descending synthetic IDs
+            // tunerId appears before resource in JSON (event → tunerId → resource)
+            expect(output).toMatch(/"tunerId":-1,"resource":"tuner1"/);
+            expect(output).toMatch(/"tunerId":-2,"resource":"tuner2"/);
+            expect(output).toMatch(/"tunerId":-3,"resource":"tuner3"/);
+        });
+    });
 });
 
 // =============================================================================

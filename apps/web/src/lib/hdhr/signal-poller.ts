@@ -134,10 +134,15 @@ export function validateDeviceUrl(url: string): void {
  * Singleton manager for HDHomeRun device signal polling.
  *
  * Maintains one poll timer per device and fans events to all subscribers.
+ * Auto-discovers all physical tuners from /status.json on each poll cycle,
+ * ensuring all tuner slots (tuner0–tuner3) are tracked even when the DB
+ * only has one record per device.
  */
 export class SignalPollingManager {
     private readonly devices = new Map<string, DevicePollEntry>();
     private readonly encoder = new TextEncoder();
+    /** Global counter for synthetic tuner IDs assigned to auto-discovered resources */
+    private nextSyntheticId = -1;
 
     /**
      * Subscribe a single-tuner SSE client.
@@ -236,6 +241,32 @@ export class SignalPollingManager {
         return entry;
     }
 
+    /**
+     * Discover untracked tuner slots from /status.json and add them to trackedTuners
+     * with globally unique synthetic IDs (negative). Handles variable-slot devices.
+     */
+    private autoDiscoverTuners(entry: DevicePollEntry, statusJson: TunerStatusResponse): void {
+        for (const statusEntry of statusJson) {
+            const { Resource: resource } = statusEntry;
+            if (resource === undefined || entry.trackedTuners.has(resource)) {
+                continue;
+            }
+
+            const match = /^tuner(\d+)$/.exec(resource);
+            if (match === null) {
+                Logger.warn({ deviceUrl: entry.deviceUrl, resource }, 'Skipping unknown resource');
+                continue;
+            }
+
+            const syntheticId = this.nextSyntheticId--;
+            entry.trackedTuners.set(resource, { tunerId: syntheticId, resource });
+            Logger.debug(
+                { deviceUrl: entry.deviceUrl, resource, syntheticId },
+                'Auto-discovered tuner slot',
+            );
+        }
+    }
+
     private ensurePolling(deviceUrl: string): void {
         const entry = this.devices.get(deviceUrl);
         if (entry?.intervalHandle !== null) {
@@ -317,6 +348,9 @@ export class SignalPollingManager {
             }
             return;
         }
+
+        // Auto-discover any untracked tuner slots from /status.json (handles 1/2/4 tuner devices).
+        this.autoDiscoverTuners(entry, statusJson);
 
         for (const [, tuner] of entry.trackedTuners) {
             const statusEntry = parseStatusJson(statusJson, tuner.resource);

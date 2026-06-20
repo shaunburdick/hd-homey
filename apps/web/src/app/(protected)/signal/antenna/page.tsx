@@ -31,7 +31,7 @@ function buildTunerState(options: BuildStateOptions): TunerSignalState {
     const { data, existing, newHistory, nameMap } = options;
     return {
         tunerId: data.tunerId,
-        tunerName: existing?.tunerName ?? nameMap.get(data.tunerId) ?? `Tuner ${data.tunerId}`,
+        tunerName: existing?.tunerName ?? nameMap.get(data.tunerId) ?? data.resource.replace('tuner', 'Tuner '),
         resource: data.resource,
         idle: data.idle,
         vctName: data.vctName,
