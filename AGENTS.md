@@ -456,7 +456,25 @@ gh workflow run release.yml -f version=v1.0.0-alpha.2
 - [React 19 Docs](https://react.dev/)
 - [Better-Auth Docs](https://www.better-auth.com/)
 - [Drizzle ORM Docs](https://orm.drizzle.team/)
-- [HDHomeRun API](https://www.silicondust.com/hdhomerun/developers/)
+
+### SiliconDust HDHomeRun API
+
+This project interfaces directly with HDHomeRun devices. A detailed reference is available in the local skill at `skills/hdhomerun-api/SKILL.md`.
+
+**Primary documentation sources:**
+- **GitHub Wiki** (Guide API, Tuner API, UI) — https://github.com/Silicondust/documentation/wiki
+- **HTTP API Guide** (lineup, streaming, tuning) — https://info.hdhomerun.com/info/http_api
+- **Discovery API** (UDP device discovery) — https://info.hdhomerun.com/info/discovery_api
+- **hdhomerun_config** (CLI reference) — https://info.hdhomerun.com/info/hdhomerun_config
+- **libhdhomerun** (C library) — https://github.com/Silicondust/libhdhomerun
+- **Developer Portal** — https://www.silicondust.com/hdhomerun/developers/
+
+**Known device quirks (learned from real-world testing):**
+- `/tuner{N}/streaminfo` HTTP endpoint returns **404 on FLEX 4K and SCRIBE 4K** (firmware 20250815+). Always available via `hdhomerun_config` CLI native protocol.
+- `lineup.json` is universally supported and newer firmwares include `VideoCodec`/`AudioCodec` fields.
+- `atsc3/plpinfo` and `atsc3/l1info` endpoints only work when the tuner is locked to an ATSC 3.0 channel.
+- Signal counters reset on channel change — use deltas over time for diagnostics.
+- For full details, see the `hdhomerun-api` skill: `skills/hdhomerun-api/SKILL.md`
 
 ---
 
