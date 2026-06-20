@@ -134,7 +134,9 @@ function writeTlvLength(options: WriteTlvLengthOptions): number {
         buf.writeUInt8(length, offset);
         return 1;
     }
+    // eslint-disable-next-line no-bitwise -- TLV 2-byte length: mask low 7 bits then OR in the MSB continuation flag
     buf.writeUInt8((length & TLV_LENGTH_LOW_7_BITS) | TLV_LENGTH_MULTIBYTE_FLAG, offset);
+    // eslint-disable-next-line no-bitwise -- TLV 2-byte length encoding: right-shift to extract high bits
     buf.writeUInt8(length >> TLV_LENGTH_HIGH_SHIFT, offset + 1);
     return 2;
 }
@@ -153,6 +155,7 @@ function readTlvLength(buf: Buffer, offset: number): { length: number; consumed:
     }
 
     const first = buf.readUInt8(offset);
+    // eslint-disable-next-line no-bitwise -- TLV length MSB is the continuation flag; AND is the only way to test it
     if ((first & TLV_LENGTH_MULTIBYTE_FLAG) === 0) {
         return { length: first, consumed: 1 };
     }
@@ -163,6 +166,7 @@ function readTlvLength(buf: Buffer, offset: number): { length: number; consumed:
 
     const second = buf.readUInt8(offset + 1);
     return {
+        // eslint-disable-next-line no-bitwise -- TLV 2-byte length: mask low 7 bits then OR in shifted high byte
         length: (first & TLV_LENGTH_LOW_7_BITS) | (second << TLV_LENGTH_HIGH_SHIFT),
         consumed: 2,
     };

@@ -57,6 +57,22 @@ vi.mock('node:net', () => ({
 /** Variable name used across encode/TCP tests */
 const VAR_STREAMINFO = '/tuner0/streaminfo';
 
+// TLV length encoding constants — mirrors hdhomerun_pkt.h definitions used in
+// the production writeTlvLength function. Duplicated here so test packet
+// builders remain self-contained without coupling to private module internals.
+
+/** Maximum value encodable in a single TLV length byte (7-bit field, MSB reserved) */
+const TEST_TLV_SINGLE_BYTE_MAX = 127;
+
+/** Mask bit indicating a 2-byte TLV length encoding (MSB set) */
+const TEST_TLV_LENGTH_MULTIBYTE_FLAG = 0x80;
+
+/** Mask for extracting the 7 low-order bits of the first TLV length byte */
+const TEST_TLV_LENGTH_LOW_7_BITS = 0x7F;
+
+/** Shift count for the high-order bits in a 2-byte TLV length */
+const TEST_TLV_LENGTH_HIGH_SHIFT = 7;
+
 /** Device IP address used for all nativeGet mock tests */
 const MOCK_DEVICE_IP = '192.168.1.1';
 
@@ -69,7 +85,7 @@ const DEVICE_ERROR_MSG = 'not recording';
 
 /** Compute TLV length bytes needed for a payload of the given size */
 function tlvLengthBytes(tlvLen: number): number {
-    return tlvLen <= 127 ? 1 : 2;
+    return tlvLen <= TEST_TLV_SINGLE_BYTE_MAX ? 1 : 2;
 }
 
 /** Options for {@link writeTlvLen} */
@@ -82,12 +98,17 @@ interface WriteTlvLenOptions {
 /** Write a TLV length field into a buffer at the given offset */
 function writeTlvLen(options: WriteTlvLenOptions): number {
     const { buf, offset, tlvLen } = options;
-    if (tlvLen <= 127) {
+    if (tlvLen <= TEST_TLV_SINGLE_BYTE_MAX) {
         buf.writeUInt8(tlvLen, offset);
         return 1;
     }
-    buf.writeUInt8((tlvLen & 0x7F) | 0x80, offset);
-    buf.writeUInt8(tlvLen >> 7, offset + 1);
+    // TLV 2-byte encoding: first byte = (low 7 bits | 0x80), second = length >> 7.
+    // This mirrors the HDHomeRun native protocol variable-length format (hdhomerun_pkt.h).
+    // Bitwise operations are the only way to implement this wire-format algorithm.
+    // eslint-disable-next-line no-bitwise -- TLV 2-byte length: mask low 7 bits then OR in the MSB continuation flag
+    buf.writeUInt8((tlvLen & TEST_TLV_LENGTH_LOW_7_BITS) | TEST_TLV_LENGTH_MULTIBYTE_FLAG, offset);
+    // eslint-disable-next-line no-bitwise -- TLV 2-byte length encoding: right-shift to extract high bits
+    buf.writeUInt8(tlvLen >> TEST_TLV_LENGTH_HIGH_SHIFT, offset + 1);
     return 2;
 }
 
@@ -259,6 +280,9 @@ describe('decodeResponse', () => {
 
     it('throws NativeProtocolError with code CRC_MISMATCH on bad CRC', () => {
         const packet = buildValueResponsePacket('test value');
+        // Corrupt the last CRC byte by flipping all its bits — the only way to
+        // reliably corrupt a specific byte for CRC mismatch testing.
+        // eslint-disable-next-line no-bitwise -- XOR bit-flip is the only way to corrupt a single byte for CRC testing
         packet[packet.length - 1] ^= 0xFF; // corrupt last CRC byte
 
         let caught: NativeProtocolError | undefined;
@@ -460,7 +484,9 @@ describe('nativeGet', () => {
 
     it('throws NativeProtocolError with code CRC_MISMATCH when the response has a bad CRC', async () => {
         const corruptedPacket = buildValueResponsePacket('some value');
-        // Flip the last byte of the CRC to corrupt it
+        // Flip the last byte of the CRC to corrupt it — the only reliable way
+        // to corrupt a single byte for CRC mismatch testing.
+        // eslint-disable-next-line no-bitwise -- XOR bit-flip is the only way to corrupt a single byte for CRC testing
         corruptedPacket[corruptedPacket.length - 1] ^= 0xFF;
 
         const resultPromise = nativeGet({
