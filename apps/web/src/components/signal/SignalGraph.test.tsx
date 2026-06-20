@@ -1,6 +1,7 @@
 /**
  * Tests for SignalGraph component.
- * Verifies role="img", aria-label, reduced-motion handling, and rendering.
+ * Verifies role="img", aria-label, reduced-motion store subscription,
+ * rendering with data, and fixed-window XAxis behaviour.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -118,9 +119,11 @@ describe('SignalGraph', () => {
         expect(imgWrapper).toBeTruthy();
     });
 
-    it('disables animation when prefers-reduced-motion is set', () => {
-        // This test verifies that the component reads the matchMedia preference.
-        // We mock matchMedia to return matches: true for 'prefers-reduced-motion: reduce'.
+    it('subscribes to prefers-reduced-motion even though animation is disabled', () => {
+        // Animation is unconditionally disabled on rolling charts to prevent
+        // the distracting full-redraw on every 2-second data arrival.
+        // The reduced-motion store subscription is retained so future subtle
+        // transitions can still respect this user preference.
         mockMatchMedia(true);
 
         const { container } = render(
@@ -151,5 +154,43 @@ describe('SignalGraph', () => {
             />,
         );
         expect(container.textContent).toContain('My Signal');
+    });
+
+    it('renders without crashing when data points are in non-chronological order', () => {
+        // Intentionally provide points out-of-order — the component must sort
+        // them ascending by timestamp before passing to recharts.
+        const now = Date.now();
+        const unordered: SignalDataPoint[] = [
+            { timestamp: now, ss: 90, snq: 85 },
+            { timestamp: now - 4000, ss: 80, snq: 82 },
+            { timestamp: now - 2000, ss: 85, snq: 83 },
+        ];
+
+        expect(() => {
+            render(
+                <SignalGraph
+                    title="Ordering Test"
+                    data={unordered}
+                    dataKey="ss"
+                    color="steelblue"
+                    ariaLabel="Ordering test graph"
+                />,
+            );
+        }).not.toThrow();
+    });
+
+    it('renders without crashing when data array has a single point', () => {
+        const point: SignalDataPoint = { timestamp: Date.now(), ss: 75, snq: 80 };
+        expect(() => {
+            render(
+                <SignalGraph
+                    title="Single Point"
+                    data={[point]}
+                    dataKey="ss"
+                    color="steelblue"
+                    ariaLabel="Single point graph"
+                />,
+            );
+        }).not.toThrow();
     });
 });
