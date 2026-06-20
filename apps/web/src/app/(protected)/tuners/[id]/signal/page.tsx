@@ -164,7 +164,8 @@ export default function SignalPage() {
                 if (json !== null) {
                     setTunerName(json.data.name);
                 } return json;
-            });
+            })
+            .catch(() => { /* AbortError expected during Strict Mode cleanup */ });
         return () => {
             controller.abort();
         };

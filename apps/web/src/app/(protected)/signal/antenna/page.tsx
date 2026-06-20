@@ -67,7 +67,8 @@ function useTunerNameMap(): Map<number, string> {
                     setNameMap(map);
                 }
                 return json;
-            });
+            })
+            .catch(() => { /* AbortError expected during Strict Mode cleanup */ });
         return () => {
             controller.abort();
         };
