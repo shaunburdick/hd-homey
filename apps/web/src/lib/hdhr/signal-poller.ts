@@ -1,8 +1,6 @@
 /**
  * Signal Polling Manager — Singleton for HDHomeRun device signal polling.
- *
  * One poll timer per device IP; fanned out to all SSE subscribers.
- * Pattern: module-level singleton (same as transcoding/session-manager.ts).
  *
  * @module signal-poller
  */
@@ -15,9 +13,11 @@ import {
     parseAtsc3L1,
     parseTunerLockStatus,
     formatSseEvent,
+    createLineupFallbackProgram,
 } from './signal-parsers';
 import type { SignalSseEvent, StreamInfoSseEvent, Atsc3PlpSseEvent, Atsc3L1SseEvent } from './signal-parsers';
-import type { TunerStatusResponse } from './types';
+import type { TunerStatusResponse, ChannelInfo } from './types';
+import { validateDeviceUrl } from './device-url';
 import Logger from '@/lib/logger';
 
 const POLL_INTERVAL_MS = 2_000;
@@ -25,8 +25,7 @@ const PING_INTERVAL_MS = 30_000;
 const FETCH_TIMEOUT_MS = 3_000;
 const WILDCARD_RESOURCE = '*';
 
-/** Loopback and link-local hostnames/addresses that must not be polled */
-const BLOCKED_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+export { validateDeviceUrl } from './device-url';
 
 interface SseSubscriber {
     id: string;
@@ -49,9 +48,10 @@ interface DevicePollEntry {
     lastVctNumber: Map<string, string | undefined>;
     lastLockType: Map<string, string | null>;
     trackedTuners: Map<string, TrackedTuner>;
+    /** Cached lineup.json response. Null until first successful fetch. */
+    lineupCache: ChannelInfo[] | null;
 }
 
-// Options objects to comply with max-params=2 rule
 interface SubscribeOptions {
     deviceUrl: string;
     tunerDbId: number;
@@ -79,55 +79,20 @@ interface DispatchStreamInfoOptions extends DispatchEventOptions {
     deviceUrl: string;
 }
 
-interface DispatchAtsc3Options extends DispatchEventOptions {
-    statusEntry: NonNullable<ReturnType<typeof parseStatusJson>>;
+interface LineupFallbackDispatchOptions extends DispatchEventOptions {
+    resource: string;
     deviceUrl: string;
+    currentVct: string;
+    vctName: string | undefined;
 }
+
+/** Reuse DispatchStreamInfoOptions — same shape as DispatchAtsc3Options */
+type DispatchAtsc3Options = DispatchStreamInfoOptions;
 
 interface SubscribeAllOptions {
     deviceUrl: string;
     tunersToTrack: TrackedTuner[];
     controller: ReadableStreamDefaultController<Uint8Array>;
-}
-
-/**
- * Validate that a device URL is a safe HTTP URL targeting an HDHomeRun device.
- *
- * Defense-in-depth check applied before any outbound fetch. Ensures:
- * - URL is parseable
- * - Protocol is `http:` (HDHomeRun devices are HTTP-only)
- * - Hostname is not a loopback or link-local address
- *
- * @param url - Device URL to validate
- * @throws {Error} If the URL fails any validation check
- */
-export function validateDeviceUrl(url: string): void {
-    let parsed: URL;
-    try {
-        parsed = new URL(url);
-    } catch {
-        throw new Error(`Invalid device URL: "${url}" is not a valid URL`);
-    }
-
-    if (parsed.protocol !== 'http:') {
-        throw new Error(
-            `Invalid device URL protocol: expected "http:", got "${parsed.protocol}". ` +
-            'HDHomeRun devices only support HTTP.',
-        );
-    }
-
-    if (BLOCKED_HOSTNAMES.has(parsed.hostname)) {
-        throw new Error(
-            `Blocked device URL: "${parsed.hostname}" is a loopback address and cannot be used as a device URL.`,
-        );
-    }
-
-    // Block link-local IPv4 (169.254.x.x) and IPv6 link-local (fe80::)
-    if (parsed.hostname.startsWith('169.254.') || parsed.hostname.toLowerCase().startsWith('fe80')) {
-        throw new Error(
-            `Blocked device URL: "${parsed.hostname}" is a link-local address and cannot be used as a device URL.`,
-        );
-    }
 }
 
 /**
@@ -236,15 +201,13 @@ export class SignalPollingManager {
             lastVctNumber: new Map(),
             lastLockType: new Map(),
             trackedTuners: new Map(),
+            lineupCache: null,
         };
         this.devices.set(deviceUrl, entry);
         return entry;
     }
 
-    /**
-     * Discover untracked tuner slots from /status.json and add them to trackedTuners
-     * with globally unique synthetic IDs (negative). Handles variable-slot devices.
-     */
+    /** Discover untracked tuner slots from /status.json and register them with synthetic IDs. */
     private autoDiscoverTuners(entry: DevicePollEntry, statusJson: TunerStatusResponse): void {
         for (const statusEntry of statusJson) {
             const { Resource: resource } = statusEntry;
@@ -425,6 +388,51 @@ export class SignalPollingManager {
             });
         } catch (error) {
             Logger.warn({ deviceUrl, resource, error }, 'Failed to fetch streaminfo');
+            await this.tryLineupFallback({ entry, tunerId, resource, deviceUrl, currentVct, vctName });
+        }
+    }
+
+    /**
+     * Attempt to build synthetic stream-info from lineup.json when `/tuner{N}/streaminfo`
+     * is unavailable. Caches the lineup per device; silently swallows fetch/parse failures.
+     *
+     * @param options - Dispatch context plus the current virtual channel number
+     */
+    private async tryLineupFallback(options: LineupFallbackDispatchOptions): Promise<void> {
+        const { entry, tunerId, resource, deviceUrl, currentVct, vctName } = options;
+
+        try {
+            const lineupData: ChannelInfo[] = entry.lineupCache ?? await (async () => {
+                const lineupResponse = await this.fetchWithTimeout(
+                    `${deviceUrl}/lineup.json`,
+                    FETCH_TIMEOUT_MS,
+                );
+                const parsed = await lineupResponse.json() as ChannelInfo[];
+                entry.lineupCache = parsed;
+                return parsed;
+            })();
+
+            const programs = createLineupFallbackProgram({
+                guideNumber: currentVct,
+                vctName,
+                lineupData,
+            });
+
+            if (programs.length > 0) {
+                const event: StreamInfoSseEvent = {
+                    event: 'streaminfo',
+                    tunerId,
+                    programs,
+                };
+                this.dispatchToSubscribers({
+                    entry,
+                    resource,
+                    tunerId,
+                    sseText: formatSseEvent('streaminfo', event),
+                });
+            }
+        } catch (lineupError) {
+            Logger.debug({ deviceUrl, lineupError }, 'Lineup fallback unavailable');
         }
     }
 
@@ -443,7 +451,6 @@ export class SignalPollingManager {
             );
             currentLockType = parseTunerLockStatus(await response.text()).lock;
         } catch {
-            // Lock status unavailable — skip ATSC 3.0 check entirely
             return;
         }
 
@@ -453,7 +460,6 @@ export class SignalPollingManager {
 
         entry.lastLockType.set(resource, currentLockType);
 
-        // Type guard: null check + substring check satisfy both strict-boolean and optional-chain rules
         const lockString = currentLockType ?? '';
         if (!lockString.includes('atsc3')) {
             return;

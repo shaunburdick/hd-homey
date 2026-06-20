@@ -70,6 +70,15 @@ const STREAMINFO_TWO_PIDS = `${STREAMINFO_RESPONSE}482: ac3 a 1`;
 /** Tuner status response for ATSC 1 lock with signal values */
 const LOCK_STATUS_ATSC1 = 'lock=atsc1-t\nss=83\nsnq=90\nseq=100\n';
 
+/** Lineup.json fixture for lineup fallback tests */
+const LINEUP_JSON = JSON.stringify([
+    { GuideNumber: '5.1', GuideName: 'KPIX', VideoCodec: 'MPEG2', AudioCodec: 'AC3', URL: 'http://192.168.1.100:5004/auto/v5.1' },
+    { GuideNumber: '7.1', GuideName: 'KGO', VideoCodec: 'MPEG2', AudioCodec: 'AC3', URL: 'http://192.168.1.100:5004/auto/v7.1' },
+]);
+
+/** Error message for simulated 404 responses in lineup fallback tests */
+const ERR_404 = '404 Not Found';
+
 // =============================================================================
 // Tests
 // =============================================================================
@@ -448,6 +457,160 @@ describe('SignalPollingManager', () => {
             const output = decodeChunks(controller);
             expect(output).toContain('"tunerId":1');
             expect(output).toContain('"tunerId":2');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // lineup.json fallback for devices that return 404 on /streaminfo
+    // -------------------------------------------------------------------------
+
+    describe('lineup.json fallback', () => {
+        it('dispatches synthetic streaminfo SSE event when streaminfo returns 404', async () => {
+            const controller = makeController();
+
+            // Single-tuner status to avoid tuner1 auto-discovery complicating mock order.
+            const singleTunerStatus = JSON.stringify([
+                {
+                    Resource: 'tuner0',
+                    VctNumber: '5.1',
+                    VctName: 'KPIX',
+                    SignalStrengthPercent: 83,
+                    SignalQualityPercent: 90,
+                    SymbolQualityPercent: 100,
+                },
+            ]);
+
+            // Fetch order:
+            // 1. status.json — active tuner on channel 5.1
+            // 2. streaminfo — fails (simulates 404 / network error on newer models)
+            // 3. lineup.json — succeeds with codec info
+            // 4. tuner0/status — for ATSC lock detection
+            fetchMock
+                .mockResolvedValueOnce(new Response(singleTunerStatus, { status: 200 })) // status.json
+                .mockRejectedValueOnce(new Error(ERR_404))                                  // streaminfo fails
+                .mockResolvedValueOnce(new Response(LINEUP_JSON, { status: 200 }))        // lineup.json
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 })); // tuner status
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+
+            await vi.advanceTimersByTimeAsync(0);
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
+
+            const output = decodeChunks(controller);
+            expect(output).toContain(STREAMINFO_EVENT);
+            // Synthetic program from lineup: programNumber 0, codecs from lineup
+            expect(output).toContain('"programNumber":0');
+            expect(output).toContain('"MPEG2 video"');
+            expect(output).toContain('"AC3 audio"');
+        });
+
+        it('does not crash when lineup.json also returns 404', async () => {
+            const controller = makeController();
+
+            // Single-tuner status to avoid auto-discovery complicating mock order.
+            const singleTunerStatus = JSON.stringify([
+                {
+                    Resource: 'tuner0',
+                    VctNumber: '5.1',
+                    VctName: 'KPIX',
+                    SignalStrengthPercent: 83,
+                    SignalQualityPercent: 90,
+                    SymbolQualityPercent: 100,
+                },
+            ]);
+
+            // Fetch order:
+            // 1. status.json — active tuner
+            // 2. streaminfo — fails
+            // 3. lineup.json — also fails (truly unsupported device or network blip)
+            // 4. tuner0/status — for ATSC lock detection
+            fetchMock
+                .mockResolvedValueOnce(new Response(singleTunerStatus, { status: 200 })) // status.json
+                .mockRejectedValueOnce(new Error(ERR_404))                                  // streaminfo fails
+                .mockRejectedValueOnce(new Error(ERR_404))                                  // lineup.json also fails
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 })); // tuner status
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+
+            await vi.advanceTimersByTimeAsync(0);
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
+
+            // Must still emit the signal event — lineup failure is silently swallowed
+            const output = decodeChunks(controller);
+            expect(output).toContain(SIGNAL_EVENT);
+            // No streaminfo event emitted — there was no data to build one from
+            expect(output).not.toContain(STREAMINFO_EVENT);
+        });
+
+        it('uses cached lineup on second poll cycle without re-fetching', async () => {
+            const controller = makeController();
+
+            // Single-tuner status responses to keep mock sequence deterministic.
+            // First poll: channel 5.1 — streaminfo fails, lineup fetched and cached.
+            const singleTunerPoll1 = JSON.stringify([
+                {
+                    Resource: 'tuner0',
+                    VctNumber: '5.1',
+                    VctName: 'KPIX',
+                    SignalStrengthPercent: 83,
+                    SignalQualityPercent: 90,
+                    SymbolQualityPercent: 100,
+                },
+            ]);
+            // Second poll: channel changes to 7.1 — triggers another streaminfo attempt.
+            // Lineup is already cached, so no /lineup.json re-fetch.
+            const singleTunerPoll2 = JSON.stringify([
+                {
+                    Resource: 'tuner0',
+                    VctNumber: '7.1',
+                    VctName: 'KGO',
+                    SignalStrengthPercent: 75,
+                    SignalQualityPercent: 85,
+                    SymbolQualityPercent: 100,
+                },
+            ]);
+
+            // Poll 1 fetches: status.json → streaminfo (fails) → lineup.json → tuner0/status
+            // Poll 2 fetches: status.json → streaminfo (fails) → tuner0/status  [no lineup re-fetch]
+            fetchMock
+                // Poll 1
+                .mockResolvedValueOnce(new Response(singleTunerPoll1, { status: 200 })) // status.json
+                .mockRejectedValueOnce(new Error('streaminfo 404'))                       // streaminfo
+                .mockResolvedValueOnce(new Response(LINEUP_JSON, { status: 200 }))       // lineup.json (cached)
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 })) // tuner0/status
+                // Poll 2
+                .mockResolvedValueOnce(new Response(singleTunerPoll2, { status: 200 })) // status.json
+                .mockRejectedValueOnce(new Error('streaminfo 404'))                       // streaminfo (uses cache)
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 })); // tuner0/status
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+
+            // Run first poll
+            await vi.advanceTimersByTimeAsync(0);
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
+
+            // Run second poll (2 second interval)
+            await vi.advanceTimersByTimeAsync(2000);
+            for (let i = 0; i < 20; i++) {
+                await Promise.resolve();
+            }
+
+            const lineupCalls = fetchMock.mock.calls.filter(
+                (call: unknown[]) => typeof call[0] === 'string' && call[0].endsWith('/lineup.json'),
+            );
+            // Only one lineup.json fetch across two poll cycles
+            expect(lineupCalls).toHaveLength(1);
+
+            // Both polls should have dispatched streaminfo events (using cached lineup on poll 2)
+            const output = decodeChunks(controller);
+            const streaminfoMatches = output.match(/event: streaminfo/g);
+            expect(streaminfoMatches).toHaveLength(2);
         });
     });
 

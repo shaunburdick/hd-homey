@@ -15,6 +15,7 @@ import type {
     Atsc3PlpInfo,
     Atsc3L1Info,
     TunerLockStatus,
+    ChannelInfo,
 } from './types';
 
 // =============================================================================
@@ -454,4 +455,52 @@ export function getSignalQuality(value: number | null, metric: 'SS' | 'SNQ' | 'S
  */
 export function formatSseEvent(eventName: string, data: object): string {
     return `event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+/**
+ * Options for {@link createLineupFallbackProgram}.
+ */
+export interface LineupFallbackOptions {
+    /** Current VctNumber from status.json, e.g. "3.1" */
+    guideNumber: string;
+    /** Channel guide name from status.json (optional) */
+    vctName?: string;
+    /** Parsed lineup.json array from the device */
+    lineupData: ChannelInfo[];
+}
+
+/**
+ * Create synthetic program entries from lineup.json data.
+ *
+ * Used as fallback when `/tuner{N}/streaminfo` returns 404 on newer HDHomeRun
+ * models (FLEX 4K, SCRIBE 4K with firmware 20250815+). Cross-references the
+ * tuner's current `VctNumber` from status.json against `GuideNumber` entries
+ * in lineup.json to produce a single synthetic `ParsedProgram`.
+ *
+ * The returned `ParsedProgram` uses `programNumber: 0` to indicate it is
+ * synthetic (no real MPEG program number is available from lineup data).
+ * PIDs are assigned placeholder IDs: 0 for video, 1 for audio.
+ *
+ * @param options - Guide number, optional VCT name, and lineup data to search
+ * @returns Synthetic ParsedProgram[] — one entry if matched, empty if no match
+ */
+export function createLineupFallbackProgram(options: LineupFallbackOptions): ParsedProgram[] {
+    const { guideNumber, lineupData } = options;
+
+    const entry = lineupData.find((item) => item.GuideNumber === guideNumber);
+    if (entry === undefined) {
+        return [];
+    }
+
+    const pids: StreamInfoPid[] = [];
+
+    if (entry.VideoCodec !== undefined) {
+        pids.push({ pid: 0, codec: `${entry.VideoCodec} video`, type: 'video', program: 0 });
+    }
+
+    if (entry.AudioCodec !== undefined) {
+        pids.push({ pid: 1, codec: `${entry.AudioCodec} audio`, type: 'audio', program: 0 });
+    }
+
+    return [{ programNumber: 0, name: entry.GuideName, pids }];
 }

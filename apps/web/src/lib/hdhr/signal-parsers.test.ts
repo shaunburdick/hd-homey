@@ -14,8 +14,9 @@ import {
     getSignalQuality,
     formatSseEvent,
     SIGNAL_THRESHOLDS,
+    createLineupFallbackProgram,
 } from './signal-parsers';
-import type { TunerStatusResponse } from './types';
+import type { TunerStatusResponse, ChannelInfo } from './types';
 
 // =============================================================================
 // parseStatusJson
@@ -370,5 +371,88 @@ describe('formatSseEvent', () => {
         const result = formatSseEvent('signal', payload);
         const dataLine = result.split('\n')[1];
         expect(dataLine).toBe(`data: ${JSON.stringify(payload)}`);
+    });
+});
+
+// =============================================================================
+// createLineupFallbackProgram
+// =============================================================================
+
+/** Sample lineup.json data covering common codec combinations and a no-codec entry. */
+const LINEUP_FIXTURE: ChannelInfo[] = [
+    { GuideNumber: '3.1', GuideName: 'WSTMNBC', VideoCodec: 'MPEG2', AudioCodec: 'AC3', URL: 'http://192.168.1.100:5004/auto/v3.1' },
+    { GuideNumber: '5.1', GuideName: 'KPIX', VideoCodec: 'MPEG2', AudioCodec: 'AC3', URL: 'http://192.168.1.100:5004/auto/v5.1' },
+    { GuideNumber: '7.1', GuideName: 'KGO', URL: 'http://192.168.1.100:5004/auto/v7.1' },
+];
+
+describe('createLineupFallbackProgram', () => {
+    it('returns a synthetic program with video and audio pids when guideNumber matches', () => {
+        const result = createLineupFallbackProgram({ guideNumber: '3.1', lineupData: LINEUP_FIXTURE });
+
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual({
+            programNumber: 0,
+            name: 'WSTMNBC',
+            pids: [
+                { pid: 0, codec: 'MPEG2 video', type: 'video', program: 0 },
+                { pid: 1, codec: 'AC3 audio',   type: 'audio', program: 0 },
+            ],
+        });
+    });
+
+    it('returns empty array when guideNumber has no match in lineup', () => {
+        const result = createLineupFallbackProgram({ guideNumber: '99.1', lineupData: LINEUP_FIXTURE });
+        expect(result).toEqual([]);
+    });
+
+    it('returns a program with empty pids when the entry has no codec fields', () => {
+        // GuideNumber "7.1" has no VideoCodec or AudioCodec in the fixture
+        const result = createLineupFallbackProgram({ guideNumber: '7.1', lineupData: LINEUP_FIXTURE });
+
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({
+            programNumber: 0,
+            name: 'KGO',
+            pids: [],
+        });
+    });
+
+    it('uses GuideName from lineup (not vctName) for the program name', () => {
+        // Mirrors behaviour of the real streaminfo path: groupStreamInfoByProgram
+        // does not receive vctName from createLineupFallbackProgram; name comes
+        // from the lineup entry so it is always the guide name.
+        const result = createLineupFallbackProgram({
+            guideNumber: '3.1',
+            vctName: 'Custom Name',
+            lineupData: LINEUP_FIXTURE,
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0]?.name).toBe('WSTMNBC');
+    });
+
+    it('returns empty array for an empty lineup', () => {
+        const result = createLineupFallbackProgram({ guideNumber: '3.1', lineupData: [] });
+        expect(result).toEqual([]);
+    });
+
+    it('only creates a video pid when AudioCodec is absent', () => {
+        const lineup: ChannelInfo[] = [
+            { GuideNumber: '10.1', GuideName: 'HDTV', VideoCodec: 'H264', URL: 'http://192.168.1.100:5004/auto/v10.1' },
+        ];
+        const result = createLineupFallbackProgram({ guideNumber: '10.1', lineupData: lineup });
+
+        expect(result[0]?.pids).toHaveLength(1);
+        expect(result[0]?.pids[0]).toEqual({ pid: 0, codec: 'H264 video', type: 'video', program: 0 });
+    });
+
+    it('only creates an audio pid when VideoCodec is absent', () => {
+        const lineup: ChannelInfo[] = [
+            { GuideNumber: '11.1', GuideName: 'RADIO', AudioCodec: 'AAC', URL: 'http://192.168.1.100:5004/auto/v11.1' },
+        ];
+        const result = createLineupFallbackProgram({ guideNumber: '11.1', lineupData: lineup });
+
+        expect(result[0]?.pids).toHaveLength(1);
+        expect(result[0]?.pids[0]).toEqual({ pid: 1, codec: 'AAC audio', type: 'audio', program: 0 });
     });
 });
