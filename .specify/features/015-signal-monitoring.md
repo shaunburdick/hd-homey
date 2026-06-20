@@ -3,7 +3,7 @@
 **Feature ID**: `015-signal-monitoring`  
 **Created**: 2026-06-19  
 **Last Updated**: 2026-06-19  
-**Status**: Implemented — All 25 tasks complete  
+**Status**: Implemented — All 30 tasks complete  
 **Owner**: HD Homey Core Team  
 **Version**: 1.0  
 **Dependencies**: SPEC-001 (Tuner Management), SPEC-003 (User Authentication)

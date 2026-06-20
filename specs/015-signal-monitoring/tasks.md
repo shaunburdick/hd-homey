@@ -355,6 +355,36 @@ T-001 (recharts install)
 
 ---
 
+---
+
+## Wave 8 — Lineup.json Fallback for Devices without HTTP streaminfo
+
+Newer HDHomeRun models (FLEX 4K, SCRIBE 4K) return 404 on `/tuner{N}/streaminfo` HTTP
+endpoint. These devices still serve `/lineup.json` which includes per-channel
+VideoCodec and AudioCodec info. Fall back to lineup.json when streaminfo is
+unavailable.
+
+**Plan reference**: `plan-refinement-lineup-fallback.md`
+
+- [x] **T-029** `[M]` — Add `createLineupFallbackProgram` to signal-parsers.ts + unit tests
+  - New pure function: `createLineupFallbackProgram(guideNumber, vctName, lineupData)`
+  - Returns `ParsedProgram[]` with synthetic video/audio PIDs from lineup codec info
+  - When guide number not found in lineup → return `[]`
+  - When VideoCodec/AudioCodec missing → return program with empty `pids` array
+  - Add test fixture with sample lineup.json data
+  - Unit tests: match found, no match, missing codec fields
+
+- [x] **T-030** `[M]` `[DEPENDS: T-029]` — Add lineup cache + fallback fetch to signal-poller.ts + integration test
+  - Add `lineupCache: ChannelInfo[] | null` to `DevicePollEntry`
+  - In `dispatchStreamInfoIfChanged` catch block:
+    1. Check `entry.lineupCache` — fetch `/lineup.json` if missing
+    2. Parse response as `ChannelInfo[]`
+    3. Look up current `VctNumber` by `GuideNumber`
+    4. If match found: call `createLineupFallbackProgram`, dispatch streaminfo SSE
+    5. Cache lineup data (no TTL — data is read-only, changes only on device rescan)
+  - Integration test: mock lineup.json response, verify synthetic program in SSE
+  - Integration test: lineup.json error/404 → no crash, empty programs
+
 ## Estimated Total Effort
 
 | Wave | Tasks | Complexity | Approx Time |
@@ -367,4 +397,5 @@ T-001 (recharts install)
 | 5 — Pages | 3 | L+L+S | 4–5 hr |
 | 6 — Integration & Docs | 4 | M+M+S+S | 2–3 hr |
 | 7 — Per-Device Signal Page | 3 | M+M+S | 2–3 hr |
-| **Total** | **28** | | **~26–36 hr** |
+| 8 — Lineup Fallback | 2 | M+M | 2–3 hr |
+| **Total** | **30** | | **~28–39 hr** |
