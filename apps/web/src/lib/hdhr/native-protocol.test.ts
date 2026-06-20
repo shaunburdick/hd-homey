@@ -1,14 +1,18 @@
 /**
  * Unit tests for native-protocol.ts
  *
- * Tests the CRC32 checksum (via node:zlib), TLV packet encoder/decoder, and
- * nativeGet TCP client using real local net.Server instances to simulate
- * HDHomeRun device responses.
+ * Pure-function tests (crc32, encodeGetRequest, decodeResponse) exercise
+ * encoding and decoding logic directly with known byte sequences.
+ *
+ * nativeGet tests use a module-level `vi.mock('node:net')` to replace
+ * `net.createConnection` with a factory that returns a mock EventEmitter
+ * socket. No real TCP connections are made — all network behaviour is
+ * simulated by emitting events on the mock socket after each test arranges it.
  */
 
-import * as net from 'node:net';
+import { EventEmitter } from 'node:events';
 import { crc32 } from 'node:zlib';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     decodeResponse,
     encodeGetRequest,
@@ -17,20 +21,50 @@ import {
 import type { NativeProtocolError } from './native-protocol';
 
 // =============================================================================
+// Module-level mock for node:net
+//
+// We mock only `createConnection`. The factory below stores the last created
+// mock socket so individual tests can emit events on it after calling nativeGet.
+// =============================================================================
+
+/** A minimal mock socket: EventEmitter + stubs for the methods nativeGet calls */
+interface MockSocket extends EventEmitter {
+    setTimeout: ReturnType<typeof vi.fn>;
+    write: ReturnType<typeof vi.fn>;
+    end: ReturnType<typeof vi.fn>;
+    destroy: ReturnType<typeof vi.fn>;
+}
+
+/** Shared slot — set by the mock factory, consumed by each test */
+let currentMockSocket: MockSocket;
+
+vi.mock('node:net', () => ({
+    createConnection: vi.fn((): MockSocket => {
+        const socket = new EventEmitter() as MockSocket;
+        socket.setTimeout = vi.fn();
+        socket.write = vi.fn();
+        socket.end = vi.fn();
+        socket.destroy = vi.fn();
+        currentMockSocket = socket;
+        return socket;
+    }),
+}));
+
+// =============================================================================
 // Shared Test Constants
 // =============================================================================
 
-/** Loopback address used for all test TCP connections */
-const TEST_HOST = '127.0.0.1';
-
 /** Variable name used across encode/TCP tests */
 const VAR_STREAMINFO = '/tuner0/streaminfo';
+
+/** Device IP address used for all nativeGet mock tests */
+const MOCK_DEVICE_IP = '192.168.1.1';
 
 /** Error message used in error-response decode/nativeGet tests */
 const DEVICE_ERROR_MSG = 'not recording';
 
 // =============================================================================
-// Test Helpers
+// Test Helpers — packet builders (pure functions, no I/O)
 // =============================================================================
 
 /** Compute TLV length bytes needed for a payload of the given size */
@@ -107,74 +141,6 @@ function buildErrorResponsePacket(errorMsg: string): Buffer {
     return buf;
 }
 
-/** Sentinel type for server with tracked socket set */
-type TrackableServer = net.Server & { _trackedSockets: Set<net.Socket> };
-
-/**
- * Spin up a TCP server on an ephemeral port.
- *
- * Tracks all server-side sockets so `stopServer()` can destroy them before
- * calling `server.close()` — preventing `server.close()` from hanging when a
- * client socket was destroyed uncleanly (e.g., after a timeout).
- *
- * @param handler - Called with each new socket. Null means server accepts but never replies.
- * @returns Server and its listening port
- */
-async function startTcpServer(
-    handler: ((socket: net.Socket) => void) | null,
-): Promise<{ server: TrackableServer; port: number }> {
-    return await new Promise((resolve, reject) => {
-        const trackedSockets = new Set<net.Socket>();
-
-        const server = net.createServer((socket) => {
-            trackedSockets.add(socket);
-            socket.on('close', () => {
-                trackedSockets.delete(socket);
-            });
-
-            if (handler !== null) {
-                handler(socket);
-            }
-            // If handler is null, do nothing — simulates a device that accepts but never replies
-        }) as TrackableServer;
-
-        server._trackedSockets = trackedSockets;
-
-        server.listen(0, TEST_HOST, () => {
-            const addr = server.address();
-            if (addr === null || typeof addr === 'string') {
-                reject(new Error('Failed to get server port'));
-                return;
-            }
-            resolve({ server, port: addr.port });
-        });
-
-        server.on('error', reject);
-    });
-}
-
-/** Stop a TCP server, destroying all lingering server-side connections first */
-async function stopServer(server: TrackableServer): Promise<void> {
-    // Destroy any server-side sockets that weren't cleanly closed (e.g., after
-    // a client-side timeout + destroy). Without this, server.close() hangs
-    // waiting for those connections to finish.
-    for (const socket of server._trackedSockets) {
-        socket.destroy();
-    }
-    server._trackedSockets.clear();
-
-    return await new Promise((resolve, reject) => {
-        server.close((err) => {
-            if (err !== undefined && err !== null) {
-                reject(err);
-            } else {
-                resolve();
-            }
-        });
-    });
-}
-
-// =============================================================================
 // =============================================================================
 // CRC32 Tests
 // =============================================================================
@@ -354,115 +320,216 @@ describe('decodeResponse', () => {
 });
 
 // =============================================================================
-// nativeGet Tests — real TCP sockets on ephemeral ports
+// nativeGet Tests — mocked net.createConnection, zero real TCP I/O
+//
+// How the mock works:
+//   1. `vi.mock('node:net')` replaces `createConnection` at module load time.
+//   2. Each call to `createConnection` creates a fresh EventEmitter with
+//      stub methods (setTimeout, write, end, destroy) and stores it in
+//      `currentMockSocket`.
+//   3. Tests call `nativeGet(...)` — nativeGet calls createConnection
+//      synchronously, wiring up its event handlers to the new mock socket.
+//   4. The test then emits events on `currentMockSocket` (e.g. 'connect',
+//      'data', 'error', 'timeout', 'close') to drive nativeGet's state machine.
+//   5. nativeGet resolves or rejects; the test asserts on the outcome.
 // =============================================================================
 
 /** Streaminfo response returned by the mock device for success tests */
 const MOCK_STREAMINFO_RESPONSE = '481: mpeg2video v 1\n482: ac3 a 1\n';
 
 describe('nativeGet', () => {
-    it('resolves with the value string when the mock device sends a valid response', async () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('resolves with the value string when the mock socket sends a valid response', async () => {
         const responsePacket = buildValueResponsePacket(MOCK_STREAMINFO_RESPONSE);
 
-        // Server: send the full response packet immediately on data receipt
-        const { server, port } = await startTcpServer((socket) => {
-            socket.once('data', () => {
-                socket.write(responsePacket);
-                socket.end();
-            });
+        // Start nativeGet — it wires event handlers onto currentMockSocket
+        const resultPromise = nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_STREAMINFO,
+            timeoutMs: 2500,
         });
 
-        try {
-            const result = await nativeGet({ deviceIp: TEST_HOST, variable: VAR_STREAMINFO, timeoutMs: 3000, port });
-            expect(result).toBe(MOCK_STREAMINFO_RESPONSE);
-        } finally {
-            await stopServer(server);
-        }
-    }, 10000);
+        // Simulate TCP connection established → nativeGet will write the request
+        currentMockSocket.emit('connect');
+
+        // Simulate device sending the full response packet in one chunk
+        currentMockSocket.emit('data', responsePacket);
+
+        const result = await resultPromise;
+        expect(result).toBe(MOCK_STREAMINFO_RESPONSE);
+    });
 
     it('resolves correctly when the mock device sends the response in two TCP chunks', async () => {
         const expectedValue = 'lock=qam256\nss=84\n';
         const responsePacket = buildValueResponsePacket(expectedValue);
 
-        // Split the packet into two halves to simulate TCP fragmentation
-        const half = Math.floor(responsePacket.length / 2);
-        const chunk1 = responsePacket.subarray(0, half);
-        const chunk2 = responsePacket.subarray(half);
+        // Split the packet at an arbitrary byte boundary to simulate TCP fragmentation
+        const splitAt = Math.floor(responsePacket.length / 2);
+        const chunk1 = responsePacket.subarray(0, splitAt);
+        const chunk2 = responsePacket.subarray(splitAt);
 
-        const { server, port } = await startTcpServer((socket) => {
-            socket.once('data', () => {
-                socket.write(chunk1);
-                // Delay second chunk slightly to force accumulation
-                setTimeout(() => {
-                    socket.write(chunk2);
-                    socket.end();
-                }, 10);
-            });
+        const resultPromise = nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: '/tuner0/status',
+            timeoutMs: 2500,
         });
 
-        try {
-            const result = await nativeGet({ deviceIp: TEST_HOST, variable: '/tuner0/status', timeoutMs: 3000, port });
-            expect(result).toBe(expectedValue);
-        } finally {
-            await stopServer(server);
-        }
-    }, 10000);
+        currentMockSocket.emit('connect');
+
+        // First chunk arrives — packet is incomplete, nativeGet keeps accumulating
+        currentMockSocket.emit('data', chunk1);
+
+        // Second chunk completes the packet — nativeGet resolves
+        currentMockSocket.emit('data', chunk2);
+
+        const result = await resultPromise;
+        expect(result).toBe(expectedValue);
+    });
 
     it('throws NativeProtocolError with code DEVICE_ERROR when device sends an error tag', async () => {
         const errorPacket = buildErrorResponsePacket(DEVICE_ERROR_MSG);
 
-        const { server, port } = await startTcpServer((socket) => {
-            socket.once('data', () => {
-                socket.write(errorPacket);
-                socket.end();
-            });
+        const resultPromise = nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_STREAMINFO,
+            timeoutMs: 2500,
         });
+
+        currentMockSocket.emit('connect');
+        currentMockSocket.emit('data', errorPacket);
 
         let caught: NativeProtocolError | undefined;
         try {
-            await nativeGet({ deviceIp: TEST_HOST, variable: VAR_STREAMINFO, timeoutMs: 3000, port });
+            await resultPromise;
         } catch (err) {
             caught = err as NativeProtocolError;
-        } finally {
-            await stopServer(server);
         }
 
         expect(caught).toBeDefined();
         expect(caught?.code).toBe('DEVICE_ERROR');
         expect(caught?.message).toContain(DEVICE_ERROR_MSG);
-    }, 10000);
+    });
 
-    it('throws NativeProtocolError with code TIMEOUT when device does not respond', async () => {
-        // Server accepts connection but never sends data
-        const { server, port } = await startTcpServer(null);
+    it('throws NativeProtocolError with code TIMEOUT when the socket timeout fires', async () => {
+        const resultPromise = nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_STREAMINFO,
+            timeoutMs: 2500,
+        });
+
+        // Simulate the socket timeout event — no 'connect' or 'data' emitted
+        currentMockSocket.emit('timeout');
 
         let caught: NativeProtocolError | undefined;
         try {
-            await nativeGet({ deviceIp: TEST_HOST, variable: VAR_STREAMINFO, timeoutMs: 300, port }); // 300ms timeout
+            await resultPromise;
         } catch (err) {
             caught = err as NativeProtocolError;
-        } finally {
-            await stopServer(server);
         }
 
         expect(caught).toBeDefined();
         expect(caught?.code).toBe('TIMEOUT');
-    }, 10000);
+    });
 
-    it('throws NativeProtocolError with code CONNECTION_REFUSED when no listener on port', async () => {
-        // Find a port that is definitely not in use by starting and immediately stopping a server
-        const { server, port } = await startTcpServer(null);
-        await stopServer(server);
-        // Now port is free (and closed) — connection will be refused
+    it('throws NativeProtocolError with code CONNECTION_REFUSED when ECONNREFUSED error fires', async () => {
+        const resultPromise = nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_STREAMINFO,
+            timeoutMs: 2500,
+        });
+
+        // Simulate OS-level connection refused
+        const connRefusedError = Object.assign(new Error(`connect ECONNREFUSED ${MOCK_DEVICE_IP}:65001`), {
+            code: 'ECONNREFUSED',
+        });
+        currentMockSocket.emit('error', connRefusedError);
 
         let caught: NativeProtocolError | undefined;
         try {
-            await nativeGet({ deviceIp: TEST_HOST, variable: VAR_STREAMINFO, timeoutMs: 2000, port });
+            await resultPromise;
         } catch (err) {
             caught = err as NativeProtocolError;
         }
 
         expect(caught).toBeDefined();
         expect(caught?.code).toBe('CONNECTION_REFUSED');
-    }, 10000);
+    });
+
+    it('throws NativeProtocolError with code CRC_MISMATCH when the response has a bad CRC', async () => {
+        const corruptedPacket = buildValueResponsePacket('some value');
+        // Flip the last byte of the CRC to corrupt it
+        corruptedPacket[corruptedPacket.length - 1] ^= 0xFF;
+
+        const resultPromise = nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_STREAMINFO,
+            timeoutMs: 2500,
+        });
+
+        currentMockSocket.emit('connect');
+        currentMockSocket.emit('data', corruptedPacket);
+
+        let caught: NativeProtocolError | undefined;
+        try {
+            await resultPromise;
+        } catch (err) {
+            caught = err as NativeProtocolError;
+        }
+
+        expect(caught).toBeDefined();
+        expect(caught?.code).toBe('CRC_MISMATCH');
+    });
+
+    it('throws NativeProtocolError with code INVALID_RESPONSE when connection closes with no data', async () => {
+        const resultPromise = nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_STREAMINFO,
+            timeoutMs: 2500,
+        });
+
+        // Connect but then close without sending any data
+        currentMockSocket.emit('connect');
+        currentMockSocket.emit('close');
+
+        let caught: NativeProtocolError | undefined;
+        try {
+            await resultPromise;
+        } catch (err) {
+            caught = err as NativeProtocolError;
+        }
+
+        expect(caught).toBeDefined();
+        expect(caught?.code).toBe('INVALID_RESPONSE');
+    });
+
+    it('calls setTimeout on the socket with the configured timeoutMs', () => {
+        // Fire-and-forget — we only want to verify setTimeout was wired up
+        void nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_STREAMINFO,
+            timeoutMs: 1234,
+        });
+
+        expect(currentMockSocket.setTimeout).toHaveBeenCalledWith(1234);
+    });
+
+    it('writes the encoded request to the socket on connect', () => {
+        const expectedPacket = encodeGetRequest(VAR_STREAMINFO);
+
+        void nativeGet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_STREAMINFO,
+            timeoutMs: 2500,
+        });
+
+        currentMockSocket.emit('connect');
+
+        // The write call should have received a Buffer matching the encoded request
+        expect(currentMockSocket.write).toHaveBeenCalledOnce();
+        const writtenArg: Buffer = currentMockSocket.write.mock.calls[0][0] as Buffer;
+        expect(Buffer.compare(writtenArg, expectedPacket)).toBe(0);
+    });
 });
