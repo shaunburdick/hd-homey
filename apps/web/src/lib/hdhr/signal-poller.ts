@@ -375,6 +375,11 @@ export class SignalPollingManager {
                 `${deviceUrl}/tuner${tunerNum}/streaminfo`,
                 FETCH_TIMEOUT_MS,
             );
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: streaminfo unavailable`);
+            }
+
             const event: StreamInfoSseEvent = {
                 event: 'streaminfo',
                 tunerId,

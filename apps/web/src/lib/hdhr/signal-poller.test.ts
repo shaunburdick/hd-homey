@@ -506,6 +506,41 @@ describe('SignalPollingManager', () => {
             expect(output).toContain('"AC3 audio"');
         });
 
+        it('triggers lineup fallback on HTTP 404 response (not just network errors)', async () => {
+            const controller = makeController();
+
+            const singleTunerStatus = JSON.stringify([
+                {
+                    Resource: 'tuner0',
+                    VctNumber: '5.1',
+                    VctName: 'KPIX',
+                    SignalStrengthPercent: 83,
+                    SignalQualityPercent: 90,
+                    SymbolQualityPercent: 100,
+                },
+            ]);
+
+            // streaminfo returns HTTP 404 (response.ok = false) — real-world
+            // scenario on FLEX 4K / SCRIBE 4K firmware 20250815+.
+            fetchMock
+                .mockResolvedValueOnce(new Response(singleTunerStatus, { status: 200 })) // status.json
+                .mockResolvedValueOnce(new Response('Not Found', { status: 404 }))        // streaminfo — HTTP 404
+                .mockResolvedValueOnce(new Response(LINEUP_JSON, { status: 200 }))        // lineup.json
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 })); // tuner status
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+
+            await vi.advanceTimersByTimeAsync(0);
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
+
+            const output = decodeChunks(controller);
+            expect(output).toContain(STREAMINFO_EVENT);
+            expect(output).toContain('"programNumber":0');
+            expect(output).toContain('"MPEG2 video"');
+        });
+
         it('does not crash when lineup.json also returns 404', async () => {
             const controller = makeController();
 
