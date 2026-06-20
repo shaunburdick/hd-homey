@@ -18,6 +18,16 @@ import type {
 } from './types';
 
 // =============================================================================
+// Rolling History Buffer Size
+// =============================================================================
+
+/**
+ * Number of data points retained in the rolling signal history graph buffer.
+ * At a 2-second poll interval, this gives 120 seconds (2 minutes) of history.
+ */
+export const MAX_HISTORY_POINTS = 60;
+
+// =============================================================================
 // Color Quality Thresholds & Types
 // =============================================================================
 

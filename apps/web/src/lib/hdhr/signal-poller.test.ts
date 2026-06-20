@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SignalPollingManager } from './signal-poller';
+import { SignalPollingManager, validateDeviceUrl } from './signal-poller';
 
 // =============================================================================
 // Test Helpers
@@ -425,5 +425,41 @@ describe('SignalPollingManager', () => {
             expect(output).toContain('"tunerId":1');
             expect(output).toContain('"tunerId":2');
         });
+    });
+});
+
+// =============================================================================
+// validateDeviceUrl — SSRF guard tests
+// =============================================================================
+
+describe('validateDeviceUrl', () => {
+    it('accepts a valid HDHomeRun device HTTP URL', () => {
+        expect(() => validateDeviceUrl('http://192.168.1.100')).not.toThrow();
+        expect(() => validateDeviceUrl('http://10.0.0.5:5004')).not.toThrow();
+    });
+
+    it('rejects HTTPS URLs (HDHomeRun devices are HTTP-only)', () => {
+        expect(() => validateDeviceUrl('https://192.168.1.100')).toThrow(/expected "http:"/i);
+    });
+
+    it('rejects loopback addresses', () => {
+        expect(() => validateDeviceUrl('http://127.0.0.1')).toThrow(/loopback/i);
+        expect(() => validateDeviceUrl('http://localhost')).toThrow(/loopback/i);
+        // IPv6 loopback must use bracket notation in URLs
+        expect(() => validateDeviceUrl('http://[::1]')).toThrow(/loopback/i);
+    });
+
+    it('rejects IPv4 link-local addresses', () => {
+        expect(() => validateDeviceUrl('http://169.254.1.1')).toThrow(/link-local/i);
+    });
+
+    it('rejects malformed URLs', () => {
+        expect(() => validateDeviceUrl('not-a-url')).toThrow(/not a valid URL/i);
+        expect(() => validateDeviceUrl('')).toThrow(/not a valid URL/i);
+    });
+
+    it('rejects non-HTTP schemes', () => {
+        expect(() => validateDeviceUrl('ftp://192.168.1.100')).toThrow(/expected "http:"/i);
+        expect(() => validateDeviceUrl('file:///etc/passwd')).toThrow(/expected "http:"/i);
     });
 });

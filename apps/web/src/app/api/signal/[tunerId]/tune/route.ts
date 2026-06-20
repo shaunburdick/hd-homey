@@ -97,7 +97,7 @@ async function sendTuneCommand(options: SendTuneCommandOptions): Promise<boolean
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), DEVICE_TIMEOUT_MS);
         const response = await fetch(
-            `${devicePath}/tuner${tunerNum}/set?channel=v${guideNumber}`,
+            `${devicePath}/tuner${tunerNum}/set?channel=v${encodeURIComponent(guideNumber)}`,
             { signal: controller.signal },
         );
         clearTimeout(timer);

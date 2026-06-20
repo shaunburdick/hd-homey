@@ -25,6 +25,9 @@ const PING_INTERVAL_MS = 30_000;
 const FETCH_TIMEOUT_MS = 3_000;
 const WILDCARD_RESOURCE = '*';
 
+/** Loopback and link-local hostnames/addresses that must not be polled */
+const BLOCKED_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+
 interface SseSubscriber {
     id: string;
     controller: ReadableStreamDefaultController<Uint8Array>;
@@ -88,20 +91,64 @@ interface SubscribeAllOptions {
 }
 
 /**
+ * Validate that a device URL is a safe HTTP URL targeting an HDHomeRun device.
+ *
+ * Defense-in-depth check applied before any outbound fetch. Ensures:
+ * - URL is parseable
+ * - Protocol is `http:` (HDHomeRun devices are HTTP-only)
+ * - Hostname is not a loopback or link-local address
+ *
+ * @param url - Device URL to validate
+ * @throws {Error} If the URL fails any validation check
+ */
+export function validateDeviceUrl(url: string): void {
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        throw new Error(`Invalid device URL: "${url}" is not a valid URL`);
+    }
+
+    if (parsed.protocol !== 'http:') {
+        throw new Error(
+            `Invalid device URL protocol: expected "http:", got "${parsed.protocol}". ` +
+            'HDHomeRun devices only support HTTP.',
+        );
+    }
+
+    if (BLOCKED_HOSTNAMES.has(parsed.hostname)) {
+        throw new Error(
+            `Blocked device URL: "${parsed.hostname}" is a loopback address and cannot be used as a device URL.`,
+        );
+    }
+
+    // Block link-local IPv4 (169.254.x.x) and IPv6 link-local (fe80::)
+    if (parsed.hostname.startsWith('169.254.') || parsed.hostname.toLowerCase().startsWith('fe80')) {
+        throw new Error(
+            `Blocked device URL: "${parsed.hostname}" is a link-local address and cannot be used as a device URL.`,
+        );
+    }
+}
+
+/**
  * Singleton manager for HDHomeRun device signal polling.
  *
  * Maintains one poll timer per device and fans events to all subscribers.
  */
 export class SignalPollingManager {
     private readonly devices = new Map<string, DevicePollEntry>();
+    private readonly encoder = new TextEncoder();
 
     /**
      * Subscribe a single-tuner SSE client.
      *
+     * @param options - Subscribe options including device URL, tuner ID, resource, and controller
+     * @throws {Error} If `deviceUrl` fails SSRF validation
      * @returns subscriberId — pass to unsubscribe() on disconnect
      */
     public subscribe(options: SubscribeOptions): string {
         const { deviceUrl, tunerDbId, resource, controller } = options;
+        validateDeviceUrl(deviceUrl);
         const subscriberId = crypto.randomUUID();
         const entry = this.getOrCreateEntry(deviceUrl);
 
@@ -116,10 +163,13 @@ export class SignalPollingManager {
     /**
      * Subscribe an antenna-mode SSE client to all tuners on a device.
      *
+     * @param options - Subscribe-all options including device URL, tuners to track, and controller
+     * @throws {Error} If `deviceUrl` fails SSRF validation
      * @returns subscriberId
      */
     public subscribeAll(options: SubscribeAllOptions): string {
         const { deviceUrl, tunersToTrack, controller } = options;
+        validateDeviceUrl(deviceUrl);
         const subscriberId = crypto.randomUUID();
         const entry = this.getOrCreateEntry(deviceUrl);
 
@@ -138,6 +188,9 @@ export class SignalPollingManager {
 
     /**
      * Remove a subscriber; stops polling if this was the last one.
+     *
+     * @param deviceUrl - Device base URL the subscriber is registered for
+     * @param subscriberId - ID returned by subscribe() or subscribeAll()
      */
     public unsubscribe(deviceUrl: string, subscriberId: string): void {
         const entry = this.devices.get(deviceUrl);
@@ -156,6 +209,9 @@ export class SignalPollingManager {
 
     /**
      * Number of active subscribers for a device.
+     *
+     * @param deviceUrl - Device base URL to check
+     * @returns Number of active subscribers (0 if device is unknown)
      */
     public getSubscriberCount(deviceUrl: string): number {
         return this.devices.get(deviceUrl)?.subscribers.size ?? 0;
@@ -314,7 +370,8 @@ export class SignalPollingManager {
             return;
         }
 
-        const tunerNum = resource.replace('tuner', '');
+        const match = /^tuner(\d+)$/.exec(resource);
+        const tunerNum = match !== null ? match[1] : '0';
 
         try {
             const response = await this.fetchWithTimeout(
@@ -340,7 +397,8 @@ export class SignalPollingManager {
     private async dispatchAtsc3IfLocked(options: DispatchAtsc3Options): Promise<void> {
         const { entry, statusEntry, tunerId, deviceUrl } = options;
         const { Resource: resource } = statusEntry;
-        const tunerNum = resource.replace('tuner', '');
+        const match = /^tuner(\d+)$/.exec(resource);
+        const tunerNum = match !== null ? match[1] : '0';
 
         let currentLockType: string | null;
 
@@ -454,7 +512,7 @@ export class SignalPollingManager {
         text: string,
     ): void {
         try {
-            controller.enqueue(new TextEncoder().encode(text));
+            controller.enqueue(this.encoder.encode(text));
         } catch (error) {
             Logger.debug({ error }, 'Failed to enqueue SSE data — stream may be closed');
         }

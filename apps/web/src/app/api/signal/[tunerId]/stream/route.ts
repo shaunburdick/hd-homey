@@ -13,16 +13,15 @@ import { auth } from '@/lib/auth/auth';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
 import { getSignalPoller } from '@/lib/hdhr/signal-poller';
+import { SSE_HEADERS } from '@/app/api/signal/sse-headers';
+import {
+    canOpenConnection,
+    registerConnection,
+    unregisterConnection,
+} from '@/lib/hdhr/sse-connection-tracker';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const SSE_HEADERS: Record<string, string> = {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no',
-};
 
 interface Params {
     tunerId: string;
@@ -56,7 +55,7 @@ async function resolveTuner(tunerId: number) {
  *
  * Opens an SSE stream for a single tuner's signal data.
  *
- * @returns 200 text/event-stream | 400 | 401 | 404
+ * @returns 200 text/event-stream | 400 | 401 | 404 | 429
  */
 export async function GET(
     request: NextRequest,
@@ -80,27 +79,35 @@ export async function GET(
     }
     const { tuner, resource } = resolved;
 
+    if (!canOpenConnection(session.user.id)) {
+        return Response.json({ error: 'Too many connections' }, { status: 429 });
+    }
+
+    const userId = session.user.id;
     const poller = getSignalPoller();
     let subscriberId = '';
+    let cleaned = false;
+
+    function cleanup(): void {
+        if (cleaned || subscriberId === '') {
+            return;
+        }
+        cleaned = true;
+        poller.unsubscribe(tuner.path, subscriberId);
+        unregisterConnection(userId, subscriberId);
+    }
 
     const stream = new ReadableStream<Uint8Array>({
         start(controller) {
             subscriberId = poller.subscribe({
                 deviceUrl: tuner.path, tunerDbId: tunerId, resource, controller,
             });
+            registerConnection(userId, subscriberId);
         },
-        cancel() {
-            if (subscriberId !== '') {
-                poller.unsubscribe(tuner.path, subscriberId);
-            }
-        },
+        cancel: cleanup,
     });
 
-    request.signal.addEventListener('abort', () => {
-        if (subscriberId !== '') {
-            poller.unsubscribe(tuner.path, subscriberId);
-        }
-    });
+    request.signal.addEventListener('abort', cleanup);
 
     return new Response(stream, { headers: SSE_HEADERS });
 }

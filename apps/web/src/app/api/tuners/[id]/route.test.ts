@@ -99,9 +99,11 @@ describe('GET /api/tuners/[id]', () => {
 
         expect(json.data).toHaveProperty('id');
         expect(json.data).toHaveProperty('name');
-        expect(json.data).toHaveProperty('path');
         expect(json.data).toHaveProperty('is_active');
-        expect(json.data).toHaveProperty('last_scanned');
+        // `path` (device IP) is intentionally omitted from the response
+        // to prevent internal network address leakage
+        expect(json.data).not.toHaveProperty('path');
+        expect(json.data).not.toHaveProperty('last_scanned');
     });
 });
 

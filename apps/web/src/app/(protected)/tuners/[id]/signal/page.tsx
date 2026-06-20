@@ -8,13 +8,14 @@
  * @module app/(protected)/tuners/[id]/signal/page
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SignalGauge } from '@/components/signal/SignalGauge';
 import { SignalGraph } from '@/components/signal/SignalGraph';
 import { ProgramList } from '@/components/signal/ProgramList';
 import { Atsc3Details } from '@/components/signal/Atsc3Details';
+import { MAX_HISTORY_POINTS } from '@/lib/hdhr/signal-parsers';
 import type {
     SignalDataPoint,
     SignalSseEvent,
@@ -23,8 +24,6 @@ import type {
     Atsc3L1SseEvent,
 } from '@/lib/hdhr/signal-parsers';
 import type { ParsedProgram } from '@/lib/hdhr/types';
-
-const MAX_HISTORY_POINTS = 60;
 
 function toErrorMsg(code: string | undefined): string | null {
     if (code === 'timeout') {
@@ -53,43 +52,51 @@ function useSignalStream(tunerId: string): SignalHookState {
     });
     const historyRef = useRef<SignalDataPoint[]>([]);
 
+    const handleSignal = useCallback((ev: MessageEvent<string>) => {
+        const data = JSON.parse(ev.data) as SignalSseEvent;
+        historyRef.current = [...historyRef.current,
+            { timestamp: data.timestamp, ss: data.ss, snq: data.snq }].slice(-MAX_HISTORY_POINTS);
+        setState((prev) => ({
+            ...prev, signal: data, connected: true,
+            connError: toErrorMsg(data.error), history: [...historyRef.current],
+        }));
+    }, []);
+
+    const handleStreamInfo = useCallback((ev: MessageEvent<string>) => {
+        const data = JSON.parse(ev.data) as StreamInfoSseEvent;
+        setState((prev) => ({ ...prev, programs: data.programs }));
+    }, []);
+
+    const handleAtsc3Plp = useCallback((ev: MessageEvent<string>) => {
+        const data = JSON.parse(ev.data) as Atsc3PlpSseEvent;
+        setState((prev) => ({ ...prev, atsc3Plp: data }));
+    }, []);
+
+    const handleAtsc3L1 = useCallback((ev: MessageEvent<string>) => {
+        const data = JSON.parse(ev.data) as Atsc3L1SseEvent;
+        setState((prev) => ({ ...prev, atsc3L1: data }));
+    }, []);
+
     useEffect(() => {
         const es = new EventSource(`/api/signal/${tunerId}/stream`);
 
-        es.onmessage = (ev: MessageEvent<string>) => {
-            const parsed = JSON.parse(ev.data) as { event?: string } & Record<string, unknown>;
-            const eventType = parsed.event ?? 'signal';
-
-            if (eventType === 'streaminfo') {
-                setState((prev) => ({ ...prev, programs: (parsed as unknown as StreamInfoSseEvent).programs }));
-                return;
-            }
-            if (eventType === 'atsc3plp') {
-                setState((prev) => ({ ...prev, atsc3Plp: parsed as unknown as Atsc3PlpSseEvent }));
-                return;
-            }
-            if (eventType === 'atsc3l1') {
-                setState((prev) => ({ ...prev, atsc3L1: parsed as unknown as Atsc3L1SseEvent }));
-                return;
-            }
-            // Default: signal event
-            const data = parsed as unknown as SignalSseEvent;
-            historyRef.current = [...historyRef.current,
-                { timestamp: data.timestamp, ss: data.ss, snq: data.snq }].slice(-MAX_HISTORY_POINTS);
-            setState((prev) => ({
-                ...prev, signal: data, connected: true,
-                connError: toErrorMsg(data.error), history: [...historyRef.current],
-            }));
-        };
+        es.addEventListener('signal', handleSignal);
+        es.addEventListener('streaminfo', handleStreamInfo);
+        es.addEventListener('atsc3plp', handleAtsc3Plp);
+        es.addEventListener('atsc3l1', handleAtsc3L1);
 
         es.onerror = () => {
             setState((prev) => ({ ...prev, connError: 'Connection error — retrying…' }));
         };
 
         return () => {
+            es.removeEventListener('signal', handleSignal);
+            es.removeEventListener('streaminfo', handleStreamInfo);
+            es.removeEventListener('atsc3plp', handleAtsc3Plp);
+            es.removeEventListener('atsc3l1', handleAtsc3L1);
             es.close();
         };
-    }, [tunerId]);
+    }, [tunerId, handleSignal, handleStreamInfo, handleAtsc3Plp, handleAtsc3L1]);
 
     return state;
 }
@@ -181,7 +188,7 @@ export default function SignalPage() {
             )}
             <SignalGaugeRow signal={signal} />
             <SignalGraphRow signal={signal} history={history} />
-            <ProgramList programs={programs} idle={signal?.idle ?? true} tunerId={parseInt(tunerId, 10)} />
+            <ProgramList programs={programs} idle={signal?.idle ?? true} />
             <Atsc3Details plp={atsc3Plp} l1={atsc3L1} />
             <div className="signal-actions">
                 <button type="button" onClick={() => router.back()} className="signal-back-button">← Back</button>

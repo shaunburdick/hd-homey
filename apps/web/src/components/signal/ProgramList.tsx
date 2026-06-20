@@ -6,13 +6,11 @@
  * @module components/signal/ProgramList
  */
 
-import Link from 'next/link';
 import type { ParsedProgram, StreamInfoPid } from '@/lib/hdhr/types';
 
 interface ProgramListProps {
     programs: ParsedProgram[];
     idle: boolean;
-    tunerId: number;
 }
 
 /** PID table row */
@@ -27,7 +25,7 @@ function PidRow({ pid }: { pid: StreamInfoPid }) {
 }
 
 /** Single program entry with PID table */
-function ProgramEntry({ program, tunerId }: { program: ParsedProgram; tunerId: number }) {
+function ProgramEntry({ program }: { program: ParsedProgram }) {
     return (
         <div className="program-entry">
             <div className="program-entry-header">
@@ -35,12 +33,6 @@ function ProgramEntry({ program, tunerId }: { program: ParsedProgram; tunerId: n
                 {program.name !== '' && (
                     <span className="program-entry-name">{program.name}</span>
                 )}
-                <Link
-                    href={`/tuners/${tunerId}/channel/${program.programNumber}/watch`}
-                    className="program-entry-watch-link"
-                >
-                    Watch
-                </Link>
             </div>
 
             {program.pids.length > 0 && (
@@ -68,7 +60,7 @@ function ProgramEntry({ program, tunerId }: { program: ParsedProgram; tunerId: n
  *
  * @param props - Program list props
  */
-export function ProgramList({ programs, idle, tunerId }: ProgramListProps) {
+export function ProgramList({ programs, idle }: ProgramListProps) {
     return (
         <details className="program-list">
             <summary className="program-list-summary">
@@ -84,7 +76,7 @@ export function ProgramList({ programs, idle, tunerId }: ProgramListProps) {
                     <p className="program-list-empty">No program data available</p>
                 )}
                 {!idle && programs.map((program) => (
-                    <ProgramEntry key={program.programNumber} program={program} tunerId={tunerId} />
+                    <ProgramEntry key={program.programNumber} program={program} />
                 ))}
             </div>
         </details>

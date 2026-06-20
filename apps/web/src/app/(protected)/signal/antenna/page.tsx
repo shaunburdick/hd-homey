@@ -8,24 +8,30 @@
  * @module app/(protected)/signal/antenna/page
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SignalStatusCard } from '@/components/signal/SignalStatusCard';
+import { MAX_HISTORY_POINTS } from '@/lib/hdhr/signal-parsers';
 import type { TunerSignalState, SignalDataPoint, SignalSseEvent } from '@/lib/hdhr/signal-parsers';
 
-const MAX_HISTORY_POINTS = 60;
+interface TunerApiEntry {
+    id: number;
+    name: string;
+    is_active: boolean;
+}
 
 interface BuildStateOptions {
     data: SignalSseEvent;
     existing: TunerSignalState | undefined;
     newHistory: SignalDataPoint[];
+    nameMap: Map<number, string>;
 }
 
 function buildTunerState(options: BuildStateOptions): TunerSignalState {
-    const { data, existing, newHistory } = options;
+    const { data, existing, newHistory, nameMap } = options;
     return {
         tunerId: data.tunerId,
-        tunerName: existing?.tunerName ?? `Tuner ${data.tunerId}`,
+        tunerName: existing?.tunerName ?? nameMap.get(data.tunerId) ?? `Tuner ${data.tunerId}`,
         resource: data.resource,
         idle: data.idle,
         vctName: data.vctName,
@@ -44,38 +50,74 @@ interface AntennaStreamState {
     connError: string | null;
 }
 
+/** Fetch tuner name map from /api/tuners for display labels */
+function useTunerNameMap(): Map<number, string> {
+    const [nameMap, setNameMap] = useState<Map<number, string>>(() => new Map());
+
+    useEffect(() => {
+        const controller = new AbortController();
+        void fetch('/api/tuners', { signal: controller.signal })
+            .then((res) => res.ok ? res.json() as Promise<{ data: TunerApiEntry[] }> : Promise.resolve(null))
+            .then((json) => {
+                if (json !== null) {
+                    const map = new Map<number, string>();
+                    for (const tuner of json.data) {
+                        map.set(tuner.id, tuner.name);
+                    }
+                    setNameMap(map);
+                }
+                return json;
+            });
+        return () => {
+            controller.abort();
+        };
+    }, []);
+
+    return nameMap;
+}
+
 function useAntennaStream(): AntennaStreamState {
     const [tunerStates, setTunerStates] = useState<Record<number, TunerSignalState>>({});
     const [connected, setConnected] = useState(false);
     const [connError, setConnError] = useState<string | null>(null);
     const historyRef = useRef<Record<number, SignalDataPoint[]>>({});
+    const nameMap = useTunerNameMap();
+
+    const handleSignalEvent = useCallback((ev: MessageEvent<string>) => {
+        const data = JSON.parse(ev.data) as SignalSseEvent;
+        if (data.error === 'no-tuners') {
+            setConnError('No active tuners configured'); return;
+        }
+
+        setConnected(true);
+        const prevHistory = historyRef.current[data.tunerId] ?? [];
+        const point: SignalDataPoint = { timestamp: data.timestamp, ss: data.ss, snq: data.snq };
+        const newHistory = [...prevHistory, point].slice(-MAX_HISTORY_POINTS);
+        historyRef.current[data.tunerId] = newHistory;
+        setTunerStates((prev) => ({
+            ...prev,
+            [data.tunerId]: buildTunerState({
+                data,
+                existing: prev[data.tunerId],
+                newHistory,
+                nameMap,
+            }),
+        }));
+    }, [nameMap]);
 
     useEffect(() => {
         const es = new EventSource('/api/signal/antenna/stream');
 
-        es.onmessage = (ev: MessageEvent<string>) => {
-            const data = JSON.parse(ev.data) as SignalSseEvent;
-            if (data.error === 'no-tuners') {
-                setConnError('No active tuners configured'); return;
-            }
-
-            setConnected(true);
-            const prevHistory = historyRef.current[data.tunerId] ?? [];
-            const point: SignalDataPoint = { timestamp: data.timestamp, ss: data.ss, snq: data.snq };
-            const newHistory = [...prevHistory, point].slice(-MAX_HISTORY_POINTS);
-            historyRef.current[data.tunerId] = newHistory;
-            setTunerStates((prev) => ({
-                ...prev, [data.tunerId]: buildTunerState({ data, existing: prev[data.tunerId], newHistory }),
-            }));
-        };
-
+        es.addEventListener('signal', handleSignalEvent);
         es.onerror = () => {
             setConnError('Connection error — retrying…');
         };
+
         return () => {
+            es.removeEventListener('signal', handleSignalEvent);
             es.close();
         };
-    }, []);
+    }, [handleSignalEvent]);
 
     return { tunerStates, connected, connError };
 }
