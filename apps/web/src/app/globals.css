@@ -608,3 +608,180 @@ button.unstyled {
 
 /* Transitions */
 .transition { transition: all var(--transition-fast); }
+
+/* ========================================
+   Signal Monitoring Components
+   ======================================== */
+
+/*
+ * SignalGauge — vertical stack layout:  label → value (large) → quality dot
+ *
+ * Design rationale: the numeric value is the primary data point users scan.
+ * Making it large lets the user read all three metrics at a glance without
+ * squinting. The quality dot (colored circle) communicates health with color;
+ * the small text label below it satisfies WCAG 1.4.1 (not color alone).
+ * The "Idle" state reuses the same small indicator — the "--" value already
+ * makes the idle state obvious without needing a prominent badge.
+ */
+.signal-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  min-width: 5rem;
+}
+
+/* Abbreviated metric identifier (SS / SNQ / SEQ) — small, muted */
+.signal-gauge-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Large, prominent numeric value — the primary scannable element */
+.signal-gauge-value {
+  line-height: 1;
+}
+
+.signal-gauge-number {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+/* Quality indicator — small dot + tiny text label; color does the heavy lifting */
+.signal-gauge-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* The colored dot — primary quality indicator */
+.signal-gauge-badge-icon {
+  font-size: 0.6rem;
+  line-height: 1;
+}
+
+/* Text label — visually subtle; present for WCAG 1.4.1 (not color alone) */
+.signal-gauge-badge-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* Quality color tiers applied to the badge container (dot + label inherit) */
+.signal-quality-good  { color: var(--color-success); }
+.signal-quality-fair  { color: var(--color-warning); }
+.signal-quality-poor  { color: var(--color-error);   }
+.signal-quality-idle  { color: var(--color-text-disabled); }
+
+/* Override badge-label color when idle so it stays muted */
+.signal-quality-idle .signal-gauge-badge-label {
+  color: var(--color-text-disabled);
+}
+
+/* SignalStatusCard — tuner card in antenna grid */
+.signal-status-card {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.signal-status-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.signal-status-card-name {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.signal-status-card-channel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+.signal-status-card-error {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+/* Three gauges in a row — equal columns, centered content */
+.signal-status-card-gauges {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* Vertical dividers between gauges */
+.signal-status-card-gauges .signal-gauge:not(:last-child) {
+  border-right: 1px solid var(--color-border);
+}
+
+/* Two graphs stacked vertically */
+.signal-status-card-graphs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* SignalGraph title */
+.signal-graph-title {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+/* Antenna page grid */
+.antenna-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.antenna-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+/* Per-device signal page breadcrumb */
+.signal-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.signal-breadcrumb-separator {
+  color: var(--color-text-tertiary);
+}
+
+.signal-actions {
+  margin-top: var(--space-6);
+}

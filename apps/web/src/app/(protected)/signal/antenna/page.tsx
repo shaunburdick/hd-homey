@@ -14,24 +14,32 @@ import { SignalStatusCard } from '@/components/signal/SignalStatusCard';
 import { MAX_HISTORY_POINTS } from '@/lib/hdhr/signal-parsers';
 import type { TunerSignalState, SignalDataPoint, SignalSseEvent } from '@/lib/hdhr/signal-parsers';
 
-interface TunerApiEntry {
-    id: number;
-    name: string;
-    is_active: boolean;
-}
-
 interface BuildStateOptions {
     data: SignalSseEvent;
     existing: TunerSignalState | undefined;
     newHistory: SignalDataPoint[];
-    nameMap: Map<number, string>;
 }
 
+/**
+ * Construct a TunerSignalState from a raw SSE signal event.
+ *
+ * Slot labels are always derived from the resource field ("tuner0" → "Tuner 0",
+ * "tuner1" → "Tuner 1", …). The DB tuner name is the device model name (e.g.
+ * "HDHomeRun Connect 4") and is NOT used here — it is a device identifier,
+ * not a slot label, and would be confusingly inconsistent with the auto-
+ * discovered slot labels.
+ *
+ * @param options - Event data, prior state, and updated history
+ * @returns Immutable state object for the keyed tuner slot
+ */
 function buildTunerState(options: BuildStateOptions): TunerSignalState {
-    const { data, existing, newHistory, nameMap } = options;
+    const { data, existing, newHistory } = options;
+    // Derive a consistent slot label from the HDHomeRun resource name.
+    // "tuner0" → "Tuner 0", "tuner1" → "Tuner 1", etc.
+    const slotLabel = data.resource.replace('tuner', 'Tuner ');
     return {
         tunerId: data.tunerId,
-        tunerName: existing?.tunerName ?? nameMap.get(data.tunerId) ?? data.resource.replace('tuner', 'Tuner '),
+        tunerName: existing?.tunerName ?? slotLabel,
         resource: data.resource,
         idle: data.idle,
         vctName: data.vctName,
@@ -50,39 +58,17 @@ interface AntennaStreamState {
     connError: string | null;
 }
 
-/** Fetch tuner name map from /api/tuners for display labels */
-function useTunerNameMap(): Map<number, string> {
-    const [nameMap, setNameMap] = useState<Map<number, string>>(() => new Map());
-
-    useEffect(() => {
-        const controller = new AbortController();
-        void fetch('/api/tuners', { signal: controller.signal })
-            .then((res) => res.ok ? res.json() as Promise<{ data: TunerApiEntry[] }> : Promise.resolve(null))
-            .then((json) => {
-                if (json !== null) {
-                    const map = new Map<number, string>();
-                    for (const tuner of json.data) {
-                        map.set(tuner.id, tuner.name);
-                    }
-                    setNameMap(map);
-                }
-                return json;
-            })
-            .catch(() => { /* AbortError expected during Strict Mode cleanup */ });
-        return () => {
-            controller.abort();
-        };
-    }, []);
-
-    return nameMap;
-}
-
+/**
+ * Subscribe to the antenna SSE stream and maintain a record of
+ * TunerSignalState objects keyed by tunerId.
+ *
+ * @returns Live stream state: per-slot signal states + connection status
+ */
 function useAntennaStream(): AntennaStreamState {
     const [tunerStates, setTunerStates] = useState<Record<number, TunerSignalState>>({});
     const [connected, setConnected] = useState(false);
     const [connError, setConnError] = useState<string | null>(null);
     const historyRef = useRef<Record<number, SignalDataPoint[]>>({});
-    const nameMap = useTunerNameMap();
 
     const handleSignalEvent = useCallback((ev: MessageEvent<string>) => {
         const data = JSON.parse(ev.data) as SignalSseEvent;
@@ -101,10 +87,9 @@ function useAntennaStream(): AntennaStreamState {
                 data,
                 existing: prev[data.tunerId],
                 newHistory,
-                nameMap,
             }),
         }));
-    }, [nameMap]);
+    }, []);
 
     useEffect(() => {
         const es = new EventSource('/api/signal/antenna/stream');

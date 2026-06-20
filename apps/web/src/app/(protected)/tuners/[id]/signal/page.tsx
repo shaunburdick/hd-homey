@@ -6,10 +6,14 @@
  * Route: /tuners/[id]/signal
  *
  * Displays a grid of SignalStatusCard components — one card per physical
- * tuner slot on the device (tuner0, tuner1, …). The SSE stream now emits
+ * tuner slot on the device (tuner0, tuner1, …). The SSE stream emits
  * events for ALL slots, so state is keyed by tunerId (same pattern as the
  * antenna page). Physical slots beyond the DB-tracked ones are auto-
  * discovered by the poller and arrive with synthetic negative tunerId values.
+ *
+ * All slots use consistent "Tuner N" labels derived from the resource field
+ * (e.g. "tuner0" → "Tuner 0"). The device model name from the DB is used
+ * only for the breadcrumb "Back to <device>" link — not as a slot label.
  *
  * @module app/(protected)/tuners/[id]/signal/page
  */
@@ -38,20 +42,24 @@ interface BuildStateOptions {
     data: SignalSseEvent;
     existing: TunerSignalState | undefined;
     newHistory: SignalDataPoint[];
-    tunerName: string;
+    slotLabel: string;
 }
 
 /**
  * Construct a TunerSignalState from a raw SSE signal event.
  *
- * @param options - Event data, prior state, updated history, and display name
+ * All slots use a resource-derived slot label ("Tuner 0", "Tuner 1", …)
+ * regardless of whether they are DB-tracked or auto-discovered. This keeps
+ * naming consistent across the per-device and antenna pages.
+ *
+ * @param options - Event data, prior state, updated history, and slot label
  * @returns Immutable state object for the keyed tuner slot
  */
 function buildTunerState(options: BuildStateOptions): TunerSignalState {
-    const { data, existing, newHistory, tunerName } = options;
+    const { data, existing, newHistory, slotLabel } = options;
     return {
         tunerId: data.tunerId,
-        tunerName: existing?.tunerName ?? tunerName,
+        tunerName: existing?.tunerName ?? slotLabel,
         resource: data.resource,
         idle: data.idle,
         vctName: data.vctName,
@@ -78,11 +86,16 @@ interface SignalStreamState {
  * Subscribe to the per-device SSE stream and maintain a record of
  * TunerSignalState objects keyed by tunerId.
  *
+ * The EventSource URL is stable for the lifetime of the component — it only
+ * changes when the `tunerId` URL param changes. The device model name from
+ * the API fetch is intentionally NOT a hook dependency so that updating the
+ * breadcrumb label does not cause the EventSource to reconnect and
+ * temporarily clear the multi-slot grid.
+ *
  * @param tunerId - The DB id from the URL; used to form the stream URL
- * @param tunerName - Display name for the primary (DB-tracked) tuner slot
  * @returns Live stream state: per-slot signal states + connection status
  */
-function useSignalStream(tunerId: string, tunerName: string): SignalStreamState {
+function useSignalStream(tunerId: string): SignalStreamState {
     const [tunerStates, setTunerStates] = useState<Record<number, TunerSignalState>>({});
     const [connected, setConnected] = useState(false);
     const [connError, setConnError] = useState<string | null>(null);
@@ -97,9 +110,10 @@ function useSignalStream(tunerId: string, tunerName: string): SignalStreamState 
         const newHistory = [...prevHistory, point].slice(-MAX_HISTORY_POINTS);
         historyRef.current[data.tunerId] = newHistory;
 
-        // Derive display name: DB tuner gets the fetched name; auto-discovered
-        // slots get a human-friendly label from the resource field.
-        const derivedName = data.resource.replace('tuner', 'Tuner ');
+        // All slots — whether DB-tracked (positive tunerId) or auto-discovered
+        // (negative tunerId) — use the same resource-derived slot label.
+        // "tuner0" → "Tuner 0", "tuner1" → "Tuner 1", etc.
+        const slotLabel = data.resource.replace('tuner', 'Tuner ');
 
         setTunerStates((prev) => ({
             ...prev,
@@ -107,7 +121,7 @@ function useSignalStream(tunerId: string, tunerName: string): SignalStreamState 
                 data,
                 existing: prev[data.tunerId],
                 newHistory,
-                tunerName: data.tunerId > 0 ? tunerName : derivedName,
+                slotLabel,
             }),
         }));
 
@@ -120,7 +134,7 @@ function useSignalStream(tunerId: string, tunerName: string): SignalStreamState 
         } else {
             setConnError(null);
         }
-    }, [tunerName]);
+    }, []);
 
     useEffect(() => {
         const es = new EventSource(`/api/signal/${tunerId}/stream`);
@@ -213,7 +227,7 @@ export default function SignalPage() {
         };
     }, [tunerId]);
 
-    const { tunerStates, connected, connError } = useSignalStream(tunerId, tunerName);
+    const { tunerStates, connected, connError } = useSignalStream(tunerId);
 
     return (
         <main className="page-container">
