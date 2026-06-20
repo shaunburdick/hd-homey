@@ -92,6 +92,42 @@ export default [
         ]
     },
     {
+        // CRC32 requires bitwise operations by algorithm definition.
+        // The IEEE 802.3 polynomial table construction and the running
+        // CRC accumulation both rely on XOR, AND, and right-shift — there
+        // is no way to implement this algorithm without bitwise operators.
+        // Magic numbers in this file are the standard CRC32 algorithm constants
+        // (polynomial, iteration count, mask values) documented by the IEEE spec.
+        files: ['src/lib/hdhr/crc32.ts'],
+        rules: {
+            'no-bitwise': 'off',
+            'no-magic-numbers': 'off',
+        },
+    },
+    {
+        // The HDHomeRun native TCP protocol (port 65001) uses a TLV (tag-length-value)
+        // binary framing format that inherently requires bitwise operations to encode
+        // and decode variable-length fields, CRC computation, and protocol constants.
+        // The magic numbers in this file are all protocol wire-format constants
+        // defined in the libhdhomerun C header (hdhomerun_pkt.h).
+        files: ['src/lib/hdhr/native-protocol.ts'],
+        rules: {
+            'no-bitwise': 'off',
+            'no-magic-numbers': 'off',
+        },
+    },
+    {
+        // Test helpers for native-protocol.test.ts must replicate TLV binary packet
+        // construction to build realistic mock device responses. This requires the
+        // same bitwise operations and protocol constants as the production code.
+        // Limiting to the test file prevents pollution of other test files.
+        files: ['src/lib/hdhr/native-protocol.test.ts'],
+        rules: {
+            'no-bitwise': 'off',
+            'no-magic-numbers': 'off',
+        },
+    },
+    {
         // Node.js script files need node globals (process, console, etc.)
         files: ['src/scripts/*.mjs', 'src/scripts/*.js'],
         languageOptions: {

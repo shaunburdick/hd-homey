@@ -385,6 +385,67 @@ unavailable.
   - Integration test: mock lineup.json response, verify synthetic program in SSE
   - Integration test: lineup.json error/404 → no crash, empty programs
 
+---
+
+## Wave 9 — Native TCP Protocol Integration
+
+HDHomeRun devices expose a native TCP protocol on port 65001 that provides
+data not available via HTTP on newer models (FLEX 4K, SCRIBE 4K). Implement
+a pure TypeScript client for this protocol to unlock:
+
+- **`streaminfo`** — always works on all devices (no lineup fallback needed)
+- **`debug`** — transport stream diagnostics (bps, transport errors, CRC errors)
+
+**Plan reference**: `plan-refinement-native-protocol.md`  
+**Research reference**: `research-native-protocol.md`
+
+- [x] **T-031** `[S]` — Use native Node.js `zlib.crc32()` in `native-protocol.ts`
+  - Available in Node 22+: `import { crc32 } from 'node:zlib'`
+  - `crc32.ts` re-exports from `node:zlib` to keep test imports stable
+  - No new npm dependencies
+
+- [x] **T-032** `[M]` — Implement TLV packet encoder/decoder in `apps/web/src/lib/hdhr/native-protocol.ts`
+  - `encodeGetRequest(variable: string): Buffer` — request packet with type 0x0004, TLV payload, CRC32
+  - `decodeResponse(data: Buffer): { value?: string; error?: string }` — response parsing, CRC32 verification, unknown tag skipping
+  - Handle 1/2-byte variable-length TLV length encoding
+  - Max packet buffer: 1460 bytes
+
+- [x] **T-033** `[M]` — Implement TCP native get client in `native-protocol.ts`
+  - `async function nativeGet(options: NativeGetOptions): Promise<string>` — single options object API
+  - Opens TCP to `{deviceIp}:65001`, sends request, reads response with accumulation loop
+  - Throws `NativeProtocolError` on timeout, CRC mismatch, device error, connection refused
+
+- [x] **T-034** `[M]` — Add debug status parser to `apps/web/src/lib/hdhr/signal-parsers-debug.ts`
+  - `parseDebugStatus(rawText: string): DebugStatus` — extracted to new file to stay under 500-line limit
+  - Parse: `tun:`, `dev:`, `ts:`, `flt:`, `net:` lines into structured object using Map dispatch table
+  - Export `DebugSseEvent` type; re-exported from `signal-parsers.ts` for single import point
+
+- [x] **T-035** `[L]` — Wire native protocol fallback into `SignalPollingManager`
+  - In `dispatchStreamInfoIfChanged`: try native TCP on HTTP 404 (before lineup fallback)
+  - Extracted to `signal-poller-streaminfo.ts` to keep `signal-poller.ts` under 500 lines
+  - Add debug polling: each poll cycle, query native `/tuner{N}/debug` for active tuners
+  - Dispatch `debug` SSE events with parsed data
+
+- [x] **T-036** `[M]` — Write unit tests for native protocol
+  - `apps/web/src/lib/hdhr/native-protocol.test.ts`
+  - CRC32: test vectors against known-good values (delegates to `crc32.ts` which wraps `node:zlib`)
+  - `encodeGetRequest`: verify packet bytes match expected binary output
+  - `decodeResponse`: value response, error response, CRC mismatch, truncated data, unknown tag skipping
+  - `nativeGet`: real TCP net.Server in test; success, TCP fragmentation, device error, timeout, connection refused
+
+- [x] **T-037** `[M]` `[DEPENDS: T-035]` — Update `signal-poller.test.ts` for native fallback
+  - Mock `nativeGet` in streaminfo-404 tests → verify native attempted before lineup fallback
+  - Test native success → SSE dispatched without lineup fallback
+  - Test native failure → lineup fallback still attempted
+  - Test debug event dispatch for active tuners
+  - Test no debug event for idle tuners
+
+- [x] **T-038** `[S]` — Update documentation
+  - `crc32.ts` updated to delegate to `node:zlib` instead of hand-rolled table
+  - `signal-parsers-debug.ts` extracted from `signal-parsers.ts` (500-line limit)
+  - `signal-poller-streaminfo.ts` extracted from `signal-poller.ts` (500-line limit)
+  - All Wave 9 tasks marked complete
+
 ## Estimated Total Effort
 
 | Wave | Tasks | Complexity | Approx Time |
@@ -398,4 +459,5 @@ unavailable.
 | 6 — Integration & Docs | 4 | M+M+S+S | 2–3 hr |
 | 7 — Per-Device Signal Page | 3 | M+M+S | 2–3 hr |
 | 8 — Lineup Fallback | 2 | M+M | 2–3 hr |
-| **Total** | **30** | | **~28–39 hr** |
+| 9 — Native Protocol | 8 | S+M+M+M+L+M+M+S | ~8–9 hr |
+| **Total** | **38** | | **~36–48 hr** |

@@ -2,18 +2,19 @@
  * Signal Polling Manager — Singleton for HDHomeRun device signal polling.
  * One poll timer per device IP; fanned out to all SSE subscribers.
  *
+ * Streaminfo dispatch (HTTP + native TCP + lineup fallback) is extracted
+ * into `signal-poller-streaminfo.ts` to keep this file within the 500-line limit.
+ *
  * @module signal-poller
  */
 
 import {
     parseStatusJson,
-    parseStreamInfo,
-    groupStreamInfoByProgram,
     parseTunerLockStatus,
     formatSseEvent,
-    createLineupFallbackProgram,
+    parseDebugStatus,
 } from './signal-parsers';
-import type { SignalSseEvent, StreamInfoSseEvent } from './signal-parsers';
+import type { SignalSseEvent, DebugSseEvent } from './signal-parsers';
 import type { TunerStatusResponse, ChannelInfo } from './types';
 import { validateDeviceUrl } from './device-url';
 import {
@@ -25,6 +26,12 @@ import {
     fetchAtsc3L1,
 } from './sse-dispatch';
 import type { SseSubscriber } from './sse-dispatch';
+import { nativeGet } from './native-protocol';
+import type { NativeProtocolError } from './native-protocol';
+import {
+    dispatchStreamInfoIfChanged,
+} from './signal-poller-streaminfo';
+import type { StreamInfoEntry } from './signal-poller-streaminfo';
 import Logger from '@/lib/logger';
 
 const POLL_INTERVAL_MS = 2_000;
@@ -32,6 +39,20 @@ const PING_INTERVAL_MS = 30_000;
 const FETCH_TIMEOUT_MS = 3_000;
 
 export { validateDeviceUrl } from './device-url';
+
+/**
+ * Extract the bare hostname/IP from a device URL string.
+ *
+ * @param deviceUrl - Full device URL (e.g. "http://192.168.1.100")
+ * @returns Hostname or IP string, or empty string if parsing fails
+ */
+function extractHostname(deviceUrl: string): string {
+    try {
+        return new URL(deviceUrl).hostname;
+    } catch {
+        return '';
+    }
+}
 
 /** A tuner slot being tracked on a device */
 export interface TrackedTuner {
@@ -63,25 +84,37 @@ interface DispatchEventOptions {
     tunerId: number;
 }
 
-interface DispatchStreamInfoOptions extends DispatchEventOptions {
+interface DispatchStatusOptions extends DispatchEventOptions {
     statusEntry: NonNullable<ReturnType<typeof parseStatusJson>>;
     deviceUrl: string;
 }
 
-interface LineupFallbackDispatchOptions extends DispatchEventOptions {
-    resource: string;
-    deviceUrl: string;
-    currentVct: string;
-    vctName: string | undefined;
-}
-
-/** Reuse DispatchStreamInfoOptions — same shape as DispatchAtsc3Options */
-type DispatchAtsc3Options = DispatchStreamInfoOptions;
+/** Reuse DispatchStatusOptions — same shape as DispatchAtsc3Options */
+type DispatchAtsc3Options = DispatchStatusOptions;
 
 interface SubscribeAllOptions {
     deviceUrl: string;
     tunersToTrack: TrackedTuner[];
     controller: ReadableStreamDefaultController<Uint8Array>;
+}
+
+/**
+ * Adapt a DevicePollEntry to the StreamInfoEntry interface required by
+ * the streaminfo dispatch module.
+ *
+ * @param entry - Full device poll entry
+ * @returns Minimal StreamInfoEntry view
+ */
+function asStreamInfoEntry(entry: DevicePollEntry): StreamInfoEntry {
+    return {
+        deviceUrl: entry.deviceUrl,
+        subscribers: entry.subscribers,
+        lastVctNumber: entry.lastVctNumber,
+        lineupCache: entry.lineupCache,
+        setLineupCache: (data) => {
+            entry.lineupCache = data;
+        },
+    };
 }
 
 /**
@@ -264,6 +297,35 @@ export class SignalPollingManager {
         Logger.debug({ deviceUrl }, 'Signal polling stopped');
     }
 
+    /**
+     * Dispatch error signal events to all tracked tuners when the device status fetch fails.
+     *
+     * @param entry - Device poll entry with subscriber and tuner state
+     * @param errorType - Error classification: 'timeout' or 'unreachable'
+     */
+    private dispatchFetchError(entry: DevicePollEntry, errorType: 'timeout' | 'unreachable'): void {
+        for (const [, tuner] of entry.trackedTuners) {
+            const errorEvent: SignalSseEvent = {
+                event: 'signal',
+                tunerId: tuner.tunerId,
+                resource: tuner.resource,
+                idle: true,
+                ss: null,
+                snq: null,
+                seq: null,
+                timestamp: Date.now(),
+                error: errorType,
+            };
+            dispatchToSubscribers({
+                subscribers: entry.subscribers,
+                resource: tuner.resource,
+                tunerId: tuner.tunerId,
+                sseText: formatSseEvent('signal', errorEvent),
+                encoder: this.encoder,
+            });
+        }
+    }
+
     private async poll(deviceUrl: string): Promise<void> {
         const entry = this.devices.get(deviceUrl);
         if (entry === undefined || entry.subscribers.size === 0) {
@@ -271,38 +333,16 @@ export class SignalPollingManager {
         }
 
         let statusJson: TunerStatusResponse;
-
         try {
             const response = await fetchWithTimeout(`${deviceUrl}/status.json`, FETCH_TIMEOUT_MS);
             statusJson = await response.json() as TunerStatusResponse;
         } catch (error) {
             const errorType = error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'unreachable';
             Logger.warn({ deviceUrl, errorType }, 'Device fetch failed');
-
-            for (const [, tuner] of entry.trackedTuners) {
-                const errorEvent: SignalSseEvent = {
-                    event: 'signal',
-                    tunerId: tuner.tunerId,
-                    resource: tuner.resource,
-                    idle: true,
-                    ss: null,
-                    snq: null,
-                    seq: null,
-                    timestamp: Date.now(),
-                    error: errorType,
-                };
-                dispatchToSubscribers({
-                    subscribers: entry.subscribers,
-                    resource: tuner.resource,
-                    tunerId: tuner.tunerId,
-                    sseText: formatSseEvent('signal', errorEvent),
-                    encoder: this.encoder,
-                });
-            }
+            this.dispatchFetchError(entry, errorType);
             return;
         }
 
-        // Auto-discover any untracked tuner slots from /status.json (handles 1/2/4 tuner devices).
         this.autoDiscoverTuners(entry, statusJson);
 
         for (const [, tuner] of entry.trackedTuners) {
@@ -312,8 +352,21 @@ export class SignalPollingManager {
             }
 
             this.dispatchSignalEvent({ entry, statusEntry, tunerId: tuner.tunerId });
-            await this.dispatchStreamInfoIfChanged({ entry, statusEntry, tunerId: tuner.tunerId, deviceUrl });
+            await dispatchStreamInfoIfChanged({
+                entry: asStreamInfoEntry(entry),
+                resource: statusEntry.Resource,
+                currentVct: statusEntry.VctNumber,
+                vctName: statusEntry.VctName,
+                tunerId: tuner.tunerId,
+                deviceUrl,
+                encoder: this.encoder,
+            });
             await this.dispatchAtsc3IfLocked({ entry, statusEntry, tunerId: tuner.tunerId, deviceUrl });
+
+            // Best-effort debug polling — void to avoid blocking the poll cycle.
+            if (statusEntry.VctNumber !== undefined) {
+                void this.dispatchDebugEvent({ entry, statusEntry, tunerId: tuner.tunerId, deviceUrl });
+            }
         }
     }
 
@@ -342,96 +395,6 @@ export class SignalPollingManager {
             sseText: formatSseEvent('signal', event),
             encoder: this.encoder,
         });
-    }
-
-    private async dispatchStreamInfoIfChanged(options: DispatchStreamInfoOptions): Promise<void> {
-        const { entry, statusEntry, tunerId, deviceUrl } = options;
-        const { Resource: resource, VctNumber: currentVct, VctName: vctName } = statusEntry;
-
-        if (currentVct === entry.lastVctNumber.get(resource)) {
-            return;
-        }
-
-        entry.lastVctNumber.set(resource, currentVct);
-
-        if (currentVct === undefined) {
-            return;
-        }
-
-        const match = /^tuner(\d+)$/.exec(resource);
-        const tunerNum = match !== null ? match[1] : '0';
-
-        try {
-            const response = await fetchWithTimeout(
-                `${deviceUrl}/tuner${tunerNum}/streaminfo`,
-                FETCH_TIMEOUT_MS,
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: streaminfo unavailable`);
-            }
-
-            const event: StreamInfoSseEvent = {
-                event: 'streaminfo',
-                tunerId,
-                programs: groupStreamInfoByProgram(parseStreamInfo(await response.text()), vctName),
-            };
-            dispatchToSubscribers({
-                subscribers: entry.subscribers,
-                resource,
-                tunerId,
-                sseText: formatSseEvent('streaminfo', event),
-                encoder: this.encoder,
-            });
-        } catch (error) {
-            Logger.warn({ deviceUrl, resource, error }, 'Failed to fetch streaminfo');
-            await this.tryLineupFallback({ entry, tunerId, resource, deviceUrl, currentVct, vctName });
-        }
-    }
-
-    /**
-     * Attempt to build synthetic stream-info from lineup.json when `/tuner{N}/streaminfo`
-     * is unavailable. Caches the lineup per device; silently swallows fetch/parse failures.
-     *
-     * @param options - Dispatch context plus the current virtual channel number
-     */
-    private async tryLineupFallback(options: LineupFallbackDispatchOptions): Promise<void> {
-        const { entry, tunerId, resource, deviceUrl, currentVct, vctName } = options;
-
-        try {
-            const lineupData: ChannelInfo[] = entry.lineupCache ?? await (async () => {
-                const lineupResponse = await fetchWithTimeout(
-                    `${deviceUrl}/lineup.json`,
-                    FETCH_TIMEOUT_MS,
-                );
-                const parsed = await lineupResponse.json() as ChannelInfo[];
-                entry.lineupCache = parsed;
-                return parsed;
-            })();
-
-            const programs = createLineupFallbackProgram({
-                guideNumber: currentVct,
-                vctName,
-                lineupData,
-            });
-
-            if (programs.length > 0) {
-                const event: StreamInfoSseEvent = {
-                    event: 'streaminfo',
-                    tunerId,
-                    programs,
-                };
-                dispatchToSubscribers({
-                    subscribers: entry.subscribers,
-                    resource,
-                    tunerId,
-                    sseText: formatSseEvent('streaminfo', event),
-                    encoder: this.encoder,
-                });
-            }
-        } catch (lineupError) {
-            Logger.debug({ deviceUrl, lineupError }, 'Lineup fallback unavailable');
-        }
     }
 
     private async dispatchAtsc3IfLocked(options: DispatchAtsc3Options): Promise<void> {
@@ -481,6 +444,47 @@ export class SignalPollingManager {
                 encoder: this.encoder,
             }),
         ]);
+    }
+
+    /**
+     * Query `/tuner{N}/debug` via the native protocol and dispatch a `debug` SSE event.
+     * Best-effort — failures are logged at DEBUG level and silently swallowed.
+     * Only called for active (non-idle) tuners.
+     *
+     * @param options - Dispatch context including device URL, status entry, and tuner ID
+     */
+    private async dispatchDebugEvent(options: DispatchStatusOptions): Promise<void> {
+        const { entry, statusEntry, tunerId, deviceUrl } = options;
+        const { Resource: resource } = statusEntry;
+        const match = /^tuner(\d+)$/.exec(resource);
+        const tunerNum = match !== null ? match[1] : '0';
+
+        const deviceHostname = extractHostname(deviceUrl);
+        if (deviceHostname === '') {
+            return;
+        }
+
+        try {
+            const debugText = await nativeGet({ deviceIp: deviceHostname, variable: `/tuner${tunerNum}/debug` });
+            const event: DebugSseEvent = {
+                event: 'debug',
+                tunerId,
+                debug: parseDebugStatus(debugText),
+            };
+            dispatchToSubscribers({
+                subscribers: entry.subscribers,
+                resource,
+                tunerId,
+                sseText: formatSseEvent('debug', event),
+                encoder: this.encoder,
+            });
+        } catch (debugError) {
+            const nativeErr = debugError as Partial<NativeProtocolError>;
+            Logger.debug(
+                { deviceUrl, resource, code: nativeErr.code, message: nativeErr.message },
+                'Debug native query failed — skipping debug event for this cycle',
+            );
+        }
     }
 
 }

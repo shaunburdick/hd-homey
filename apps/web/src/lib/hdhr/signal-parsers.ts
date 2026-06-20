@@ -4,6 +4,9 @@
  * All functions in this module are pure (no side effects) and operate on
  * plain strings or objects. This makes them trivially unit-testable.
  *
+ * Debug status parsing for the native protocol is in `signal-parsers-debug.ts`
+ * (extracted to keep this file within the 500-line limit).
+ *
  * @module signal-parsers
  */
 
@@ -17,6 +20,11 @@ import type {
     TunerLockStatus,
     ChannelInfo,
 } from './types';
+
+// Re-export debug types and parser from the dedicated module so callers have
+// a single import point for all signal-parsing utilities.
+export type { DebugStatus, DebugSseEvent } from './signal-parsers-debug';
+export { parseDebugStatus } from './signal-parsers-debug';
 
 // =============================================================================
 // Rolling History Buffer Size
@@ -45,9 +53,7 @@ export const SIGNAL_THRESHOLDS = {
     SEQ: { green: 100, yellow: 80 },
 } as const;
 
-/**
- * Color quality tier — maps to CSS class names and ARIA label suffixes
- */
+/** Color quality tier — maps to CSS class names and ARIA label suffixes */
 export type SignalQuality = 'good' | 'fair' | 'poor' | 'idle';
 
 // =============================================================================
@@ -107,9 +113,7 @@ export interface Atsc3PlpSseEvent {
     fecType: string | null;
 }
 
-/**
- * Emitted alongside atsc3plp when ATSC 3.0 lock is detected.
- */
+/** Emitted alongside atsc3plp when ATSC 3.0 lock is detected. */
 export interface Atsc3L1SseEvent {
     event: 'atsc3l1';
     tunerId: number;
@@ -201,24 +205,13 @@ export function parseStatusJson(
 /** Characters after the colon+space prefix in a streaminfo line */
 const STREAMINFO_CODEC_OFFSET = 2;
 
-/**
- * Parse the plain-text /tuner{N}/streaminfo response into structured PID entries.
- *
- * Line format: `{pid}: {codec} {type} {program} [{extra}]`
- * Where type is 'v' (video), 'a' (audio), or absent for data PIDs.
- *
- * @param rawText - Raw plain-text response from the device
- * @returns Array of parsed PID entries. Empty array on empty/malformed input.
- */
 /** Maps streaminfo type token to normalized PID type */
 const TYPE_TOKEN_MAP = new Map<string, StreamInfoPid['type']>([
     ['v', 'video'],
     ['a', 'audio'],
 ]);
 
-/**
- * Determine the PID type and program number from the rest-of-line parts array.
- */
+/** Determine the PID type and program number from the rest-of-line parts array. */
 function parsePidTypeParts(
     codec: string,
     parts: string[],
@@ -274,6 +267,15 @@ function parseStreamInfoLine(line: string): StreamInfoPid | null {
     return { pid, codec, type, program: isNaN(program) ? 0 : program };
 }
 
+/**
+ * Parse the plain-text /tuner{N}/streaminfo response into structured PID entries.
+ *
+ * Line format: `{pid}: {codec} {type} {program} [{extra}]`
+ * Where type is 'v' (video), 'a' (audio), or absent for data PIDs.
+ *
+ * @param rawText - Raw plain-text response from the device
+ * @returns Array of parsed PID entries. Empty array on empty/malformed input.
+ */
 export function parseStreamInfo(rawText: string): StreamInfoPid[] {
     if (rawText.trim() === '') {
         return [];
@@ -327,8 +329,7 @@ export function groupStreamInfoByProgram(
 }
 
 /**
- * Parse key=value plain-text into a Map.
- * Lines without '=' are silently skipped.
+ * Parse key=value plain-text into a Map. Lines without '=' are silently skipped.
  *
  * @param rawText - Raw key=value text
  * @returns Map of key → value strings
@@ -442,12 +443,7 @@ export function getSignalQuality(value: number | null, metric: 'SS' | 'SNQ' | 'S
 /**
  * Format an SSE event as RFC 8895 wire format.
  *
- * Output format:
- * ```
- * event: <eventName>\n
- * data: <json>\n
- * \n
- * ```
+ * Output: `event: <name>\ndata: <json>\n\n`
  *
  * @param eventName - SSE event name (e.g. "signal", "ping")
  * @param data - Event payload object (serialized to JSON)
@@ -474,12 +470,10 @@ export interface LineupFallbackOptions {
  *
  * Used as fallback when `/tuner{N}/streaminfo` returns 404 on newer HDHomeRun
  * models (FLEX 4K, SCRIBE 4K with firmware 20250815+). Cross-references the
- * tuner's current `VctNumber` from status.json against `GuideNumber` entries
- * in lineup.json to produce a single synthetic `ParsedProgram`.
+ * tuner's current `VctNumber` against `GuideNumber` entries in lineup.json.
  *
- * The returned `ParsedProgram` uses `programNumber: 0` to indicate it is
- * synthetic (no real MPEG program number is available from lineup data).
- * PIDs are assigned placeholder IDs: 0 for video, 1 for audio.
+ * Returns a single synthetic `ParsedProgram` with `programNumber: 0` (no real
+ * MPEG program number available). PIDs use placeholder IDs: 0 for video, 1 for audio.
  *
  * @param options - Guide number, optional VCT name, and lineup data to search
  * @returns Synthetic ParsedProgram[] — one entry if matched, empty if no match

@@ -2,11 +2,19 @@
  * Unit tests for signal-poller.ts
  *
  * Tests the SignalPollingManager singleton, subscriber management,
- * deduplication, and error handling. Uses mocked fetch.
+ * deduplication, and error handling. Uses mocked fetch and mocked nativeGet.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SignalPollingManager, validateDeviceUrl } from './signal-poller';
+
+// Mock the native protocol module so tests don't open real TCP connections.
+// Each test configures the mock behaviour as needed via nativeGetMock.
+vi.mock('./native-protocol', () => ({
+    nativeGet: vi.fn(),
+}));
+
+import { nativeGet } from './native-protocol';
 
 // =============================================================================
 // Test Helpers
@@ -79,6 +87,18 @@ const LINEUP_JSON = JSON.stringify([
 /** Error message for simulated 404 responses in lineup fallback tests */
 const ERR_404 = '404 Not Found';
 
+/** Expected JSON fragment for synthetic lineup program number */
+const PROG_NUM_0 = '"programNumber":0';
+
+/** Expected JSON fragment for MPEG2 video codec from lineup fallback */
+const MPEG2_VIDEO = '"MPEG2 video"';
+
+/** Expected JSON fragment for a NativeProtocolError with CONNECTION_REFUSED */
+const NATIVE_REFUSED_ERROR = Object.assign(new Error('Connection refused'), {
+    name: 'NativeProtocolError',
+    code: 'CONNECTION_REFUSED',
+});
+
 // =============================================================================
 // Tests
 // =============================================================================
@@ -86,6 +106,7 @@ const ERR_404 = '404 Not Found';
 describe('SignalPollingManager', () => {
     let manager: SignalPollingManager;
     let fetchMock: ReturnType<typeof vi.fn>;
+    let nativeGetMock: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         // Fresh manager instance per test
@@ -94,6 +115,11 @@ describe('SignalPollingManager', () => {
         // Replace global fetch with a mock
         fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
+
+        // Default: nativeGet rejects with CONNECTION_REFUSED so it doesn't
+        // interfere with tests that are not specifically testing native protocol.
+        nativeGetMock = vi.mocked(nativeGet);
+        nativeGetMock.mockRejectedValue(NATIVE_REFUSED_ERROR);
 
         vi.useFakeTimers();
     });
@@ -501,8 +527,8 @@ describe('SignalPollingManager', () => {
             const output = decodeChunks(controller);
             expect(output).toContain(STREAMINFO_EVENT);
             // Synthetic program from lineup: programNumber 0, codecs from lineup
-            expect(output).toContain('"programNumber":0');
-            expect(output).toContain('"MPEG2 video"');
+            expect(output).toContain(PROG_NUM_0);
+            expect(output).toContain(MPEG2_VIDEO);
             expect(output).toContain('"AC3 audio"');
         });
 
@@ -537,8 +563,8 @@ describe('SignalPollingManager', () => {
 
             const output = decodeChunks(controller);
             expect(output).toContain(STREAMINFO_EVENT);
-            expect(output).toContain('"programNumber":0');
-            expect(output).toContain('"MPEG2 video"');
+            expect(output).toContain(PROG_NUM_0);
+            expect(output).toContain(MPEG2_VIDEO);
         });
 
         it('does not crash when lineup.json also returns 404', async () => {
@@ -728,6 +754,166 @@ describe('SignalPollingManager', () => {
             expect(output).toMatch(/"tunerId":-1,"resource":"tuner1"/);
             expect(output).toMatch(/"tunerId":-2,"resource":"tuner2"/);
             expect(output).toMatch(/"tunerId":-3,"resource":"tuner3"/);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // T-037: Native protocol fallback for streaminfo + debug polling
+    // -------------------------------------------------------------------------
+
+    describe('native protocol fallback', () => {
+        /** Active single-tuner status without tuner1 to keep mock ordering simple */
+        const SINGLE_TUNER_ACTIVE = JSON.stringify([
+            {
+                Resource: 'tuner0',
+                VctNumber: '5.1',
+                VctName: 'KPIX',
+                SignalStrengthPercent: 83,
+                SignalQualityPercent: 90,
+                SymbolQualityPercent: 100,
+            },
+        ]);
+
+        it('dispatches streaminfo via native protocol when HTTP streaminfo returns 404', async () => {
+            const controller = makeController();
+
+            // Fetch order:
+            // 1. status.json — active tuner
+            // 2. streaminfo — HTTP 404 response (response.ok = false)
+            // 3. tuner0/status — ATSC lock detection
+            fetchMock
+                .mockResolvedValueOnce(new Response(SINGLE_TUNER_ACTIVE, { status: 200 }))
+                .mockResolvedValueOnce(new Response('Not Found', { status: 404 }))          // streaminfo 404
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 }));   // tuner status
+
+            // nativeGet for streaminfo succeeds
+            nativeGetMock.mockResolvedValueOnce('481: mpeg2video v 1\n482: ac3 a 1\n');
+            // nativeGet for debug may also fire (best-effort, non-blocking)
+            nativeGetMock.mockRejectedValue(NATIVE_REFUSED_ERROR);
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+            await vi.advanceTimersByTimeAsync(0);
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
+
+            const output = decodeChunks(controller);
+            // Streaminfo event must appear from native protocol data
+            expect(output).toContain(STREAMINFO_EVENT);
+            expect(output).toContain('"programNumber":1');
+            expect(output).toContain('"codec":"mpeg2video"');
+        });
+
+        it('falls back to lineup.json when native protocol streaminfo also fails', async () => {
+            const controller = makeController();
+
+            // Fetch order:
+            // 1. status.json — active tuner
+            // 2. streaminfo — HTTP error → triggers native fallback
+            // 3. lineup.json — lineup fallback
+            // 4. tuner0/status — ATSC lock
+            fetchMock
+                .mockResolvedValueOnce(new Response(SINGLE_TUNER_ACTIVE, { status: 200 }))
+                .mockRejectedValueOnce(new Error('streaminfo network error'))                // streaminfo fails
+                .mockResolvedValueOnce(new Response(LINEUP_JSON, { status: 200 }))         // lineup fallback
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 }));   // tuner status
+
+            // All nativeGet calls fail — native is down
+            nativeGetMock.mockRejectedValue(NATIVE_REFUSED_ERROR);
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+            await vi.advanceTimersByTimeAsync(0);
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
+
+            const output = decodeChunks(controller);
+            // Lineup fallback must have dispatched synthetic streaminfo
+            expect(output).toContain(STREAMINFO_EVENT);
+            expect(output).toContain(PROG_NUM_0);
+            expect(output).toContain(MPEG2_VIDEO);
+        });
+
+        it('native success prevents lineup fallback from being attempted', async () => {
+            const controller = makeController();
+
+            fetchMock
+                .mockResolvedValueOnce(new Response(SINGLE_TUNER_ACTIVE, { status: 200 }))
+                .mockRejectedValueOnce(new Error(ERR_404))                                  // streaminfo fails
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 }));   // tuner status
+
+            // Native streaminfo succeeds, debug fails
+            nativeGetMock
+                .mockResolvedValueOnce('481: mpeg2video v 1\n')                             // streaminfo native
+                .mockRejectedValue(NATIVE_REFUSED_ERROR);
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+            await vi.advanceTimersByTimeAsync(0);
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
+
+            // Lineup.json should NOT have been fetched
+            const lineupCalls = fetchMock.mock.calls.filter(
+                (call: unknown[]) => typeof call[0] === 'string' && call[0].endsWith('/lineup.json'),
+            );
+            expect(lineupCalls).toHaveLength(0);
+
+            // Streaminfo event should still appear (from native)
+            const output = decodeChunks(controller);
+            expect(output).toContain(STREAMINFO_EVENT);
+        });
+
+        it('dispatches debug SSE event for active tuners via native protocol', async () => {
+            const controller = makeController();
+
+            /** Raw debug response as the device returns it */
+            const DEBUG_RESPONSE =
+                'tun: ch=qam:33 lock=qam256 ss=84 snq=88 seq=100 dbg=22081-6930\n' +
+                'dev: resync=0 overflow=0\n' +
+                'ts:  bps=38809216 ut=94 te=0 miss=0 crc=0\n' +
+                'flt: bps=38809216\n' +
+                'net: pps=0 err=0 stop=0\n';
+
+            fetchMock
+                .mockResolvedValueOnce(new Response(SINGLE_TUNER_ACTIVE, { status: 200 }))
+                .mockResolvedValueOnce(new Response(STREAMINFO_RESPONSE, { status: 200 }))  // streaminfo OK
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 }));   // tuner status
+
+            // nativeGet returns the debug response (debug poll fires via void — let it run)
+            nativeGetMock.mockResolvedValue(DEBUG_RESPONSE);
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+            await vi.advanceTimersByTimeAsync(0);
+            // Extra ticks to let the void debug promise resolve
+            for (let i = 0; i < 20; i++) {
+                await Promise.resolve();
+            }
+
+            const output = decodeChunks(controller);
+            // Debug event must appear with parsed fields
+            expect(output).toContain('event: debug');
+            expect(output).toContain('"ss":84');
+            expect(output).toContain('"bps":38809216');
+        });
+
+        it('does not dispatch debug event for idle tuners', async () => {
+            const controller = makeController();
+
+            fetchMock.mockResolvedValue(new Response(IDLE_STATUS_JSON, { status: 200 }));
+
+            // nativeGet should not be called for debug on an idle tuner
+            nativeGetMock.mockRejectedValue(NATIVE_REFUSED_ERROR);
+
+            manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
+            await vi.advanceTimersByTimeAsync(0);
+            for (let i = 0; i < 10; i++) {
+                await Promise.resolve();
+            }
+
+            const output = decodeChunks(controller);
+            // No debug event for idle tuner
+            expect(output).not.toContain('event: debug');
         });
     });
 });
