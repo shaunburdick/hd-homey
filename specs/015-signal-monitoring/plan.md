@@ -295,6 +295,42 @@ Per NFR-008/009/010/011:
 
 ---
 
+## Per-Device Signal Page — All Physical Tuner Slots
+
+**Added**: Wave 7 (2026-06-19) — see `plan-refinement-per-device.md` for the full rationale.
+
+### Problem
+
+The `/tuners/[id]/signal` page originally subscribed to a single physical slot (`tuner0`) because the SSE route called `poller.subscribe()` with one resource. Users with multi-slot devices (2 or 4 tuners per box) could not see all their tuners on one page.
+
+### Architecture Decision: No New Database Table
+
+Physical tuner slots are **not** stored in the database. They are discovered at runtime from the device's `/status.json` endpoint and tracked in-memory by the `SignalPollingManager`.
+
+| Consideration | DB Table | In-Memory (chosen) |
+|---|---|---|
+| Data accuracy | Stale on firmware change | Self-correcting — reads device every 2 s |
+| Sync complexity | Insert/delete/update needed | Zero — device is source of truth |
+| Migration required | Yes | No |
+| Runtime cost | DB read per cycle | Already fetched every 2 s |
+| Simplicity (Const. I) | ❌ More moving parts | ✅ Zero new infrastructure |
+
+The existing `autoDiscoverTuners()` method in `SignalPollingManager` already handles this — it iterates `/status.json` entries, detects untracked resources, assigns synthetic negative IDs, and emits events for all of them.
+
+### Changes (Wave 7)
+
+- **`route.ts`** — Changed `poller.subscribe()` → `poller.subscribeAll()`. The route now builds `tunersToTrack` from all DB records sharing the same `tuner.path` (device URL), ordering them by ascending `id` to assign stable `tuner0`, `tuner1`, … resource indices.
+- **`page.tsx`** — Refactored from single-tuner state (`SignalSseEvent | null`) to multi-tuner state (`Record<number, TunerSignalState>`) and replaced the `SignalGaugeRow` + `SignalGraphRow` + `ProgramList` + `Atsc3Details` layout with a CSS grid of `SignalStatusCard` components (identical to the antenna page).
+- **Test** — Updated route test assertion from `poller.subscribe` to `poller.subscribeAll` and added argument verification.
+
+### Synthetic ID Convention
+
+- DB-backed tuner slots → positive integer id (stable across restarts)
+- Auto-discovered slots → synthetic negative ids (`-1`, `-2`, …) assigned by the poller (ephemeral — reset on server restart)
+- The UI treats both identically; display names are derived from the `resource` field (e.g. `"tuner2"` → `"Tuner 2"`)
+
+---
+
 ## Testing Strategy
 
 Per NFR-014 and AC-012:
@@ -302,6 +338,6 @@ Per NFR-014 and AC-012:
 - **Unit tests** (Vitest, no DOM): `signal-parsers.test.ts` — test all four parser functions with sample device responses, including error/empty cases.
 - **Component tests** (React Testing Library): `SignalGauge.test.tsx` — verify correct color class for threshold values; verify `aria-label` text.
 - **Component tests**: `SignalGraph.test.tsx` — verify `role="img"` present; verify reduced-motion disables animation.
-- **Route handler tests** (Vitest with mocked fetch): `stream/route.test.ts` — verify SSE response headers; verify auth rejection; mock polling manager.
+- **Route handler tests** (Vitest with mocked fetch): `stream/route.test.ts` — verify SSE response headers; verify auth rejection; verify `subscribeAll` call with correct arguments; mock polling manager.
 
 Target: ≥70% coverage on all new files in `src/lib/hdhr/` and `src/app/api/signal/`.

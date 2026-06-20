@@ -1,7 +1,13 @@
 /**
- * SSE Route: Single-Tuner Signal Stream
+ * SSE Route: Per-Device Signal Stream
  *
  * GET /api/signal/[tunerId]/stream
+ *
+ * Subscribes to ALL physical tuner slots on the same device as the requested
+ * tuner (tuner0, tuner1, …). Physical slots are NOT stored in the DB; the
+ * poller auto-discovers them from /status.json and assigns synthetic negative
+ * IDs for any slots beyond the DB-tracked ones. See plan.md §"Per-Device
+ * Signal Page — All Physical Tuner Slots" for the architecture decision.
  *
  * @module app/api/signal/[tunerId]/stream/route
  */
@@ -13,6 +19,7 @@ import { auth } from '@/lib/auth/auth';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
 import { getSignalPoller } from '@/lib/hdhr/signal-poller';
+import type { TrackedTuner } from '@/lib/hdhr/signal-poller';
 import { SSE_HEADERS } from '@/app/api/signal/sse-headers';
 import {
     canOpenConnection,
@@ -27,8 +34,17 @@ interface Params {
     tunerId: string;
 }
 
-/** Lookup a tuner by DB id and compute its HDHomeRun resource name */
-async function resolveTuner(tunerId: number) {
+/**
+ * Lookup a tuner by DB id and build the full list of tuners to track on
+ * that device. Each DB tuner on the same path (device URL) maps to a
+ * physical slot resource ("tuner0", "tuner1", …) ordered by ascending id.
+ *
+ * @param tunerId - The DB id of the requested tuner
+ * @returns Device URL + ordered list of trackedTuners, or null if not found
+ */
+async function resolveDevice(
+    tunerId: number,
+): Promise<{ deviceUrl: string; tunersToTrack: TrackedTuner[] } | null> {
     const db = await getDb();
 
     const tuner = await db.query.tuners.findFirst({
@@ -44,16 +60,21 @@ async function resolveTuner(tunerId: number) {
     });
 
     deviceTuners.sort((tunerA, tunerB) => tunerA.id - tunerB.id);
-    const resourceIndex = deviceTuners.findIndex((tun) => tun.id === tunerId);
-    const resource = resourceIndex >= 0 ? `tuner${resourceIndex}` : 'tuner0';
 
-    return { tuner, resource };
+    const tunersToTrack: TrackedTuner[] = deviceTuners.map((deviceTuner, index) => ({
+        tunerId: deviceTuner.id,
+        resource: `tuner${index}`,
+    }));
+
+    return { deviceUrl: tuner.path, tunersToTrack };
 }
 
 /**
  * GET /api/signal/[tunerId]/stream
  *
- * Opens an SSE stream for a single tuner's signal data.
+ * Opens an SSE stream that delivers signal events for ALL physical tuner
+ * slots on the device associated with `tunerId`. The client page displays
+ * a grid of SignalStatusCard components, one per slot.
  *
  * @returns 200 text/event-stream | 400 | 401 | 404 | 429
  */
@@ -73,11 +94,11 @@ export async function GET(
         return Response.json({ error: 'Invalid tunerId' }, { status: 400 });
     }
 
-    const resolved = await resolveTuner(tunerId);
+    const resolved = await resolveDevice(tunerId);
     if (resolved === null) {
         return Response.json({ error: 'Tuner not found' }, { status: 404 });
     }
-    const { tuner, resource } = resolved;
+    const { deviceUrl, tunersToTrack } = resolved;
 
     if (!canOpenConnection(session.user.id)) {
         return Response.json({ error: 'Too many connections' }, { status: 429 });
@@ -93,15 +114,13 @@ export async function GET(
             return;
         }
         cleaned = true;
-        poller.unsubscribe(tuner.path, subscriberId);
+        poller.unsubscribe(deviceUrl, subscriberId);
         unregisterConnection(userId, subscriberId);
     }
 
     const stream = new ReadableStream<Uint8Array>({
         start(controller) {
-            subscriberId = poller.subscribe({
-                deviceUrl: tuner.path, tunerDbId: tunerId, resource, controller,
-            });
+            subscriberId = poller.subscribeAll({ deviceUrl, tunersToTrack, controller });
             registerConnection(userId, subscriberId);
         },
         cancel: cleanup,

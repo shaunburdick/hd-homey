@@ -328,6 +328,30 @@ T-001 (recharts install)
 | AC-012: Parser unit tests exist and pass | T-004 |
 | AC-013: ARIA labels on gauges | T-012, T-013 |
 | AC-014: Reduced-motion disables animation | T-014, T-015 |
+| AC-015: `/tuners/[id]/signal` shows all physical tuner slots on the device | T-026, T-027 |
+| AC-016: SSE route calls `subscribeAll` instead of `subscribe` | T-026 |
+| AC-017: Auto-discovered slots use negative synthetic IDs; DB slots use positive IDs | T-026 |
+
+---
+
+## Wave 7 — Per-Device Signal Page Refinement
+
+- [x] **T-026** `[M]` `[DEPENDS: T-005]` — Change SSE route `/api/signal/[tunerId]/stream` from single-resource `subscribe()` to multi-slot `subscribeAll()`
+  - Modify `route.ts`: instead of `resolveTuner()` returning one resource, build `tunersToTrack` from all DB records on the same device path
+  - Call `poller.subscribeAll()` instead of `poller.subscribe()`
+  - Update route test to expect `subscribeAll` call
+  - No DB schema changes — physical slots remain in-memory via auto-discovery
+
+- [x] **T-027** `[M]` `[DEPENDS: T-026]` — Refactor client page `/tuners/[id]/signal/page.tsx` to show all physical tuner slots
+  - Change state from single-tuner (`SignalSseEvent | null`) to multi-tuner (`Record<number, TunerSignalState>`)
+  - Replace `SignalGaugeRow` + `SignalGraphRow` + `ProgramList` + `Atsc3Details` with a grid of `SignalStatusCard` components (same component and layout as antenna mode)
+  - Keep identical breadcrumb, page title "{tunerName} — Signal Monitor", and back button
+  - Remove unused `ProgramList` and `Atsc3Details` imports (or keep them for future slot-level detail view — defer if not needed)
+
+- [x] **T-028** `[S]` `[DEPENDS: T-026, T-027]` — Update plan and spec documentation
+  - Update `specs/015-signal-monitoring/plan.md` with architecture decision (no DB table for sub-tuners)
+  - Update `plan-refinement-per-device.md` if needed
+  - Mark all Wave 7 tasks complete
 
 ---
 
@@ -342,4 +366,5 @@ T-001 (recharts install)
 | 4 — UI Components | 7 | M×7 | 6–8 hr |
 | 5 — Pages | 3 | L+L+S | 4–5 hr |
 | 6 — Integration & Docs | 4 | M+M+S+S | 2–3 hr |
-| **Total** | **25** | | **~24–33 hr** |
+| 7 — Per-Device Signal Page | 3 | M+M+S | 2–3 hr |
+| **Total** | **28** | | **~26–36 hr** |

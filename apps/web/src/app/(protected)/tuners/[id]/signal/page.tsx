@@ -1,9 +1,15 @@
 'use client';
 
 /**
- * Single-Tuner Signal Monitor Page
+ * Per-Device Signal Monitor Page
  *
  * Route: /tuners/[id]/signal
+ *
+ * Displays a grid of SignalStatusCard components — one card per physical
+ * tuner slot on the device (tuner0, tuner1, …). The SSE stream now emits
+ * events for ALL slots, so state is keyed by tunerId (same pattern as the
+ * antenna page). Physical slots beyond the DB-tracked ones are auto-
+ * discovered by the poller and arrive with synthetic negative tunerId values.
  *
  * @module app/(protected)/tuners/[id]/signal/page
  */
@@ -11,96 +17,138 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { SignalGauge } from '@/components/signal/SignalGauge';
-import { SignalGraph } from '@/components/signal/SignalGraph';
-import { ProgramList } from '@/components/signal/ProgramList';
-import { Atsc3Details } from '@/components/signal/Atsc3Details';
+import { SignalStatusCard } from '@/components/signal/SignalStatusCard';
 import { MAX_HISTORY_POINTS } from '@/lib/hdhr/signal-parsers';
-import type {
-    SignalDataPoint,
-    SignalSseEvent,
-    StreamInfoSseEvent,
-    Atsc3PlpSseEvent,
-    Atsc3L1SseEvent,
-} from '@/lib/hdhr/signal-parsers';
-import type { ParsedProgram } from '@/lib/hdhr/types';
+import type { TunerSignalState, SignalDataPoint, SignalSseEvent } from '@/lib/hdhr/signal-parsers';
 
-function toErrorMsg(code: string | undefined): string | null {
-    if (code === 'timeout') {
-        return 'Device not responding — retrying…';
-    }
-    if (code === 'unreachable') {
-        return 'Device unreachable — retrying…';
-    }
-    return null;
+// ---------------------------------------------------------------------------
+// Helper types
+// ---------------------------------------------------------------------------
+
+interface TunerApiEntry {
+    id: number;
+    name: string;
 }
 
-interface SignalHookState {
-    signal: SignalSseEvent | null;
-    programs: ParsedProgram[];
-    atsc3Plp: Atsc3PlpSseEvent | null;
-    atsc3L1: Atsc3L1SseEvent | null;
+// ---------------------------------------------------------------------------
+// State builder (mirrors the antenna page pattern)
+// ---------------------------------------------------------------------------
+
+interface BuildStateOptions {
+    data: SignalSseEvent;
+    existing: TunerSignalState | undefined;
+    newHistory: SignalDataPoint[];
+    tunerName: string;
+}
+
+/**
+ * Construct a TunerSignalState from a raw SSE signal event.
+ *
+ * @param options - Event data, prior state, updated history, and display name
+ * @returns Immutable state object for the keyed tuner slot
+ */
+function buildTunerState(options: BuildStateOptions): TunerSignalState {
+    const { data, existing, newHistory, tunerName } = options;
+    return {
+        tunerId: data.tunerId,
+        tunerName: existing?.tunerName ?? tunerName,
+        resource: data.resource,
+        idle: data.idle,
+        vctName: data.vctName,
+        vctNumber: data.vctNumber,
+        ss: data.ss,
+        snq: data.snq,
+        seq: data.seq,
+        history: newHistory,
+        error: data.error,
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Custom hook: SSE stream subscription (multi-tuner)
+// ---------------------------------------------------------------------------
+
+interface SignalStreamState {
+    tunerStates: Record<number, TunerSignalState>;
     connected: boolean;
     connError: string | null;
-    history: SignalDataPoint[];
 }
 
-function useSignalStream(tunerId: string): SignalHookState {
-    const [state, setState] = useState<SignalHookState>({
-        signal: null, programs: [], atsc3Plp: null, atsc3L1: null,
-        connected: false, connError: null, history: [],
-    });
-    const historyRef = useRef<SignalDataPoint[]>([]);
+/**
+ * Subscribe to the per-device SSE stream and maintain a record of
+ * TunerSignalState objects keyed by tunerId.
+ *
+ * @param tunerId - The DB id from the URL; used to form the stream URL
+ * @param tunerName - Display name for the primary (DB-tracked) tuner slot
+ * @returns Live stream state: per-slot signal states + connection status
+ */
+function useSignalStream(tunerId: string, tunerName: string): SignalStreamState {
+    const [tunerStates, setTunerStates] = useState<Record<number, TunerSignalState>>({});
+    const [connected, setConnected] = useState(false);
+    const [connError, setConnError] = useState<string | null>(null);
+    const historyRef = useRef<Record<number, SignalDataPoint[]>>({});
 
-    const handleSignal = useCallback((ev: MessageEvent<string>) => {
+    const handleSignalEvent = useCallback((ev: MessageEvent<string>) => {
         const data = JSON.parse(ev.data) as SignalSseEvent;
-        historyRef.current = [...historyRef.current,
-            { timestamp: data.timestamp, ss: data.ss, snq: data.snq }].slice(-MAX_HISTORY_POINTS);
-        setState((prev) => ({
-            ...prev, signal: data, connected: true,
-            connError: toErrorMsg(data.error), history: [...historyRef.current],
+        setConnected(true);
+
+        const prevHistory = historyRef.current[data.tunerId] ?? [];
+        const point: SignalDataPoint = { timestamp: data.timestamp, ss: data.ss, snq: data.snq };
+        const newHistory = [...prevHistory, point].slice(-MAX_HISTORY_POINTS);
+        historyRef.current[data.tunerId] = newHistory;
+
+        // Derive display name: DB tuner gets the fetched name; auto-discovered
+        // slots get a human-friendly label from the resource field.
+        const derivedName = data.resource.replace('tuner', 'Tuner ');
+
+        setTunerStates((prev) => ({
+            ...prev,
+            [data.tunerId]: buildTunerState({
+                data,
+                existing: prev[data.tunerId],
+                newHistory,
+                tunerName: data.tunerId > 0 ? tunerName : derivedName,
+            }),
         }));
-    }, []);
 
-    const handleStreamInfo = useCallback((ev: MessageEvent<string>) => {
-        const data = JSON.parse(ev.data) as StreamInfoSseEvent;
-        setState((prev) => ({ ...prev, programs: data.programs }));
-    }, []);
-
-    const handleAtsc3Plp = useCallback((ev: MessageEvent<string>) => {
-        const data = JSON.parse(ev.data) as Atsc3PlpSseEvent;
-        setState((prev) => ({ ...prev, atsc3Plp: data }));
-    }, []);
-
-    const handleAtsc3L1 = useCallback((ev: MessageEvent<string>) => {
-        const data = JSON.parse(ev.data) as Atsc3L1SseEvent;
-        setState((prev) => ({ ...prev, atsc3L1: data }));
-    }, []);
+        if (data.error !== undefined) {
+            setConnError(
+                data.error === 'timeout'
+                    ? 'Device not responding — retrying…'
+                    : 'Device unreachable — retrying…',
+            );
+        } else {
+            setConnError(null);
+        }
+    }, [tunerName]);
 
     useEffect(() => {
         const es = new EventSource(`/api/signal/${tunerId}/stream`);
 
-        es.addEventListener('signal', handleSignal);
-        es.addEventListener('streaminfo', handleStreamInfo);
-        es.addEventListener('atsc3plp', handleAtsc3Plp);
-        es.addEventListener('atsc3l1', handleAtsc3L1);
-
+        es.addEventListener('signal', handleSignalEvent);
         es.onerror = () => {
-            setState((prev) => ({ ...prev, connError: 'Connection error — retrying…' }));
+            setConnError('Connection error — retrying…');
         };
 
         return () => {
-            es.removeEventListener('signal', handleSignal);
-            es.removeEventListener('streaminfo', handleStreamInfo);
-            es.removeEventListener('atsc3plp', handleAtsc3Plp);
-            es.removeEventListener('atsc3l1', handleAtsc3L1);
+            es.removeEventListener('signal', handleSignalEvent);
             es.close();
         };
-    }, [tunerId, handleSignal, handleStreamInfo, handleAtsc3Plp, handleAtsc3L1]);
+    }, [tunerId, handleSignalEvent]);
 
-    return state;
+    return { tunerStates, connected, connError };
 }
 
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+/**
+ * Breadcrumb navigation bar for the signal monitor page.
+ *
+ * @param tunerId - DB tuner id (used for the "Back" link)
+ * @param tunerName - Human-readable device/tuner name
+ */
 function SignalBreadcrumb({ tunerId, tunerName }: { tunerId: string; tunerName: string }) {
     return (
         <nav className="signal-breadcrumb" aria-label="Signal page navigation">
@@ -111,65 +159,61 @@ function SignalBreadcrumb({ tunerId, tunerName }: { tunerId: string; tunerName: 
     );
 }
 
-function SignalGaugeRow({ signal }: { signal: SignalSseEvent | null }) {
-    return (
-        <div className="signal-gauge-row" role="region" aria-label="Signal metrics">
-            <SignalGauge label="Signal Strength" value={signal?.ss ?? null} metric="SS" />
-            <SignalGauge label="SNR Quality" value={signal?.snq ?? null} metric="SNQ" />
-            <SignalGauge label="Symbol Quality" value={signal?.seq ?? null} metric="SEQ" />
-        </div>
-    );
-}
-
-function signalAriaLabel(prefix: string, value: number | null | undefined): string {
-    return value !== null && value !== undefined
-        ? `${prefix} rolling graph, current: ${value}%`
-        : `${prefix} rolling graph`;
-}
-
-function SignalGraphRow({ signal, history }: { signal: SignalSseEvent | null; history: SignalDataPoint[] }) {
-    return (
-        <div className="signal-graphs-row">
-            <SignalGraph
-                title="Signal Strength" data={history} dataKey="ss" color="steelblue"
-                ariaLabel={signalAriaLabel('Signal Strength', signal?.ss)}
-            />
-            <SignalGraph
-                title="SNR Quality" data={history} dataKey="snq" color="mediumseagreen"
-                ariaLabel={signalAriaLabel('SNR Quality', signal?.snq)}
-            />
-        </div>
-    );
-}
-
-function buildChannelText(signal: SignalSseEvent): string {
-    if (signal.vctName !== undefined && signal.vctName !== '') {
-        return `${signal.vctNumber ?? ''} ${signal.vctName}`.trim();
+/**
+ * Renders the grid of SignalStatusCard components (one per discovered slot).
+ *
+ * @param tunerStates - Map of tunerId → TunerSignalState
+ */
+function SignalGrid({ tunerStates }: { tunerStates: Record<number, TunerSignalState> }) {
+    const tunerList = Object.values(tunerStates);
+    if (tunerList.length === 0) {
+        return null;
     }
-    return signal.vctNumber ?? '';
+
+    return (
+        <div className="antenna-grid" role="region" aria-label="All tuner slots signal status">
+            {tunerList.map((tunerState) => (
+                <SignalStatusCard key={tunerState.tunerId} state={tunerState} />
+            ))}
+        </div>
+    );
 }
 
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-device signal monitor page.
+ *
+ * Fetches the device name from /api/tuners/[id], then opens an SSE stream
+ * that delivers signal events for all physical tuner slots on that device.
+ * Renders a CSS grid of SignalStatusCard components mirroring the antenna page.
+ */
 export default function SignalPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const tunerId = params.id;
     const [tunerName, setTunerName] = useState(`Tuner ${tunerId}`);
-    const { signal, programs, atsc3Plp, atsc3L1, connected, connError, history } = useSignalStream(tunerId);
 
+    // Fetch display name for the primary tuner (DB-tracked slot)
     useEffect(() => {
         const controller = new AbortController();
         void fetch(`/api/tuners/${tunerId}`, { signal: controller.signal })
-            .then((res) => res.ok ? res.json() as Promise<{ data: { name: string } }> : Promise.resolve(null))
+            .then((res) => res.ok ? res.json() as Promise<{ data: TunerApiEntry }> : Promise.resolve(null))
             .then((json) => {
                 if (json !== null) {
                     setTunerName(json.data.name);
-                } return json;
+                }
+                return json;
             })
             .catch(() => { /* AbortError expected during Strict Mode cleanup */ });
         return () => {
             controller.abort();
         };
     }, [tunerId]);
+
+    const { tunerStates, connected, connError } = useSignalStream(tunerId, tunerName);
 
     return (
         <main className="page-container">
@@ -181,16 +225,10 @@ export default function SignalPage() {
             {connError !== null && (
                 <div className="signal-error-banner" role="alert">⚠️ {connError}</div>
             )}
-            {signal !== null && !signal.idle && (
-                <p className="signal-channel-info">{buildChannelText(signal)}</p>
+            {connected && Object.keys(tunerStates).length === 0 && (
+                <p className="signal-empty">No tuner data received yet…</p>
             )}
-            {signal !== null && signal.idle && (
-                <p className="signal-channel-info signal-channel-idle">Idle — no channel tuned</p>
-            )}
-            <SignalGaugeRow signal={signal} />
-            <SignalGraphRow signal={signal} history={history} />
-            <ProgramList programs={programs} idle={signal?.idle ?? true} />
-            <Atsc3Details plp={atsc3Plp} l1={atsc3L1} />
+            <SignalGrid tunerStates={tunerStates} />
             <div className="signal-actions">
                 <button type="button" onClick={() => router.back()} className="signal-back-button">← Back</button>
             </div>

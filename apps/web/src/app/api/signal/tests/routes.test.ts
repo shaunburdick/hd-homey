@@ -155,14 +155,15 @@ describe('GET /api/signal/[tunerId]/stream', () => {
         expect(response.status).toBe(400);
     });
 
-    it('returns 200 with SSE Content-Type for valid tuner', async () => {
+    it('returns 200 with SSE Content-Type for valid tuner and calls subscribeAll', async () => {
         const mockTuner = { id: 1, name: 'Test Tuner', path: DEVICE_URL, is_active: true };
+        const mockTuner2 = { id: 2, name: 'Test Tuner 2', path: DEVICE_URL, is_active: true };
         getMockGetSession().mockResolvedValue(VIEWER_ROLE);
         getMockGetDb().mockResolvedValue({
             query: {
                 tuners: {
                     findFirst: vi.fn().mockResolvedValue(mockTuner),
-                    findMany: vi.fn().mockResolvedValue([mockTuner]),
+                    findMany: vi.fn().mockResolvedValue([mockTuner, mockTuner2]),
                 },
             },
         });
@@ -171,6 +172,19 @@ describe('GET /api/signal/[tunerId]/stream', () => {
         expect(response.status).toBe(200);
         expect(response.headers.get('Content-Type')).toBe('text/event-stream');
         expect(response.headers.get('Cache-Control')).toBe('no-cache');
+
+        // Route must now call subscribeAll (not subscribe) with all device tuners
+        expect(mockPoller.subscribeAll).toHaveBeenCalledOnce();
+        expect(mockPoller.subscribe).not.toHaveBeenCalled();
+        const callArgs = mockPoller.subscribeAll.mock.calls[0][0] as {
+            deviceUrl: string;
+            tunersToTrack: { tunerId: number; resource: string }[];
+        };
+        expect(callArgs.deviceUrl).toBe(DEVICE_URL);
+        expect(callArgs.tunersToTrack).toEqual([
+            { tunerId: 1, resource: 'tuner0' },
+            { tunerId: 2, resource: 'tuner1' },
+        ]);
     });
 });
 
