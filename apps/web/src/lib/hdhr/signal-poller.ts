@@ -9,30 +9,29 @@ import {
     parseStatusJson,
     parseStreamInfo,
     groupStreamInfoByProgram,
-    parseAtsc3Plp,
-    parseAtsc3L1,
     parseTunerLockStatus,
     formatSseEvent,
     createLineupFallbackProgram,
 } from './signal-parsers';
-import type { SignalSseEvent, StreamInfoSseEvent, Atsc3PlpSseEvent, Atsc3L1SseEvent } from './signal-parsers';
+import type { SignalSseEvent, StreamInfoSseEvent } from './signal-parsers';
 import type { TunerStatusResponse, ChannelInfo } from './types';
 import { validateDeviceUrl } from './device-url';
+import {
+    WILDCARD_RESOURCE,
+    dispatchToSubscribers,
+    dispatchPing,
+    fetchWithTimeout,
+    fetchAtsc3Plp,
+    fetchAtsc3L1,
+} from './sse-dispatch';
+import type { SseSubscriber } from './sse-dispatch';
 import Logger from '@/lib/logger';
 
 const POLL_INTERVAL_MS = 2_000;
 const PING_INTERVAL_MS = 30_000;
 const FETCH_TIMEOUT_MS = 3_000;
-const WILDCARD_RESOURCE = '*';
 
 export { validateDeviceUrl } from './device-url';
-
-interface SseSubscriber {
-    id: string;
-    controller: ReadableStreamDefaultController<Uint8Array>;
-    tunerId: number;
-    resource: string;
-}
 
 /** A tuner slot being tracked on a device */
 export interface TrackedTuner {
@@ -62,16 +61,6 @@ interface SubscribeOptions {
 interface DispatchEventOptions {
     entry: DevicePollEntry;
     tunerId: number;
-}
-
-interface DispatchToSubscribersOptions extends DispatchEventOptions {
-    resource: string;
-    sseText: string;
-}
-
-interface Atsc3FetchOptions extends DispatchEventOptions {
-    resource: string;
-    url: string;
 }
 
 interface DispatchStreamInfoOptions extends DispatchEventOptions {
@@ -252,7 +241,7 @@ export class SignalPollingManager {
         }, POLL_INTERVAL_MS);
 
         entry.pingHandle = setInterval(() => {
-            this.dispatchPing(deviceUrl);
+            dispatchPing(entry.subscribers, this.encoder);
         }, PING_INTERVAL_MS);
     }
 
@@ -284,7 +273,7 @@ export class SignalPollingManager {
         let statusJson: TunerStatusResponse;
 
         try {
-            const response = await this.fetchWithTimeout(`${deviceUrl}/status.json`, FETCH_TIMEOUT_MS);
+            const response = await fetchWithTimeout(`${deviceUrl}/status.json`, FETCH_TIMEOUT_MS);
             statusJson = await response.json() as TunerStatusResponse;
         } catch (error) {
             const errorType = error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'unreachable';
@@ -302,11 +291,12 @@ export class SignalPollingManager {
                     timestamp: Date.now(),
                     error: errorType,
                 };
-                this.dispatchToSubscribers({
-                    entry,
+                dispatchToSubscribers({
+                    subscribers: entry.subscribers,
                     resource: tuner.resource,
                     tunerId: tuner.tunerId,
                     sseText: formatSseEvent('signal', errorEvent),
+                    encoder: this.encoder,
                 });
             }
             return;
@@ -345,11 +335,12 @@ export class SignalPollingManager {
             timestamp: Date.now(),
         };
 
-        this.dispatchToSubscribers({
-            entry,
+        dispatchToSubscribers({
+            subscribers: entry.subscribers,
             resource: statusEntry.Resource,
             tunerId,
             sseText: formatSseEvent('signal', event),
+            encoder: this.encoder,
         });
     }
 
@@ -371,7 +362,7 @@ export class SignalPollingManager {
         const tunerNum = match !== null ? match[1] : '0';
 
         try {
-            const response = await this.fetchWithTimeout(
+            const response = await fetchWithTimeout(
                 `${deviceUrl}/tuner${tunerNum}/streaminfo`,
                 FETCH_TIMEOUT_MS,
             );
@@ -385,11 +376,12 @@ export class SignalPollingManager {
                 tunerId,
                 programs: groupStreamInfoByProgram(parseStreamInfo(await response.text()), vctName),
             };
-            this.dispatchToSubscribers({
-                entry,
+            dispatchToSubscribers({
+                subscribers: entry.subscribers,
                 resource,
                 tunerId,
                 sseText: formatSseEvent('streaminfo', event),
+                encoder: this.encoder,
             });
         } catch (error) {
             Logger.warn({ deviceUrl, resource, error }, 'Failed to fetch streaminfo');
@@ -408,7 +400,7 @@ export class SignalPollingManager {
 
         try {
             const lineupData: ChannelInfo[] = entry.lineupCache ?? await (async () => {
-                const lineupResponse = await this.fetchWithTimeout(
+                const lineupResponse = await fetchWithTimeout(
                     `${deviceUrl}/lineup.json`,
                     FETCH_TIMEOUT_MS,
                 );
@@ -429,11 +421,12 @@ export class SignalPollingManager {
                     tunerId,
                     programs,
                 };
-                this.dispatchToSubscribers({
-                    entry,
+                dispatchToSubscribers({
+                    subscribers: entry.subscribers,
                     resource,
                     tunerId,
                     sseText: formatSseEvent('streaminfo', event),
+                    encoder: this.encoder,
                 });
             }
         } catch (lineupError) {
@@ -450,7 +443,7 @@ export class SignalPollingManager {
         let currentLockType: string | null;
 
         try {
-            const response = await this.fetchWithTimeout(
+            const response = await fetchWithTimeout(
                 `${deviceUrl}/tuner${tunerNum}/status`,
                 FETCH_TIMEOUT_MS,
             );
@@ -471,108 +464,25 @@ export class SignalPollingManager {
         }
 
         await Promise.all([
-            this.fetchAtsc3Plp({
-                entry,
+            fetchAtsc3Plp({
+                subscribers: entry.subscribers,
                 resource,
                 tunerId,
                 url: `${deviceUrl}/tuner${tunerNum}/atsc3/plpinfo`,
+                timeoutMs: FETCH_TIMEOUT_MS,
+                encoder: this.encoder,
             }),
-            this.fetchAtsc3L1({
-                entry,
+            fetchAtsc3L1({
+                subscribers: entry.subscribers,
                 resource,
                 tunerId,
                 url: `${deviceUrl}/tuner${tunerNum}/atsc3/l1info`,
+                timeoutMs: FETCH_TIMEOUT_MS,
+                encoder: this.encoder,
             }),
         ]);
     }
 
-    private async fetchAtsc3Plp(options: Atsc3FetchOptions): Promise<void> {
-        const { entry, resource, tunerId, url } = options;
-        try {
-            const response = await this.fetchWithTimeout(url, FETCH_TIMEOUT_MS);
-            const event: Atsc3PlpSseEvent = {
-                event: 'atsc3plp',
-                tunerId,
-                ...parseAtsc3Plp(await response.text()),
-            };
-            this.dispatchToSubscribers({
-                entry,
-                resource,
-                tunerId,
-                sseText: formatSseEvent('atsc3plp', event),
-            });
-        } catch (fetchError) {
-            Logger.debug({ url, fetchError }, 'ATSC 3.0 PLP endpoint not available');
-        }
-    }
-
-    private async fetchAtsc3L1(options: Atsc3FetchOptions): Promise<void> {
-        const { entry, resource, tunerId, url } = options;
-        try {
-            const response = await this.fetchWithTimeout(url, FETCH_TIMEOUT_MS);
-            const event: Atsc3L1SseEvent = {
-                event: 'atsc3l1',
-                tunerId,
-                ...parseAtsc3L1(await response.text()),
-            };
-            this.dispatchToSubscribers({
-                entry,
-                resource,
-                tunerId,
-                sseText: formatSseEvent('atsc3l1', event),
-            });
-        } catch (fetchError) {
-            Logger.debug({ url, fetchError }, 'ATSC 3.0 L1 endpoint not available');
-        }
-    }
-
-    private dispatchPing(deviceUrl: string): void {
-        const entry = this.devices.get(deviceUrl);
-        if (entry === undefined) {
-            return;
-        }
-
-        const pingData = formatSseEvent('ping', {});
-
-        for (const [, subscriber] of entry.subscribers) {
-            this.enqueueToController(subscriber.controller, pingData);
-        }
-    }
-
-    private dispatchToSubscribers(options: DispatchToSubscribersOptions): void {
-        const { entry, resource, tunerId, sseText } = options;
-
-        for (const [, subscriber] of entry.subscribers) {
-            const isWildcard = subscriber.resource === WILDCARD_RESOURCE;
-            const isMatch = subscriber.resource === resource && subscriber.tunerId === tunerId;
-
-            if (isWildcard || isMatch) {
-                this.enqueueToController(subscriber.controller, sseText);
-            }
-        }
-    }
-
-    private enqueueToController(
-        controller: ReadableStreamDefaultController<Uint8Array>,
-        text: string,
-    ): void {
-        try {
-            controller.enqueue(this.encoder.encode(text));
-        } catch (error) {
-            Logger.debug({ error }, 'Failed to enqueue SSE data — stream may be closed');
-        }
-    }
-
-    private async fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-        try {
-            return await fetch(url, { signal: controller.signal });
-        } finally {
-            clearTimeout(timer);
-        }
-    }
 }
 
 let pollerInstance: SignalPollingManager | null = null;
