@@ -123,6 +123,7 @@ All Wave 1 tasks are parallel-safe after T-001.
     7. On abort: unsubscribe all device subscriptions
 
 - [x] **T-009** `[P]` `[M]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/[tunerId]/tune/route.ts` — Tune channel (admin)
+  > **Note**: Implemented as bonus — originally out-of-scope per product decision (Option A). No UI controls expose this route; admin-only access.
   - `POST` handler:
     1. Validate session → 401; check `role === 'admin'` → 403
     2. Parse `tunerId` → DB lookup → 404
@@ -133,6 +134,7 @@ All Wave 1 tasks are parallel-safe after T-001.
     7. Return `{ success: true, resource: "tuner0" }` on success
 
 - [x] **T-010** `[P]` `[M]` `[DEPENDS: T-005]` — Create `apps/web/src/app/api/signal/[tunerId]/clear/route.ts` — Clear tuner (admin)
+  > **Note**: Implemented as bonus — originally out-of-scope per product decision (Option A). No UI controls expose this route; admin-only access.
   - `POST` handler:
     1. Validate session → 401; check `role === 'admin'` → 403
     2. Parse `tunerId` → DB lookup → 404
