@@ -1,14 +1,14 @@
 /**
- * Unit tests for native-protocol.ts and crc32.ts
+ * Unit tests for native-protocol.ts
  *
- * Tests the CRC32 implementation, TLV packet encoder/decoder, and
+ * Tests the CRC32 checksum (via node:zlib), TLV packet encoder/decoder, and
  * nativeGet TCP client using real local net.Server instances to simulate
  * HDHomeRun device responses.
  */
 
 import * as net from 'node:net';
+import { crc32 } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { crc32 } from './crc32';
 import {
     decodeResponse,
     encodeGetRequest,
