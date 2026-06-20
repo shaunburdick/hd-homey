@@ -6,21 +6,23 @@
  * Route: /tuners/[id]/signal
  *
  * Displays a grid of SignalStatusCard components — one card per physical
- * tuner slot on the device (tuner0, tuner1, …). Each card is followed by a
- * collapsible <details> section showing ProgramList + Atsc3Details for that
- * specific slot. This keeps deep diagnostics inline with their slot without
- * cluttering the overview.
+ * tuner slot on the device (tuner0, tuner1, …). Each card contains a
+ * collapsible diagnostics section (ProgramList + Atsc3Details) rendered as
+ * the optional `diagnostics` prop on SignalStatusCard. This keeps deep
+ * diagnostics visually inside the card, below the graphs, without cluttering
+ * the overview.
  *
- * Layout decision (Option A — inline per-slot diagnostics):
- *   The diagnostic components (ProgramList, Atsc3Details) are placed below
- *   EACH SignalStatusCard in a collapsible <details> element keyed by slot.
- *   This gives the best UX because:
- *     1. Slot diagnostics are co-located with that slot's gauges/graphs.
- *     2. The <details> collapses by default — the grid stays clean.
- *     3. Users can expand exactly the slot they care about simultaneously.
- *   Option B (single panel below the grid showing the first active slot)
- *   was rejected because it breaks the spatial correspondence between a slot's
- *   metrics and its program/PID data.
+ * Layout decision (Option A — diagnostics inside SignalStatusCard):
+ *   The diagnostic components (ProgramList, Atsc3Details) are passed as the
+ *   `diagnostics` prop to each SignalStatusCard and rendered as a collapsible
+ *   `<details>` section inside the card, below the graphs. This gives the
+ *   best UX because:
+ *     1. Slot diagnostics are visually unified with that slot's card.
+ *     2. The section collapses by default — the grid stays clean.
+ *     3. Styling is consistent: same background, border, padding as the card.
+ *     4. The antenna page passes no `diagnostics` prop and is unaffected.
+ *   Option B (separate styled element below the card) was rejected because
+ *   it requires extra CSS and breaks the visual grouping.
  *
  * The antenna page (/signal/antenna) remains a pure overview — it only shows
  * SignalStatusCards with no diagnostic sections.
@@ -264,35 +266,6 @@ function SignalBreadcrumb({ tunerId, tunerName }: { tunerId: string; tunerName: 
     );
 }
 
-interface SlotDiagnosticsProps {
-    tunerId: number;
-    idle: boolean;
-    programs: ParsedProgram[];
-    plp: Atsc3PlpSseEvent | null;
-    l1: Atsc3L1SseEvent | null;
-}
-
-/**
- * Collapsible diagnostics panel for a single tuner slot.
- *
- * Shown below each SignalStatusCard in the per-device signal page.
- * Collapses by default — only expands when the user clicks the summary.
- * Renders ProgramList and Atsc3Details side-by-side when present.
- *
- * @param props - Slot ID, idle flag, programs array, ATSC 3.0 PLP/L1 payloads
- */
-function SlotDiagnostics({ tunerId, idle, programs, plp, l1 }: SlotDiagnosticsProps) {
-    return (
-        <details className="slot-diagnostics" data-tuner-id={tunerId}>
-            <summary className="slot-diagnostics-summary">Diagnostics</summary>
-            <div className="slot-diagnostics-content">
-                <ProgramList programs={programs} idle={idle} />
-                <Atsc3Details plp={plp} l1={l1} />
-            </div>
-        </details>
-    );
-}
-
 interface SignalGridProps {
     tunerStates: Record<number, TunerSignalState>;
     programs: Record<number, ParsedProgram[]>;
@@ -301,9 +274,10 @@ interface SignalGridProps {
 }
 
 /**
- * Renders the grid of SignalStatusCard components (one per discovered slot),
- * each followed by a collapsible SlotDiagnostics panel.
+ * Renders the grid of SignalStatusCard components (one per discovered slot).
  *
+ * Each card receives a `diagnostics` node containing a ProgramList and
+ * optional Atsc3Details, rendered as a collapsible section inside the card.
  * Diagnostic data is keyed by the same tunerId as the signal state, so each
  * slot's diagnostics update independently as SSE events arrive.
  *
@@ -318,16 +292,22 @@ function SignalGrid({ tunerStates, programs, atsc3Plp, atsc3L1 }: SignalGridProp
     return (
         <div className="antenna-grid" role="region" aria-label="All tuner slots signal status">
             {tunerList.map((tunerState) => (
-                <div key={tunerState.tunerId} className="signal-slot-wrapper">
-                    <SignalStatusCard state={tunerState} />
-                    <SlotDiagnostics
-                        tunerId={tunerState.tunerId}
-                        idle={tunerState.idle}
-                        programs={programs[tunerState.tunerId] ?? []}
-                        plp={atsc3Plp[tunerState.tunerId] ?? null}
-                        l1={atsc3L1[tunerState.tunerId] ?? null}
-                    />
-                </div>
+                <SignalStatusCard
+                    key={tunerState.tunerId}
+                    state={tunerState}
+                    diagnostics={
+                        <>
+                            <ProgramList
+                                programs={programs[tunerState.tunerId] ?? []}
+                                idle={tunerState.idle}
+                            />
+                            <Atsc3Details
+                                plp={atsc3Plp[tunerState.tunerId] ?? null}
+                                l1={atsc3L1[tunerState.tunerId] ?? null}
+                            />
+                        </>
+                    }
+                />
             ))}
         </div>
     );
@@ -343,7 +323,7 @@ function SignalGrid({ tunerStates, programs, atsc3Plp, atsc3L1 }: SignalGridProp
  * Fetches the device name from /api/tuners/[id], then opens an SSE stream
  * that delivers signal events for all physical tuner slots on that device.
  * Renders a CSS grid of SignalStatusCard components with collapsible
- * per-slot diagnostics (ProgramList + Atsc3Details) below each card.
+ * per-slot diagnostics (ProgramList + Atsc3Details) inside each card.
  */
 export default function SignalPage() {
     const params = useParams<{ id: string }>();

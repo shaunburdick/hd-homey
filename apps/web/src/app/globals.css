@@ -785,3 +785,37 @@ button.unstyled {
 .signal-actions {
   margin-top: var(--space-6);
 }
+
+/* Collapsible diagnostics section inside SignalStatusCard */
+.signal-status-card-diagnostics {
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-1);
+}
+
+.signal-status-card-diagnostics-summary {
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--space-2) 0;
+  list-style: none;
+  user-select: none;
+}
+
+/* Remove default disclosure triangle in webkit; we use the ▶ in the text */
+.signal-status-card-diagnostics-summary::-webkit-details-marker {
+  display: none;
+}
+
+.signal-status-card-diagnostics[open] .signal-status-card-diagnostics-summary {
+  color: var(--color-text-primary);
+}
+
+.signal-status-card-diagnostics-content {
+  padding-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

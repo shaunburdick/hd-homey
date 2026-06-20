@@ -61,6 +61,15 @@ const SIGNAL_EVENT = 'event: signal';
 /** SSE streaminfo event prefix for assertions */
 const STREAMINFO_EVENT = 'event: streaminfo';
 
+/** Minimal streaminfo response — one video PID in program 1 */
+const STREAMINFO_RESPONSE = '481: mpeg2video v 1\n';
+
+/** Two-PID streaminfo response — video + audio in program 1 */
+const STREAMINFO_TWO_PIDS = `${STREAMINFO_RESPONSE}482: ac3 a 1`;
+
+/** Tuner status response for ATSC 1 lock with signal values */
+const LOCK_STATUS_ATSC1 = 'lock=atsc1-t\nss=83\nsnq=90\nseq=100\n';
+
 // =============================================================================
 // Tests
 // =============================================================================
@@ -143,10 +152,14 @@ describe('SignalPollingManager', () => {
         it('dispatches a signal SSE event after subscribing', async () => {
             const controller = makeController();
 
-            // Mock: status.json returns active tuner, then tuner status for lock check
+            // Fetch order per poll cycle for an active tuner:
+            // 1. status.json (tuner0 has VctNumber="5.1")
+            // 2. streaminfo (VctNumber changed from undefined to "5.1")
+            // 3. tuner status (ATSC lock type check)
             fetchMock
                 .mockResolvedValueOnce(new Response(ACTIVE_STATUS_JSON, { status: 200 }))
-                .mockResolvedValueOnce(new Response('lock=atsc1-t\nss=83\n', { status: 200 }));
+                .mockResolvedValueOnce(new Response(STREAMINFO_RESPONSE, { status: 200 })) // streaminfo
+                .mockResolvedValueOnce(new Response('lock=atsc1-t\nss=83\n', { status: 200 })); // tuner status
 
             manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
 
@@ -283,11 +296,14 @@ describe('SignalPollingManager', () => {
                 },
             ]);
 
-            // status.json, tuner status (lock check), streaminfo
+            // Fetch order per poll cycle:
+            // 1. status.json
+            // 2. streaminfo (VctNumber changed from undefined to '5.1')
+            // 3. tuner status (for ATSC lock detection)
             fetchMock
                 .mockResolvedValueOnce(new Response(statusFirstPoll, { status: 200 }))
-                .mockResolvedValueOnce(new Response('lock=atsc1-t\nss=83\nsnq=90\nseq=100\n', { status: 200 }))
-                .mockResolvedValueOnce(new Response('481: mpeg2video v 1\n482: ac3 a 1', { status: 200 }));
+                .mockResolvedValueOnce(new Response(STREAMINFO_TWO_PIDS, { status: 200 })) // streaminfo
+                .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 })); // tuner status
 
             manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);
@@ -298,7 +314,9 @@ describe('SignalPollingManager', () => {
 
             const output = decodeChunks(controller);
             expect(output).toContain(STREAMINFO_EVENT);
-            expect(output).toContain('"programs"');
+            // programs array must contain the parsed PIDs from the streaminfo response
+            expect(output).toContain('"programNumber":1');
+            expect(output).toContain('"codec":"mpeg2video"');
         });
     });
 
@@ -329,7 +347,7 @@ describe('SignalPollingManager', () => {
             // 5. l1info
             fetchMock
                 .mockResolvedValueOnce(new Response(statusAtsc3, { status: 200 }))
-                .mockResolvedValueOnce(new Response('481: mpeg2video v 1\n', { status: 200 })) // streaminfo
+                .mockResolvedValueOnce(new Response(STREAMINFO_RESPONSE, { status: 200 })) // streaminfo
                 .mockResolvedValueOnce(new Response('lock=atsc3-t2\nss=80\n', { status: 200 })) // tuner status
                 .mockResolvedValueOnce(new Response('plpid=0\nsnr=32.5\nfectype=ldpc\n', { status: 200 }))
                 .mockResolvedValueOnce(new Response('fftsize=16K\ngi=1/192\npp=PP4\n', { status: 200 }));
@@ -359,12 +377,18 @@ describe('SignalPollingManager', () => {
                 },
             ]);
 
+            // Fetch order per poll cycle:
+            // 1. status.json
+            // 2. streaminfo (VctNumber changed to '44.1' from undefined)
+            // 3. tuner status (returns atsc3 lock → triggers ATSC 3.0 fetches)
+            // 4. plpinfo — fails with 404
+            // 5. l1info — fails with 404
             fetchMock
                 .mockResolvedValueOnce(new Response(statusAtsc3, { status: 200 }))
-                .mockResolvedValueOnce(new Response('lock=atsc3-t2\nss=80\n', { status: 200 }))
+                .mockResolvedValueOnce(new Response(STREAMINFO_RESPONSE, { status: 200 })) // streaminfo
+                .mockResolvedValueOnce(new Response('lock=atsc3-t2\nss=80\n', { status: 200 })) // tuner status
                 .mockRejectedValueOnce(new Error('404 not found'))  // plpinfo fails
-                .mockRejectedValueOnce(new Error('404 not found')) // l1info fails
-                .mockResolvedValueOnce(new Response('481: mpeg2video v 1\n', { status: 200 })); // streaminfo
+                .mockRejectedValueOnce(new Error('404 not found')); // l1info fails
 
             manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);

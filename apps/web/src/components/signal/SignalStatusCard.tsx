@@ -1,17 +1,24 @@
 'use client';
 
 /**
- * SignalStatusCard — Per-tuner card for antenna tuning mode.
+ * SignalStatusCard — Per-tuner card for antenna tuning mode and per-device signal page.
+ *
+ * Accepts an optional `diagnostics` node that, when provided, is rendered as a
+ * collapsible section inside the card — below the graphs and visually flush with
+ * the card's background, border and padding. The antenna page omits this prop.
  *
  * @module components/signal/SignalStatusCard
  */
 
+import type { ReactNode } from 'react';
 import { SignalGauge } from './SignalGauge';
 import { SignalGraph } from './SignalGraph';
 import type { TunerSignalState } from '@/lib/hdhr/signal-parsers';
 
 interface SignalStatusCardProps {
     state: TunerSignalState;
+    /** Optional diagnostics node rendered as a collapsible section inside the card. */
+    diagnostics?: ReactNode;
 }
 
 /** Determine the channel display string from the tuner state */
@@ -38,11 +45,14 @@ function snqLabel(state: TunerSignalState): string {
 /**
  * Card component displaying live signal data for a single tuner.
  *
- * Used exclusively in the antenna tuning mode page.
+ * The optional `diagnostics` prop is rendered as a collapsible `<details>`
+ * section at the bottom of the card, styled to match the card's background and
+ * typography. Omit the prop entirely on pages that don't need diagnostics
+ * (e.g. the antenna page).
  *
  * @param props - Card display props
  */
-export function SignalStatusCard({ state }: SignalStatusCardProps) {
+export function SignalStatusCard({ state, diagnostics }: SignalStatusCardProps) {
     const channelDisplay = getChannelDisplay(state);
     const hasError = state.error !== undefined;
 
@@ -81,6 +91,15 @@ export function SignalStatusCard({ state }: SignalStatusCardProps) {
                     ariaLabel={snqLabel(state)}
                 />
             </div>
+
+            {diagnostics !== undefined && (
+                <details className="signal-status-card-diagnostics">
+                    <summary className="signal-status-card-diagnostics-summary">▶ Diagnostics</summary>
+                    <div className="signal-status-card-diagnostics-content">
+                        {diagnostics}
+                    </div>
+                </details>
+            )}
         </div>
     );
 }
