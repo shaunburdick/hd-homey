@@ -1,7 +1,7 @@
 # HD Homey Feature Status
 
-**Last Updated**: 2024-12-04  
-**Version**: 1.0.0-beta.5 (Channel Favorites and Organization Complete)
+**Last Updated**: 2026-06-20  
+**Version**: 1.0.0-beta.6 (Signal Monitoring)
 
 This document provides a quick overview of all features and their implementation status.
 

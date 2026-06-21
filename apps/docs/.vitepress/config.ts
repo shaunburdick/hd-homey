@@ -1,4 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vitepress';
+
+// Read version once at build time from root package.json (source of truth)
+const rootPkg: { version: string } = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../../../package.json'), 'utf8'),
+);
+const appVersion = `v${rootPkg.version}`;
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -19,7 +27,7 @@ export default defineConfig({
             { text: 'API', link: '/api/' },
             { text: 'Contributing', link: '/contributing/' },
             {
-                text: 'v1.0.0-beta.6',
+                text: appVersion,
                 items: [
                     { text: 'Changelog', link: 'https://github.com/shaunburdick/hd-homey/blob/main/CHANGELOG.md' },
                     { text: 'GitHub', link: 'https://github.com/shaunburdick/hd-homey' }

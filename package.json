@@ -32,7 +32,8 @@
     "db:push": "npm run db:push --workspace=apps/web",
     "db:generate": "npm run db:generate --workspace=apps/web",
     "db:studio": "npm run db:studio --workspace=apps/web",
-    "db:migrate": "npm run db:migrate --workspace=apps/web"
+    "db:migrate": "npm run db:migrate --workspace=apps/web",
+    "sync-version": "node apps/web/scripts/sync-version.mjs"
   },
   "keywords": [
     "hdhomerun",

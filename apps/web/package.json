@@ -1,6 +1,5 @@
 {
   "name": "@hd-homey/web",
-  "version": "1.0.0-beta.6",
   "license": "AGPL-3.0-only",
   "private": true,
   "scripts": {
