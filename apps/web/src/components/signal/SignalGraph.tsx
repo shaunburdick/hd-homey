@@ -17,7 +17,7 @@
  * @module components/signal/SignalGraph
  */
 
-import { useSyncExternalStore } from 'react';
+import React, { useSyncExternalStore } from 'react';
 import {
     ResponsiveContainer,
     LineChart,
@@ -39,6 +39,23 @@ const AXIS_TICK_FONT_SIZE = 10;
 
 /** YAxis domain maximum (signal values are 0–100%) */
 const YAXIS_MAX = 100;
+
+/**
+ * Recharts Tooltip content box styles — uses CSS custom properties so the
+ * overlay adapts to light/dark mode automatically.
+ */
+const TOOLTIP_CONTENT_STYLE: React.CSSProperties = {
+    background: 'var(--color-bg-tertiary)',
+    border: '1px solid var(--color-border)',
+    color: 'var(--color-text-primary)',
+    boxShadow: 'var(--shadow-md)',
+};
+
+/** Tooltip time-label style — slightly de-emphasised vs. the value row. */
+const TOOLTIP_LABEL_STYLE: React.CSSProperties = { color: 'var(--color-text-secondary)' };
+
+/** Tooltip value-row style — matches primary text to ensure legibility. */
+const TOOLTIP_ITEM_STYLE: React.CSSProperties = { color: 'var(--color-text-primary)' };
 
 /**
  * Fixed time window width in milliseconds.
@@ -157,6 +174,9 @@ export function SignalGraph({ title, data, dataKey, color, ariaLabel }: SignalGr
                         <Tooltip
                             labelFormatter={(label) => typeof label === 'number' ? formatTime(label) : String(label)}
                             formatter={(value) => [`${String(value)}%`, dataKey.toUpperCase()]}
+                            contentStyle={TOOLTIP_CONTENT_STYLE}
+                            labelStyle={TOOLTIP_LABEL_STYLE}
+                            itemStyle={TOOLTIP_ITEM_STYLE}
                         />
                         <Line
                             type="monotone"
