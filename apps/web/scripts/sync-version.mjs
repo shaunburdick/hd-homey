@@ -19,6 +19,8 @@
  * version text in prose or examples.
  */
 
+/* eslint-disable no-console, no-undef -- Script intentionally logs to stdout/stderr; process is a Node.js global */
+
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
@@ -49,7 +51,6 @@ const FILES = [
  * @returns {string|null} The old version to replace
  */
 function detectOldVersion() {
-    // eslint-disable-next-line no-undef -- 'process' is a Node.js global
     const args = process.argv.slice(2);
     const fromFlag = args.indexOf('--from');
 
@@ -65,7 +66,6 @@ function detectOldVersion() {
         ).trim();
         if (prevPkg) {
             const parsed = JSON.parse(prevPkg);
-            // eslint-disable-next-line no-console -- Script intentionally logs progress
             console.log(`Detected old version from git HEAD (root package.json): ${parsed.version}`);
             return parsed.version;
         }
@@ -150,27 +150,18 @@ function updateFile({ relPath, oldVersion, newVersion }) {
  * @param {{updated: number, skipped: number, errors: number}} counts
  */
 function printSummary({ updated, skipped, errors }) {
-    // eslint-disable-next-line no-console -- Script intentionally prints results
     console.log('');
-    // eslint-disable-next-line no-console -- Script intentionally prints results
     console.log(`Done. ${updated} file(s) updated.`);
     if (skipped > 0) {
-        // eslint-disable-next-line no-console -- Script output
         console.log(`${skipped} file(s) skipped (not found).`);
     }
     if (errors > 0) {
-        // eslint-disable-next-line no-console -- Script output
         console.log(`${errors} file(s) had errors.`);
     }
-    // eslint-disable-next-line no-console -- Script output
     console.log('');
-    // eslint-disable-next-line no-console -- Script output
     console.log('Next steps:');
-    // eslint-disable-next-line no-console -- Script output
     console.log('  1. Update CHANGELOG.md (add release section with notes)');
-    // eslint-disable-next-line no-console -- Script output
     console.log('  2. Verify with: git diff');
-    // eslint-disable-next-line no-console -- Script output
     console.log('  3. Stage everything: git add -A');
 }
 
@@ -180,9 +171,7 @@ function printSummary({ updated, skipped, errors }) {
  * @param {{ oldVersion: string, newVersion: string }} opts
  */
 function processFiles({ oldVersion, newVersion }) {
-    // eslint-disable-next-line no-console -- Script reports progress
     console.log(`Syncing version: ${oldVersion} → ${newVersion}`);
-    // eslint-disable-next-line no-console -- Script output formatting
     console.log('');
 
     let updatedCount = 0;
@@ -193,19 +182,15 @@ function processFiles({ oldVersion, newVersion }) {
         const result = updateFile({ relPath, oldVersion, newVersion });
 
         if (result.updated) {
-            // eslint-disable-next-line no-console -- Script reports per-file progress
             console.log(`  ✓ ${relPath}`);
             updatedCount++;
         } else if (result.skipped) {
-            // eslint-disable-next-line no-console -- Script reports per-file progress
             console.log(`  ~ ${relPath}  (not found, skipping)`);
             skippedCount++;
         } else if (result.error) {
-            // eslint-disable-next-line no-console -- Script reports per-file errors
             console.error(`  ✗ ${relPath}  ${result.message}`);
             errorCount++;
         } else {
-            // eslint-disable-next-line no-console -- Script reports per-file status
             console.log(`  - ${relPath}  (no changes)`);
         }
     }
@@ -220,28 +205,22 @@ function processFiles({ oldVersion, newVersion }) {
 function main() {
     const newVersion = readCurrentVersion();
     if (!newVersion) {
-        // eslint-disable-next-line no-console -- Script reports fatal errors to stderr
         console.error('ERROR: Could not read version from root package.json');
-        // eslint-disable-next-line no-undef -- 'process' is a Node.js global
         process.exit(1);
     }
 
     const oldVersion = detectOldVersion();
     if (!oldVersion) {
-        // eslint-disable-next-line no-console -- Script reports fatal errors to stderr
         console.error(
             'ERROR: Could not detect old version.\n' +
             '  Provide it with: node apps/web/scripts/sync-version.mjs --from <version>\n' +
             '  e.g., node apps/web/scripts/sync-version.mjs --from 1.0.0-beta.5',
         );
-        // eslint-disable-next-line no-undef -- 'process' is a Node.js global
         process.exit(1);
     }
 
     if (oldVersion === newVersion) {
-        // eslint-disable-next-line no-console -- Script reports outcome
         console.log(`Version is already ${oldVersion} — nothing to update.`);
-        // eslint-disable-next-line no-undef -- 'process' is a Node.js global
         process.exit(0);
     }
 
@@ -249,3 +228,5 @@ function main() {
 }
 
 main();
+
+/* eslint-enable no-console, no-undef -- Script uses console for user-facing output; process is a Node.js global */
