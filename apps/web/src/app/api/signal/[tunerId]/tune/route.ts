@@ -11,7 +11,11 @@
  * replacing the former sibling-sort approach.
  *
  * Tuning is performed via the HDHomeRun native TCP protocol (port 65001)
- * because the device firmware does NOT expose an HTTP `/tuner{N}/set` endpoint.
+ * using the `/tuner{N}/vchannel` variable. The device internally resolves
+ * the virtual channel (guide number) to the correct physical frequency and
+ * program, so the full guide number (e.g. "5.1") is passed directly without
+ * any stripping or transformation. This works on all tested models including
+ * FLEX 4K (firmware 20250815+).
  *
  * @module app/api/signal/[tunerId]/tune/route
  */
@@ -131,15 +135,15 @@ interface SendTuneCommandOptions {
 /**
  * Send a tune command to the device via the native TCP protocol.
  *
- * Sets `/tuner{N}/channel` to `auto:{majorChannel}` using the HDHomeRun
- * binary control protocol on port 65001. HTTP-based tuning is not supported
- * by the device firmware.
+ * Sets `/tuner{N}/vchannel` to the full guide number (e.g. "5.1") using the
+ * HDHomeRun binary control protocol on port 65001. The device internally
+ * resolves the virtual channel to the correct physical frequency and program,
+ * so no stripping or transformation of the guide number is required.
  *
- * Only the major (integer) channel number is sent to the device. FLEX 4K
- * firmware (20250815+) rejects virtual channel values that include a subchannel
- * component (e.g. "auto:3.1" → "ERROR: invalid channel"). Stripping the
- * subchannel — sending "auto:3" instead — works on all known firmware versions;
- * the device normalises the value and locks to the correct multiplex.
+ * This approach works on all tested models including FLEX 4K (firmware
+ * 20250815+). The former `/tuner{N}/channel` approach with `auto:{major}`
+ * failed because `channel` only accepts physical frequencies, not virtual
+ * channel numbers.
  *
  * @param options - Device path, tuner slot number, guide number, tunerId, and resource
  * @returns True if the device acknowledged the command; false on any failure
@@ -154,12 +158,13 @@ async function sendTuneCommand(options: SendTuneCommandOptions): Promise<boolean
     try {
         await nativeSet({
             deviceIp,
-            variable: `/tuner${tunerNum}/channel`,
-            // Use only the major channel number (integer part) — FLEX 4K firmware
-            // (20250815+) rejects subchannel values like "auto:3.1" with
-            // "ERROR: invalid channel". Sending "auto:3" works on all firmware.
-            value: `auto:${parseInt(guideNumber, 10)}`,
+            variable: `/tuner${tunerNum}/vchannel`,
+            value: guideNumber,
         });
+        Logger.info(
+            { deviceIp, tunerNum, guideNumber, tunerId, resource },
+            'Tune command sent via vchannel',
+        );
         return true;
     } catch (error) {
         const nativeErr = error as Partial<NativeProtocolError>;

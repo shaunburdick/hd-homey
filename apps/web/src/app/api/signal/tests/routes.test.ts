@@ -411,7 +411,7 @@ describe('POST /api/signal/[tunerId]/tune', () => {
         expect(body.expected).toBe('tunerN');
     });
 
-    it('returns 200 and sends auto: channel format when nativeSet succeeds', async () => {
+    it('returns 200 when vchannel is set via native protocol', async () => {
         const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
         const mockChannel = { id: 5, guideNumber: '5.1', guideName: 'KPIX', fk_tuner: 1, is_active: true };
 
@@ -424,8 +424,8 @@ describe('POST /api/signal/[tunerId]/tune', () => {
 
         await waitForSocketAndEmit((socket) => {
             socket.emit('connect');
-            // Device receives "auto:5" — subchannel stripped per FLEX 4K firmware quirk
-            socket.emit('data', makeSuccessPacket('auto:5'));
+            // Device responds with the guide number echoed back via vchannel
+            socket.emit('data', makeSuccessPacket('5.1'));
         });
 
         const response = await responsePromise;
@@ -435,7 +435,7 @@ describe('POST /api/signal/[tunerId]/tune', () => {
         expect(body.resource).toBe('tuner0');
     });
 
-    it('returns 502 when nativeSet fails (device connection refused)', async () => {
+    it('returns 502 when nativeSet fails (device unreachable)', async () => {
         const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
         const mockChannel = { id: 5, guideNumber: '5.1', guideName: 'KPIX', fk_tuner: 1, is_active: true };
 

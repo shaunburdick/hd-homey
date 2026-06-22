@@ -255,8 +255,13 @@ hdhomerun_config <device-id-or-ip> get /tuner0/debug
 # List all supported options
 hdhomerun_config <device-id-or-ip> get help
 
-# Tune a channel
+# Tune a channel (physical frequency)
 hdhomerun_config <device-id-or-ip> set /tuner0/channel auto:651000000
+
+# Tune a virtual channel (guide number, e.g. "3.1")
+# The device internally resolves the virtual channel to the correct physical
+# frequency and program. Works on all models including FLEX 4K.
+hdhomerun_config <device-id-or-ip> set /tuner0/vchannel 3.1
 
 # Start streaming to a UDP target
 hdhomerun_config <device-id-or-ip> set /tuner0/target udp://192.168.1.100:5000
@@ -278,6 +283,7 @@ hdhomerun_config <device-id-or-ip> set /tuner0/channel none
 | `/tuner{N}/streaminfo` | ❌ 404 on FLEX 4K+ | ✅ Always available |
 | `/tuner{N}/debug` | ❌ Not available | ✅ Available |
 | `/tuner{N}/status` | ✅ Available | ✅ Available |
+| `/tuner{N}/vchannel` | ❌ Not available | ✅ Available (set virtual channel) |
 | Channel scanning | ❌ Not available | ✅ Available via `scan` command |
 | PID filtering | ❌ Not available | ✅ Available via `set /tuner{N}/filter` |
 | Streaming to UDP target | ❌ Not available | ✅ Available via `set /tuner{N}/target` |
@@ -339,6 +345,7 @@ HDHomeRun devices have significant firmware-dependent behavior. Here's what the 
 2. **ATSC 3.0 endpoints only work when locked**: Even on ATSC 3.0-capable devices, `/atsc3/*` endpoints return 404 unless the tuner is actively locked to an ATSC 3.0 signal.
 3. **Signal counters reset on channel change**: When evaluating signal quality over time, compare **deltas** between poll cycles, not absolute values.
 4. **`idle` vs `lock=none`**: When a tuner is idle but still allocated, `lock=none` returns with `ss=0`. When truly unallocated, `/tuner{N}/status` may 404 entirely.
+5. **Use `vchannel` for virtual channel tuning, not `channel`**: The `/tuner{N}/channel` variable only accepts physical frequencies or channel numbers (e.g., `auto:651000000`, `auto:18`). To tune by virtual channel (guide number), use the **`vchannel`** variable instead (e.g., `/tuner{N}/vchannel` = `3.1`). The device internally resolves the virtual channel to the correct physical frequency and program. This works on all tested models including FLEX 4K (firmware 20250815+). Attempting to set `channel=auto:3.1` will fail with `"ERROR: invalid channel"` — this is expected behavior, not a firmware quirk.
 
 ---
 
