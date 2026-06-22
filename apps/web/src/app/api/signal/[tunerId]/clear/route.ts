@@ -7,6 +7,9 @@
  * slot to release (e.g. "tuner0", "tuner2"). The device slot index is derived
  * directly from the resource string, replacing the former sibling-sort approach.
  *
+ * Clearing is performed via the HDHomeRun native TCP protocol (port 65001)
+ * because the device firmware does NOT expose an HTTP `/tuner{N}/set` endpoint.
+ *
  * @module app/api/signal/[tunerId]/clear/route
  */
 
@@ -17,11 +20,9 @@ import { auth } from '@/lib/auth/auth';
 import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
 import { AuthRoles } from '@/lib/auth-roles';
+import { nativeSet, extractHostname } from '@/lib/hdhr/native-protocol';
 
 export const dynamic = 'force-dynamic';
-
-/** Device command timeout in milliseconds */
-const DEVICE_TIMEOUT_MS = 3_000;
 
 /** Regex for valid resource names: "tuner0", "tuner1", etc. */
 const RESOURCE_PATTERN = /^tuner\d+$/;
@@ -117,17 +118,10 @@ export async function POST(
     }
 
     const tunerNum = parseInt(resource.replace(/\D/g, ''), 10);
-    const clearUrl = `${tuner.path}/tuner${tunerNum}/set?channel=none`;
 
     try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), DEVICE_TIMEOUT_MS);
-        const response = await fetch(clearUrl, { signal: controller.signal });
-        clearTimeout(timer);
-
-        if (!response.ok) {
-            return Response.json({ error: 'Device clear command failed' }, { status: 502 });
-        }
+        const deviceIp = extractHostname(tuner.path);
+        await nativeSet({ deviceIp, variable: `/tuner${tunerNum}/channel`, value: 'none' });
     } catch {
         return Response.json({ error: 'Device unreachable' }, { status: 502 });
     }

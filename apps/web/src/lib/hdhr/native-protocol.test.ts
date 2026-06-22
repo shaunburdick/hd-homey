@@ -16,7 +16,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     decodeResponse,
     encodeGetRequest,
+    encodeSetRequest,
     nativeGet,
+    nativeSet,
 } from './native-protocol';
 import type { NativeProtocolError } from './native-protocol';
 
@@ -557,5 +559,255 @@ describe('nativeGet', () => {
         expect(currentMockSocket.write).toHaveBeenCalledOnce();
         const writtenArg: Buffer = currentMockSocket.write.mock.calls[0][0] as Buffer;
         expect(Buffer.compare(writtenArg, expectedPacket)).toBe(0);
+    });
+});
+
+// =============================================================================
+// encodeSetRequest Tests
+// =============================================================================
+
+/** Variable and value used across encodeSetRequest tests */
+const VAR_CHANNEL = '/tuner2/channel';
+const VAL_TUNE = 'auto:5.1';
+
+describe('encodeSetRequest', () => {
+    it('writes the GETSET_REQ type (0x0004) in the first two bytes', () => {
+        const buf = encodeSetRequest(VAR_CHANNEL, VAL_TUNE);
+        expect(buf.readUInt16BE(0)).toBe(0x0004);
+    });
+
+    it('writes tag 0x03 (GETSET_NAME) at byte 4', () => {
+        const buf = encodeSetRequest(VAR_CHANNEL, VAL_TUNE);
+        expect(buf.readUInt8(4)).toBe(0x03);
+    });
+
+    it('writes tag 0x04 (GETSET_VALUE) immediately after the name TLV', () => {
+        const variable = VAR_CHANNEL;
+        const buf = encodeSetRequest(variable, VAL_TUNE);
+
+        // name TLV: tag(1) + len(1) + name_bytes(variable.length) + null(1)
+        const nameFieldOffset = 4 + 1 + 1 + variable.length + 1;
+        expect(buf.readUInt8(nameFieldOffset)).toBe(0x04);
+    });
+
+    it('encodes the variable name as null-terminated UTF-8 in the name TLV', () => {
+        const variable = VAR_CHANNEL;
+        const buf = encodeSetRequest(variable, VAL_TUNE);
+
+        // TLV length for name is at byte 5 (single byte, 15+1 = 16 ≤ 127)
+        expect(buf.readUInt8(5)).toBe(variable.length + 1);
+
+        // Variable name starts at byte 6
+        const extracted = buf.toString('utf8', 6, 6 + variable.length);
+        expect(extracted).toBe(variable);
+
+        // Null terminator
+        expect(buf.readUInt8(6 + variable.length)).toBe(0);
+    });
+
+    it('encodes the value as null-terminated UTF-8 in the value TLV', () => {
+        const variable = VAR_CHANNEL;
+        const value = VAL_TUNE;
+        const buf = encodeSetRequest(variable, value);
+
+        // Locate value TLV start: byte 4 + name TLV (tag+len+name+null)
+        const nameTlvEnd = 4 + 1 + 1 + variable.length + 1; // tag=4, tag(1)+len(1)+nameLen+null
+        const valueLenOffset = nameTlvEnd + 1; // skip value tag byte
+        const valueDataOffset = valueLenOffset + 1; // skip value length byte
+
+        // Check length byte
+        expect(buf.readUInt8(valueLenOffset)).toBe(value.length + 1);
+
+        // Check value string
+        const extracted = buf.toString('utf8', valueDataOffset, valueDataOffset + value.length);
+        expect(extracted).toBe(value);
+
+        // Null terminator
+        expect(buf.readUInt8(valueDataOffset + value.length)).toBe(0);
+    });
+
+    it('appends a valid CRC32 that matches independently computed CRC', () => {
+        const buf = encodeSetRequest(VAR_CHANNEL, VAL_TUNE);
+
+        const payloadEnd = buf.length - 4;
+        const expectedCrc = crc32(buf.subarray(0, payloadEnd));
+        expect(buf.readUInt32LE(payloadEnd)).toBe(expectedCrc);
+    });
+
+    it('payload length field matches actual payload byte count', () => {
+        const buf = encodeSetRequest(VAR_CHANNEL, VAL_TUNE);
+
+        const declaredLength = buf.readUInt16BE(2);
+        const actualLength = buf.length - 4 - 4; // subtract header(4) and CRC(4)
+        expect(declaredLength).toBe(actualLength);
+    });
+
+    it('produces a valid CRC for a long variable requiring 2-byte TLV length encoding', () => {
+        // Name length = 128 → TLV value length = 129 → needs 2-byte encoding
+        const longVar = `/tuner0/${'x'.repeat(120)}`;
+        const buf = encodeSetRequest(longVar, 'auto:5.1');
+        const payloadEnd = buf.length - 4;
+        const expectedCrc = crc32(buf.subarray(0, payloadEnd));
+        expect(buf.readUInt32LE(payloadEnd)).toBe(expectedCrc);
+    });
+
+    it('produces a valid CRC for a long value requiring 2-byte TLV length encoding', () => {
+        // Value length = 128 → TLV value length = 129 → needs 2-byte encoding
+        const longValue = 'x'.repeat(128);
+        const buf = encodeSetRequest(VAR_CHANNEL, longValue);
+        const payloadEnd = buf.length - 4;
+        const expectedCrc = crc32(buf.subarray(0, payloadEnd));
+        expect(buf.readUInt32LE(payloadEnd)).toBe(expectedCrc);
+    });
+});
+
+// =============================================================================
+// nativeSet Tests — mocked net.createConnection, zero real TCP I/O
+// =============================================================================
+
+describe('nativeSet', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('resolves with the value string when the mock socket sends a valid response', async () => {
+        const responsePacket = buildValueResponsePacket('auto:5.1');
+
+        const resultPromise = nativeSet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_CHANNEL,
+            value: 'auto:5.1',
+            timeoutMs: 2500,
+        });
+
+        currentMockSocket.emit('connect');
+        currentMockSocket.emit('data', responsePacket);
+
+        const result = await resultPromise;
+        expect(result).toBe('auto:5.1');
+    });
+
+    it('throws NativeProtocolError with code DEVICE_ERROR when device sends an error tag', async () => {
+        const errorPacket = buildErrorResponsePacket(DEVICE_ERROR_MSG);
+
+        const resultPromise = nativeSet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_CHANNEL,
+            value: 'auto:5.1',
+            timeoutMs: 2500,
+        });
+
+        currentMockSocket.emit('connect');
+        currentMockSocket.emit('data', errorPacket);
+
+        let caught: NativeProtocolError | undefined;
+        try {
+            await resultPromise;
+        } catch (err) {
+            caught = err as NativeProtocolError;
+        }
+
+        expect(caught).toBeDefined();
+        expect(caught?.code).toBe('DEVICE_ERROR');
+        expect(caught?.message).toContain(DEVICE_ERROR_MSG);
+    });
+
+    it('throws NativeProtocolError with code TIMEOUT when the socket timeout fires', async () => {
+        const resultPromise = nativeSet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_CHANNEL,
+            value: 'auto:5.1',
+            timeoutMs: 2500,
+        });
+
+        currentMockSocket.emit('timeout');
+
+        let caught: NativeProtocolError | undefined;
+        try {
+            await resultPromise;
+        } catch (err) {
+            caught = err as NativeProtocolError;
+        }
+
+        expect(caught).toBeDefined();
+        expect(caught?.code).toBe('TIMEOUT');
+    });
+
+    it('throws NativeProtocolError with code CONNECTION_REFUSED when ECONNREFUSED error fires', async () => {
+        const resultPromise = nativeSet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_CHANNEL,
+            value: 'auto:5.1',
+            timeoutMs: 2500,
+        });
+
+        const connRefusedError = Object.assign(new Error(`connect ECONNREFUSED ${MOCK_DEVICE_IP}:65001`), {
+            code: 'ECONNREFUSED',
+        });
+        currentMockSocket.emit('error', connRefusedError);
+
+        let caught: NativeProtocolError | undefined;
+        try {
+            await resultPromise;
+        } catch (err) {
+            caught = err as NativeProtocolError;
+        }
+
+        expect(caught).toBeDefined();
+        expect(caught?.code).toBe('CONNECTION_REFUSED');
+    });
+
+    it('throws NativeProtocolError with code CRC_MISMATCH on bad CRC', async () => {
+        const corruptedPacket = buildValueResponsePacket('auto:5.1');
+        // eslint-disable-next-line no-bitwise -- XOR bit-flip is the only way to corrupt a single byte for CRC testing
+        corruptedPacket[corruptedPacket.length - 1] ^= 0xFF;
+
+        const resultPromise = nativeSet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_CHANNEL,
+            value: 'auto:5.1',
+            timeoutMs: 2500,
+        });
+
+        currentMockSocket.emit('connect');
+        currentMockSocket.emit('data', corruptedPacket);
+
+        let caught: NativeProtocolError | undefined;
+        try {
+            await resultPromise;
+        } catch (err) {
+            caught = err as NativeProtocolError;
+        }
+
+        expect(caught).toBeDefined();
+        expect(caught?.code).toBe('CRC_MISMATCH');
+    });
+
+    it('writes the encoded set request to the socket on connect', () => {
+        const expectedPacket = encodeSetRequest(VAR_CHANNEL, VAL_TUNE);
+
+        void nativeSet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_CHANNEL,
+            value: VAL_TUNE,
+            timeoutMs: 2500,
+        });
+
+        currentMockSocket.emit('connect');
+
+        expect(currentMockSocket.write).toHaveBeenCalledOnce();
+        const writtenArg: Buffer = currentMockSocket.write.mock.calls[0][0] as Buffer;
+        expect(Buffer.compare(writtenArg, expectedPacket)).toBe(0);
+    });
+
+    it('calls setTimeout on the socket with the configured timeoutMs', () => {
+        void nativeSet({
+            deviceIp: MOCK_DEVICE_IP,
+            variable: VAR_CHANNEL,
+            value: VAL_TUNE,
+            timeoutMs: 1500,
+        });
+
+        expect(currentMockSocket.setTimeout).toHaveBeenCalledWith(1500);
     });
 });

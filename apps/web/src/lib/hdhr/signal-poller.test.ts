@@ -10,9 +10,16 @@ import { SignalPollingManager, validateDeviceUrl } from './signal-poller';
 
 // Mock the native protocol module so tests don't open real TCP connections.
 // Each test configures the mock behaviour as needed via nativeGetMock.
-vi.mock('./native-protocol', () => ({
-    nativeGet: vi.fn(),
-}));
+// extractHostname is included from the real module since it has no side effects.
+vi.mock('./native-protocol', async (importOriginal) => {
+    // Use the real module as a base so extractHostname (and other non-async exports)
+    // remain available. Only nativeGet is replaced with a vi.fn() stub.
+    const actual = await importOriginal();
+    return {
+        ...(actual as Record<string, unknown>),
+        nativeGet: vi.fn(),
+    };
+});
 
 import { nativeGet } from './native-protocol';
 

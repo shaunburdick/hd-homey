@@ -2,9 +2,11 @@
  * Route handler tests for signal API endpoints.
  *
  * Tests: authentication, authorization, SSE response headers, and edge cases.
- * Mocks: auth, database, signal poller, session manager.
+ * Mocks: auth, database, signal poller, session manager, node:net.
  */
 
+import { EventEmitter } from 'node:events';
+import { crc32 } from 'node:zlib';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
@@ -24,6 +26,35 @@ const NOT_AUTH = 'returns 401 when not authenticated';
 
 /** Reusable 403 description */
 const VIEWER_FORBIDDEN = 'returns 403 for viewer role';
+
+// =============================================================================
+// node:net mock — replaces createConnection for nativeSet/nativeGet calls
+// =============================================================================
+
+/** Minimal mock socket: EventEmitter + stubs for the methods nativeTcpRequest calls */
+interface MockSocket extends EventEmitter {
+    setTimeout: ReturnType<typeof vi.fn>;
+    write: ReturnType<typeof vi.fn>;
+    end: ReturnType<typeof vi.fn>;
+    destroy: ReturnType<typeof vi.fn>;
+}
+
+/** Shared slot — set by the mock factory, consumed by each test. Typed as possibly undefined
+ * so beforeEach can reset it between tests, preventing stale socket from previous test
+ * leaking into waitForSocketAndEmit's poll. */
+let currentMockSocket: MockSocket | undefined;
+
+vi.mock('node:net', () => ({
+    createConnection: vi.fn((): MockSocket => {
+        const socket = new EventEmitter() as MockSocket;
+        socket.setTimeout = vi.fn();
+        socket.write = vi.fn();
+        socket.end = vi.fn();
+        socket.destroy = vi.fn();
+        currentMockSocket = socket;
+        return socket;
+    }),
+}));
 
 // =============================================================================
 // Shared mock instances (created before vi.mock factories run)
@@ -115,6 +146,73 @@ function makeDbMock(options: DbMockOptions = {}) {
     };
 }
 
+// =============================================================================
+// Packet builder helper — used by tune/clear success tests
+//
+// Builds a minimal GETSET_RPY packet (type 0x0005) containing a TAG_GETSET_VALUE
+// (0x04) TLV with a null-terminated UTF-8 value string and a valid CRC32 trailer.
+// This helper is intentionally inline (not imported from native-protocol.test.ts).
+// =============================================================================
+
+/**
+ * Build a valid GETSET_RPY packet carrying the given value string.
+ *
+ * @param value - The value string to embed (UTF-8, null-terminated in packet)
+ * @returns Complete response packet: header(4) + payload + CRC(4)
+ */
+function makeSuccessPacket(value: string): Buffer {
+    const valueBytes = Buffer.from(value, 'utf8');
+    const tlvLen = valueBytes.length + 1; // +1 for null terminator
+    const payloadLength = 1 + 1 + tlvLen; // tag(1) + len(1) + value+null
+    const buf = Buffer.alloc(4 + payloadLength + 4);
+    let offset = 0;
+
+    buf.writeUInt16BE(0x0005, offset); offset += 2; // GETSET_RPY
+    buf.writeUInt16BE(payloadLength, offset); offset += 2;
+    buf.writeUInt8(0x04, offset); offset += 1; // TAG_GETSET_VALUE
+    buf.writeUInt8(tlvLen, offset); offset += 1;
+    valueBytes.copy(buf, offset); offset += valueBytes.length;
+    buf.writeUInt8(0, offset); offset += 1; // null terminator
+
+    const crcVal = crc32(buf.subarray(0, offset));
+    buf.writeUInt32LE(crcVal, offset);
+
+    return buf;
+}
+
+/**
+ * Poll for `currentMockSocket` to be populated after the route handler's
+ * async steps (auth, DB) have run and nativeSet has created its socket.
+ *
+ * The route handler does several async awaits before calling nativeSet, so
+ * the mock socket isn't available synchronously after starting the request.
+ * This helper spins on `setImmediate` until the factory has populated
+ * `currentMockSocket`, then emits the supplied events on it.
+ *
+ * @param emitFn - Callback to run once the socket is ready
+ * @param timeoutMs - Maximum wait before giving up (default 2000ms)
+ */
+async function waitForSocketAndEmit(
+    emitFn: (socket: MockSocket) => void,
+    timeoutMs = 2000,
+): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    return await new Promise<void>((resolve, reject) => {
+        function poll(): void {
+            if (currentMockSocket !== undefined) {
+                emitFn(currentMockSocket);
+                resolve();
+                return;
+            }
+            if (Date.now() >= deadline) {
+                reject(new Error('waitForSocketAndEmit: timed out waiting for mock socket'));
+                return;
+            }
+            setImmediate(poll);
+        }
+        poll();
+    });
+}
 // =============================================================================
 // GET /api/signal/[tunerId]/stream
 // =============================================================================
@@ -218,6 +316,7 @@ function makeClearRequest(path = CLEAR_PATH, resource = 'tuner0'): NextRequest {
 describe('POST /api/signal/[tunerId]/tune', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        currentMockSocket = undefined;
         (getSignalPoller as MockedFn).mockReturnValue(mockPoller);
         (getSessionManager as MockedFn).mockReturnValue({ getActiveSessions: vi.fn().mockReturnValue([]) });
     });
@@ -312,27 +411,48 @@ describe('POST /api/signal/[tunerId]/tune', () => {
         expect(body.expected).toBe('tunerN');
     });
 
-    it('returns 200 and sends auto: channel format when tune succeeds', async () => {
+    it('returns 200 and sends auto: channel format when nativeSet succeeds', async () => {
         const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
         const mockChannel = { id: 5, guideNumber: '5.1', guideName: 'KPIX', fk_tuner: 1, is_active: true };
 
         getMockGetSession().mockResolvedValue(ADMIN_ROLE);
         getMockGetDb().mockResolvedValue(makeDbMock({ tuner: mockTuner, channel: mockChannel }));
 
-        // Mock device fetch to succeed with auto: format
-        const deviceFetchMock = vi.fn().mockResolvedValue({ ok: true });
-        global.fetch = deviceFetchMock;
+        // Start request — nativeSet is called after several async route awaits,
+        // so we must wait for the mock socket to be created before emitting.
+        const responsePromise = tunePOST(makeTuneRequest(), makeParams('1'));
 
-        const response = await tunePOST(makeTuneRequest(), makeParams('1'));
+        await waitForSocketAndEmit((socket) => {
+            socket.emit('connect');
+            socket.emit('data', makeSuccessPacket('auto:5.1'));
+        });
+
+        const response = await responsePromise;
         expect(response.status).toBe(200);
         const body = await response.json() as { success: boolean; resource: string };
         expect(body.success).toBe(true);
         expect(body.resource).toBe('tuner0');
+    });
 
-        // Verify the tune command uses auto: format, not v prefix
-        const calledUrl = deviceFetchMock.mock.calls[0][0] as string;
-        expect(calledUrl).toContain('auto:5.1');
-        expect(calledUrl).not.toContain('/tuner0/set?channel=v');
+    it('returns 502 when nativeSet fails (device connection refused)', async () => {
+        const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
+        const mockChannel = { id: 5, guideNumber: '5.1', guideName: 'KPIX', fk_tuner: 1, is_active: true };
+
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock({ tuner: mockTuner, channel: mockChannel }));
+
+        const responsePromise = tunePOST(makeTuneRequest(), makeParams('1'));
+
+        // Simulate device refusing connection
+        await waitForSocketAndEmit((socket) => {
+            const connRefusedError = Object.assign(new Error('connect ECONNREFUSED 192.168.1.100:65001'), {
+                code: 'ECONNREFUSED',
+            });
+            socket.emit('error', connRefusedError);
+        });
+
+        const response = await responsePromise;
+        expect(response.status).toBe(502);
     });
 });
 
@@ -343,6 +463,7 @@ describe('POST /api/signal/[tunerId]/tune', () => {
 describe('POST /api/signal/[tunerId]/clear', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        currentMockSocket = undefined;
         (getSignalPoller as MockedFn).mockReturnValue(mockPoller);
     });
 
@@ -397,5 +518,46 @@ describe('POST /api/signal/[tunerId]/clear', () => {
         const body = await response.json() as { error: string; expected: string };
         expect(body.error).toBe('Invalid resource');
         expect(body.expected).toBe('tunerN');
+    });
+
+    it('returns 200 and clears the tuner when nativeSet succeeds', async () => {
+        const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
+
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock({ tuner: mockTuner }));
+
+        const responsePromise = clearPOST(makeClearRequest(), makeParams('1'));
+
+        // Wait for nativeSet's socket to be created, then emit success
+        await waitForSocketAndEmit((socket) => {
+            socket.emit('connect');
+            socket.emit('data', makeSuccessPacket('none'));
+        });
+
+        const response = await responsePromise;
+        expect(response.status).toBe(200);
+        const body = await response.json() as { success: boolean; resource: string };
+        expect(body.success).toBe(true);
+        expect(body.resource).toBe('tuner0');
+    });
+
+    it('returns 502 when nativeSet fails (device connection refused)', async () => {
+        const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
+
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock({ tuner: mockTuner }));
+
+        const responsePromise = clearPOST(makeClearRequest(), makeParams('1'));
+
+        // Simulate device refusing connection
+        await waitForSocketAndEmit((socket) => {
+            const connRefusedError = Object.assign(new Error('connect ECONNREFUSED 192.168.1.100:65001'), {
+                code: 'ECONNREFUSED',
+            });
+            socket.emit('error', connRefusedError);
+        });
+
+        const response = await responsePromise;
+        expect(response.status).toBe(502);
     });
 });

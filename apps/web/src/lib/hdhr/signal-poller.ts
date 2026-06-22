@@ -26,7 +26,7 @@ import {
     fetchAtsc3L1,
 } from './sse-dispatch';
 import type { SseSubscriber } from './sse-dispatch';
-import { nativeGet } from './native-protocol';
+import { nativeGet, extractHostname } from './native-protocol';
 import type { NativeProtocolError } from './native-protocol';
 import {
     dispatchStreamInfoIfChanged,
@@ -39,20 +39,6 @@ const PING_INTERVAL_MS = 30_000;
 const FETCH_TIMEOUT_MS = 3_000;
 
 export { validateDeviceUrl } from './device-url';
-
-/**
- * Extract the bare hostname/IP from a device URL string.
- *
- * @param deviceUrl - Full device URL (e.g. "http://192.168.1.100")
- * @returns Hostname or IP string, or empty string if parsing fails
- */
-function extractHostname(deviceUrl: string): string {
-    try {
-        return new URL(deviceUrl).hostname;
-    } catch {
-        return '';
-    }
-}
 
 /** A tuner slot being tracked on a device */
 export interface TrackedTuner {

@@ -1,0 +1,397 @@
+/**
+ * HDHomeRun Native Control Protocol — TLV packet codec and URL utilities.
+ *
+ * Implements the binary packet encoding and decoding for the HDHomeRun native
+ * control protocol (TCP port 65001). Packet format uses a 4-byte header,
+ * TLV (tag-length-value) payload, and a CRC32 checksum trailer.
+ *
+ * Protocol reference: libhdhomerun/hdhomerun_pkt.h and hdhomerun_pkt.c
+ * (https://github.com/Silicondust/libhdhomerun)
+ *
+ * CRC32 uses the Node.js built-in `zlib.crc32()` (available from Node.js 22+).
+ *
+ * @module native-protocol-codec
+ */
+
+import { crc32 } from 'node:zlib';
+
+// =============================================================================
+// Protocol Constants (from hdhomerun_pkt.h)
+// =============================================================================
+
+/** Maximum packet size in bytes (HDHOMERUN_MAX_PACKET_SIZE) */
+export const MAX_PACKET_SIZE = 1460;
+
+/** Packet header length: 2 bytes type + 2 bytes payload length */
+export const HEADER_LENGTH = 4;
+
+/** CRC32 trailer length in bytes */
+export const CRC_LENGTH = 4;
+
+/** Packet type: get/set request (HDHOMERUN_TYPE_GETSET_REQ) */
+const PACKET_TYPE_GETSET_REQ = 0x0004;
+
+/** TLV tag: variable name in a get/set request (HDHOMERUN_TAG_GETSET_NAME) */
+const TAG_GETSET_NAME = 0x03;
+
+/** TLV tag: returned variable value (HDHOMERUN_TAG_GETSET_VALUE) */
+const TAG_GETSET_VALUE = 0x04;
+
+/** TLV tag: device error message (HDHOMERUN_TAG_ERROR_MESSAGE) */
+const TAG_ERROR_MESSAGE = 0x05;
+
+/** Maximum single-byte TLV length value (7-bit field, MSB reserved) */
+const TLV_SINGLE_BYTE_MAX = 127;
+
+/** Mask bit indicating a 2-byte TLV length encoding (MSB set) */
+const TLV_LENGTH_MULTIBYTE_FLAG = 0x80;
+
+/** Mask for extracting the 7 low-order bits of the first TLV length byte */
+const TLV_LENGTH_LOW_7_BITS = 0x7F;
+
+/** Shift count for the high-order bits in a 2-byte TLV length */
+const TLV_LENGTH_HIGH_SHIFT = 7;
+
+/** Hex radix for error message formatting */
+const HEX_RADIX = 16;
+
+// =============================================================================
+// Error Types
+// =============================================================================
+
+/**
+ * Error codes for native protocol failures.
+ *
+ * - `TIMEOUT`: TCP connection or read timed out
+ * - `CRC_MISMATCH`: Received packet has invalid CRC32
+ * - `DEVICE_ERROR`: Device responded with an error message (tag 0x05)
+ * - `CONNECTION_REFUSED`: TCP connect was refused (device not listening)
+ * - `INVALID_RESPONSE`: Packet format is malformed or incomplete
+ */
+export type NativeProtocolErrorCode =
+    | 'TIMEOUT'
+    | 'CRC_MISMATCH'
+    | 'DEVICE_ERROR'
+    | 'CONNECTION_REFUSED'
+    | 'INVALID_RESPONSE';
+
+/**
+ * Error thrown by {@link nativeGet} and {@link nativeSet} on protocol-level failures.
+ * The `code` field identifies the specific failure mode.
+ */
+export interface NativeProtocolError extends Error {
+    code: NativeProtocolErrorCode;
+}
+
+/**
+ * Create a NativeProtocolError with the given code and message.
+ *
+ * @param code - Machine-readable error code
+ * @param message - Human-readable description
+ * @returns NativeProtocolError instance
+ */
+export function makeNativeError(code: NativeProtocolErrorCode, message: string): NativeProtocolError {
+    const error = new Error(message) as NativeProtocolError;
+    error.name = 'NativeProtocolError';
+    error.code = code;
+    return error;
+}
+
+// =============================================================================
+// TLV Length Encoding Helpers
+// =============================================================================
+
+/**
+ * Options for {@link writeTlvLength}.
+ */
+interface WriteTlvLengthOptions {
+    buf: Buffer;
+    offset: number;
+    length: number;
+}
+
+/**
+ * Encode a TLV length field into a buffer at the given offset.
+ *
+ * HDHomeRun uses a variable-length encoding:
+ * - Length ≤ 127: single byte, MSB clear
+ * - Length ≥ 128: two bytes — first byte is `(low 7 bits | 0x80)`, second is `length >> 7`
+ *
+ * @param options - Buffer, offset, and length to encode
+ * @returns Number of bytes written (1 or 2)
+ */
+export function writeTlvLength(options: WriteTlvLengthOptions): number {
+    const { buf, offset, length } = options;
+    if (length <= TLV_SINGLE_BYTE_MAX) {
+        buf.writeUInt8(length, offset);
+        return 1;
+    }
+    // eslint-disable-next-line no-bitwise -- TLV 2-byte length: mask low 7 bits then OR in the MSB continuation flag
+    buf.writeUInt8((length & TLV_LENGTH_LOW_7_BITS) | TLV_LENGTH_MULTIBYTE_FLAG, offset);
+    // eslint-disable-next-line no-bitwise -- TLV 2-byte length encoding: right-shift to extract high bits
+    buf.writeUInt8(length >> TLV_LENGTH_HIGH_SHIFT, offset + 1);
+    return 2;
+}
+
+/**
+ * Decode a TLV length field from a buffer at the given offset.
+ *
+ * @param buf - Source buffer to read from
+ * @param offset - Byte offset of the length field
+ * @returns Decoded length value and the number of bytes consumed (1 or 2)
+ * @throws {NativeProtocolError} If offset is past the end of the buffer
+ */
+export function readTlvLength(buf: Buffer, offset: number): { length: number; consumed: number } {
+    if (offset >= buf.length) {
+        throw makeNativeError('INVALID_RESPONSE', 'Buffer truncated reading TLV length');
+    }
+
+    const first = buf.readUInt8(offset);
+    // eslint-disable-next-line no-bitwise -- TLV length MSB is the continuation flag; AND is the only way to test it
+    if ((first & TLV_LENGTH_MULTIBYTE_FLAG) === 0) {
+        return { length: first, consumed: 1 };
+    }
+
+    if (offset + 1 >= buf.length) {
+        throw makeNativeError('INVALID_RESPONSE', 'Buffer truncated reading 2-byte TLV length');
+    }
+
+    const second = buf.readUInt8(offset + 1);
+    return {
+        // eslint-disable-next-line no-bitwise -- TLV 2-byte length: mask low 7 bits then OR in shifted high byte
+        length: (first & TLV_LENGTH_LOW_7_BITS) | (second << TLV_LENGTH_HIGH_SHIFT),
+        consumed: 2,
+    };
+}
+
+// =============================================================================
+// Packet Encoders
+// =============================================================================
+
+/**
+ * Encode a GETSET_REQ packet for a single named variable query.
+ *
+ * The encoded packet has the following layout:
+ * ```
+ * [0-1]  Packet type: 0x0004 (GETSET_REQ), big-endian uint16
+ * [2-3]  Payload length, big-endian uint16
+ * [4]    Tag: 0x03 (GETSET_NAME)
+ * [5]    TLV length: len(variable) + 1 (for null terminator)
+ * [6+]   Variable name string, null-terminated (UTF-8)
+ * [last 4 bytes] CRC32 of all preceding bytes, little-endian uint32
+ * ```
+ *
+ * @param variable - Variable name to query, e.g. "/tuner0/streaminfo"
+ * @returns Encoded request packet as a Buffer
+ */
+export function encodeGetRequest(variable: string): Buffer {
+    const nameBytes = Buffer.from(variable, 'utf8');
+    const valueLength = nameBytes.length + 1; // +1 for null terminator
+
+    // Calculate TLV length bytes needed (1 or 2)
+    const tlvLengthBytes = valueLength <= TLV_SINGLE_BYTE_MAX ? 1 : 2;
+
+    // Payload = tag(1) + length(1 or 2) + value(nameBytes.length + 1 for null)
+    const payloadLength = 1 + tlvLengthBytes + valueLength;
+
+    const buf = Buffer.alloc(MAX_PACKET_SIZE);
+    let offset = 0;
+
+    // Header
+    buf.writeUInt16BE(PACKET_TYPE_GETSET_REQ, offset); offset += 2;
+    buf.writeUInt16BE(payloadLength, offset); offset += 2;
+
+    // TLV: tag
+    buf.writeUInt8(TAG_GETSET_NAME, offset); offset += 1;
+
+    // TLV: length (variable encoding)
+    offset += writeTlvLength({ buf, offset, length: valueLength });
+
+    // TLV: value (variable name + null terminator)
+    nameBytes.copy(buf, offset); offset += nameBytes.length;
+    buf.writeUInt8(0, offset); offset += 1; // null terminator
+
+    // CRC32 over header + payload, appended as little-endian uint32
+    const crcValue = crc32(buf.subarray(0, offset));
+    buf.writeUInt32LE(crcValue, offset); offset += CRC_LENGTH;
+
+    return buf.subarray(0, offset);
+}
+
+/**
+ * Encode a GETSET_REQ packet that sets a named variable to a new value.
+ *
+ * The encoded packet has the following layout:
+ * ```
+ * [0-1]  Packet type: 0x0004 (GETSET_REQ), big-endian uint16
+ * [2-3]  Payload length, big-endian uint16
+ * [4]    Tag: 0x03 (GETSET_NAME)
+ * [5]    TLV length: len(variable) + 1 (for null terminator)
+ * [6+]   Variable name string, null-terminated (UTF-8)
+ * [?]    Tag: 0x04 (GETSET_VALUE)
+ * [?]    TLV length: len(value) + 1 (for null terminator)
+ * [?+]   Value string, null-terminated (UTF-8)
+ * [last 4 bytes] CRC32 of all preceding bytes, little-endian uint32
+ * ```
+ *
+ * @param variable - Variable name to set, e.g. "/tuner2/channel"
+ * @param value - Value to write, e.g. "auto:5.1" or "none"
+ * @returns Encoded request packet as a Buffer
+ */
+export function encodeSetRequest(variable: string, value: string): Buffer {
+    const nameBytes = Buffer.from(variable, 'utf8');
+    const valueBytes = Buffer.from(value, 'utf8');
+
+    const nameTlvLen = nameBytes.length + 1;  // +1 for null terminator
+    const valueTlvLen = valueBytes.length + 1; // +1 for null terminator
+
+    // Payload = nameTLV(tag+len+data) + valueTLV(tag+len+data)
+    const nameLenBytes = nameTlvLen <= TLV_SINGLE_BYTE_MAX ? 1 : 2;
+    const valueLenBytes = valueTlvLen <= TLV_SINGLE_BYTE_MAX ? 1 : 2;
+    const payloadLength = 1 + nameLenBytes + nameTlvLen + 1 + valueLenBytes + valueTlvLen;
+
+    const buf = Buffer.alloc(MAX_PACKET_SIZE);
+    let offset = 0;
+
+    // Header
+    buf.writeUInt16BE(PACKET_TYPE_GETSET_REQ, offset); offset += 2;
+    buf.writeUInt16BE(payloadLength, offset); offset += 2;
+
+    // TLV: name tag + length + null-terminated variable name
+    buf.writeUInt8(TAG_GETSET_NAME, offset); offset += 1;
+    offset += writeTlvLength({ buf, offset, length: nameTlvLen });
+    nameBytes.copy(buf, offset); offset += nameBytes.length;
+    buf.writeUInt8(0, offset); offset += 1; // null terminator
+
+    // TLV: value tag + length + null-terminated value string
+    buf.writeUInt8(TAG_GETSET_VALUE, offset); offset += 1;
+    offset += writeTlvLength({ buf, offset, length: valueTlvLen });
+    valueBytes.copy(buf, offset); offset += valueBytes.length;
+    buf.writeUInt8(0, offset); offset += 1; // null terminator
+
+    // CRC32 over header + payload, appended as little-endian uint32
+    const crcValue = crc32(buf.subarray(0, offset));
+    buf.writeUInt32LE(crcValue, offset); offset += CRC_LENGTH;
+
+    return buf.subarray(0, offset);
+}
+
+// =============================================================================
+// Packet Decoder
+// =============================================================================
+
+/**
+ * Verify the CRC32 of a complete response packet.
+ *
+ * @param data - Complete response packet buffer
+ * @throws {NativeProtocolError} On CRC mismatch
+ */
+function verifyPacketCrc(data: Buffer): void {
+    const payloadEnd = data.length - CRC_LENGTH;
+    const computed = crc32(data.subarray(0, payloadEnd));
+    const received = data.readUInt32LE(payloadEnd);
+
+    if (computed !== received) {
+        const computedHex = computed.toString(HEX_RADIX);
+        const receivedHex = received.toString(HEX_RADIX);
+        throw makeNativeError(
+            'CRC_MISMATCH',
+            `CRC32 mismatch: computed 0x${computedHex}, received 0x${receivedHex}`,
+        );
+    }
+}
+
+/**
+ * Options for {@link extractTlvString}.
+ */
+interface ExtractTlvOptions {
+    data: Buffer;
+    payloadLimit: number;
+    targetTag: number;
+}
+
+/**
+ * Extract the string value of a specific TLV tag from a packet payload.
+ * Unknown tags are skipped silently for forward compatibility.
+ * Returns undefined if the target tag is not present.
+ *
+ * @param options - Buffer, payload limit, and target tag to search for
+ * @returns Null-stripped string value, or undefined if tag not found
+ */
+function extractTlvString(options: ExtractTlvOptions): string | undefined {
+    const { data, payloadLimit, targetTag } = options;
+    let offset = HEADER_LENGTH;
+
+    while (offset < payloadLimit && offset < data.length - CRC_LENGTH) {
+        const tag = data.readUInt8(offset);
+        offset += 1;
+
+        const { length: tlvLen, consumed } = readTlvLength(data, offset);
+        offset += consumed;
+
+        if (offset + tlvLen > payloadLimit) {
+            break;
+        }
+
+        if (tag === targetTag) {
+            // Null-terminated string: strip trailing null if present
+            const rawLen = tlvLen > 0 && data[offset + tlvLen - 1] === 0
+                ? tlvLen - 1
+                : tlvLen;
+            return data.toString('utf8', offset, offset + rawLen);
+        }
+
+        // Skip unknown or non-matching tags — forward compatibility
+        offset += tlvLen;
+    }
+
+    return undefined;
+}
+
+/**
+ * Decode a GETSET_RPY response packet.
+ *
+ * Verifies the CRC32 of the complete packet, then iterates the TLV payload.
+ * Unknown tags are silently skipped (unlike `node-hdhomerun` which throws).
+ * Returns the first value or error string found.
+ *
+ * @param data - Complete response packet buffer (header + payload + CRC)
+ * @returns Decoded value and/or error string. Both may be undefined on empty payload.
+ * @throws {NativeProtocolError} On CRC mismatch or truncated buffer
+ */
+export function decodeResponse(data: Buffer): { value?: string; error?: string } {
+    if (data.length < HEADER_LENGTH + CRC_LENGTH) {
+        throw makeNativeError('INVALID_RESPONSE', `Response too short: ${data.length} bytes`);
+    }
+
+    verifyPacketCrc(data);
+
+    const payloadLength = data.readUInt16BE(2);
+    const payloadLimit = HEADER_LENGTH + payloadLength;
+
+    return {
+        value: extractTlvString({ data, payloadLimit, targetTag: TAG_GETSET_VALUE }),
+        error: extractTlvString({ data, payloadLimit, targetTag: TAG_ERROR_MESSAGE }),
+    };
+}
+
+// =============================================================================
+// URL Utility
+// =============================================================================
+
+/**
+ * Extract the bare hostname or IP address from a device URL string.
+ *
+ * Used to convert a full device URL (e.g. "http://192.168.1.100") into
+ * the plain hostname form required by the native TCP protocol.
+ *
+ * @param deviceUrl - Full device URL (e.g. "http://192.168.1.100")
+ * @returns Bare hostname/IP string, or empty string if parsing fails
+ */
+export function extractHostname(deviceUrl: string): string {
+    try {
+        return new URL(deviceUrl).hostname;
+    } catch {
+        return '';
+    }
+}

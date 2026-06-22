@@ -10,6 +10,9 @@
  * The `resource` field is used to derive the device slot index directly,
  * replacing the former sibling-sort approach.
  *
+ * Tuning is performed via the HDHomeRun native TCP protocol (port 65001)
+ * because the device firmware does NOT expose an HTTP `/tuner{N}/set` endpoint.
+ *
  * @module app/api/signal/[tunerId]/tune/route
  */
 
@@ -21,10 +24,9 @@ import { getDb } from '@/lib/database/db';
 import { tuners, channels } from '@/lib/database/schema';
 import { getSessionManager } from '@/lib/transcoding/session-manager';
 import { AuthRoles } from '@/lib/auth-roles';
+import { nativeSet, extractHostname } from '@/lib/hdhr/native-protocol';
 
 export const dynamic = 'force-dynamic';
-
-const DEVICE_TIMEOUT_MS = 3_000;
 
 /** Regex for valid resource names: "tuner0", "tuner1", etc. */
 const RESOURCE_PATTERN = /^tuner\d+$/;
@@ -122,18 +124,29 @@ interface SendTuneCommandOptions {
     guideNumber: string;
 }
 
-/** Send tune command to device */
+/**
+ * Send a tune command to the device via the native TCP protocol.
+ *
+ * Sets `/tuner{N}/channel` to `auto:{guideNumber}` using the HDHomeRun
+ * binary control protocol on port 65001. HTTP-based tuning is not supported
+ * by the device firmware.
+ *
+ * @param options - Device path, tuner slot number, and guide number to tune
+ * @returns True if the device acknowledged the command; false on any failure
+ */
 async function sendTuneCommand(options: SendTuneCommandOptions): Promise<boolean> {
     const { devicePath, tunerNum, guideNumber } = options;
+    const deviceIp = extractHostname(devicePath);
+    if (deviceIp === '') {
+        return false;
+    }
     try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), DEVICE_TIMEOUT_MS);
-        const response = await fetch(
-            `${devicePath}/tuner${tunerNum}/set?channel=auto:${encodeURIComponent(guideNumber)}`,
-            { signal: controller.signal },
-        );
-        clearTimeout(timer);
-        return response.ok;
+        await nativeSet({
+            deviceIp,
+            variable: `/tuner${tunerNum}/channel`,
+            value: `auto:${guideNumber}`,
+        });
+        return true;
     } catch {
         return false;
     }

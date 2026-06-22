@@ -21,7 +21,7 @@ import {
     fetchWithTimeout,
 } from './sse-dispatch';
 import type { SseSubscriber } from './sse-dispatch';
-import { nativeGet } from './native-protocol';
+import { nativeGet, extractHostname } from './native-protocol';
 import Logger from '@/lib/logger';
 
 /** Fetch timeout in milliseconds — shared constant for all streaminfo fetches */
@@ -55,20 +55,6 @@ export interface StreamInfoDispatchOptions {
     deviceUrl: string;
     /** Encoder for SSE output */
     encoder: TextEncoder;
-}
-
-/**
- * Extract the bare hostname/IP from a device URL string.
- *
- * @param deviceUrl - Full device URL (e.g. "http://192.168.1.100")
- * @returns Hostname or IP string, or empty string if parsing fails
- */
-function extractHostname(deviceUrl: string): string {
-    try {
-        return new URL(deviceUrl).hostname;
-    } catch {
-        return '';
-    }
 }
 
 /**
