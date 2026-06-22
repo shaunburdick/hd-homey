@@ -1,11 +1,12 @@
 'use client';
 
 /**
- * SignalStatusCard — Per-tuner card for antenna tuning mode and per-device signal page.
+ * SignalStatusCard — Per-tuner signal status card with optional collapsible diagnostics.
  *
  * Accepts an optional `diagnostics` node that, when provided, is rendered as a
  * collapsible section inside the card — below the graphs and visually flush with
- * the card's background, border and padding. The antenna page omits this prop.
+ * the card's background, border and padding. Omit the prop on pages that show
+ * signal gauges and graphs only.
  *
  * @module components/signal/SignalStatusCard
  */
@@ -47,8 +48,7 @@ function snqLabel(state: TunerSignalState): string {
  *
  * The optional `diagnostics` prop is rendered as a collapsible `<details>`
  * section at the bottom of the card, styled to match the card's background and
- * typography. Omit the prop entirely on pages that don't need diagnostics
- * (e.g. the antenna page).
+ * typography. Omit the prop entirely on pages that don't need diagnostics.
  *
  * @param props - Card display props
  */

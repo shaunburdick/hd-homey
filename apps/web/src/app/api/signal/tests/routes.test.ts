@@ -68,7 +68,6 @@ vi.mock('next/headers', () => ({
 // =============================================================================
 
 import { GET as streamGET } from '../[tunerId]/stream/route';
-import { GET as antennaGET } from '../antenna/stream/route';
 import { POST as tunePOST } from '../[tunerId]/tune/route';
 import { POST as clearPOST } from '../[tunerId]/clear/route';
 import { auth } from '@/lib/auth/auth';
@@ -185,47 +184,6 @@ describe('GET /api/signal/[tunerId]/stream', () => {
             { tunerId: 1, resource: 'tuner0' },
             { tunerId: 2, resource: 'tuner1' },
         ]);
-    });
-});
-
-// =============================================================================
-// GET /api/signal/antenna/stream
-// =============================================================================
-
-describe('GET /api/signal/antenna/stream', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockPoller.subscribeAll.mockReturnValue('sub-id-antenna');
-        (getSignalPoller as MockedFn).mockReturnValue(mockPoller);
-    });
-
-    it(NOT_AUTH, async () => {
-        getMockGetSession().mockResolvedValue(null);
-
-        const response = await antennaGET(
-            new NextRequest('http://localhost/api/signal/antenna/stream'),
-        );
-        expect(response.status).toBe(401);
-    });
-
-    it('returns 200 SSE stream when tuners exist', async () => {
-        getMockGetSession().mockResolvedValue(VIEWER_ROLE);
-        getMockGetDb().mockResolvedValue({
-            query: {
-                tuners: {
-                    findMany: vi.fn().mockResolvedValue([
-                        { id: 1, path: DEVICE_URL, is_active: true, name: 'T1' },
-                        { id: 2, path: DEVICE_URL, is_active: true, name: 'T2' },
-                    ]),
-                },
-            },
-        });
-
-        const response = await antennaGET(
-            new NextRequest('http://localhost/api/signal/antenna/stream'),
-        );
-        expect(response.status).toBe(200);
-        expect(response.headers.get('Content-Type')).toBe('text/event-stream');
     });
 });
 

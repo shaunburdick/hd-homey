@@ -20,12 +20,8 @@
  *     1. Slot diagnostics are visually unified with that slot's card.
  *     2. The section collapses by default — the grid stays clean.
  *     3. Styling is consistent: same background, border, padding as the card.
- *     4. The antenna page passes no `diagnostics` prop and is unaffected.
  *   Option B (separate styled element below the card) was rejected because
  *   it requires extra CSS and breaks the visual grouping.
- *
- * The antenna page (/signal/antenna) remains a pure overview — it only shows
- * SignalStatusCards with no diagnostic sections.
  *
  * SSE stream multiplexing:
  *   The same SSE stream emits `signal`, `streaminfo`, `atsc3plp`, and
@@ -38,7 +34,7 @@
  *
  * All slots use consistent "Tuner N" labels derived from the resource field
  * (e.g. "tuner0" → "Tuner 0"). The device model name from the DB is used
- * only for the breadcrumb "Back to <device>" link — not as a slot label.
+ * only for the breadcrumb "← Back to <device>" link — not as a slot label.
  *
  * @module app/(protected)/tuners/[id]/signal/page
  */
@@ -46,7 +42,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { SignalStatusCard } from '@/components/signal/SignalStatusCard';
 import { ProgramList } from '@/components/signal/ProgramList';
 import { Atsc3Details } from '@/components/signal/Atsc3Details';
@@ -71,7 +66,7 @@ interface TunerApiEntry {
 }
 
 // ---------------------------------------------------------------------------
-// State builder (mirrors the antenna page pattern)
+// State builder
 // ---------------------------------------------------------------------------
 
 interface BuildStateOptions {
@@ -86,7 +81,7 @@ interface BuildStateOptions {
  *
  * All slots use a resource-derived slot label ("Tuner 0", "Tuner 1", …)
  * regardless of whether they are DB-tracked or auto-discovered. This keeps
- * naming consistent across the per-device and antenna pages.
+ * naming consistent across all per-device signal pages.
  *
  * @param options - Event data, prior state, updated history, and slot label
  * @returns Immutable state object for the keyed tuner slot
@@ -259,9 +254,7 @@ function useSignalStream(tunerId: string): SignalStreamState {
 function SignalBreadcrumb({ tunerId, tunerName }: { tunerId: string; tunerName: string }) {
     return (
         <nav className="signal-breadcrumb" aria-label="Signal page navigation">
-            <Link href={`/tuners/${tunerId}`} className="signal-breadcrumb-back">← Back to {tunerName}</Link>
-            <span className="signal-breadcrumb-separator" aria-hidden="true"> | </span>
-            <Link href="/signal/antenna" className="signal-breadcrumb-antenna">📡 Antenna Tuning Mode →</Link>
+            <a href={`/tuners/${tunerId}`} className="signal-breadcrumb-back">← Back to {tunerName}</a>
         </nav>
     );
 }

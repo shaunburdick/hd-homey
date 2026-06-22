@@ -71,14 +71,13 @@ Generate secure invitation links for easy user onboarding without sharing creden
 - Invitation tracking
 
 ### 📡 Signal Monitoring
-Real-time RF signal diagnostics and antenna alignment tool with live gauges and rolling graphs for all configured tuners.
+Real-time RF signal diagnostics with live gauges and rolling graphs for all configured tuners.
 
 [Learn More →](/features/signal-monitoring)
 
 **Key capabilities:**
 - Live Signal Strength, SNR Quality, and Symbol Quality gauges
 - Color-coded thresholds for instant visual feedback
-- Antenna Tuning Mode — all tuners on one screen simultaneously
 - Rolling 2-minute line graphs (SS and SNQ)
 - ATSC 3.0 / NextGen TV PLP and L1 details (Flex 4K and compatible devices)
 - Program and PID listing for the currently tuned channel

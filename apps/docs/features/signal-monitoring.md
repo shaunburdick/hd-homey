@@ -1,6 +1,6 @@
 # Signal Monitoring
 
-HD Homey includes a real-time signal monitoring system that turns it into a tuner installation and diagnostic tool. View live signal strength, SNR quality, and symbol quality for every HDHomeRun tuner — and use **Antenna Tuning Mode** to watch all tuners simultaneously while physically adjusting your antenna.
+HD Homey includes a real-time signal monitoring system that turns it into a tuner installation and diagnostic tool. View live signal strength, SNR quality, and symbol quality for every HDHomeRun tuner slot on any configured device.
 
 ## Overview
 
@@ -13,10 +13,6 @@ Signal data is fetched directly from the HDHomeRun device's HTTP API (`/status.j
 1. Navigate to **Tuners → [your tuner]**
 2. Click **📡 Signal Monitor** in the tuner action area
 3. The signal monitor page opens at `/tuners/[id]/signal`
-
-### Antenna Tuning Mode
-
-From any signal page, click **Antenna Tuning Mode →** to navigate to `/signal/antenna`, which shows all active tuners simultaneously.
 
 ## Signal Metrics
 
@@ -91,21 +87,6 @@ If your HDHomeRun device detects an ATSC 3.0 (NextGen TV) signal, an additional 
 ::: info ATSC 3.0 Availability
 This section only appears on devices that support ATSC 3.0 (e.g., HDHomeRun Flex 4K). On ATSC 1.0 devices, it is automatically hidden.
 :::
-
-## Antenna Tuning Mode
-
-Navigate to `/signal/antenna` to see all active tuners simultaneously on a grid layout.
-
-Each tuner card shows:
-
-- **Tuner name** and currently tuned channel (or "Idle")
-- **Compact gauge row**: SS, SNQ, SEQ with color badges
-- **Two rolling line graphs**: Signal Strength and SNR Quality (60-point history)
-- **Error banner**: If a device becomes unreachable
-
-### Multiple Browser Tabs
-
-The polling manager deduplicates device requests. If two browser windows open antenna mode simultaneously, the HDHomeRun device is only polled **once per 2-second cycle**, regardless of how many clients are connected.
 
 ### Reduced Motion
 
