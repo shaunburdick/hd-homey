@@ -472,7 +472,7 @@ This project interfaces directly with HDHomeRun devices. A detailed reference is
 - **Developer Portal** — https://www.silicondust.com/hdhomerun/developers/
 
 **Known device quirks (learned from real-world testing):**
-- `/tuner{N}/streaminfo` HTTP endpoint returns **404 on FLEX 4K and SCRIBE 4K** (firmware 20250815+). Always available via `hdhomerun_config` CLI native protocol.
+- `/tuner{N}/streaminfo` is a **native-protocol-only** endpoint (not available under HTTP on most models). The native `hdhomerun_config` CLI command always works.
 - `lineup.json` is universally supported and newer firmwares include `VideoCodec`/`AudioCodec` fields.
 - `atsc3/plpinfo` and `atsc3/l1info` endpoints only work when the tuner is locked to an ATSC 3.0 channel.
 - Signal counters reset on channel change — use deltas over time for diagnostics.

@@ -114,16 +114,9 @@ Returns program/sub-channel information for the currently tuned channel.
 4: 20.4 AZTECA
 ```
 
-**⚠️ IMPORTANT: Device Compatibility**
+**⚠️ Important:** `streaminfo` is a **native-protocol-only** endpoint — it was never a standard HTTP API. Some older models (Connect 4, PRIME, EXTEND) also expose it over HTTP as a convenience. The native protocol (`hdhomerun_config get /tuner{N}/streaminfo`) works on all models.
 
-`/tuner{N}/streaminfo` is **NOT available as an HTTP endpoint** on newer devices:
-
-- **Supported** (older devices): HDHomeRun Connect 4, PRIME, EXTEND — works via HTTP
-- **Not supported** (newer devices): HDHomeRun **FLEX 4K**, **SCRIBE 4K** with firmware 20250815+ — returns **HTTP 404**
-
-The `streaminfo` data is always available via the `hdhomerun_config get /tuner{N}/streaminfo` native CLI command (UDP/TCP protocol, not HTTP).
-
-**Fallback strategy for newer devices:** When `/tuner{N}/streaminfo` returns 404, use `/lineup.json` data as a fallback. The `VideoCodec`/`AudioCodec` fields can be used to create synthetic program entries.
+When HTTP streaminfo is unavailable, the application falls back to `lineup.json` data using `VideoCodec`/`AudioCodec` fields for synthetic program entries.
 
 ### ATSC 3.0 Endpoints
 
@@ -280,7 +273,7 @@ hdhomerun_config <device-id-or-ip> set /tuner0/channel none
 
 | Capability | HTTP API | hdhomerun_config CLI |
 |-----------|----------|---------------------|
-| `/tuner{N}/streaminfo` | ❌ 404 on FLEX 4K+ | ✅ Always available |
+| `/tuner{N}/streaminfo` | ❌ Not available (native protocol only) | ✅ Always available |
 | `/tuner{N}/debug` | ❌ Not available | ✅ Available |
 | `/tuner{N}/status` | ✅ Available | ✅ Available |
 | `/tuner{N}/vchannel` | ❌ Not available | ✅ Available (set virtual channel) |
@@ -322,7 +315,7 @@ HDHomeRun devices have significant firmware-dependent behavior. Here's what the 
 | `status.json` | ✅ Works |
 | `lineup.json` | ✅ Works (includes VideoCodec/AudioCodec) |
 | `/tuner{N}/status` | ✅ Works |
-| `/tuner{N}/streaminfo` (HTTP) | ❌ **404 Not Found** |
+| `/tuner{N}/streaminfo` (HTTP) | ❌ Native protocol only |
 | `/tuner{N}/atsc3/plpinfo` (HTTP) | ❌ 404 (even on ATSC 3.0 channels?) |
 | `/tuner{N}/atsc3/l1info` (HTTP) | ❌ 404 |
 | Streaminfo via hdhomerun_config | ✅ Works |
@@ -357,7 +350,7 @@ HDHomeRun devices have significant firmware-dependent behavior. Here's what the 
 1. GET /status.json              → device info, tuner count
 2. For each tuner:
    a. GET /tuner{N}/status       → SS/SNQ/SEQ values
-   b. GET /tuner{N}/streaminfo   → program listing (may 404 on newer devices)
+   b. GET /tuner{N}/streaminfo   → program listing (some models; falls back to native protocol + lineup.json)
    c. If ATSC 3.0 locked:
       GET /tuner{N}/atsc3/plpinfo
       GET /tuner{N}/atsc3/l1info
@@ -371,7 +364,7 @@ The device's tuner count is obtained from `status.json` or the UDP discovery pro
 
 ### Lineup Fallback for Program Data
 
-When `/tuner{N}/streaminfo` returns 404 (newer devices), use `lineup.json` as fallback:
+When HTTP `/tuner{N}/streaminfo` is unavailable (native protocol also fails), use `lineup.json` as fallback:
 - Find the entry matching the tuned virtual channel by `GuideNumber`
 - Return the channel name and codec info (`VideoCodec`, `AudioCodec`) as synthetic program data
 - This provides at minimum the channel name without per-PID stream details
