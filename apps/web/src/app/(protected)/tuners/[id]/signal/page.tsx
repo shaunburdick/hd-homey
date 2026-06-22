@@ -45,6 +45,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { SignalStatusCard } from '@/components/signal/SignalStatusCard';
 import { ProgramList } from '@/components/signal/ProgramList';
 import { Atsc3Details } from '@/components/signal/Atsc3Details';
+import { TuningControl } from '@/components/signal/TuningControl';
 import { MAX_HISTORY_POINTS } from '@/lib/hdhr/signal-parsers';
 import type {
     TunerSignalState,
@@ -264,19 +265,22 @@ interface SignalGridProps {
     programs: Record<number, ParsedProgram[]>;
     atsc3Plp: Record<number, Atsc3PlpSseEvent>;
     atsc3L1: Record<number, Atsc3L1SseEvent>;
+    /** DB tuner ID from the URL — passed to TuningControl for API calls */
+    pageTunerId: number;
 }
 
 /**
  * Renders the grid of SignalStatusCard components (one per discovered slot).
  *
- * Each card receives a `diagnostics` node containing a ProgramList and
- * optional Atsc3Details, rendered as a collapsible section inside the card.
- * Diagnostic data is keyed by the same tunerId as the signal state, so each
- * slot's diagnostics update independently as SSE events arrive.
+ * Each card receives a `diagnostics` node containing a ProgramList,
+ * optional Atsc3Details, and a TuningControl rendered as a collapsible
+ * section inside the card. Diagnostic data is keyed by the same tunerId as
+ * the signal state, so each slot's diagnostics update independently as SSE
+ * events arrive.
  *
  * @param props - Tuner signal states and per-slot diagnostic data
  */
-function SignalGrid({ tunerStates, programs, atsc3Plp, atsc3L1 }: SignalGridProps) {
+function SignalGrid({ tunerStates, programs, atsc3Plp, atsc3L1, pageTunerId }: SignalGridProps) {
     const tunerList = Object.values(tunerStates);
     if (tunerList.length === 0) {
         return null;
@@ -297,6 +301,13 @@ function SignalGrid({ tunerStates, programs, atsc3Plp, atsc3L1 }: SignalGridProp
                             <Atsc3Details
                                 plp={atsc3Plp[tunerState.tunerId] ?? null}
                                 l1={atsc3L1[tunerState.tunerId] ?? null}
+                            />
+                            <TuningControl
+                                tunerId={pageTunerId}
+                                resource={tunerState.resource ?? 'tuner0'}
+                                vctName={tunerState.vctName}
+                                vctNumber={tunerState.vctNumber}
+                                idle={tunerState.idle}
                             />
                         </>
                     }
@@ -361,6 +372,7 @@ export default function SignalPage() {
                 programs={programs}
                 atsc3Plp={atsc3Plp}
                 atsc3L1={atsc3L1}
+                pageTunerId={parseInt(tunerId, 10)}
             />
             <div className="signal-actions">
                 <button type="button" onClick={() => router.back()} className="signal-back-button">← Back</button>

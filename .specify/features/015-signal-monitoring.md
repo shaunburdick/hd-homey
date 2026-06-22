@@ -2,17 +2,17 @@
 
 **Feature ID**: `015-signal-monitoring`  
 **Created**: 2026-06-19  
-**Last Updated**: 2026-06-19  
-**Status**: Implemented — All 30 tasks complete  
+**Last Updated**: 2026-06-22  
+**Status**: Extended — Tuning controls added  
 **Owner**: HD Homey Core Team  
-**Version**: 1.0  
+**Version**: 1.1  
 **Dependencies**: SPEC-001 (Tuner Management), SPEC-003 (User Authentication)
 
 ---
 
 ## Overview
 
-Signal Monitoring & Antenna Tuning adds real-time RF signal diagnostics to HD Homey, turning it from a remote-streaming tool into also a tuner installation and diagnostic tool. Users can view live signal strength (SS), SNR quality (SNQ), and symbol error quality (SEQ) for individual tuners, use an antenna tuning mode that shows all tuners simultaneously with rolling graphs, view ATSC 3.0 / NextGen TV advanced data, inspect available programs and PIDs on a tuned channel, and tune channels directly from the signal view.
+Signal Monitoring & Antenna Tuning adds real-time RF signal diagnostics to HD Homey, turning it from a remote-streaming tool into also a tuner installation and diagnostic tool. Users can view live signal strength (SS), SNR quality (SNQ), and symbol error quality (SEQ) for individual tuners, view ATSC 3.0 / NextGen TV advanced data, inspect available programs and PIDs on a tuned channel, and tune or clear channels directly from the per-device signal view (`/tuners/[id]/signal`) using per-slot controls — a channel dropdown populated from the device's lineup, a Tune button, and a Clear button. Tuning controls are visible to admin users only.
 
 Signal data is fetched from the HDHomeRun device's own HTTP API — specifically `http://{device-ip}/status.json` — using the standard `fetch()` call that already works in the HD Homey server environment. No binary protocol, no `hdhomerun_config` CLI binary, and no additional native dependencies are introduced. Real-time delivery to the browser uses Server-Sent Events (SSE) via a Next.js Route Handler returning a `ReadableStream`, which integrates naturally with the existing app-router infrastructure. Historical signal data is not persisted to the database; all graphs are computed from an in-memory rolling buffer maintained per SSE connection.
 
@@ -35,7 +35,9 @@ Signal data is fetched from the HDHomeRun device's own HTTP API — specifically
 
 ---
 
-### Story 2: Antenna Tuning Mode — All Tuners Simultaneously (Priority: P1)
+### Story 2: Antenna Tuning Mode — All Tuners Simultaneously (Priority: P1) ~~[Removed in v1.1]~~
+
+> **v1.1 Note**: The `/signal/antenna` page was removed. Per-slot tuning controls on `/tuners/[id]/signal` (Story 7) supersede this story for the primary use-case.
 
 **As a** user positioning an antenna  
 **I want** to see signal graphs for every tuner at the same time  
@@ -114,7 +116,22 @@ Signal data is fetched from the HDHomeRun device's own HTTP API — specifically
 **Acceptance Criteria**:
 - **Given** I am on `/tuners/[id]`, **When** the page renders, **Then** I see a "Signal Monitor" button or link in the tuner action area
 - **Given** I am on `/tuners/[id]/signal`, **When** the page renders, **Then** I see a breadcrumb or back link to `/tuners/[id]`
-- **Given** I am on `/signal/antenna`, **When** the page renders, **Then** I see a global "Antenna Mode" nav link accessible from any signal page
+- **Given** I am on `/signal/antenna`, **When** the page renders, **Then** I see a global "Antenna Mode" nav link accessible from any signal page *(removed in v1.1 — `/signal/antenna` page no longer exists)*
+
+---
+
+### Story 7: Tune a Specific Channel on a Tuner Slot (Priority: P1)
+
+**As an** admin user  
+**I want** to select a channel from the device's lineup and tune any physical tuner slot  
+**So that** I can test and verify specific channel reception without using a separate TV or tool
+
+**Acceptance Criteria**:
+- **Given** I am on `/tuners/[id]/signal`, **When** the page loads, **Then** each tuner slot card shows a channel dropdown and Tune/Clear buttons
+- **Given** I select a channel from the dropdown and click Tune, **When** the request completes, **Then** the tuner locks to that channel and signal gauges update within 2 seconds
+- **Given** the tuner is idle and I click Clear, **When** the request completes, **Then** the tuner remains idle
+- **Given** I am not an admin user, **When** the page loads, **Then** tuning controls are not shown
+- **Given** the tuner slot is auto-discovered (negative tunerId), **When** I interact with the tuning controls, **Then** tuning controls still work using the page's DB tunerId and the slot's `resource` name
 
 ---
 
@@ -138,7 +155,6 @@ Signal data is fetched from the HDHomeRun device's own HTTP API — specifically
 
 ### ATSC 3.0 Details
 
-- **FR-011**: System MUST check whether the `Resource` entry's `lock` field (from the device status or debug endpoint) contains the substring `"atsc3"` to detect ATSC 3.0 channels
 - **FR-012**: System MUST fetch ATSC 3.0 PLP data from `http://{device-ip}/tuner{N}/atsc3/plpinfo` when an ATSC 3.0 channel is locked; this endpoint is device-optional and returns an empty response or 404 if not available
 - **FR-013**: System MUST fetch ATSC 3.0 L1 data from `http://{device-ip}/tuner{N}/atsc3/l1info` when an ATSC 3.0 channel is locked; same device-optional handling applies
 - **FR-014**: Both ATSC 3.0 endpoints respond with plain text in `key=value` format; System MUST parse key-value pairs into typed objects and deliver them via the SSE stream as `atsc3plp` and `atsc3l1` event types
@@ -152,16 +168,24 @@ Signal data is fetched from the HDHomeRun device's own HTTP API — specifically
 - **FR-019**: Each SSE event payload MUST be valid JSON conforming to the data shapes defined in the Data Requirements section
 - **FR-020**: The server MUST send a `ping` event (empty data) every 30 seconds to keep the SSE connection alive through proxies and firewalls
 - **FR-021**: When the client aborts the request (`request.signal` abort event), the server MUST stop the polling interval and close the `ReadableStream` controller
-- **FR-022**: System MUST implement a Route Handler at `GET /api/signal/antenna/stream` that fans out `signal` events for **all** active tuners across all configured devices, emitting per-tuner objects in a single stream with a `tunerId` field in each event payload
-- **FR-023**: The antenna stream MUST handle partial device failures gracefully: if one device is unreachable, its tuners emit `{ error: "unreachable" }` while other devices continue normally
 
 ### UI Pages
 
 - **FR-024**: System MUST add a `/tuners/[id]/signal` page (Next.js App Router, under `(protected)`) that renders the single-tuner signal view
-- **FR-025**: System MUST add a `/signal/antenna` page (Next.js App Router, under `(protected)`) that renders the multi-tuner antenna view
 - **FR-026**: Both pages MUST be client components (using `'use client'`) because they manage SSE `EventSource` connections and live graph state
 - **FR-027**: The single-tuner signal page MUST display a "Signal Monitor" button on the existing `/tuners/[id]` page; implementation MUST modify `apps/web/src/app/(protected)/tuners/[id]/page.tsx` to add this link
 - **FR-028**: Rolling graphs MUST use the `recharts` library for chart rendering (add as a dependency if not already present); each graph MUST display a maximum of 60 data points (one per 2-second poll cycle = 120 seconds)
+
+### Tuning Controls
+
+- **FR-029**: System MUST accept `resource` (string, required) in the POST body of `/api/signal/[tunerId]/tune` and `/api/signal/[tunerId]/clear` to explicitly identify which physical tuner slot to target (e.g., `"tuner2"`)
+- **FR-030**: The `/api/signal/[tunerId]/tune` endpoint MUST extract the tuner number from the `resource` string (strip non-digit characters) to build the device command URL, instead of resolving via sibling-tuner index
+- **FR-031**: The `/api/signal/[tunerId]/tune` endpoint MUST accept `guideNumber` as a required string in the POST body and validate it against the device's channel lineup in the database
+- **FR-032**: The `/api/signal/[tunerId]/tune` endpoint MUST check for active viewer conflicts before tuning; if active viewers > 0, return HTTP 409 with `{ conflict: true, viewers: N }`; the client MUST show a confirmation dialog before resending with `?force=true`
+- **FR-033**: The per-device signal page (`/tuners/[id]/signal`) MUST display per-slot tuning controls: a channel dropdown populated from the device's lineup, a "Tune" button, and a "Clear" button
+- **FR-034**: Tuning controls MUST show the currently tuned channel name (`vctName`) and number (`vctNumber`) from the live signal state when the slot is locked
+- **FR-035**: Tuning controls MUST be hidden for non-admin users (role check on the client side based on session)
+- **FR-036**: Tuning controls MUST work for all physical slots, including auto-discovered slots with synthetic negative tunerIds, by using the page's DB tunerId (from URL) for device lookup and the slot's `resource` name for the physical target
 
 ---
 
@@ -170,14 +194,12 @@ Signal data is fetched from the HDHomeRun device's own HTTP API — specifically
 - **NFR-001**: Performance — SSE endpoint MUST stream the first `signal` event within 3 seconds of connection
 - **NFR-002**: Performance — Signal gauge updates MUST appear in the browser within 500 ms of the server receiving the device response (net round-trip budget: 2000 ms poll + 500 ms delivery)
 - **NFR-003**: Resource Usage — Each open SSE connection to `/api/signal/[tunerId]/stream` MUST NOT maintain more than one concurrent polling request to the HDHomeRun device per tuner (fan-out/deduplication is handled by a server-side polling manager singleton)
-- **NFR-004**: Resource Usage — The antenna mode stream (`/api/signal/antenna/stream`) MUST NOT create duplicate per-device polling when multiple clients connect; the polling manager MUST share a single poll timer per device
 - **NFR-005**: Reliability — Device fetch timeouts of 3 seconds MUST be enforced; a timeout MUST emit a `signal` event with `{ error: "timeout" }` rather than dropping the SSE connection
 - **NFR-006**: Security — All signal API routes MUST require an authenticated session (enforced by the existing proxy at `src/proxy.ts`); no additional auth work is needed for read-only signal routes
 - **NFR-007**: Security — Channel tuning endpoints (`/api/signal/[tunerId]/tune`, `/api/signal/[tunerId]/clear`) MUST additionally require admin role checked server-side in the route handler
 - **NFR-008**: Accessibility — Signal gauge values MUST have ARIA labels; e.g., `aria-label="Signal Strength 83 percent"` — not just visual color coding
 - **NFR-009**: Accessibility — Color-coded indicators MUST also have text labels or icons so the information is not conveyed by color alone (WCAG 1.4.1)
 - **NFR-010**: Accessibility — Graphs MUST have `role="img"` and an `aria-label` summarizing the current value for screen readers
-- **NFR-011**: Compatibility — Antenna mode graphs MUST respect `prefers-reduced-motion` by disabling CSS transitions and animation when the media query matches
 - **NFR-012**: Compatibility — The feature MUST work on HDHomeRun Connect, Extend, Flex, and Quatro (ATSC 1.0) models; ATSC 3.0 sections degrade gracefully on older hardware
 - **NFR-013**: Compatibility — DVB-T/T2 devices (EU models) return the same `/status.json` structure with the same field names; the signal gauges MUST work identically; ATSC 3.0 section is simply never shown
 - **NFR-014**: Testing — All server-side signal parsing logic (status.json parser, streaminfo parser, ATSC 3.0 parser, SSE event formatting) MUST have unit tests with mocked device responses; minimum 70% coverage on new code
@@ -371,26 +393,20 @@ export interface Atsc3L1Info {
 apps/web/src/
 ├── app/
 │   ├── (protected)/
-│   │   ├── tuners/
-│   │   │   └── [id]/
-│   │   │       ├── page.tsx              # MODIFIED: add "Signal Monitor" link
-│   │   │       └── signal/
-│   │   │           └── page.tsx          # NEW: single-tuner signal view (client component)
-│   │   └── signal/
-│   │       └── antenna/
-│   │           └── page.tsx              # NEW: antenna tuning mode (client component)
+│   │   └── tuners/
+│   │       └── [id]/
+│   │           ├── page.tsx              # MODIFIED: add "Signal Monitor" link
+│   │           └── signal/
+│   │               └── page.tsx          # NEW: single-tuner signal view (client component)
 │   └── api/
 │       └── signal/
-│           ├── [tunerId]/
-│           │   ├── stream/
-│           │   │   └── route.ts          # NEW: SSE stream for single tuner
-│           │   ├── tune/
-│           │   │   └── route.ts          # NEW: POST tune channel
-│           │   └── clear/
-│           │       └── route.ts          # NEW: POST clear/release tuner
-│           └── antenna/
-│               └── stream/
-│                   └── route.ts          # NEW: SSE stream for all tuners
+│           └── [tunerId]/
+│               ├── stream/
+│               │   └── route.ts          # NEW: SSE stream for single tuner
+│               ├── tune/
+│               │   └── route.ts          # MODIFIED: accept explicit `resource` body field
+│               └── clear/
+│                   └── route.ts          # MODIFIED: accept explicit `resource` body field
 └── lib/
     └── hdhr/
         ├── types.ts                      # MODIFIED: add new types above
@@ -439,20 +455,15 @@ apps/web/src/
 - **Scenario**: Device does not have `/tuner{N}/atsc3/plpinfo` (e.g., older firmware or ATSC 1.0 device)
 - **Handling**: `fetch()` returns 404 or network error; polling manager emits no `atsc3plp` or `atsc3l1` events; client never shows the ATSC 3.0 section (hidden by default, shown only when events arrive)
 
-### Multiple Browser Tabs in Antenna Mode
-
-- **Scenario**: Two browser windows open `/signal/antenna` simultaneously
-- **Handling**: Each tab opens its own SSE connection to `/api/signal/antenna/stream`; the polling manager recognizes all device IPs are already being polled, increments subscriber counts, and fans out to both connections; device polling does NOT double up; when the first tab closes, the subscriber count decrements but polling continues for the second tab
-
 ### streaminfo Parse Failure
 
 - **Scenario**: Device returns malformed or empty `streaminfo` response
 - **Handling**: Parse function catches errors and returns an empty `programs: []` array; a `streaminfo` event with empty programs is emitted; UI shows "No program data available" in the programs section; signal gauges are unaffected
 
-### Antenna Mode with Zero Active Tuners
+### Tuning Auto-Discovered Slots
 
-- **Scenario**: All configured tuners are on unreachable devices or no tuners are configured
-- **Handling**: The `/api/signal/antenna/stream` still opens successfully; for each unreachable device it emits error events; if `tuners` table is empty, the SSE stream emits a single `signal` event with `{ error: "no-tuners" }` and then closes
+- **Scenario**: The tuner slot being targeted has a synthetic negative `tunerId` (auto-discovered via SPEC-007) and therefore has no individual DB record
+- **Handling**: Auto-discovered tuner slots (negative tunerId) don't have DB records, but the tune/clear endpoints use the URL's DB tunerId for device resolution and the `resource` field for the physical slot. Channels are fetched using the URL's DB tunerId. If no channel lineup exists for this device, the dropdown shows "No channels available".
 
 ---
 
@@ -468,12 +479,15 @@ The following are specific, binary-testable pass/fail criteria:
 - **AC-006**: `POST /api/signal/[tunerId]/tune` with a non-existent guide number returns HTTP 404
 - **AC-007**: Signal gauges display `--` when tuner is idle (no `VctNumber` in `status.json`)
 - **AC-008**: SEQ = 100 renders green badge; SEQ = 50 renders yellow badge; SEQ = 30 renders red badge
-- **AC-009**: Antenna mode page shows one card per active tuner in the `tuners` database table
 - **AC-010**: The "Signal Monitor" link exists on `/tuners/[id]` and navigates to `/tuners/[id]/signal`
 - **AC-011**: ATSC 3.0 section is hidden when the lock string does not contain `"atsc3"`
 - **AC-012**: Unit tests for `parseStatusJson()`, `parseStreamInfo()`, `parseAtsc3Plp()`, and `parseAtsc3L1()` exist and pass
 - **AC-013**: All gauges have `aria-label` attributes with human-readable values
 - **AC-014**: With `prefers-reduced-motion: reduce` media query active, rolling graph animations are disabled
+- **AC-015**: `POST /api/signal/[tunerId]/tune` without a `resource` body field returns HTTP 400
+- **AC-016**: `POST /api/signal/[tunerId]/tune` with an active viewer count > 0 returns HTTP 409 with `{ conflict: true, viewers: N }`
+- **AC-017**: Tuning controls (channel dropdown, Tune button, Clear button) are visible on `/tuners/[id]/signal` for admin users and hidden for viewer-role users
+- **AC-018**: `GET /api/tuners/[id]/channels` is called to populate the channel dropdown; if the lineup is empty, the dropdown shows "No channels available"
 
 ---
 
@@ -499,7 +513,7 @@ Explicitly excluded from this feature:
 ### Measurable Outcomes
 
 - **SC-001**: Signal gauges update within 500 ms of receiving a device response in 95th percentile
-- **SC-002**: Antenna tuning mode shows zero duplicate device polls when 3+ tabs are open simultaneously (verified by server-side poll counter log)
+- **SC-002**: ~~Antenna tuning mode shows zero duplicate device polls when 3+ tabs are open simultaneously~~ *(removed in v1.1 — antenna mode page deleted)*
 - **SC-003**: Feature works on HDHomeRun Connect 4 (2-tuner ATSC 1.0) and HDHomeRun Flex 4K (ATSC 3.0) hardware
 - **SC-004**: All new code passes ESLint with zero warnings
 - **SC-005**: Test coverage ≥ 70% for all new files in `src/lib/hdhr/` and `src/app/api/signal/`
@@ -507,7 +521,7 @@ Explicitly excluded from this feature:
 ### User Validation
 
 - [ ] Signal gauges tested on at least one physical HDHomeRun device
-- [ ] Antenna tuning mode used during actual antenna positioning exercise
+- [ ] Per-slot tuning controls verified on device (tune, clear, conflict dialog)
 - [ ] Program/PID listing verified against a known multi-program transport stream
 - [ ] ATSC 3.0 section verified on a NextGen TV-capable device (or marked "not tested" if hardware unavailable)
 
@@ -559,9 +573,20 @@ All design decisions below were resolved during the specification phase (no `[NE
 | dBm/dB conversions? | **Not implemented; percentages only** | The dBm conversion factor (80% ≈ −12 dBmV) varies by device model and antenna input impedance; official SiliconDust guidance is to use % for alignment decisions; conversion would add complexity and potential user confusion |
 | Signal data source: HTTP REST vs `hdhomerun_config` binary? | **HTTP REST only (`/status.json` on port 80)** | `hdhomerun_config` is a CLI binary requiring separate installation and native execution; HD Homey is a pure Node.js/Next.js app; the `/status.json` endpoint provides identical data via standard `fetch()`; no native binary dependency |
 | Chart library? | **Use `recharts` library** | Recharts is a well-known React charting library that simplifies building rolling line graphs; approved product decision |
+| Tuning: resolve physical slot via sibling sort vs explicit `resource`? | **Explicit `resource` field in POST body (v1.1)** | Sibling-sort resolution was fragile when auto-discovered slots with synthetic negative tunerIds were involved; explicit `resource` (e.g., `"tuner2"`) is deterministic, matches the device's own field name, and works for all slot types |
+| Antenna mode page: keep or remove? | **Removed (v1.1)** | `/signal/antenna` page has been deleted; per-slot tuning controls on `/tuners/[id]/signal` replace the primary use-case of monitoring all slots simultaneously for the same device |
 
 ---
 
-**Version**: 1.0 | **Created**: 2026-06-19 | **Status**: Implemented — 2026-06-19
+## Revision History
 
-*Specification complete. All 25 tasks implemented and tested.*
+| Version | Date | Summary |
+|---|---|---|
+| 1.0 | 2026-06-19 | Initial specification. All 30 tasks implemented. |
+| 1.1 | 2026-06-22 | Added per-slot tuning controls (FR-029–FR-036, Story 7, AC-015–AC-018). Removed `/signal/antenna` page and its associated FRs (022, 023, 025), NFRs (004, 011), and edge cases. Updated tune/clear API to accept explicit `resource` body field. |
+
+---
+
+**Version**: 1.1 | **Created**: 2026-06-19 | **Last Updated**: 2026-06-22 | **Status**: Extended — Tuning controls added
+
+*Base implementation complete (v1.0). Tuning controls extension specified in v1.1.*

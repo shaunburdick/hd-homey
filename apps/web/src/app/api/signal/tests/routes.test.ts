@@ -187,12 +187,27 @@ describe('GET /api/signal/[tunerId]/stream', () => {
     });
 });
 
-/** Build a tune POST request */
-function makeTuneRequest(path = TUNE_PATH, body = { guideNumber: '5.1' }): NextRequest {
+/** Shared Content-Type header for inline JSON requests */
+const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
+
+/** Build a tune POST request — resource defaults to 'tuner0' */
+function makeTuneRequest(
+    path = TUNE_PATH,
+    body: { guideNumber?: string; resource?: string } = { guideNumber: '5.1', resource: 'tuner0' },
+): NextRequest {
     return new NextRequest(path, {
         method: 'POST',
         body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
+    });
+}
+
+/** Build a clear POST request with a JSON body */
+function makeClearRequest(path = CLEAR_PATH, resource = 'tuner0'): NextRequest {
+    return new NextRequest(path, {
+        method: 'POST',
+        body: JSON.stringify({ resource }),
+        headers: JSON_HEADERS,
     });
 }
 
@@ -265,10 +280,36 @@ describe('POST /api/signal/[tunerId]/tune', () => {
         getMockGetDb().mockResolvedValue(makeDbMock({ tuner: mockTuner }));
 
         const response = await tunePOST(
-            makeTuneRequest(TUNE_PATH, { guideNumber: '999.1' }),
+            makeTuneRequest(TUNE_PATH, { guideNumber: '999.1', resource: 'tuner0' }),
             makeParams('1'),
         );
         expect(response.status).toBe(404);
+    });
+
+    it('returns 400 when resource is missing', async () => {
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+
+        const response = await tunePOST(
+            makeTuneRequest(TUNE_PATH, { guideNumber: '5.1' }),
+            makeParams('1'),
+        );
+        expect(response.status).toBe(400);
+        const body = await response.json() as { error: string; expected: string };
+        expect(body.error).toBe('resource is required');
+        expect(body.expected).toBe('tunerN');
+    });
+
+    it('returns 400 when resource is invalid', async () => {
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+
+        const response = await tunePOST(
+            makeTuneRequest(TUNE_PATH, { guideNumber: '5.1', resource: 'invalid' }),
+            makeParams('1'),
+        );
+        expect(response.status).toBe(400);
+        const body = await response.json() as { error: string; expected: string };
+        expect(body.error).toBe('Invalid resource');
+        expect(body.expected).toBe('tunerN');
     });
 });
 
@@ -284,19 +325,13 @@ describe('POST /api/signal/[tunerId]/clear', () => {
 
     it(NOT_AUTH, async () => {
         getMockGetSession().mockResolvedValue(null);
-        const response = await clearPOST(
-            new NextRequest(CLEAR_PATH, { method: 'POST' }),
-            makeParams('1'),
-        );
+        const response = await clearPOST(makeClearRequest(), makeParams('1'));
         expect(response.status).toBe(401);
     });
 
     it(VIEWER_FORBIDDEN, async () => {
         getMockGetSession().mockResolvedValue(VIEWER_ROLE);
-        const response = await clearPOST(
-            new NextRequest(CLEAR_PATH, { method: 'POST' }),
-            makeParams('1'),
-        );
+        const response = await clearPOST(makeClearRequest(), makeParams('1'));
         expect(response.status).toBe(403);
     });
 
@@ -305,9 +340,39 @@ describe('POST /api/signal/[tunerId]/clear', () => {
         getMockGetDb().mockResolvedValue(makeDbMock());
 
         const response = await clearPOST(
-            new NextRequest('http://localhost/api/signal/999/clear', { method: 'POST' }),
+            makeClearRequest('http://localhost/api/signal/999/clear'),
             makeParams('999'),
         );
         expect(response.status).toBe(404);
+    });
+
+    it('returns 400 when resource is missing', async () => {
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+
+        const response = await clearPOST(
+            new NextRequest(CLEAR_PATH, { method: 'POST', body: '{}', headers: JSON_HEADERS }),
+            makeParams('1'),
+        );
+        expect(response.status).toBe(400);
+        const body = await response.json() as { error: string; expected: string };
+        expect(body.error).toBe('resource is required');
+        expect(body.expected).toBe('tunerN');
+    });
+
+    it('returns 400 when resource is invalid', async () => {
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+
+        const response = await clearPOST(
+            new NextRequest(CLEAR_PATH, {
+                method: 'POST',
+                body: JSON.stringify({ resource: 'invalid-slot' }),
+                headers: JSON_HEADERS,
+            }),
+            makeParams('1'),
+        );
+        expect(response.status).toBe(400);
+        const body = await response.json() as { error: string; expected: string };
+        expect(body.error).toBe('Invalid resource');
+        expect(body.expected).toBe('tunerN');
     });
 });

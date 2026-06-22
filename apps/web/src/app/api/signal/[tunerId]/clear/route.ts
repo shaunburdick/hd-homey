@@ -3,6 +3,10 @@
  *
  * POST /api/signal/[tunerId]/clear
  *
+ * Accepts a JSON body with a `resource` field identifying the physical tuner
+ * slot to release (e.g. "tuner0", "tuner2"). The device slot index is derived
+ * directly from the resource string, replacing the former sibling-sort approach.
+ *
  * @module app/api/signal/[tunerId]/clear/route
  */
 
@@ -19,14 +23,50 @@ export const dynamic = 'force-dynamic';
 /** Device command timeout in milliseconds */
 const DEVICE_TIMEOUT_MS = 3_000;
 
+/** Regex for valid resource names: "tuner0", "tuner1", etc. */
+const RESOURCE_PATTERN = /^tuner\d+$/;
+
+/** Error sentinel returned when resource field is absent or empty */
+const ERR_MISSING_RESOURCE = 'missing-resource' as const;
+
+/** Error sentinel returned when resource field does not match RESOURCE_PATTERN */
+const ERR_INVALID_RESOURCE = 'invalid-resource' as const;
+
 interface Params {
     tunerId: string;
+}
+
+/**
+ * Parse and validate resource from the request body.
+ *
+ * @param request - Incoming POST request
+ * @returns The resource string if valid; a string sentinel describing the error otherwise
+ */
+async function parseResource(
+    request: NextRequest,
+): Promise<string | typeof ERR_MISSING_RESOURCE | typeof ERR_INVALID_RESOURCE> {
+    try {
+        const body = await request.json() as { resource?: unknown };
+
+        if (typeof body.resource !== 'string' || body.resource === '') {
+            return ERR_MISSING_RESOURCE;
+        }
+
+        if (!RESOURCE_PATTERN.test(body.resource)) {
+            return ERR_INVALID_RESOURCE;
+        }
+
+        return body.resource;
+    } catch {
+        return ERR_MISSING_RESOURCE;
+    }
 }
 
 /**
  * POST /api/signal/[tunerId]/clear
  *
  * @returns 200 `{ success: true, resource: string }` on success
+ * @returns 400 if resource is missing or invalid
  * @returns 401 if not authenticated
  * @returns 403 if not admin
  * @returns 404 if tuner not found
@@ -52,6 +92,18 @@ export async function POST(
         return Response.json({ error: 'Invalid tunerId' }, { status: 400 });
     }
 
+    const resourceResult = await parseResource(request);
+
+    if (resourceResult === ERR_MISSING_RESOURCE) {
+        return Response.json({ error: 'resource is required', expected: 'tunerN' }, { status: 400 });
+    }
+
+    if (resourceResult === ERR_INVALID_RESOURCE) {
+        return Response.json({ error: 'Invalid resource', expected: 'tunerN' }, { status: 400 });
+    }
+
+    const resource = resourceResult;
+
     const db = await getDb();
     const tuner = await db.query.tuners.findFirst({
         where: and(
@@ -64,16 +116,7 @@ export async function POST(
         return Response.json({ error: 'Tuner not found' }, { status: 404 });
     }
 
-    const deviceTuners = await db.query.tuners.findMany({
-        where: and(
-            eq(tuners.path, tuner.path),
-            isNull(tuners.deleted_at),
-        ),
-    });
-    deviceTuners.sort((tunerA, tunerB) => tunerA.id - tunerB.id);
-    const resourceIndex = deviceTuners.findIndex((tun) => tun.id === tunerId);
-    const tunerNum = resourceIndex >= 0 ? resourceIndex : 0;
-
+    const tunerNum = parseInt(resource.replace(/\D/g, ''), 10);
     const clearUrl = `${tuner.path}/tuner${tunerNum}/set?channel=none`;
 
     try {
@@ -89,5 +132,5 @@ export async function POST(
         return Response.json({ error: 'Device unreachable' }, { status: 502 });
     }
 
-    return Response.json({ success: true, resource: `tuner${tunerNum}` });
+    return Response.json({ success: true, resource });
 }

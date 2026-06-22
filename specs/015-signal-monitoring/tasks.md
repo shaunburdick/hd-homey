@@ -446,6 +446,59 @@ a pure TypeScript client for this protocol to unlock:
   - `signal-poller-streaminfo.ts` extracted from `signal-poller.ts` (500-line limit)
   - All Wave 9 tasks marked complete
 
+---
+
+## Wave 10 — Per-Slot Tuning Controls
+
+**Spec**: SPEC-015 v1.1 — Story 7, FR-029–FR-036, AC-015–AC-018  
+**Plan reference**: `plan-refinement-tuning.md`
+
+- [ ] **T-039** `[M]` — Modify tune route to require `resource` body field, remove sibling-sort index resolution
+  - Add `resource` as required field in POST body parsing
+  - Remove `resolveTunerAndIndex()` — no longer needed
+  - Extract `tunerNum` from resource string: `parseInt(resource.replace(/\D/g, ''), 10)`
+  - Validate `resource` format matches `/^tuner\d+$/` → return 400 if invalid
+  - Use `tuner.path` + parsed tunerNum for device command URL
+  - Keep existing viewer conflict check (HTTP 409) and admin auth
+  - File: `apps/web/src/app/api/signal/[tunerId]/tune/route.ts`
+
+- [ ] **T-040** `[S]` — Modify clear route to require `resource` body field, remove sibling-sort index resolution
+  - Add `resource` as required field in POST body parsing
+  - Remove sibling-sort index resolution, extract tuner number from resource string
+  - Validate resource format same as T-039
+  - File: `apps/web/src/app/api/signal/[tunerId]/clear/route.ts`
+
+- [ ] **T-041** `[M]` — Create `TuningControl` component
+  - New file: `apps/web/src/components/signal/TuningControl.tsx`
+  - Props: `tunerId`, `resource`, `vctName?`, `vctNumber?`, `idle`
+  - Fetches channels via `GET /api/tuners/[tunerId]/channels` on mount
+  - Renders: select dropdown of channels + Tune button + Clear button
+  - Shows current channel badge when slot is locked
+  - Grayed out "No channels available" when lineup is empty
+  - Hidden for non-admin users (check via `useSession()` from `@/lib/auth/auth-client` comparing `session.user.role` against `AuthRoles.Admin`)
+  - On Tune: `POST /api/signal/[tunerId]/tune { guideNumber, resource }`
+  - On Clear: `POST /api/signal/[tunerId]/clear { resource }`
+  - Handle HTTP 409 → confirmation dialog, resend with `?force=true`
+  - Handle HTTP 401/403 → hide controls
+  - Loading state while fetching channels
+
+- [ ] **T-042** `[M]` `[DEPENDS: T-041]` — Wire `TuningControl` into per-device signal page
+  - Import `TuningControl` in `apps/web/src/app/(protected)/tuners/[id]/signal/page.tsx`
+  - Pass tunerId, resource, vctName, vctNumber, idle from each slot's `TunerSignalState`
+  - Render `TuningControl` inside the `diagnostics` slot of each `SignalStatusCard`, alongside ProgramList and Atsc3Details
+
+- [ ] **T-043** `[M]` `[DEPENDS: T-039, T-040, T-041, T-042]` — Write tests
+  - Update `apps/web/src/app/api/signal/[tunerId]/tune/route.test.ts`: test 400 on missing/invalid resource, test tunerNum extraction from resource
+  - Update `apps/web/src/app/api/signal/[tunerId]/clear/route.test.ts`: test 400 on missing resource, test tunerNum extraction
+  - Create `apps/web/src/components/signal/TuningControl.test.tsx`: render for admin user, render for viewer (hidden), tune click, clear click, empty lineup, 409 conflict dialog
+
+- [ ] **T-044** `[S]` `[DEPENDS: all]` — Quality gate + final checks
+  - Run `npm test -w @hd-homey/web` — all tests pass
+  - Run `npm run lint -w @hd-homey/web` — zero errors
+  - Run `npm run build -w @hd-homey/web` — build succeeds
+  - Update plan-refinement-tuning.md status
+  - Mark all Wave 10 tasks complete in tasks.md
+
 ## Estimated Total Effort
 
 | Wave | Tasks | Complexity | Approx Time |
@@ -460,4 +513,5 @@ a pure TypeScript client for this protocol to unlock:
 | 7 — Per-Device Signal Page | 3 | M+M+S | 2–3 hr |
 | 8 — Lineup Fallback | 2 | M+M | 2–3 hr |
 | 9 — Native Protocol | 8 | S+M+M+M+L+M+M+S | ~8–9 hr |
-| **Total** | **38** | | **~36–48 hr** |
+| 10 — Tuning Controls | 6 | M+S+M+M+M+S | ~4–6 hr |
+| **Total** | **44** | | **~40–54 hr** |
