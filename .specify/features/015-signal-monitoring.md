@@ -3,7 +3,7 @@
 **Feature ID**: `015-signal-monitoring`  
 **Created**: 2026-06-19  
 **Last Updated**: 2026-06-22  
-**Status**: Extended — Tuning controls added  
+**Status**: Implemented  
 **Owner**: HD Homey Core Team  
 **Version**: 1.1  
 **Dependencies**: SPEC-001 (Tuner Management), SPEC-003 (User Authentication)
@@ -583,10 +583,10 @@ All design decisions below were resolved during the specification phase (no `[NE
 | Version | Date | Summary |
 |---|---|---|
 | 1.0 | 2026-06-19 | Initial specification. All 30 tasks implemented. |
-| 1.1 | 2026-06-22 | Added per-slot tuning controls (FR-029–FR-036, Story 7, AC-015–AC-018). Removed `/signal/antenna` page and its associated FRs (022, 023, 025), NFRs (004, 011), and edge cases. Updated tune/clear API to accept explicit `resource` body field. |
+| 1.1 | 2026-06-22 | Added per-slot tuning controls (FR-029–FR-036, Story 7, AC-015–AC-018). Removed `/signal/antenna` page and its associated FR items. Updated tune/clear API to accept explicit `resource` body field. All 6 Wave 10 tasks implemented — 562/562 tests passing, lint/build clean. |
 
 ---
 
-**Version**: 1.1 | **Created**: 2026-06-19 | **Last Updated**: 2026-06-22 | **Status**: Extended — Tuning controls added
+**Version**: 1.1 | **Created**: 2026-06-19 | **Last Updated**: 2026-06-22 | **Status**: Implemented
 
 *Base implementation complete (v1.0). Tuning controls extension specified in v1.1.*
