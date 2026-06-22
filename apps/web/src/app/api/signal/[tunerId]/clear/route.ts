@@ -21,6 +21,8 @@ import { getDb } from '@/lib/database/db';
 import { tuners } from '@/lib/database/schema';
 import { AuthRoles } from '@/lib/auth-roles';
 import { nativeSet, extractHostname } from '@/lib/hdhr/native-protocol';
+import type { NativeProtocolError } from '@/lib/hdhr/native-protocol';
+import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +62,46 @@ async function parseResource(
         return body.resource;
     } catch {
         return ERR_MISSING_RESOURCE;
+    }
+}
+
+interface SendClearCommandOptions {
+    devicePath: string;
+    tunerNum: number;
+    tunerId: number;
+    resource: string;
+}
+
+/**
+ * Send a clear command to the device via the native TCP protocol.
+ *
+ * Sets `/tuner{N}/channel` to `none` using the HDHomeRun binary control
+ * protocol on port 65001. Returns a 502 Response on any failure, or null
+ * on success so the caller can proceed to return 200.
+ *
+ * @param options - Device path, tuner slot number, tunerId, and resource
+ * @returns Null on success; a 502 Response on device error or bad path
+ */
+async function sendClearCommand(options: SendClearCommandOptions): Promise<Response | null> {
+    const { devicePath, tunerNum, tunerId, resource } = options;
+    const deviceIp = extractHostname(devicePath);
+    if (deviceIp === '') {
+        Logger.warn({ devicePath, tunerId, resource }, 'extractHostname returned empty string');
+        return Response.json({ error: 'Device unreachable', tunerId, resource }, { status: 502 });
+    }
+    try {
+        await nativeSet({ deviceIp, variable: `/tuner${tunerNum}/channel`, value: 'none' });
+        return null;
+    } catch (error) {
+        const nativeErr = error as Partial<NativeProtocolError>;
+        Logger.error(
+            { tunerId, resource, deviceIp, errorCode: nativeErr.code, errorMsg: nativeErr.message },
+            'Failed to send clear command',
+        );
+        return Response.json(
+            { error: 'Device unreachable', errorCode: nativeErr.code, details: nativeErr.message },
+            { status: 502 },
+        );
     }
 }
 
@@ -119,11 +161,9 @@ export async function POST(
 
     const tunerNum = parseInt(resource.replace(/\D/g, ''), 10);
 
-    try {
-        const deviceIp = extractHostname(tuner.path);
-        await nativeSet({ deviceIp, variable: `/tuner${tunerNum}/channel`, value: 'none' });
-    } catch {
-        return Response.json({ error: 'Device unreachable' }, { status: 502 });
+    const clearError = await sendClearCommand({ devicePath: tuner.path, tunerNum, tunerId, resource });
+    if (clearError !== null) {
+        return clearError;
     }
 
     return Response.json({ success: true, resource });

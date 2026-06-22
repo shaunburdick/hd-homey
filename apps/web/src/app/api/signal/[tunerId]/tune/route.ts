@@ -25,6 +25,8 @@ import { tuners, channels } from '@/lib/database/schema';
 import { getSessionManager } from '@/lib/transcoding/session-manager';
 import { AuthRoles } from '@/lib/auth-roles';
 import { nativeSet, extractHostname } from '@/lib/hdhr/native-protocol';
+import type { NativeProtocolError } from '@/lib/hdhr/native-protocol';
+import Logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,6 +124,8 @@ interface SendTuneCommandOptions {
     devicePath: string;
     tunerNum: number;
     guideNumber: string;
+    tunerId: number;
+    resource: string;
 }
 
 /**
@@ -131,13 +135,14 @@ interface SendTuneCommandOptions {
  * binary control protocol on port 65001. HTTP-based tuning is not supported
  * by the device firmware.
  *
- * @param options - Device path, tuner slot number, and guide number to tune
+ * @param options - Device path, tuner slot number, guide number, tunerId, and resource
  * @returns True if the device acknowledged the command; false on any failure
  */
 async function sendTuneCommand(options: SendTuneCommandOptions): Promise<boolean> {
-    const { devicePath, tunerNum, guideNumber } = options;
+    const { devicePath, tunerNum, guideNumber, tunerId, resource } = options;
     const deviceIp = extractHostname(devicePath);
     if (deviceIp === '') {
+        Logger.warn({ devicePath, tunerId, resource }, 'extractHostname returned empty string');
         return false;
     }
     try {
@@ -147,7 +152,12 @@ async function sendTuneCommand(options: SendTuneCommandOptions): Promise<boolean
             value: `auto:${guideNumber}`,
         });
         return true;
-    } catch {
+    } catch (error) {
+        const nativeErr = error as Partial<NativeProtocolError>;
+        Logger.error(
+            { tunerId, resource, guideNumber, deviceIp, errorCode: nativeErr.code, errorMsg: nativeErr.message },
+            'Failed to send tune command',
+        );
         return false;
     }
 }
@@ -214,9 +224,12 @@ export async function POST(
     }
 
     const tunerNum = parseInt(resource.replace(/\D/g, ''), 10);
-    const tuneOk = await sendTuneCommand({ devicePath: tuner.path, tunerNum, guideNumber });
+    const tuneOk = await sendTuneCommand({ devicePath: tuner.path, tunerNum, guideNumber, tunerId, resource });
     if (!tuneOk) {
-        return Response.json({ error: 'Device unreachable or tune command failed' }, { status: 502 });
+        return Response.json(
+            { error: 'Device unreachable or tune command failed', tunerId, resource },
+            { status: 502 },
+        );
     }
 
     return Response.json({ success: true, resource });
