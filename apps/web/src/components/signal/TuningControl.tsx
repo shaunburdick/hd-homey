@@ -190,7 +190,13 @@ function useChannelLineup(tunerId: number): { channels: Channel[]; loading: bool
             })
             .then((json) => {
                 if (json !== null) {
-                    setChannels(json.data);
+                    // Sort numerically by major.minor (e.g. 2.1 before 10.1)
+                    const sorted = [...json.data].sort((chA, chB) => {
+                        const [aMaj = 0, aMin = 0] = chA.guideNumber.split('.').map(Number);
+                        const [bMaj = 0, bMin = 0] = chB.guideNumber.split('.').map(Number);
+                        return aMaj !== bMaj ? aMaj - bMaj : aMin - bMin;
+                    });
+                    setChannels(sorted);
                 }
                 setLoading(false);
                 return json;
@@ -316,7 +322,7 @@ function TuningControlsInner({ tunerId, resource, vctName, vctNumber, idle }: Tu
                     onCancel={handleConflictCancel}
                 />
             )}
-            <div className="tuning-controls-row">
+            <div className="tuning-controls-row" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <ChannelSelect
                     channels={channels}
                     loading={loading}
@@ -324,24 +330,26 @@ function TuningControlsInner({ tunerId, resource, vctName, vctNumber, idle }: Tu
                     busy={busy}
                     onChange={setUserSelection}
                 />
-                <button
-                    type="button"
-                    className="tuning-controls-tune-button"
-                    onClick={handleTune}
-                    disabled={loading || !hasChannels || selectedGuideNumber === '' || busy}
-                    aria-label={`Tune ${resource} to selected channel`}
-                >
-                    Tune
-                </button>
-                <button
-                    type="button"
-                    className="tuning-controls-clear-button"
-                    onClick={handleClear}
-                    disabled={busy}
-                    aria-label={`Clear ${resource}`}
-                >
-                    Clear
-                </button>
+                <div className="tuning-controls-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                        type="button"
+                        className="tuning-controls-tune-button"
+                        onClick={handleTune}
+                        disabled={loading || !hasChannels || selectedGuideNumber === '' || busy}
+                        aria-label={`Tune ${resource} to selected channel`}
+                    >
+                        Tune
+                    </button>
+                    <button
+                        type="button"
+                        className="tuning-controls-clear-button"
+                        onClick={handleClear}
+                        disabled={busy}
+                        aria-label={`Clear ${resource}`}
+                    >
+                        Clear
+                    </button>
+                </div>
             </div>
         </div>
     );

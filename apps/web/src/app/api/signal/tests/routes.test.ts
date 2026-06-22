@@ -311,6 +311,29 @@ describe('POST /api/signal/[tunerId]/tune', () => {
         expect(body.error).toBe('Invalid resource');
         expect(body.expected).toBe('tunerN');
     });
+
+    it('returns 200 and sends auto: channel format when tune succeeds', async () => {
+        const mockTuner = { id: 1, path: DEVICE_URL, is_active: true };
+        const mockChannel = { id: 5, guideNumber: '5.1', guideName: 'KPIX', fk_tuner: 1, is_active: true };
+
+        getMockGetSession().mockResolvedValue(ADMIN_ROLE);
+        getMockGetDb().mockResolvedValue(makeDbMock({ tuner: mockTuner, channel: mockChannel }));
+
+        // Mock device fetch to succeed with auto: format
+        const deviceFetchMock = vi.fn().mockResolvedValue({ ok: true });
+        global.fetch = deviceFetchMock;
+
+        const response = await tunePOST(makeTuneRequest(), makeParams('1'));
+        expect(response.status).toBe(200);
+        const body = await response.json() as { success: boolean; resource: string };
+        expect(body.success).toBe(true);
+        expect(body.resource).toBe('tuner0');
+
+        // Verify the tune command uses auto: format, not v prefix
+        const calledUrl = deviceFetchMock.mock.calls[0][0] as string;
+        expect(calledUrl).toContain('auto:5.1');
+        expect(calledUrl).not.toContain('/tuner0/set?channel=v');
+    });
 });
 
 // =============================================================================
