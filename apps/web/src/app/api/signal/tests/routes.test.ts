@@ -424,7 +424,8 @@ describe('POST /api/signal/[tunerId]/tune', () => {
 
         await waitForSocketAndEmit((socket) => {
             socket.emit('connect');
-            socket.emit('data', makeSuccessPacket('auto:5.1'));
+            // Device receives "auto:5" — subchannel stripped per FLEX 4K firmware quirk
+            socket.emit('data', makeSuccessPacket('auto:5'));
         });
 
         const response = await responsePromise;

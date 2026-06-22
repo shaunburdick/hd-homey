@@ -131,9 +131,15 @@ interface SendTuneCommandOptions {
 /**
  * Send a tune command to the device via the native TCP protocol.
  *
- * Sets `/tuner{N}/channel` to `auto:{guideNumber}` using the HDHomeRun
+ * Sets `/tuner{N}/channel` to `auto:{majorChannel}` using the HDHomeRun
  * binary control protocol on port 65001. HTTP-based tuning is not supported
  * by the device firmware.
+ *
+ * Only the major (integer) channel number is sent to the device. FLEX 4K
+ * firmware (20250815+) rejects virtual channel values that include a subchannel
+ * component (e.g. "auto:3.1" → "ERROR: invalid channel"). Stripping the
+ * subchannel — sending "auto:3" instead — works on all known firmware versions;
+ * the device normalises the value and locks to the correct multiplex.
  *
  * @param options - Device path, tuner slot number, guide number, tunerId, and resource
  * @returns True if the device acknowledged the command; false on any failure
@@ -149,7 +155,10 @@ async function sendTuneCommand(options: SendTuneCommandOptions): Promise<boolean
         await nativeSet({
             deviceIp,
             variable: `/tuner${tunerNum}/channel`,
-            value: `auto:${guideNumber}`,
+            // Use only the major channel number (integer part) — FLEX 4K firmware
+            // (20250815+) rejects subchannel values like "auto:3.1" with
+            // "ERROR: invalid channel". Sending "auto:3" works on all firmware.
+            value: `auto:${parseInt(guideNumber, 10)}`,
         });
         return true;
     } catch (error) {
