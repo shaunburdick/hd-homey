@@ -74,6 +74,13 @@ android {
         buildConfig = true
         viewBinding = true
     }
+
+    packaging {
+        resources {
+            merges += "META-INF/LICENSE.md"
+            merges += "META-INF/LICENSE-notice.md"
+        }
+    }
 }
 
 ksp {
