@@ -25,7 +25,6 @@ permissions:
 env:
     NODE_VERSION: "20"
     JAVA_VERSION: "17"
-    SKIP_INSTRUMENTATION: true
 
 jobs:
     # Lint job runs independently for fast feedback
@@ -174,6 +173,52 @@ jobs:
                   path: |
                       apps/android/app/build/reports/tests/
                       apps/android/app/build/test-results/
+                  retention-days: 7
+
+    # Android instrumentation test job — runs on emulator for UI tests (T103–T105).
+    # NOT added to android-build's `needs:` so emulator flakiness cannot block builds.
+    android-instrumentation-test:
+        name: Android Instrumentation Tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        steps:
+            - name: Checkout
+              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+            - name: Setup JDK
+              uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5
+              with:
+                  distribution: 'temurin'
+                  java-version: ${{ env.JAVA_VERSION }}
+                  cache: 'gradle'
+
+            - name: Grant execute permission for gradlew
+              working-directory: apps/android
+              run: chmod +x gradlew
+
+            - name: Enable KVM
+              run: |
+                  echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+                  sudo udevadm control --reload-rules
+                  sudo udevadm trigger --name-match=kvm
+
+            - name: Run instrumentation tests
+              uses: reactivecircus/android-emulator-runner@v2
+              with:
+                  api-level: 35
+                  target: google_apis
+                  arch: x86_64
+                  disk-size: 4096M
+                  ram-size: 2048M
+                  working-directory: apps/android
+                  script: ./gradlew connectedDebugAndroidTest --no-daemon
+
+            - name: Upload instrumentation test results
+              if: always()
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+              with:
+                  name: android-instrumentation-test-results
+                  path: apps/android/app/build/reports/androidTests/
                   retention-days: 7
 
     # Build job - only runs after lint, typecheck, and test pass
