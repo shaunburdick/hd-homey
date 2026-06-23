@@ -1,6 +1,7 @@
 package com.hdhomey.app.ui.channels
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,7 +12,6 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.hdhomey.app.R
@@ -149,21 +149,28 @@ class ChannelListFragment : Fragment() {
     }
 
     /**
-     * Handle channel item click — navigate to the player.
+     * Handle channel item click — navigate to the video player.
      *
-     * TODO Phase 2.3: Navigate to PlayerActivity with channel details.
-     * When PlayerActivity is created this method will launch an Intent carrying
-     * `channelId` ([ChannelWithMetadata.channel.id]) and `tunerId` extras so the
-     * player can resolve the correct stream URL.
+     * Launches [com.hdhomey.app.ui.player.PlayerActivity] with the channel's
+     * tuner ID, channel ID, server URL, and display info. The activity uses
+     * ExoPlayer to stream the HLS channel.
      *
      * @param channel The channel the user tapped
      */
     private fun onChannelClicked(channel: ChannelWithMetadata) {
-        // Placeholder — findNavController() reference is kept here intentionally
-        // so the IDE can verify the import is used and the navigation graph wiring
-        // won't require a new import when Phase 2.3 adds the action.
-        @Suppress("UnusedVariable")
-        val navController = findNavController()
-        // Phase 2.3: navController.navigate(ChannelListFragmentDirections.actionChannelListToPlayer(channel.channel.id, tunerId))
+        val serverUrl = viewModel.getActiveServerUrl()
+        if (serverUrl == null) {
+            Log.w("ChannelListFragment", "No active server URL available — cannot play stream")
+            return
+        }
+        val intent = com.hdhomey.app.ui.player.PlayerActivity.createIntent(
+            context = requireContext(),
+            tunerId = channel.channel.tunerId,
+            channelId = channel.channel.id,
+            serverUrl = serverUrl,
+            channelNumber = channel.channel.number,
+            channelName = channel.channel.name
+        )
+        startActivity(intent)
     }
 }

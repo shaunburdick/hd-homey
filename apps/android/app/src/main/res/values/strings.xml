@@ -76,4 +76,12 @@
     <!-- Errors -->
     <string name="network_error">Network error. Please check your connection.</string>
     <string name="server_error">Server error. Please try again later.</string>
+
+    <!-- Player (activity_player.xml) -->
+    <string name="player_channel_number_description">Channel number</string>
+    <string name="player_channel_name_description">Channel name</string>
+    <string name="player_loading_description">Loading stream</string>
+    <string name="player_error_icon_description">Playback error</string>
+    <string name="player_error_message_description">Error message</string>
+    <string name="player_retry_description">Retry loading stream</string>
 </resources>

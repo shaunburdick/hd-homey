@@ -136,4 +136,17 @@ class ChannelListViewModel @Inject constructor(
             loadChannels(activeTunerId)
         }
     }
+
+    /**
+     * Get the URL of the currently active server.
+     *
+     * Used by [ChannelListFragment] when navigating to [com.hdhomey.app.ui.player.PlayerActivity]
+     * to provide the server URL needed for stream URL generation.
+     *
+     * @return The active server's base URL, or `null` if no server is active
+     */
+    fun getActiveServerUrl(): String? {
+        val activeId = appPreferences.getActiveServerId() ?: return null
+        return appPreferences.loadServers().find { it.id == activeId }?.url
+    }
 }
