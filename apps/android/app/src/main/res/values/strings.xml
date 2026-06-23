@@ -65,6 +65,7 @@
     <!-- Channel List -->
     <string name="hd_badge_label">HD</string>
     <string name="favorite_toggle_description">Toggle favorite</string>
+    <string name="channel_logo_description">Channel logo</string>
 
     <!-- Channel List -->
     <string name="channel_list_refresh_button">Refresh channels</string>

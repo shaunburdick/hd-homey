@@ -41,6 +41,7 @@ class ChannelAdapter(
      *
      * Binds [ChannelWithMetadata] data to the item layout views:
      * - Channel number → [R.id.channel_number]
+     * - Channel logo   → [R.id.channel_logo] (placeholder until backend exposes logo URLs)
      * - Channel name   → [R.id.channel_name]
      * - HD badge       → [R.id.hd_badge] (visible only when [com.hdhomey.app.domain.model.Channel.isHd] is true)
      * - Favourite icon → [R.id.favorite_icon] (visible only when [ChannelWithMetadata.isFavorite] is true)
@@ -55,6 +56,7 @@ class ChannelAdapter(
 
         private val channelNumber: TextView = itemView.findViewById(R.id.channel_number)
         private val channelName: TextView = itemView.findViewById(R.id.channel_name)
+        private val channelLogo: ImageView = itemView.findViewById(R.id.channel_logo)
         private val favoriteIcon: ImageView = itemView.findViewById(R.id.favorite_icon)
         private val hdBadge: TextView = itemView.findViewById(R.id.hd_badge)
 
@@ -71,6 +73,16 @@ class ChannelAdapter(
 
             channelNumber.text = channel.channel.number
             channelName.text = channel.channel.name
+
+            // Channel logo — placeholder until the backend provides logo URLs.
+            // TODO: Replace with Coil image loading when backend provides channel logo URLs
+            // channelLogo.load(channel.channel.logoUrl) {
+            //     placeholder(R.drawable.ic_channel_placeholder)
+            //     error(R.drawable.ic_channel_placeholder)
+            //     transformations(CircleCrop())
+            //     crossfade(true)
+            // }
+            channelLogo.setImageResource(android.R.drawable.ic_menu_gallery)
 
             // HD badge — visible only for HD channels.
             hdBadge.visibility = if (channel.channel.isHd) View.VISIBLE else View.GONE

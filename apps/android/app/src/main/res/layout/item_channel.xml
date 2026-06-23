@@ -41,8 +41,8 @@
 
     <!--
         Root horizontal container.
-        Three sections:
-          [channel_number | (channel_name + hd_badge) | favorite_icon]
+        Four sections:
+          [channel_number | channel_logo | (channel_name + hd_badge) | favorite_icon]
     -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -67,6 +67,34 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="5.1" />
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Channel Logo — displayed between channel number and name.
+             Uses a surface-elevated background as the visual placeholder.
+             TODO: Replace setImageResource placeholder with Coil load(logoUrl)
+               once the backend provides channel logo URLs in the channel API.
+               Example (ChannelAdapter.kt):
+                 channelLogo.load(channel.channel.logoUrl) {
+                     placeholder(R.drawable.ic_channel_logo)
+                     error(R.drawable.ic_channel_logo)
+                     transformations(CircleCropTransformation())
+                     crossfade(true)
+                 }
+             ═══════════════════════════════════════════════════════════ -->
+        <ImageView
+            android:id="@+id/channel_logo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@color/surface_dark_elevated"
+            android:contentDescription="@string/channel_logo_description"
+            android:scaleType="fitCenter"
+            android:src="@android:drawable/ic_menu_gallery"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/channel_name"
+            app:layout_constraintStart_toEndOf="@id/channel_number"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="VectorDrawableCompat" />
 
         <!-- ═══════════════════════════════════════════════════════════
              Favorite Star Icon — right anchor, toggles bookmark state.
@@ -106,7 +134,7 @@
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/hd_badge"
             app:layout_constraintEnd_toStartOf="@id/favorite_icon"
-            app:layout_constraintStart_toEndOf="@id/channel_number"
+            app:layout_constraintStart_toEndOf="@id/channel_logo"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_chainStyle="packed"
             tools:text="NBC (KNBC)" />
