@@ -1,6 +1,7 @@
 package com.hdhomey.app.api.interceptors
 
 import android.util.Log
+import okhttp3.HttpUrl
 import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
@@ -22,6 +23,11 @@ import javax.inject.Singleton
  *   sign-in screen)
  * - 5xx: Logs server errors for diagnostics
  * - Network errors: Let pass through for caller to handle
+ *
+ * **Security**: All URLs logged via [sanitizeUrl] to strip query parameters.
+ * Stream endpoints carry HMAC tokens in the `token` query param; logging the
+ * full URL would persist those tokens in device logcat, which is accessible
+ * to any app with READ_LOGS permission on older Android versions.
  */
 @Singleton
 class ErrorInterceptor @Inject constructor() : Interceptor {
@@ -36,6 +42,20 @@ class ErrorInterceptor @Inject constructor() : Interceptor {
         val authFailureDetected = ThreadLocal<Boolean>()
     }
 
+    /**
+     * Returns a sanitized URL string with all query parameters removed.
+     *
+     * Stream URLs contain HMAC tokens in query parameters that must not appear
+     * in logs. Stripping query params before logging prevents token leakage into
+     * logcat while still providing actionable path information for debugging.
+     *
+     * @param url The original request URL
+     * @return URL string with scheme, host, port, and path only — no query or fragment
+     */
+    private fun sanitizeUrl(url: HttpUrl): String {
+        return url.newBuilder().query(null).build().toString()
+    }
+
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
 
@@ -43,17 +63,17 @@ class ErrorInterceptor @Inject constructor() : Interceptor {
         try {
             response = chain.proceed(request)
         } catch (e: Exception) {
-            Log.e(TAG, "Network error for ${request.url}", e)
+            Log.e(TAG, "Network error for ${sanitizeUrl(request.url)}", e)
             throw e // Re-throw for caller to handle
         }
 
         when (response.code) {
             in 401..403 -> {
-                Log.w(TAG, "Auth failure (${response.code}) for ${request.url}")
+                Log.w(TAG, "Auth failure (${response.code}) for ${sanitizeUrl(response.request.url)}")
                 authFailureDetected.set(true)
             }
             in 500..599 -> {
-                Log.e(TAG, "Server error (${response.code}) for ${request.url}")
+                Log.e(TAG, "Server error (${response.code}) for ${sanitizeUrl(response.request.url)}")
             }
         }
 
