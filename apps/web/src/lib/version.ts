@@ -24,7 +24,7 @@ export function getVersionMetadata(): BuildMetadata {
     } catch {
         // Fallback metadata if version.json not found
         return {
-            version: process.env.npm_package_version ?? '1.0.0-beta.5',
+            version: process.env.npm_package_version ?? '0.0.0-unknown',
             commit: 'unknown',
             branch: null,
             buildDate: new Date().toISOString(),
@@ -37,9 +37,9 @@ export function getVersionMetadata(): BuildMetadata {
  * Get formatted version string with commit SHA
  *
  * Format varies by environment and branch:
- * - Production: "VERSION (COMMIT)" e.g., "1.0.0-beta.5 (1ce5e97)"
- * - Development (feature branch): "VERSION (BRANCH@COMMIT)" e.g., "1.0.0-beta.5 (013-build-identification@a1b2c3d)"
- * - Development (main/master): "VERSION (COMMIT)" e.g., "1.0.0-beta.5 (1ce5e97)"
+ * - Production: "VERSION (COMMIT)" e.g., "X.Y.Z (1ce5e97)"
+ * - Development (feature branch): "VERSION (BRANCH@COMMIT)" e.g., "X.Y.Z (013-build-identification@a1b2c3d)"
+ * - Development (main/master): "VERSION (COMMIT)" e.g., "X.Y.Z (1ce5e97)"
  *
  * @returns {string} Formatted version string
  */
@@ -67,7 +67,7 @@ export function getFormattedVersion(): string {
  * In development: reads from package.json via environment variable
  * In production: reads from version.json generated at build time
  *
- * @returns {string} Semantic version only (e.g., "1.0.0-beta.5")
+ * @returns {string} Semantic version only (e.g., "X.Y.Z")
  */
 export function getVersion(): string {
     const metadata = getVersionMetadata();

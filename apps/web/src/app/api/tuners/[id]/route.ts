@@ -75,7 +75,13 @@ export async function GET(request: NextRequest, context: { params: Promise<Param
         notFound();
     }
 
-    return Response.json({ data });
+    return Response.json({
+        data: {
+            id: data.id,
+            name: data.name,
+            is_active: data.is_active,
+        },
+    });
 }
 
 export async function POST(

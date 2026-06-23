@@ -228,7 +228,7 @@ From your Mac terminal (not emulator):
 curl http://192.168.1.XXX:3000/api/health
 
 # Expected response:
-# {"status":"ok","timestamp":"2024-12-13T...","version":"1.0.0-beta.5",...}
+# {"status":"ok","timestamp":"2024-12-13T...","version":"1.0.0-beta.6",...}
 ```
 
 ### Test from Emulator

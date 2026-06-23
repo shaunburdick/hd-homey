@@ -1,7 +1,7 @@
 # HD Homey Android TV App - Manual Test Guide
 
 **Phase 1: Multi-Server Management & Device Pairing**  
-**Version**: 1.0.0-beta.5  
+**Version**: 1.0.0-beta.6  
 **Last Updated**: December 13, 2025
 
 This guide provides step-by-step instructions for manually testing the HD Homey Android TV app's Phase 1 features.

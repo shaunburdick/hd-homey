@@ -34,7 +34,7 @@ Simple health check endpoint for monitoring and infrastructure tooling.
 {
   "status": "ok",
   "timestamp": "2025-12-06T13:00:00.000Z",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "commit": "a1b2c3d",
   "branch": "main",
   "buildDate": "2025-12-06T12:55:53.650Z",
@@ -45,7 +45,7 @@ Simple health check endpoint for monitoring and infrastructure tooling.
 **Fields:**
 - `status`: Always "ok" if server is responding
 - `timestamp`: Current server time (ISO 8601)
-- `version`: Semantic version (e.g., "1.0.0-beta.5")
+- `version`: Semantic version (e.g., "1.0.0-beta.6")
 - `commit`: Git commit SHA (7 characters, may include `-dirty` suffix in development)
 - `branch`: Git branch name (null for detached HEAD)
 - `buildDate`: Build timestamp (ISO 8601)

@@ -59,9 +59,14 @@ function TunerHeader({ tuner }: { tuner: { id: number; name: string; path: strin
                         </p>
                     )}
                 </div>
-                <AdminLink href={`/tuners/${tuner.id}/edit`}>
-                    <Button variant="secondary">✏️ Edit Tuner</Button>
-                </AdminLink>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Link href={`/tuners/${tuner.id}/signal`}>
+                        <Button variant="secondary">📡 Signal Monitor</Button>
+                    </Link>
+                    <AdminLink href={`/tuners/${tuner.id}/edit`}>
+                        <Button variant="secondary">✏️ Edit Tuner</Button>
+                    </AdminLink>
+                </div>
             </div>
         </div>
     );

@@ -58,6 +58,7 @@ specs/               # Spec-kit: implementation plans (created during planning p
 3. **User Authentication** (SPEC-003) - Role-based access (admin/viewer)
 4. **User Management** (SPEC-004) - CRUD operations for user accounts
 5. **Stream Proxying** - Transparent video stream relay with URL rewriting
+6. **Signal Monitoring** (SPEC-015) - Real-time signal gauges, antenna tuning mode, program/PID listing, ATSC 3.0 details
 
 ## Development Practices
 
@@ -395,7 +396,7 @@ npm run docs:build       # Build docs site
 ## Releases
 
 ### Current Version
-**1.0.0-beta.6** - Dependency upgrades and code quality release! All dependencies updated to latest versions including TypeScript 6.0, ESLint 10, and React 19.2. GitHub Actions pinned by commit SHA for supply chain security. 375+ lint errors resolved across the entire codebase for improved code quality and maintainability. All 401 tests passing.
+**1.0.0-beta.6** - Dependency upgrades and code quality release! All dependencies updated to latest versions including TypeScript 6.0, ESLint 10, and React 19.2. GitHub Actions pinned by commit SHA for supply chain security. 375+ lint errors resolved across the entire codebase for improved code quality and maintainability.
 
 ### Release Process
 
@@ -405,20 +406,22 @@ npm run docs:build       # Build docs site
    npm run build         # Verify build succeeds
    ```
    
-2. **Update version**: Use `npm version <version> --no-git-tag-version` to update package.json
+2. **Update version**: Bump the version in the source of truth (`package.json`):
+   ```bash
+   npm version <version> --no-git-tag-version
+   ```
 
-3. **Update CHANGELOG.md**: Document changes under appropriate section (Added/Changed/Fixed/Removed)
+3. **Propagate version** to all hardcoded files:
+   ```bash
+   npm run sync-version
+   ```
+   The script auto-detects the old version from git HEAD and replaces it across `README.md`, `AGENTS.md`, docs pages, and android docs. Files that derive version dynamically (`apps/docs/.vitepress/config.ts`, `apps/web/src/lib/version.ts`) need no manual update.
 
-4. **Update version references** in all files:
-   - `README.md`: Update version badge (search for "badge/version")
-   - `AGENTS.md`: Update "Current Version" section (this file)
-   - `apps/docs/.vitepress/config.ts`: Update version in nav dropdown (line 19)
-   - `apps/web/package.json`: Update version (use `npm version` in workspace)
-   - Search entire project for previous version number to catch any other references
+4. **Update CHANGELOG.md**: Add a new release section with notes under the [Unreleased] header.
 
 5. **Commit and tag**:
    ```bash
-   git add apps/web/package.json package-lock.json CHANGELOG.md README.md AGENTS.md apps/docs/.vitepress/config.ts
+   git add -A
    git commit -m "chore: release v<version>"
    git tag -a v<version> -m "Release v<version>"
    git push origin main --tags
@@ -455,7 +458,25 @@ gh workflow run release.yml -f version=v1.0.0-alpha.2
 - [React 19 Docs](https://react.dev/)
 - [Better-Auth Docs](https://www.better-auth.com/)
 - [Drizzle ORM Docs](https://orm.drizzle.team/)
-- [HDHomeRun API](https://www.silicondust.com/hdhomerun/developers/)
+
+### SiliconDust HDHomeRun API
+
+This project interfaces directly with HDHomeRun devices. A detailed reference is available in the local skill at `skills/hdhomerun-api/SKILL.md`.
+
+**Primary documentation sources:**
+- **GitHub Wiki** (Guide API, Tuner API, UI) — https://github.com/Silicondust/documentation/wiki
+- **HTTP API Guide** (lineup, streaming, tuning) — https://info.hdhomerun.com/info/http_api
+- **Discovery API** (UDP device discovery) — https://info.hdhomerun.com/info/discovery_api
+- **hdhomerun_config** (CLI reference) — https://info.hdhomerun.com/info/hdhomerun_config
+- **libhdhomerun** (C library) — https://github.com/Silicondust/libhdhomerun
+- **Developer Portal** — https://www.silicondust.com/hdhomerun/developers/
+
+**Known device quirks (learned from real-world testing):**
+- `/tuner{N}/streaminfo` is a **native-protocol-only** endpoint (not available under HTTP on most models). The native `hdhomerun_config` CLI command always works.
+- `lineup.json` is universally supported and newer firmwares include `VideoCodec`/`AudioCodec` fields.
+- `atsc3/plpinfo` and `atsc3/l1info` endpoints only work when the tuner is locked to an ATSC 3.0 channel.
+- Signal counters reset on channel change — use deltas over time for diagnostics.
+- For full details, see the `hdhomerun-api` skill: `skills/hdhomerun-api/SKILL.md`
 
 ---
 

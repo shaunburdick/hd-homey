@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useOptimistic, useTransition, useEffect } from 'react';
+import { useState, useOptimistic, useTransition, useCallback, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChannelCard } from './ChannelCard';
 import type { ChannelWithPreference } from '@/lib/database/schema';
@@ -11,6 +11,38 @@ import {
 
 /** Duration (ms) to show the error banner before auto-dismissing it. */
 const ERROR_DISMISS_DELAY_MS = 5000;
+
+/** Subscribe to storage events for useSyncExternalStore. */
+function subscribeToStorageEvent(onStoreChange: () => void): () => void {
+    window.addEventListener('storage', onStoreChange);
+    return () => window.removeEventListener('storage', onStoreChange);
+}
+
+/**
+ * Hook that syncs a boolean value with localStorage using useSyncExternalStore,
+ * avoiding SSR hydration mismatches.
+ */
+function useSectionExpanded(storageKey: string, defaultExpanded: boolean): [boolean, (value: boolean) => void] {
+    const isExpanded = useSyncExternalStore(
+        subscribeToStorageEvent,
+        useCallback(() => {
+            try {
+                const stored = localStorage.getItem(storageKey);
+                return stored !== null ? stored === 'true' : defaultExpanded;
+            } catch {
+                return defaultExpanded;
+            }
+        }, [storageKey, defaultExpanded]),
+        () => defaultExpanded,
+    );
+
+    const setIsExpanded = useCallback((value: boolean) => {
+        localStorage.setItem(storageKey, String(value));
+        window.dispatchEvent(new Event('storage'));
+    }, [storageKey]);
+
+    return [isExpanded, setIsExpanded];
+}
 
 interface ChannelSectionProps {
     title: string;
@@ -246,18 +278,7 @@ export function ChannelSection({
 }: ChannelSectionProps) {
     const sectionId = `channel-section-${title.toLowerCase().replace(/\s+/g, '-')}`;
     const storageKey = `hd-homey-tuner-${tunerId}-${sectionId}-expanded`;
-
-    const [isExpanded, setIsExpanded] = useState(() => {
-        if (typeof window === 'undefined') {
-            return defaultExpanded;
-        }
-        const stored = localStorage.getItem(storageKey);
-        return stored !== null ? stored === 'true' : defaultExpanded;
-    });
-
-    useEffect(() => {
-        localStorage.setItem(storageKey, String(isExpanded));
-    }, [isExpanded, storageKey]);
+    const [isExpanded, setIsExpanded] = useSectionExpanded(storageKey, defaultExpanded);
 
     const { optimisticChannels, isPending, error, handleFavorite, handleHidden } =
         useChannelToggles(channels);
