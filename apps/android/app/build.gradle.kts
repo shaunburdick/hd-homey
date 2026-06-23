@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -74,6 +76,10 @@ android {
     }
 }
 
+ksp {
+    arg("dagger.hilt.disableModulesHaveInstallInCheck", "true")
+}
+
 dependencies {
     // Kotlin
     implementation(libs.kotlin.stdlib)
@@ -105,6 +111,26 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+
+    // DataStore
+    implementation(libs.datastore.preferences)
+    implementation(libs.datastore.core)
+
+    // Image loading
+    implementation(libs.coil)
+
+    // Media3 / ExoPlayer
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.exoplayer.hls)
+    implementation(libs.media3.ui)
+    implementation(libs.media3.session)
+
+    // Dependency Injection (Hilt)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.fragment)
 
     // Security
     implementation(libs.androidx.security.crypto)
@@ -115,6 +141,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.turbine)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.mockk.android)

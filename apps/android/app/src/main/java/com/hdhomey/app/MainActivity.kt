@@ -5,6 +5,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import com.hdhomey.app.storage.AppPreferences
+import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Main activity for HD Homey Android app.
@@ -20,6 +21,7 @@ import com.hdhomey.app.storage.AppPreferences
  * - From ServerListFragment → Exits app
  * - From other screens → Standard back navigation
  */
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
