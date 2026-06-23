@@ -6,22 +6,11 @@
  * Route: /tuners/[id]/signal
  *
  * Displays a grid of SignalStatusCard components — one card per physical
- * tuner slot on the device (tuner0, tuner1, …). Each card contains a
- * collapsible diagnostics section (ProgramList + Atsc3Details) rendered as
- * the optional `diagnostics` prop on SignalStatusCard. This keeps deep
- * diagnostics visually inside the card, below the graphs, without cluttering
- * the overview.
- *
- * Layout decision (Option A — diagnostics inside SignalStatusCard):
- *   The diagnostic components (ProgramList, Atsc3Details) are passed as the
- *   `diagnostics` prop to each SignalStatusCard and rendered as a collapsible
- *   `<details>` section inside the card, below the graphs. This gives the
- *   best UX because:
- *     1. Slot diagnostics are visually unified with that slot's card.
- *     2. The section collapses by default — the grid stays clean.
- *     3. Styling is consistent: same background, border, padding as the card.
- *   Option B (separate styled element below the card) was rejected because
- *   it requires extra CSS and breaks the visual grouping.
+ * tuner slot on the device (tuner0, tuner1, …). Each card receives three
+ * named slot props for its diagnostic sections: `tuningControl`, `programs`,
+ * and `atsc3Details`. These render as flat sections directly inside the card —
+ * below the graphs, with no outer collapsible wrapper. ATSC 3.0 details carry
+ * their own single-level `<details>` collapsible internally.
  *
  * SSE stream multiplexing:
  *   The same SSE stream emits `signal`, `streaminfo`, `atsc3plp`, and
@@ -272,11 +261,14 @@ interface SignalGridProps {
 /**
  * Renders the grid of SignalStatusCard components (one per discovered slot).
  *
- * Each card receives a `diagnostics` node containing a ProgramList,
- * optional Atsc3Details, and a TuningControl rendered as a collapsible
- * section inside the card. Diagnostic data is keyed by the same tunerId as
- * the signal state, so each slot's diagnostics update independently as SSE
- * events arrive.
+ * Each card receives three named slot props for its diagnostic sections:
+ *   - `tuningControl` — TuningControl for channel navigation
+ *   - `programs`      — ProgramList inline program listing
+ *   - `atsc3Details`  — Atsc3Details single-level collapsible (ATSC 3.0 only)
+ *
+ * Sections render flat inside each card — no outer collapsible wrapper.
+ * Diagnostic data is keyed by the same tunerId as the signal state, so each
+ * slot's diagnostics update independently as SSE events arrive.
  *
  * @param props - Tuner signal states and per-slot diagnostic data
  */
@@ -292,24 +284,26 @@ function SignalGrid({ tunerStates, programs, atsc3Plp, atsc3L1, pageTunerId }: S
                 <SignalStatusCard
                     key={tunerState.tunerId}
                     state={tunerState}
-                    diagnostics={
-                        <>
-                            <ProgramList
-                                programs={programs[tunerState.tunerId] ?? []}
-                                idle={tunerState.idle}
-                            />
-                            <Atsc3Details
-                                plp={atsc3Plp[tunerState.tunerId] ?? null}
-                                l1={atsc3L1[tunerState.tunerId] ?? null}
-                            />
-                            <TuningControl
-                                tunerId={pageTunerId}
-                                resource={tunerState.resource ?? 'tuner0'}
-                                vctName={tunerState.vctName}
-                                vctNumber={tunerState.vctNumber}
-                                idle={tunerState.idle}
-                            />
-                        </>
+                    tuningControl={
+                        <TuningControl
+                            tunerId={pageTunerId}
+                            resource={tunerState.resource ?? 'tuner0'}
+                            vctName={tunerState.vctName}
+                            vctNumber={tunerState.vctNumber}
+                            idle={tunerState.idle}
+                        />
+                    }
+                    programs={
+                        <ProgramList
+                            programs={programs[tunerState.tunerId] ?? []}
+                            idle={tunerState.idle}
+                        />
+                    }
+                    atsc3Details={
+                        <Atsc3Details
+                            plp={atsc3Plp[tunerState.tunerId] ?? null}
+                            l1={atsc3L1[tunerState.tunerId] ?? null}
+                        />
                     }
                 />
             ))}
@@ -326,8 +320,9 @@ function SignalGrid({ tunerStates, programs, atsc3Plp, atsc3L1, pageTunerId }: S
  *
  * Fetches the device name from /api/tuners/[id], then opens an SSE stream
  * that delivers signal events for all physical tuner slots on that device.
- * Renders a CSS grid of SignalStatusCard components with collapsible
- * per-slot diagnostics (ProgramList + Atsc3Details) inside each card.
+ * Renders a CSS grid of SignalStatusCard components with flat per-slot
+ * diagnostic sections (TuningControl, ProgramList, Atsc3Details) inside
+ * each card — no outer collapsible wrapper.
  */
 export default function SignalPage() {
     const params = useParams<{ id: string }>();

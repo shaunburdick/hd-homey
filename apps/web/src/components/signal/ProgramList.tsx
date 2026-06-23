@@ -1,87 +1,50 @@
 'use client';
 
 /**
- * ProgramList — Collapsible listing of MPEG programs and PIDs on a tuned channel.
+ * ProgramList — Compact inline listing of MPEG programs on a tuned channel.
+ *
+ * Renders programs as a flow-wrapped inline list: "Programs: 15.1 WKOFCBS · 5.2 Charge!"
+ * Returns null when the tuner is idle or no program data is available.
  *
  * @module components/signal/ProgramList
  */
 
-import type { ParsedProgram, StreamInfoPid } from '@/lib/hdhr/types';
+import React from 'react';
+import type { ParsedProgram } from '@/lib/hdhr/types';
 
 interface ProgramListProps {
     programs: ParsedProgram[];
     idle: boolean;
 }
 
-/** PID table row */
-function PidRow({ pid }: { pid: StreamInfoPid }) {
-    return (
-        <tr>
-            <td>{pid.pid}</td>
-            <td>{pid.codec}</td>
-            <td>{pid.type}</td>
-        </tr>
-    );
-}
-
-/** Single program entry with PID table */
-function ProgramEntry({ program }: { program: ParsedProgram }) {
-    return (
-        <div className="program-entry">
-            <div className="program-entry-header">
-                <span className="program-entry-number">Program {program.programNumber}</span>
-                {program.guideNumber !== undefined && (
-                    <span className="program-entry-guide"> · Guide {program.guideNumber}</span>
-                )}
-                {program.name !== '' && (
-                    <span className="program-entry-name"> · {program.name}</span>
-                )}
-            </div>
-
-            {program.pids.length > 0 && (
-                <table className="program-pid-table">
-                    <thead>
-                        <tr>
-                            <th>PID</th>
-                            <th>Codec</th>
-                            <th>Type</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {program.pids.map((pid) => (
-                            <PidRow key={`${pid.pid}-${pid.codec}`} pid={pid} />
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
-    );
-}
-
 /**
- * Collapsible program/PID listing for a tuned channel.
+ * Compact inline program listing for a tuned channel.
+ *
+ * Programs are separated by a middle-dot (·) separator and wrap naturally
+ * when the card is narrow. The raw program number is shown on hover via the
+ * `title` attribute. Returns null when idle or when no programs are available.
  *
  * @param props - Program list props
  */
 export function ProgramList({ programs, idle }: ProgramListProps) {
-    return (
-        <details className="program-list">
-            <summary className="program-list-summary">
-                Programs on this channel
-                {!idle && programs.length > 0 && (
-                    <span className="program-list-count"> ({programs.length})</span>
-                )}
-            </summary>
+    if (idle || programs.length === 0) {
+        return null;
+    }
 
-            <div className="program-list-content">
-                {idle && <p className="program-list-empty">No channel tuned</p>}
-                {!idle && programs.length === 0 && (
-                    <p className="program-list-empty">No program data available</p>
-                )}
-                {!idle && programs.map((program) => (
-                    <ProgramEntry key={program.programNumber} program={program} />
+    return (
+        <div className="program-list">
+            <span className="program-list-label">Programs:</span>
+            <span className="program-list-items">
+                {programs.map((program, i) => (
+                    <React.Fragment key={program.programNumber}>
+                        {i > 0 && <span className="program-list-sep"> · </span>}
+                        <span className="program-list-item" title={`Program ${program.programNumber}`}>
+                            {program.guideNumber ?? program.programNumber}
+                            {program.name !== '' && ` ${program.name}`}
+                        </span>
+                    </React.Fragment>
                 ))}
-            </div>
-        </details>
+            </span>
+        </div>
     );
 }

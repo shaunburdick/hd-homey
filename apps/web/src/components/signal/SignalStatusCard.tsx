@@ -1,12 +1,13 @@
 'use client';
 
 /**
- * SignalStatusCard — Per-tuner signal status card with optional collapsible diagnostics.
+ * SignalStatusCard — Per-tuner signal status card with optional flat diagnostic sections.
  *
- * Accepts an optional `diagnostics` node that, when provided, is rendered as a
- * collapsible section inside the card — below the graphs and visually flush with
- * the card's background, border and padding. Omit the prop on pages that show
- * signal gauges and graphs only.
+ * Accepts three optional named slot props for diagnostics content. When provided,
+ * each slot is rendered as a flat `<div>` section directly inside the card — below
+ * the graphs, in order: tuningControl → programs → atsc3Details. There is no outer
+ * collapsible wrapper; ATSC 3.0 details carry their own single-level `<details>`
+ * internally. Omit any slot prop on pages that don't need that section.
  *
  * @module components/signal/SignalStatusCard
  */
@@ -16,10 +17,14 @@ import { SignalGauge } from './SignalGauge';
 import { SignalGraph } from './SignalGraph';
 import type { TunerSignalState } from '@/lib/hdhr/signal-parsers';
 
-interface SignalStatusCardProps {
+export interface SignalStatusCardProps {
     state: TunerSignalState;
-    /** Optional diagnostics node rendered as a collapsible section inside the card. */
-    diagnostics?: ReactNode;
+    /** Optional tuning controls — renders inline between graphs and program listing */
+    tuningControl?: ReactNode;
+    /** Optional program listing — renders inline after tuning controls */
+    programs?: ReactNode;
+    /** Optional ATSC 3.0 details — renders as a single collapsible section */
+    atsc3Details?: ReactNode;
 }
 
 /** Determine the channel display string from the tuner state */
@@ -46,13 +51,15 @@ function snqLabel(state: TunerSignalState): string {
 /**
  * Card component displaying live signal data for a single tuner.
  *
- * The optional `diagnostics` prop is rendered as a collapsible `<details>`
- * section at the bottom of the card, styled to match the card's background and
- * typography. Omit the prop entirely on pages that don't need diagnostics.
+ * The three optional diagnostic slot props (`tuningControl`, `programs`,
+ * `atsc3Details`) are rendered as flat `<div className="signal-status-card-section">`
+ * elements directly inside the card — no outer collapsible wrapping. Each slot
+ * is only rendered when the prop is provided. ATSC 3.0 details manage their own
+ * single-level `<details>` collapsible internally.
  *
  * @param props - Card display props
  */
-export function SignalStatusCard({ state, diagnostics }: SignalStatusCardProps) {
+export function SignalStatusCard({ state, tuningControl, programs, atsc3Details }: SignalStatusCardProps) {
     const channelDisplay = getChannelDisplay(state);
     const hasError = state.error !== undefined;
 
@@ -92,13 +99,14 @@ export function SignalStatusCard({ state, diagnostics }: SignalStatusCardProps) 
                 />
             </div>
 
-            {diagnostics !== undefined && (
-                <details className="signal-status-card-diagnostics">
-                    <summary className="signal-status-card-diagnostics-summary">▶ Diagnostics</summary>
-                    <div className="signal-status-card-diagnostics-content">
-                        {diagnostics}
-                    </div>
-                </details>
+            {tuningControl !== undefined && (
+                <div className="signal-status-card-section">{tuningControl}</div>
+            )}
+            {programs !== undefined && (
+                <div className="signal-status-card-section">{programs}</div>
+            )}
+            {atsc3Details !== undefined && (
+                <div className="signal-status-card-section">{atsc3Details}</div>
             )}
         </div>
     );

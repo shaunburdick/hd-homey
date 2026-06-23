@@ -4,6 +4,8 @@
  * Atsc3Details — Conditional ATSC 3.0 PLP and L1 signaling details.
  *
  * Returns null when no ATSC 3.0 data is available (satisfies AC-011).
+ * When data is present, renders as a single-level `<details>` collapsible —
+ * no outer wrapper needed since SignalStatusCard already handles section layout.
  *
  * @module components/signal/Atsc3Details
  */
@@ -51,9 +53,11 @@ function L1Section({ l1 }: { l1: Atsc3L1SseEvent }) {
 }
 
 /**
- * ATSC 3.0 technical details section.
+ * ATSC 3.0 technical details section — single-level collapsible.
  *
  * Returns null when both plp and l1 are null — satisfies AC-011.
+ * When rendered, wraps content in a `<details>` element so users can
+ * expand/collapse the technical data without a second level of nesting.
  *
  * @param props - ATSC 3.0 event payloads
  */
@@ -63,10 +67,12 @@ export function Atsc3Details({ plp, l1 }: Atsc3DetailsProps) {
     }
 
     return (
-        <section className="atsc3-details" aria-label="ATSC 3.0 Details">
-            <h3 className="atsc3-details-title">ATSC 3.0 Details</h3>
-            {plp !== null && <PlpSection plp={plp} />}
-            {l1 !== null && <L1Section l1={l1} />}
-        </section>
+        <details className="atsc3-details" aria-label="ATSC 3.0 Details">
+            <summary className="atsc3-details-summary">ATSC 3.0 Details</summary>
+            <div className="atsc3-details-content">
+                {plp !== null && <PlpSection plp={plp} />}
+                {l1 !== null && <L1Section l1={l1} />}
+            </div>
+        </details>
     );
 }

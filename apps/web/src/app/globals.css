@@ -786,36 +786,61 @@ button.unstyled {
   margin-top: var(--space-6);
 }
 
-/* Collapsible diagnostics section inside SignalStatusCard */
-.signal-status-card-diagnostics {
+/* Flattened sections inside SignalStatusCard */
+.signal-status-card-section {
   border-top: 1px solid var(--color-border);
-  margin-top: var(--space-1);
+  padding-top: var(--space-2);
+  font-size: var(--font-size-sm);
 }
 
-.signal-status-card-diagnostics-summary {
+/* Compact inline program list */
+.program-list {
+  display: inline;
+}
+
+.program-list-label {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-right: var(--space-1);
+}
+
+.program-list-items {
+  display: inline;
+}
+
+.program-list-item {
+  white-space: nowrap;
+}
+
+.program-list-sep {
+  color: var(--color-text-tertiary);
+  margin: 0 var(--space-1);
+}
+
+/* ATSC 3.0 single-level collapsible */
+.atsc3-details {
+  list-style: none;
+}
+
+.atsc3-details-summary {
   cursor: pointer;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: var(--space-2) 0;
-  list-style: none;
   user-select: none;
+  list-style: none;
 }
 
-/* Remove default disclosure triangle in webkit; we use the ▶ in the text */
-.signal-status-card-diagnostics-summary::-webkit-details-marker {
+.atsc3-details-summary::-webkit-details-marker {
   display: none;
 }
 
-.signal-status-card-diagnostics[open] .signal-status-card-diagnostics-summary {
+.atsc3-details[open] .atsc3-details-summary {
   color: var(--color-text-primary);
 }
 
-.signal-status-card-diagnostics-content {
+.atsc3-details-content {
   padding-top: var(--space-2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
