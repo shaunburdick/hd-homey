@@ -21,8 +21,12 @@ class GetChannelsUseCase @Inject constructor(
     /**
      * Fetch channels for a tuner with user preference metadata.
      *
+     * Preference errors are handled gracefully by [PreferencesRepository]
+     * (returns empty preferences). Channel fetch errors propagate to the
+     * ViewModel for user-facing error display.
+     *
      * @param tunerId ID of the tuner
-     * @return List of [ChannelWithMetadata] sorted by favorites then channel number
+     * @return List of [ChannelWithMetadata], or empty list on preference failure
      */
     suspend operator fun invoke(tunerId: Int): List<ChannelWithMetadata> {
         val preferences = preferencesRepository.getPreferences(tunerId)
