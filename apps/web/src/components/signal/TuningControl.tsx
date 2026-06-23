@@ -31,6 +31,7 @@ const HTTP_CONFLICT = 409;
 interface Channel {
     guideNumber: string;
     guideName: string;
+    videoCodec: string;
 }
 
 interface ChannelsApiResponse {
@@ -58,6 +59,17 @@ export interface TuningControlProps {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Check if a channel's video codec indicates ATSC 3.0 (HEVC/H.265).
+ *
+ * @param videoCodec - The video codec string from the channel lineup API
+ * @returns `true` when the codec is HEVC or H.265, `false` otherwise
+ */
+function isAtsc3(videoCodec: string): boolean {
+    const codec = videoCodec.toLowerCase();
+    return codec.includes('hevc') || codec.includes('h265');
+}
 
 /**
  * POST a JSON body to the given URL.
@@ -130,7 +142,7 @@ function ChannelSelect({ channels, loading, selectedGuideNumber, busy, onChange 
             {!loading && !hasChannels && <option value="">No channels available</option>}
             {!loading && hasChannels && channels.map((ch) => (
                 <option key={ch.guideNumber} value={ch.guideNumber}>
-                    {ch.guideNumber} — {ch.guideName}
+                    {ch.guideNumber} — {ch.guideName}{isAtsc3(ch.videoCodec) ? ' (3.0)' : ''}
                 </option>
             ))}
         </select>
@@ -159,6 +171,32 @@ function ConflictPrompt({ viewers, onConfirm, onCancel }: ConflictPromptProps) {
                 <button type="button" onClick={onCancel}>Cancel</button>
             </div>
         </div>
+    );
+}
+
+interface Atsc3WarningProps {
+    channels: Channel[];
+    selectedGuideNumber: string;
+}
+
+/**
+ * Inline note shown when the selected channel uses an ATSC 3.0 codec.
+ * Returns null when the selection is empty or the codec is not HEVC/H.265.
+ *
+ * @param props - Channel list and currently selected guide number
+ */
+function Atsc3Warning({ channels, selectedGuideNumber }: Atsc3WarningProps) {
+    if (selectedGuideNumber === '') {
+        return null;
+    }
+    const selectedCh = channels.find((ch) => ch.guideNumber === selectedGuideNumber);
+    if (selectedCh === undefined || !isAtsc3(selectedCh.videoCodec)) {
+        return null;
+    }
+    return (
+        <p className="tuning-controls-warning" role="note">
+            ATSC 3.0 channel — may not be available on all tuner slots
+        </p>
     );
 }
 
@@ -310,7 +348,6 @@ function TuningControlsInner({ tunerId, resource, vctName, vctNumber, idle }: Tu
     const selectedGuideNumber = userSelection ?? channels[0]?.guideNumber ?? '';
     const { handleTune, handleClear, handleConflictConfirm, handleConflictCancel, conflict, busy } =
         useTuningHandlers({ tunerId, resource, selectedGuideNumber });
-    const hasChannels = channels.length > 0;
 
     return (
         <div className="tuning-controls">
@@ -330,12 +367,13 @@ function TuningControlsInner({ tunerId, resource, vctName, vctNumber, idle }: Tu
                     busy={busy}
                     onChange={setUserSelection}
                 />
+                <Atsc3Warning channels={channels} selectedGuideNumber={selectedGuideNumber} />
                 <div className="tuning-controls-actions" style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
                         type="button"
                         className="tuning-controls-tune-button"
                         onClick={handleTune}
-                        disabled={loading || !hasChannels || selectedGuideNumber === '' || busy}
+                        disabled={loading || channels.length === 0 || selectedGuideNumber === '' || busy}
                         aria-label={`Tune ${resource} to selected channel`}
                     >
                         Tune

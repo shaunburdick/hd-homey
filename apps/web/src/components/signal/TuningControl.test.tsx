@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
 import { TuningControl } from './TuningControl';
 import { AuthRoles } from '@/lib/auth-roles';
 
@@ -37,6 +37,7 @@ function getMockUseSession(): MockedFn {
 interface ChannelEntry {
     guideNumber: string;
     guideName: string;
+    videoCodec: string;
 }
 
 /** Set up a global fetch mock that returns the given channels */
@@ -48,8 +49,9 @@ function mockFetchChannels(channels: ChannelEntry[]) {
 }
 
 const MOCK_CHANNELS: ChannelEntry[] = [
-    { guideNumber: '5.1', guideName: 'KPIX HD' },
-    { guideNumber: '7.1', guideName: 'KGO HD' },
+    { guideNumber: '5.1', guideName: 'KPIX HD', videoCodec: 'MPEG2' },
+    { guideNumber: '7.1', guideName: 'KGO HD', videoCodec: 'MPEG2' },
+    { guideNumber: '109.1', guideName: 'KAXT-CD', videoCodec: 'HEVC' },
 ];
 
 const BASE_PROPS = {
@@ -106,10 +108,11 @@ describe('TuningControl', () => {
         });
 
         const options = screen.getAllByRole('option');
-        // Channels 5.1 and 7.1
-        expect(options.length).toBe(2);
+        // Channels 5.1, 7.1, and 109.1
+        expect(options.length).toBe(3);
         expect(options[0].textContent).toContain('5.1');
         expect(options[1].textContent).toContain('7.1');
+        expect(options[2].textContent).toContain('109.1');
     });
 
     it('renders Tune and Clear buttons for admin users', async () => {
@@ -159,6 +162,64 @@ describe('TuningControl', () => {
             const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
             expect(selects.every((select) => select.disabled)).toBe(true);
         });
+    });
+
+    // -------------------------------------------------------------------------
+    // ATSC 3.0 detection
+    // -------------------------------------------------------------------------
+
+    it('shows (3.0) badge for ATSC 3.0 channels in dropdown', async () => {
+        getMockUseSession().mockReturnValue({
+            data: { user: { id: 'u1', role: AuthRoles.Admin } },
+        });
+        mockFetchChannels(MOCK_CHANNELS);
+
+        render(<TuningControl {...BASE_PROPS} />);
+
+        await waitFor(() => {
+            const options = screen.getAllByRole('option');
+            const atsc3Option = options.find((opt) => opt.textContent?.includes('109.1'));
+            expect(atsc3Option).toBeTruthy();
+            expect(atsc3Option?.textContent).toContain('(3.0)');
+        });
+    });
+
+    it('shows warning when ATSC 3.0 channel is selected', async () => {
+        getMockUseSession().mockReturnValue({
+            data: { user: { id: 'u1', role: AuthRoles.Admin } },
+        });
+        mockFetchChannels(MOCK_CHANNELS);
+
+        render(<TuningControl {...BASE_PROPS} />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('combobox')).toBeTruthy();
+        });
+
+        // Change selection to the ATSC 3.0 channel
+        const select = screen.getByRole('combobox') as HTMLSelectElement;
+        fireEvent.change(select, { target: { value: '109.1' } });
+
+        await waitFor(() => {
+            expect(screen.getByText(/ATSC 3\.0 channel/i)).toBeTruthy();
+        });
+    });
+
+    it('does not show ATSC 3.0 warning for ATSC 1.0 channels', async () => {
+        getMockUseSession().mockReturnValue({
+            data: { user: { id: 'u1', role: AuthRoles.Admin } },
+        });
+        mockFetchChannels(MOCK_CHANNELS);
+
+        render(<TuningControl {...BASE_PROPS} />);
+
+        await waitFor(() => {
+            // Controls should render with the first channel (5.1 — MPEG2) selected by default
+            expect(screen.getByRole('combobox')).toBeTruthy();
+        });
+
+        // The default selection is 5.1 (MPEG2 / ATSC 1.0) — no warning expected
+        expect(screen.queryByText(/ATSC 3\.0 channel/i)).toBeNull();
     });
 
     // -------------------------------------------------------------------------
