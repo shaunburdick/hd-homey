@@ -2,8 +2,12 @@ package com.hdhomey.app.ui.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.hls.HlsMediaSource
 import com.hdhomey.app.domain.usecase.GenerateStreamUrlUseCase
 import com.hdhomey.app.player.PlayerEventListener
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,12 +25,20 @@ import javax.inject.Inject
  * Exposes playback state as a [StateFlow] of [PlayerUiState] for the
  * Activity to collect.
  *
+ * Streams are loaded via a [HlsMediaSource] backed by a [CacheDataSource] so that
+ * previously-fetched HLS segments are served from the on-disk cache rather than
+ * re-fetched on transient network interruptions. This significantly improves live-stream
+ * resilience on flaky Wi-Fi and cellular connections.
+ *
  * @property exoPlayer Application-scoped ExoPlayer singleton from MediaModule
+ * @property cacheDataSourceFactory Cache-wrapped data source factory from MediaModule
  * @property generateStreamUrlUseCase Use case for requesting HMAC tokens and building HLS URLs
  */
+@OptIn(UnstableApi::class)
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val exoPlayer: ExoPlayer,
+    private val cacheDataSourceFactory: CacheDataSource.Factory,
     private val generateStreamUrlUseCase: GenerateStreamUrlUseCase
 ) : ViewModel() {
 
@@ -72,11 +84,15 @@ class PlayerViewModel @Inject constructor(
 
     /**
      * Load a stream for playback: request a token, build the HLS URL,
-     * and prepare the ExoPlayer.
+     * wrap it in a cache-aware [HlsMediaSource], and prepare the ExoPlayer.
      *
      * Transitions the state to [PlayerUiState.Loading] immediately, then to
-     * [PlayerUiState.Playing] on success, or [PlayerUiState.Error] if an
-     * exception is thrown.
+     * [PlayerUiState.Buffering] after the media source is set, or [PlayerUiState.Error]
+     * if an exception is thrown.
+     *
+     * Using [HlsMediaSource.Factory] with a [CacheDataSource.Factory] means ExoPlayer
+     * reads already-downloaded HLS segments from disk before going to the network,
+     * reducing re-buffering events on unstable connections.
      *
      * @param serverUrl Base URL of the HD Homey server (e.g., "http://192.168.1.100:3000")
      * @param tunerId ID of the tuner
@@ -106,9 +122,12 @@ class PlayerViewModel @Inject constructor(
                     channelId = channelId
                 )
 
-                // Build a MediaItem from the HLS URL and prepare ExoPlayer for playback
-                val mediaItem = MediaItem.fromUri(streamUrl)
-                exoPlayer.setMediaItem(mediaItem)
+                // Build an HLS media source backed by the cache data source so that
+                // previously-fetched segments are served from disk on replay/retry.
+                val mediaSource = HlsMediaSource.Factory(cacheDataSourceFactory)
+                    .createMediaSource(MediaItem.fromUri(streamUrl))
+
+                exoPlayer.setMediaSource(mediaSource)
                 exoPlayer.prepare()
 
                 // Note: isPlaying is updated by PlayerEventListener.onIsPlayingChanged

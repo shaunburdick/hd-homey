@@ -1,5 +1,6 @@
 package com.hdhomey.app.ui.player
 
+import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import app.cash.turbine.test
 import com.hdhomey.app.domain.usecase.GenerateStreamUrlUseCase
@@ -27,10 +28,11 @@ import org.robolectric.annotation.Config
  * Unit tests for [PlayerViewModel].
  *
  * Robolectric is required because [PlayerViewModel.loadStream] calls
- * [androidx.media3.common.MediaItem.fromUri], which is an Android library
- * static method that throws "Stub!" unless real Android stubs are provided.
+ * [androidx.media3.common.MediaItem.fromUri] and [androidx.media3.exoplayer.hls.HlsMediaSource],
+ * which are Android library types that throw "Stub!" without real Android stubs.
  *
- * [ExoPlayer] is mocked with MockK because it cannot be instantiated on the JVM.
+ * [ExoPlayer] and [CacheDataSource.Factory] are mocked with MockK because they cannot be
+ * instantiated on the JVM.
  * [GenerateStreamUrlUseCase] is mocked to control URL generation outcomes.
  * [UnconfinedTestDispatcher] is installed as the main dispatcher so that
  * [kotlinx.coroutines.CoroutineScope.launch] blocks inside [viewModelScope] run
@@ -43,6 +45,7 @@ class PlayerViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private val mockExoPlayer: ExoPlayer = mockk()
+    private val mockCacheDataSourceFactory: CacheDataSource.Factory = mockk()
     private val mockUseCase: GenerateStreamUrlUseCase = mockk()
 
     /** Default test parameters — reused across all stream-loading tests. */
@@ -61,6 +64,7 @@ class PlayerViewModelTest {
         every { mockExoPlayer.removeListener(any()) } just Runs
         every { mockExoPlayer.addListener(any()) } just Runs
         every { mockExoPlayer.setMediaItem(any()) } just Runs
+        every { mockExoPlayer.setMediaSource(any()) } just Runs
         every { mockExoPlayer.prepare() } just Runs
         every { mockExoPlayer.play() } just Runs
         every { mockExoPlayer.pause() } just Runs
@@ -77,6 +81,7 @@ class PlayerViewModelTest {
     /** Convenience factory — keeps test bodies focused on behaviour, not construction. */
     private fun createViewModel() = PlayerViewModel(
         exoPlayer = mockExoPlayer,
+        cacheDataSourceFactory = mockCacheDataSourceFactory,
         generateStreamUrlUseCase = mockUseCase
     )
 
