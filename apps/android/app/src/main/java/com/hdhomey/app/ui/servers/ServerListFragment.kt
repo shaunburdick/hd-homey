@@ -201,10 +201,8 @@ class ServerListFragment : Fragment() {
 
         when {
             server.isAuthenticated() -> {
-                Log.d(Constants.Tags.SERVER_LIST, "Server is authenticated, token valid")
-                // TODO Phase 2: Navigate to main app
-                // For now, show a placeholder or re-authenticate
-                navigateToAuthentication(server)
+                Log.d(Constants.Tags.SERVER_LIST, "Server is authenticated, navigating to channel list")
+                findNavController().navigate(R.id.action_serverList_to_channelList)
             }
             else -> {
                 Log.d(Constants.Tags.SERVER_LIST, "Server needs authentication")

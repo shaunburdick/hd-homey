@@ -15,6 +15,9 @@
         <action
             android:id="@+id/action_serverList_to_authentication"
             app:destination="@id/authenticationFragment" />
+        <action
+            android:id="@+id/action_serverList_to_channelList"
+            app:destination="@id/channelListFragment" />
     </fragment>
 
     <!-- Add Server Fragment (Phase 1.2) -->
@@ -50,6 +53,17 @@
             app:destination="@id/serverListFragment"
             app:popUpTo="@id/serverListFragment"
             app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Channel List Fragment (Phase 2) -->
+    <fragment
+        android:id="@+id/channelListFragment"
+        android:name="com.hdhomey.app.ui.channels.ChannelListFragment"
+        android:label="Channels">
+        <argument
+            android:name="tunerId"
+            app:argType="integer"
+            android:defaultValue="-1" />
     </fragment>
 
 </navigation>
