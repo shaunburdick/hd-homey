@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.hdhomey.app.domain.usecase.GenerateStreamUrlUseCase
+import com.hdhomey.app.player.PlayerEventListener
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +29,19 @@ class PlayerViewModel @Inject constructor(
     private val generateStreamUrlUseCase: GenerateStreamUrlUseCase
 ) : ViewModel() {
 
+    /**
+     * Exposed ExoPlayer instance for use by PlayerActivity.
+     *
+     * The Activity sets this on its PlayerView so video output and
+     * built-in controls work correctly. The ViewModel retains ownership
+     * of the player lifecycle (prepare, play, pause, stop).
+     */
+    val player: ExoPlayer get() = exoPlayer
+
     private val _uiState = MutableStateFlow<PlayerUiState>(PlayerUiState.Loading)
+
+    /** Listener that translates ExoPlayer events into [PlayerUiState] updates. */
+    private var eventListener: PlayerEventListener? = null
 
     /**
      * Observable UI state for the player activity.
@@ -68,6 +81,14 @@ class PlayerViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                // Register the event listener before preparing the player;
+                // remove any stale listener first to avoid duplicate callbacks on retry
+                eventListener?.let { exoPlayer.removeListener(it) }
+                PlayerEventListener(_uiState).also {
+                    eventListener = it
+                    exoPlayer.addListener(it)
+                }
+
                 val streamUrl = generateStreamUrlUseCase.generateStreamUrl(
                     serverUrl = serverUrl,
                     tunerId = tunerId,
@@ -78,9 +99,14 @@ class PlayerViewModel @Inject constructor(
                 val mediaItem = MediaItem.fromUri(streamUrl)
                 exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.prepare()
+
+                // Note: isPlaying is updated by PlayerEventListener.onIsPlayingChanged
+                // after exoPlayer.play() completes asynchronously
                 exoPlayer.play()
 
-                _uiState.value = PlayerUiState.Playing(isPlaying = true)
+                // Initial state is Buffering — PlayerEventListener transitions to
+                // Playing when ExoPlayer signals STATE_READY
+                _uiState.value = PlayerUiState.Buffering
             } catch (e: Exception) {
                 _uiState.value = PlayerUiState.Error(
                     message = e.message ?: "Failed to load stream"

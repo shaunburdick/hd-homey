@@ -84,9 +84,18 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Connect the ExoPlayer instance to the PlayerView for video output
+        // and built-in playback controls
+        playerView.player = viewModel.player
+    }
+
     override fun onStop() {
         super.onStop()
-        viewModel.releasePlayer()
+        // Disconnect PlayerView while activity is not visible;
+        // ExoPlayer continues to run in the background so playback
+        // resumes immediately when returning to this activity
         playerView.player = null
     }
 
