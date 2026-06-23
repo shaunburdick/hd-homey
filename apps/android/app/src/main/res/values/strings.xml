@@ -62,6 +62,10 @@
     <string name="back_to_servers">Back to Servers</string>
     <string name="view_channels">View Channels</string>
     
+    <!-- Channel List -->
+    <string name="hd_badge_label">HD</string>
+    <string name="favorite_toggle_description">Toggle favorite</string>
+
     <!-- Errors -->
     <string name="network_error">Network error. Please check your connection.</string>
     <string name="server_error">Server error. Please try again later.</string>
