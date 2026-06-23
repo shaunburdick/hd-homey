@@ -496,5 +496,5 @@ export function createLineupFallbackProgram(options: LineupFallbackOptions): Par
         pids.push({ pid: 1, codec: `${entry.AudioCodec} audio`, type: 'audio', program: 0 });
     }
 
-    return [{ programNumber: 0, name: entry.GuideName, pids }];
+    return [{ programNumber: 0, name: entry.GuideName, guideNumber: options.guideNumber, pids }];
 }

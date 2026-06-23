@@ -15,7 +15,8 @@ import {
     formatSseEvent,
 } from './signal-parsers';
 import type { StreamInfoSseEvent } from './signal-parsers';
-import type { ChannelInfo } from './types';
+import { isProgramListingFormat, parseProgramListing } from './signal-parsers-program-list';
+import type { ChannelInfo, ParsedProgram } from './types';
 import {
     dispatchToSubscribers,
     fetchWithTimeout,
@@ -71,10 +72,18 @@ function dispatchStreamInfoEvent(opts: {
     encoder: TextEncoder;
 }): void {
     const { entry, resource, tunerId, vctName, rawText, encoder } = opts;
+
+    let programs: ParsedProgram[];
+    if (isProgramListingFormat(rawText)) {
+        programs = parseProgramListing(rawText);
+    } else {
+        programs = groupStreamInfoByProgram(parseStreamInfo(rawText), vctName);
+    }
+
     const event: StreamInfoSseEvent = {
         event: 'streaminfo',
         tunerId,
-        programs: groupStreamInfoByProgram(parseStreamInfo(rawText), vctName),
+        programs,
     };
     dispatchToSubscribers({
         subscribers: entry.subscribers,

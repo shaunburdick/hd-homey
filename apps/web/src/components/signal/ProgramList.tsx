@@ -30,8 +30,11 @@ function ProgramEntry({ program }: { program: ParsedProgram }) {
         <div className="program-entry">
             <div className="program-entry-header">
                 <span className="program-entry-number">Program {program.programNumber}</span>
+                {program.guideNumber !== undefined && (
+                    <span className="program-entry-guide"> · Guide {program.guideNumber}</span>
+                )}
                 {program.name !== '' && (
-                    <span className="program-entry-name">{program.name}</span>
+                    <span className="program-entry-name"> · {program.name}</span>
                 )}
             </div>
 

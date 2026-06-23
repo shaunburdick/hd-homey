@@ -78,6 +78,13 @@ export interface ParsedProgram {
     programNumber: number;
     /** Program name from VctName (passed in externally, may be empty string) */
     name: string;
+    /**
+     * Virtual channel number, e.g. "3.1".
+     * Populated when parsing program-list format (FLEX 4K / ATSC devices
+     * that return a channel listing instead of individual PID entries).
+     * Absent in standard PID-format and lineup-fallback results.
+     */
+    guideNumber?: string;
     /** All PIDs belonging to this program */
     pids: StreamInfoPid[];
 }

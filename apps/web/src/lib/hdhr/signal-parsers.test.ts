@@ -393,6 +393,7 @@ describe('createLineupFallbackProgram', () => {
         expect(result[0]).toEqual({
             programNumber: 0,
             name: 'WSTMNBC',
+            guideNumber: '3.1',
             pids: [
                 { pid: 0, codec: 'MPEG2 video', type: 'video', program: 0 },
                 { pid: 1, codec: 'AC3 audio',   type: 'audio', program: 0 },
