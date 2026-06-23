@@ -141,6 +141,7 @@ class PlayerActivity : AppCompatActivity() {
      */
     override fun onBackPressed() {
         viewModel.releasePlayer()
+        super.onBackPressed()
         finish()
     }
 
