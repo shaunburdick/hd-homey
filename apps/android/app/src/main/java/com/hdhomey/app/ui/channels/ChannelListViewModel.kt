@@ -2,6 +2,7 @@ package com.hdhomey.app.ui.channels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hdhomey.app.data.repository.ChannelRepository
 import com.hdhomey.app.domain.usecase.GetChannelsUseCase
 import com.hdhomey.app.storage.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,11 +21,13 @@ import javax.inject.Inject
  * fragment to collect.
  *
  * @property getChannelsUseCase Use case that returns channels with preference metadata
+ * @property channelRepository Repository used to resolve tuner IDs when none is specified
  * @property appPreferences Application-scoped preferences (active server, etc.)
  */
 @HiltViewModel
 class ChannelListViewModel @Inject constructor(
     private val getChannelsUseCase: GetChannelsUseCase,
+    private val channelRepository: ChannelRepository,
     private val appPreferences: AppPreferences
 ) : ViewModel() {
 
@@ -69,17 +72,54 @@ class ChannelListViewModel @Inject constructor(
                 // toolbar always has something useful to show.
                 tunerName = "Tuner $tunerId"
 
-                _uiState.value = if (channels.isEmpty()) {
+                // Sort: favorites first, then by channel number
+                val sortedChannels = channels.sortedWith(
+                    compareByDescending<com.hdhomey.app.domain.model.ChannelWithMetadata> { it.isFavorite }
+                        .thenBy { it.channel.number.toDoubleOrNull() ?: 999.0 }
+                )
+
+                _uiState.value = if (sortedChannels.isEmpty()) {
                     ChannelListUiState.Empty
                 } else {
                     ChannelListUiState.Success(
-                        channels = channels,
+                        channels = sortedChannels,
                         tunerName = tunerName
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = ChannelListUiState.Error(
                     message = e.message ?: "Failed to load channels"
+                )
+            }
+        }
+    }
+
+    /**
+     * Load channels by auto-detecting the first available tuner.
+     *
+     * Fetches the list of tuners from the repository and uses the first one.
+     * Falls back to [ChannelListUiState.Error] if no tuners are available.
+     * Used when the fragment was opened without a specific tuner ID (e.g., from
+     * the server list rather than a tuner-specific entry point).
+     */
+    fun loadChannels() {
+        _uiState.value = ChannelListUiState.Loading
+
+        viewModelScope.launch {
+            try {
+                val tuners = channelRepository.getTuners()
+                val firstTuner = tuners.firstOrNull()
+                if (firstTuner == null) {
+                    _uiState.value = ChannelListUiState.Error(
+                        message = "No tuners available. Add an HDHomeRun device first.",
+                        isRetryable = true
+                    )
+                    return@launch
+                }
+                loadChannels(firstTuner.first)
+            } catch (e: Exception) {
+                _uiState.value = ChannelListUiState.Error(
+                    message = e.message ?: "Failed to discover tuners"
                 )
             }
         }
