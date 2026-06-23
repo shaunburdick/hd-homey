@@ -63,22 +63,23 @@ class PlayerControlsView @JvmOverloads constructor(
     }
 
     /**
-     * Update the Play/Pause button icon to reflect the current playback state.
+     * Update the Play/Pause button icon and accessibility description to reflect the
+     * current playback state.
      *
-     * Call this whenever [PlayerUiState.Playing.isPlaying] changes so the icon
-     * stays in sync with ExoPlayer's actual state.
+     * Call this whenever [PlayerUiState.Playing.isPlaying] changes so the icon and
+     * content description stay in sync with ExoPlayer's actual state.
      *
-     * @param isPlaying `true` to show the pause icon; `false` to show the play icon.
+     * @param isPlaying `true` to show the pause icon (stream is playing, tap to pause);
+     *   `false` to show the play icon (stream is paused/stopped, tap to play).
      */
     fun updatePlayPauseIcon(isPlaying: Boolean) {
-        val iconRes = if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play
-        playPauseButton.setImageResource(iconRes)
-        val descRes = if (isPlaying) {
-            R.string.player_controls_play_pause_description
-        } else {
-            R.string.player_controls_play_pause_description
-        }
-        playPauseButton.contentDescription = context.getString(descRes)
+        playPauseButton.setImageResource(
+            if (isPlaying) R.drawable.ic_player_pause else R.drawable.ic_player_play
+        )
+        playPauseButton.contentDescription = context.getString(
+            if (isPlaying) R.string.player_controls_pause_description
+            else R.string.player_controls_play_description
+        )
     }
 
     /**

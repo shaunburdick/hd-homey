@@ -89,6 +89,8 @@
     <!-- Player controls overlay (player_controls.xml / PlayerControlsView) -->
     <string name="player_controls_back_description">Exit player</string>
     <string name="player_controls_play_pause_description">Play or pause</string>
+    <string name="player_controls_play_description">Play stream</string>
+    <string name="player_controls_pause_description">Pause stream</string>
 
     <!-- Confirmation dialog when leaving during active playback -->
     <string name="player_exit_dialog_title">Stop Watching?</string>

@@ -4,6 +4,8 @@ import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Rect
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -106,9 +108,10 @@ class PlayerActivity : AppCompatActivity() {
 
         // Set up touch listener on the root so any tap shows controls
         val rootView: View = findViewById(R.id.player_root)
-        rootView.setOnTouchListener { _, event ->
+        rootView.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 showControlsTemporarily()
+                v.performClick()  // Required for accessibility: signals a completed click
             }
             false // Pass the event through to PlayerView's built-in gesture handler
         }
@@ -262,14 +265,15 @@ class PlayerActivity : AppCompatActivity() {
      * Navigate back with an optional confirmation dialog when playback is active.
      *
      * Called from both the controls overlay Back button and [onBackPressed].
-     * - If the player is **currently playing**: shows an [AlertDialog] asking the user
+     * - If the player is **playing or buffering**: shows an [AlertDialog] asking the user
      *   to confirm they want to stop watching before releasing the player and finishing.
-     * - Otherwise (Loading, Buffering, Error): releases the player and finishes immediately,
-     *   matching the previous behaviour.
+     *   Buffering is included because a stream in mid-buffer has already acquired tuner
+     *   resources; the user should still be asked before abandoning it.
+     * - Otherwise (Loading, Error): releases the player and finishes immediately.
      */
     private fun handleBackNavigation() {
         val state = viewModel.uiState.value
-        if (state is PlayerUiState.Playing && state.isPlaying) {
+        if (state is PlayerUiState.Playing || state is PlayerUiState.Buffering) {
             AlertDialog.Builder(this)
                 .setTitle(R.string.player_exit_dialog_title)
                 .setMessage(R.string.player_exit_dialog_message)
@@ -298,15 +302,28 @@ class PlayerActivity : AppCompatActivity() {
      * so the stream continues in the corner of the screen (16:9 aspect ratio).
      * This matches the user expectation for video apps: pressing Home should minimise,
      * not stop, the video.
+     *
+     * [PictureInPictureParams.Builder.setAutoEnterEnabled] (API 31+) tells Android to
+     * animate the transition using the player view's bounds, giving a smooth zoom-into-PiP
+     * effect. [setSourceRectHint] provides the on-screen bounds of the video surface so
+     * the system can calculate the correct animation start rect.
+     *
+     * On API 28–30, `setAutoEnterEnabled` is not available so the builder omits it; the
+     * transition is still correct, just without the animated auto-enter shortcut.
      */
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
         val state = viewModel.uiState.value
         if (state is PlayerUiState.Playing || state is PlayerUiState.Buffering) {
-            val params = PictureInPictureParams.Builder()
+            val sourceRect = Rect()
+            playerView.getGlobalVisibleRect(sourceRect)
+            val builder = PictureInPictureParams.Builder()
                 .setAspectRatio(Rational(PIP_ASPECT_RATIO_WIDTH, PIP_ASPECT_RATIO_HEIGHT))
-                .build()
-            enterPictureInPictureMode(params)
+                .setSourceRectHint(sourceRect)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                builder.setAutoEnterEnabled(true)
+            }
+            enterPictureInPictureMode(builder.build())
         }
     }
 

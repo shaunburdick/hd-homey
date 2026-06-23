@@ -97,14 +97,17 @@ class PlayerViewModel @Inject constructor(
      * @param serverUrl Base URL of the HD Homey server (e.g., "http://192.168.1.100:3000")
      * @param tunerId ID of the tuner
      * @param channelId ID of the channel
+     * @param resetRetry Whether to reset the retry counter to 0. Pass `false` when calling
+     *   from [retryLoad] so the accumulated attempt count is preserved for backoff/give-up
+     *   logic. Defaults to `true` for normal (non-retry) load requests.
      */
-    fun loadStream(serverUrl: String, tunerId: Int, channelId: Int) {
+    fun loadStream(serverUrl: String, tunerId: Int, channelId: Int, resetRetry: Boolean = true) {
         currentServerUrl = serverUrl
         currentTunerId = tunerId
         currentChannelId = channelId
 
         _uiState.value = PlayerUiState.Loading
-        retryAttempt = 0
+        if (resetRetry) retryAttempt = 0
 
         viewModelScope.launch {
             try {
@@ -168,14 +171,28 @@ class PlayerViewModel @Inject constructor(
      *
      * Should be called when the player activity is destroyed.
      *
+     * Removes the [eventListener] before stopping so ExoPlayer does not dispatch
+     * callbacks into a ViewModel that is no longer active, preventing memory leaks
+     * and spurious state updates after the player has been released.
+     *
      * Note: ExoPlayer is a singleton provided by [com.hdhomey.app.di.MediaModule], so we
      * stop playback but do NOT call [ExoPlayer.release] — that would destroy the singleton
      * and break subsequent playback sessions. Instead, we stop and clear media items so the
      * player is ready for the next [loadStream] call.
      */
     fun releasePlayer() {
+        eventListener?.let { exoPlayer.removeListener(it) }
+        eventListener = null
         exoPlayer.stop()
         exoPlayer.clearMediaItems()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Safety net: remove the listener if releasePlayer() was not called first
+        // (e.g., process death or unexpected ViewModel clearing).
+        eventListener?.let { exoPlayer.removeListener(it) }
+        eventListener = null
     }
 
     /**
@@ -184,9 +201,14 @@ class PlayerViewModel @Inject constructor(
      * Maximum [MAX_RETRY_ATTEMPTS] retries with delays of
      * 1s, 2s, and 4s (BASE_RETRY_DELAY_MS * 2^attempt).
      * After exhausting retries, emits an error with a finality message.
+     *
+     * Passes `resetRetry = false` to [loadStream] so the accumulated attempt counter
+     * is preserved — otherwise [loadStream] would unconditionally reset it to zero,
+     * making the retry counter useless and producing an infinite retry loop.
      */
     fun retryLoad() {
         if (currentTunerId <= 0 || currentChannelId <= 0 || currentServerUrl.isBlank()) return
+        retryAttempt++
         if (retryAttempt >= MAX_RETRY_ATTEMPTS) {
             _uiState.value = PlayerUiState.Error(
                 message = "Unable to load stream after $MAX_RETRY_ATTEMPTS attempts. Please try again later.",
@@ -195,14 +217,13 @@ class PlayerViewModel @Inject constructor(
             return
         }
 
-        retryAttempt++
         val delayMs = BASE_RETRY_DELAY_MS * (1L shl (retryAttempt - 1))
 
         _uiState.value = PlayerUiState.Loading
 
         viewModelScope.launch {
             delay(delayMs)  // Exponential backoff delay
-            loadStream(currentServerUrl, currentTunerId, currentChannelId)
+            loadStream(currentServerUrl, currentTunerId, currentChannelId, resetRetry = false)
         }
     }
 }

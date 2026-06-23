@@ -226,6 +226,23 @@ class PlayerViewModelTest {
         verify(exactly = 0) { mockExoPlayer.pause() }
     }
 
+    @Test
+    fun `releasePlayer removes event listener from exoPlayer`() = runTest {
+        coEvery {
+            mockUseCase.generateStreamUrl(serverUrl, tunerId, channelId)
+        } returns streamUrl
+
+        val viewModel = createViewModel()
+
+        // Load a stream so that an eventListener is registered
+        viewModel.loadStream(serverUrl, tunerId, channelId)
+
+        viewModel.releasePlayer()
+
+        // The listener added during loadStream must be removed to avoid a leak
+        verify(atLeast = 1) { mockExoPlayer.removeListener(any()) }
+    }
+
     // ========== retryLoad ==========
 
     @Test
@@ -292,6 +309,39 @@ class PlayerViewModelTest {
             // Success on second attempt transitions to Buffering
             val retryBuffering = awaitItem()
             assertEquals(PlayerUiState.Buffering, retryBuffering)
+        }
+    }
+
+    @Test
+    fun `retryLoad emits non-retryable Error after exhausting MAX_RETRY_ATTEMPTS`() = runTest(testDispatcher) {
+        coEvery {
+            mockUseCase.generateStreamUrl(serverUrl, tunerId, channelId)
+        } throws RuntimeException("Persistent failure")
+
+        val viewModel = createViewModel()
+
+        // Seed the saved stream parameters by calling loadStream once
+        viewModel.loadStream(serverUrl, tunerId, channelId)
+        testScheduler.advanceUntilIdle()
+
+        // Drive retryLoad until just before the exhaustion threshold (MAX_RETRY_ATTEMPTS = 3).
+        // Attempt 1 and 2 each trigger another loadStream that fails, incrementing retryAttempt.
+        repeat(2) {
+            viewModel.retryLoad()
+            testScheduler.advanceUntilIdle()
+        }
+
+        // The third retryLoad call crosses the threshold and should emit a non-retryable Error
+        viewModel.retryLoad()
+
+        val finalState = viewModel.uiState.value
+        assertTrue("Expected Error state after retry exhaustion but got $finalState",
+            finalState is PlayerUiState.Error)
+        if (finalState is PlayerUiState.Error) {
+            assertTrue(
+                "Expected non-retryable error after exhaustion",
+                !finalState.isRetryable
+            )
         }
     }
 }
