@@ -8,12 +8,19 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Use case for generating an HLS stream URL with a signed HMAC token.
+ * Use case for generating stream URLs with a signed HMAC token.
  *
- * Requests a stream token from the backend and constructs
- * the full playback URL for the ExoPlayer.
+ * Requests a stream token from the backend and constructs the full playback
+ * URL for ExoPlayer. Supports two stream types:
  *
- * Stream URL format: {serverUrl}/api/transcode/{tunerId}/{channelId}/playlist.m3u8?token={token}
+ * - **HLS transcoded**: `/api/transcode/{tunerId}/{channelId}/playlist.m3u8?token={token}`
+ *   ~6-10 s start-up latency; universally compatible; uses FFmpeg on the server.
+ * - **Raw MPEG-TS proxy**: `/tuners/{tunerId}/channel/{channelId}/stream?token={token}`
+ *   ~1-2 s start-up latency; no transcoding; requires hardware MPEG-2 decoder on device.
+ *
+ * The [generateStreamToken] / [buildRawStreamUrl] / [buildStreamUrl] split allows
+ * callers to fetch a single token once and then decide which URL to build based on
+ * runtime capability detection (e.g., try raw first, fall back to HLS on decoder error).
  */
 @Singleton
 class GenerateStreamUrlUseCase @Inject constructor(
@@ -31,6 +38,21 @@ class GenerateStreamUrlUseCase @Inject constructor(
         val request = StreamTokenRequest(tunerId = tunerId, channelId = channelId)
         val response = apiService.getStreamToken(request)
         return response.toDomain()
+    }
+
+    /**
+     * Request a stream token without constructing a URL.
+     *
+     * Used by the try-raw-then-HLS flow where the token is fetched once and the URL
+     * is built based on which stream mode is active. This avoids making two separate
+     * token requests (one for each stream type).
+     *
+     * @param tunerId ID of the tuner
+     * @param channelId ID of the channel
+     * @return [StreamToken] domain entity ready for use with [buildRawStreamUrl] or [buildStreamUrl]
+     */
+    suspend fun generateStreamToken(tunerId: Int, channelId: Int): StreamToken {
+        return invoke(tunerId, channelId)
     }
 
     /**
@@ -52,7 +74,31 @@ class GenerateStreamUrlUseCase @Inject constructor(
     }
 
     /**
-     * Convenience method: request token and build URL in one call.
+     * Build the raw MPEG-TS proxy stream URL.
+     *
+     * This endpoint transparently proxies the HDHomeRun device's native stream through
+     * the server with no transcoding, providing lower latency (~1-2s) and original
+     * quality compared to HLS transcoding (~6-10s).
+     *
+     * Endpoint: GET /tuners/{tunerId}/channel/{channelId}/stream?token={token}
+     *
+     * @param serverUrl Base URL of the HD Homey server
+     * @param tunerId ID of the tuner
+     * @param channelId ID of the channel
+     * @param streamToken Valid stream token (same HMAC token as HLS)
+     * @return Full raw stream URL
+     */
+    fun buildRawStreamUrl(
+        serverUrl: String,
+        tunerId: Int,
+        channelId: Int,
+        streamToken: StreamToken
+    ): String {
+        return "${serverUrl.trimEnd('/')}/tuners/$tunerId/channel/$channelId/stream?token=${streamToken.token}"
+    }
+
+    /**
+     * Convenience method: request token and build HLS URL in one call.
      *
      * @param serverUrl Base URL of the HD Homey server
      * @param tunerId ID of the tuner

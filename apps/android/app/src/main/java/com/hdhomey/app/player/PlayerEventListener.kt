@@ -11,13 +11,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
  *
  * This listener handles:
  * - [onPlaybackStateChanged]: Loading → Buffering → Playing state flow
- * - [onPlayerError]: Error state with diagnostics
+ * - [onPlayerError]: Error state with diagnostics, or decoder-failure fallback
  * - [onIsPlayingChanged]: Play/pause toggle state
  *
  * @param uiState The ViewModel's mutable state flow to update
+ * @param onDecoderInitFailed Optional callback invoked when the device cannot decode
+ *   the stream format (error code [PlaybackException.ERROR_CODE_DECODER_INIT_FAILED],
+ *   e.g., hardware MPEG-2 decoder absent). The ViewModel uses this hook to transparently
+ *   fall back to HLS transcoding instead of showing an error to the user.
+ *   When `null` no special handling is applied and decoder failures surface as [PlayerUiState.Error].
  */
 class PlayerEventListener(
-    private val uiState: MutableStateFlow<PlayerUiState>
+    private val uiState: MutableStateFlow<PlayerUiState>,
+    private val onDecoderInitFailed: (() -> Unit)? = null
 ) : Player.Listener {
 
     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -40,10 +46,26 @@ class PlayerEventListener(
     }
 
     override fun onPlayerError(error: PlaybackException) {
-        uiState.value = PlayerUiState.Error(
-            message = error.localizedMessage ?: "Playback error: ${error.errorCodeName}",
-            isRetryable = true
-        )
+        if (error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED) {
+            // Device cannot initialise a decoder for this stream format (e.g., MPEG-2).
+            // Invoke the fallback callback so the ViewModel can switch to HLS rather than
+            // surfacing an opaque error to the user. If no callback was provided, fall
+            // through to the standard error path.
+            val callback = onDecoderInitFailed
+            if (callback != null) {
+                callback()
+            } else {
+                uiState.value = PlayerUiState.Error(
+                    message = error.localizedMessage ?: "Playback error: ${error.errorCodeName}",
+                    isRetryable = true
+                )
+            }
+        } else {
+            uiState.value = PlayerUiState.Error(
+                message = error.localizedMessage ?: "Playback error: ${error.errorCodeName}",
+                isRetryable = true
+            )
+        }
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {

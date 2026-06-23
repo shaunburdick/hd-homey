@@ -25,14 +25,29 @@ import javax.inject.Inject
  * Exposes playback state as a [StateFlow] of [PlayerUiState] for the
  * Activity to collect.
  *
- * Streams are loaded via a [HlsMediaSource] backed by a [CacheDataSource] so that
- * previously-fetched HLS segments are served from the on-disk cache rather than
- * re-fetched on transient network interruptions. This significantly improves live-stream
- * resilience on flaky Wi-Fi and cellular connections.
+ * ## Stream Strategy: Try Raw MPEG-TS First, Fall Back to HLS
+ *
+ * [loadStream] always attempts the raw MPEG-TS proxy stream first:
+ *
+ * 1. **Raw MPEG-TS** (`/tuners/{id}/channel/{id}/stream?token=…`) — no transcoding,
+ *    ~1-2 s start-up latency, original quality. Requires a hardware MPEG-2 decoder on
+ *    the Android device. Most modern Android TVs and flagship phones include one; mid-range
+ *    phones and some tablets may not.
+ *
+ * 2. **HLS transcoded** (`/api/transcode/{id}/{id}/playlist.m3u8?token=…`) — FFmpeg on the
+ *    server converts MPEG-2 to H.264/AAC before delivery. ~6-10 s start-up latency but
+ *    universally compatible and cache-backed for resilience on flaky networks.
+ *
+ * A single HMAC token is requested once and reused for both URLs so the fallback transition
+ * is instantaneous with no extra round-trip.
+ *
+ * If ExoPlayer raises [androidx.media3.common.PlaybackException.ERROR_CODE_DECODER_INIT_FAILED]
+ * during raw playback, [PlayerEventListener] fires the `onDecoderInitFailed` callback and
+ * [fallbackToHls] seamlessly switches to the HLS source — the user never sees an error.
  *
  * @property exoPlayer Application-scoped ExoPlayer singleton from MediaModule
  * @property cacheDataSourceFactory Cache-wrapped data source factory from MediaModule
- * @property generateStreamUrlUseCase Use case for requesting HMAC tokens and building HLS URLs
+ * @property generateStreamUrlUseCase Use case for requesting HMAC tokens and building stream URLs
  */
 @OptIn(UnstableApi::class)
 @HiltViewModel
@@ -76,6 +91,10 @@ class PlayerViewModel @Inject constructor(
     /** Number of consecutive retry attempts for exponential backoff calculation. */
     private var retryAttempt: Int = 0
 
+    /** Tracks which stream type is currently active, used for diagnostics and retry decisions. */
+    private enum class StreamMode { RAW, HLS }
+    private var streamMode: StreamMode = StreamMode.RAW
+
     /** Maximum number of retry attempts before giving up. */
     private companion object {
         private const val MAX_RETRY_ATTEMPTS = 3
@@ -83,16 +102,17 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
-     * Load a stream for playback: request a token, build the HLS URL,
-     * wrap it in a cache-aware [HlsMediaSource], and prepare the ExoPlayer.
+     * Load a stream for playback using the try-raw-then-HLS strategy.
+     *
+     * 1. Requests a single HMAC token valid for both stream types.
+     * 2. Builds both the raw MPEG-TS URL and the HLS URL from that token.
+     * 3. Starts playback via the raw MPEG-TS proxy (lower latency, original quality).
+     * 4. If ExoPlayer fires [androidx.media3.common.PlaybackException.ERROR_CODE_DECODER_INIT_FAILED],
+     *    [fallbackToHls] is called transparently — the user never sees an error.
      *
      * Transitions the state to [PlayerUiState.Loading] immediately, then to
      * [PlayerUiState.Buffering] after the media source is set, or [PlayerUiState.Error]
-     * if an exception is thrown.
-     *
-     * Using [HlsMediaSource.Factory] with a [CacheDataSource.Factory] means ExoPlayer
-     * reads already-downloaded HLS segments from disk before going to the network,
-     * reducing re-buffering events on unstable connections.
+     * if an exception is thrown before playback starts.
      *
      * @param serverUrl Base URL of the HD Homey server (e.g., "http://192.168.1.100:3000")
      * @param tunerId ID of the tuner
@@ -105,47 +125,94 @@ class PlayerViewModel @Inject constructor(
         currentServerUrl = serverUrl
         currentTunerId = tunerId
         currentChannelId = channelId
-
         _uiState.value = PlayerUiState.Loading
         if (resetRetry) retryAttempt = 0
 
         viewModelScope.launch {
             try {
-                // Register the event listener before preparing the player;
-                // remove any stale listener first to avoid duplicate callbacks on retry
+                // Remove any stale listener to avoid duplicate callbacks on retry
                 eventListener?.let { exoPlayer.removeListener(it) }
-                PlayerEventListener(_uiState).also {
-                    eventListener = it
-                    exoPlayer.addListener(it)
-                }
 
-                val streamUrl = generateStreamUrlUseCase.generateStreamUrl(
-                    serverUrl = serverUrl,
-                    tunerId = tunerId,
-                    channelId = channelId
-                )
+                // Request ONE token reusable for both stream types — avoids two round-trips
+                val streamToken = generateStreamUrlUseCase.generateStreamToken(tunerId, channelId)
+                val hlsUrl = generateStreamUrlUseCase.buildStreamUrl(serverUrl, tunerId, channelId, streamToken)
+                val rawUrl = generateStreamUrlUseCase.buildRawStreamUrl(serverUrl, tunerId, channelId, streamToken)
 
-                // Build an HLS media source backed by the cache data source so that
-                // previously-fetched segments are served from disk on replay/retry.
-                val mediaSource = HlsMediaSource.Factory(cacheDataSourceFactory)
-                    .createMediaSource(MediaItem.fromUri(streamUrl))
-
-                exoPlayer.setMediaSource(mediaSource)
-                exoPlayer.prepare()
-
-                // Note: isPlaying is updated by PlayerEventListener.onIsPlayingChanged
-                // after exoPlayer.play() completes asynchronously
-                exoPlayer.play()
-
-                // Initial state is Buffering — PlayerEventListener transitions to
-                // Playing when ExoPlayer signals STATE_READY
-                _uiState.value = PlayerUiState.Buffering
+                // Attempt raw MPEG-TS first; fall back to HLS on decoder init failure
+                streamMode = StreamMode.RAW
+                tryRawStream(rawUrl, hlsUrl)
             } catch (e: Exception) {
                 _uiState.value = PlayerUiState.Error(
                     message = e.message ?: "Failed to load stream"
                 )
             }
         }
+    }
+
+    /**
+     * Start playback with the raw MPEG-TS proxy stream.
+     *
+     * Registers a [PlayerEventListener] with [onDecoderInitFailed] wired to [fallbackToHls].
+     * If the device's hardware decoder cannot handle MPEG-2, [fallbackToHls] is invoked
+     * seamlessly — no error is shown to the user.
+     *
+     * Raw streams use a plain [MediaItem] (no cache wrapper) because:
+     * - The raw stream is a continuous live pipe — there are no discrete segments to cache.
+     * - We want the decoder-failure signal to arrive quickly; a cache layer could delay it.
+     *
+     * @param rawUrl Full raw MPEG-TS proxy URL
+     * @param hlsUrl Full HLS playlist URL (passed through to [fallbackToHls] if needed)
+     */
+    private fun tryRawStream(rawUrl: String, hlsUrl: String) {
+        PlayerEventListener(_uiState, onDecoderInitFailed = {
+            // MPEG-2 not supported on this device — switch to HLS transparently
+            fallbackToHls(hlsUrl)
+        }).also {
+            eventListener = it
+            exoPlayer.addListener(it)
+        }
+
+        // Plain MediaItem — no cache wrapper for the raw stream probe
+        exoPlayer.setMediaItem(MediaItem.fromUri(rawUrl))
+        exoPlayer.prepare()
+        exoPlayer.play()
+        _uiState.value = PlayerUiState.Buffering
+    }
+
+    /**
+     * Switch to HLS transcoded playback after a decoder-init failure on the raw stream.
+     *
+     * Removes the decoder-failure-aware listener, replaces the media source with a
+     * cache-backed [HlsMediaSource], and resumes playback. Called only from the
+     * `onDecoderInitFailed` callback in [tryRawStream].
+     *
+     * Using [HlsMediaSource.Factory] with [cacheDataSourceFactory] means previously-fetched
+     * HLS segments are served from disk on replay/retry, reducing re-buffering events on
+     * flaky connections.
+     *
+     * @param hlsUrl Full HLS playlist URL built from the same token as the raw URL
+     */
+    private fun fallbackToHls(hlsUrl: String) {
+        streamMode = StreamMode.HLS
+
+        // Replace listener — new one has no fallback callback (we're already on HLS)
+        eventListener?.let { exoPlayer.removeListener(it) }
+        PlayerEventListener(_uiState).also {
+            eventListener = it
+            exoPlayer.addListener(it)
+        }
+
+        // Stop and clear before switching media source to avoid player state conflicts
+        exoPlayer.stop()
+        exoPlayer.clearMediaItems()
+
+        // HLS source with on-disk cache for segment reuse on replay / transient errors
+        val mediaSource = HlsMediaSource.Factory(cacheDataSourceFactory)
+            .createMediaSource(MediaItem.fromUri(hlsUrl))
+        exoPlayer.setMediaSource(mediaSource)
+        exoPlayer.prepare()
+        exoPlayer.play()
+        _uiState.value = PlayerUiState.Buffering
     }
 
     /**
@@ -205,6 +272,10 @@ class PlayerViewModel @Inject constructor(
      * Passes `resetRetry = false` to [loadStream] so the accumulated attempt counter
      * is preserved — otherwise [loadStream] would unconditionally reset it to zero,
      * making the retry counter useless and producing an infinite retry loop.
+     *
+     * Note: each retry goes through [loadStream] which will again try raw MPEG-TS first.
+     * If the device could not decode raw the first time it will immediately fall back to HLS
+     * again without any user-visible flicker.
      */
     fun retryLoad() {
         if (currentTunerId <= 0 || currentChannelId <= 0 || currentServerUrl.isBlank()) return
