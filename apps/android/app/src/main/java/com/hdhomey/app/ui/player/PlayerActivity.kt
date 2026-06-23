@@ -140,7 +140,7 @@ class PlayerActivity : AppCompatActivity() {
     /**
      * Navigate back to the channel list.
      */
-    fun onBackPressed() {
+    override fun onBackPressed() {
         viewModel.releasePlayer()
         finish()
     }
