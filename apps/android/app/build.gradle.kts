@@ -142,6 +142,10 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.turbine)
+
+    // Force kotlin-metadata-jvm version to match Kotlin compiler
+    // Required by Hilt's annotation processor for Kotlin 2.1.0 metadata support
+    ksp("org.jetbrains.kotlin:kotlin-metadata-jvm:2.1.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.mockk.android)
