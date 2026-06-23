@@ -89,6 +89,7 @@ function buildTunerState(options: BuildStateOptions): TunerSignalState {
         snq: data.snq,
         seq: data.seq,
         history: newHistory,
+        lockType: data.lockType,
         error: data.error,
     };
 }

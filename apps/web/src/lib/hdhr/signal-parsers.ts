@@ -86,6 +86,11 @@ export interface SignalSseEvent {
     seq: number | null;
     /** Unix timestamp in milliseconds */
     timestamp: number;
+    /**
+     * Tuner lock type from /tuner{N}/status. E.g. "atsc3-t2", "atsc1-t", "8vsb", "none".
+     * Undefined until the first lock-type poll completes. Absent when idle or on error.
+     */
+    lockType?: string;
     /** Present on device fetch failure */
     error?: 'timeout' | 'unreachable' | 'no-tuners';
 }
@@ -175,6 +180,11 @@ export interface TunerSignalState {
     seq: number | null;
     /** Rolling 60-point buffer for graphs */
     history: SignalDataPoint[];
+    /**
+     * Tuner lock type from /tuner{N}/status. E.g. "atsc3-t2", "atsc1-t", "8vsb", "none".
+     * Undefined until the first lock-type poll completes. Absent when idle or on error.
+     */
+    lockType?: string;
     /** Last error string if device unreachable */
     error?: string;
 }

@@ -360,11 +360,20 @@ export class SignalPollingManager {
         options: DispatchEventOptions & { statusEntry: NonNullable<ReturnType<typeof parseStatusJson>> },
     ): void {
         const { entry, statusEntry, tunerId } = options;
+        const { Resource: resource } = statusEntry;
         const idle = statusEntry.VctNumber === undefined;
+
+        // Propagate the last-known lock type (populated by dispatchAtsc3IfLocked).
+        // Undefined on the first poll cycle before any lock check has run. Null
+        // means the device responded with no lock ("lock=none"); we omit it from
+        // the event so the client can distinguish "not yet known" from "unlocked".
+        const lastLock = entry.lastLockType.get(resource);
+        const lockType = lastLock ?? undefined;
+
         const event: SignalSseEvent = {
             event: 'signal',
             tunerId,
-            resource: statusEntry.Resource,
+            resource,
             idle,
             vctNumber: statusEntry.VctNumber,
             vctName: statusEntry.VctName,
@@ -372,11 +381,12 @@ export class SignalPollingManager {
             snq: statusEntry.SignalQualityPercent ?? null,
             seq: statusEntry.SymbolQualityPercent ?? null,
             timestamp: Date.now(),
+            lockType,
         };
 
         dispatchToSubscribers({
             subscribers: entry.subscribers,
-            resource: statusEntry.Resource,
+            resource,
             tunerId,
             sseText: formatSseEvent('signal', event),
             encoder: this.encoder,

@@ -717,6 +717,26 @@ button.unstyled {
   max-width: 60%;
 }
 
+/* Lock type badge (ATSC 3.0 / ATSC 1.0) displayed in the card header */
+.signal-status-card-locktype {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.locktype-atsc3 {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.locktype-atsc1 {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+}
+
 .signal-status-card-error {
   padding: var(--space-2) var(--space-3);
   background-color: var(--color-error-bg);
