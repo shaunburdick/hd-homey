@@ -5,8 +5,9 @@ Native Android TV application for HD Homey that provides a seamless 10-foot UI e
 ## Status
 
 ✅ **Phase 1 Complete!** - Foundation & Authentication fully implemented and tested.
+✅ **Phase 2 Complete!** - Channel browsing and video streaming fully implemented.
 
-🚀 **Ready for Phase 2**: Channel browsing and video streaming.
+🚀 **Ready for Phase 3**: Advanced features (favorites, search, EPG).
 
 ### Phase 1 Achievements
 - ✅ Multi-server management with add/edit/delete
@@ -17,6 +18,21 @@ Native Android TV application for HD Homey that provides a seamless 10-foot UI e
 - ✅ Comprehensive error handling with retry/cancel options
 - ✅ 86 unit tests passing (100% data layer coverage)
 - ✅ Android TV optimized navigation and focus management
+
+### Phase 2 Achievements
+- ✅ MVVM architecture with Hilt DI (NetworkModule, MediaModule, DataModule)
+- ✅ Retrofit 2.11.0 API layer with cookie-based Better-Auth authentication
+- ✅ Domain layer with Use Cases (GetChannelsUseCase, GenerateStreamUrlUseCase)
+- ✅ Data layer with repositories (ChannelRepository, PreferencesRepository)
+- ✅ Channel list with RecyclerView, D-pad navigation, shimmer loading
+- ✅ Video playback with Media3 ExoPlayer and HLS stream support
+- ✅ Stream URL generation with HMAC token authentication
+- ✅ 5-minute in-memory preference cache (favorites/hidden)
+- ✅ Favorites sorting (favorites first, then by channel number)
+- ✅ Cookie-based auth interceptor with token storage (encrypted DataStore)
+- ✅ Automatic tuner discovery and selection
+- ✅ 45+ unit tests across all layers
+- ✅ Exponential backoff retry for stream playback failures
 
 ## Prerequisites
 
@@ -56,57 +72,118 @@ apps/android/
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/hdhomey/app/
+│   │   │   │   ├── HdHomeyApplication.kt    # @HiltAndroidApp application class
 │   │   │   │   ├── MainActivity.kt          # Main activity with navigation
 │   │   │   │   ├── ui/
-│   │   │   │   │   ├── servers/            # Server management screens
+│   │   │   │   │   ├── servers/            # Server management (Phase 1)
 │   │   │   │   │   │   ├── ServerListFragment.kt
 │   │   │   │   │   │   ├── ServerListAdapter.kt
 │   │   │   │   │   │   └── AddServerFragment.kt
 │   │   │   │   │   ├── auth/               # Authentication/pairing
 │   │   │   │   │   │   └── AuthenticationFragment.kt
-│   │   │   │   │   └── success/            # Success confirmation
-│   │   │   │   │       └── SuccessFragment.kt
+│   │   │   │   │   ├── success/            # Success confirmation
+│   │   │   │   │   │   └── SuccessFragment.kt
+│   │   │   │   │   ├── channels/           # Channel browsing (Phase 2)
+│   │   │   │   │   │   ├── ChannelListFragment.kt
+│   │   │   │   │   │   ├── ChannelListViewModel.kt
+│   │   │   │   │   │   ├── ChannelListUiState.kt
+│   │   │   │   │   │   └── ChannelAdapter.kt
+│   │   │   │   │   └── player/             # Video player (Phase 2)
+│   │   │   │   │       ├── PlayerActivity.kt
+│   │   │   │   │       ├── PlayerViewModel.kt
+│   │   │   │   │       └── PlayerUiState.kt
 │   │   │   │   ├── api/                    # API services
+│   │   │   │   │   ├── HdHomeyApiService.kt    # Retrofit interface
 │   │   │   │   │   ├── HdHomeyApi.kt
-│   │   │   │   │   └── DeviceCodeService.kt
-│   │   │   │   ├── data/                   # Data models
-│   │   │   │   │   ├── Server.kt
-│   │   │   │   │   ├── DeviceCodeRequest.kt
-│   │   │   │   │   ├── DeviceCodeResponse.kt
-│   │   │   │   │   └── PollResponse.kt
-│   │   │   │   ├── repository/             # Data repositories
-│   │   │   │   │   └── ServerRepository.kt
+│   │   │   │   │   ├── DeviceCodeService.kt
+│   │   │   │   │   ├── interceptors/
+│   │   │   │   │   │   ├── AuthInterceptor.kt  # Cookie-based auth
+│   │   │   │   │   │   └── ErrorInterceptor.kt # 401/403/5xx handling
+│   │   │   │   │   └── models/              # API DTOs
+│   │   │   │   │       ├── ApiResponse.kt
+│   │   │   │   │       ├── ChannelDto.kt
+│   │   │   │   │       ├── ChannelPreferenceDto.kt
+│   │   │   │   │       ├── StreamTokenDto.kt
+│   │   │   │   │       ├── TunerDto.kt
+│   │   │   │   │       ├── DeviceCodeRequest.kt
+│   │   │   │   │       ├── DeviceCodeResponse.kt
+│   │   │   │   │       └── PollResponse.kt
+│   │   │   │   ├── data/                   # Data layer
+│   │   │   │   │   ├── model/              # Data models
+│   │   │   │   │   │   └── Server.kt
+│   │   │   │   │   ├── mapper/             # DTO→Domain mappers
+│   │   │   │   │   │   ├── ChannelMapper.kt
+│   │   │   │   │   │   └── StreamTokenMapper.kt
+│   │   │   │   │   └── repository/         # Data repositories
+│   │   │   │   │       ├── ChannelRepository.kt
+│   │   │   │   │       ├── PreferencesRepository.kt
+│   │   │   │   │       ├── ServerRepository.kt
+│   │   │   │   │       └── TokenRepository.kt
+│   │   │   │   ├── domain/                 # Domain layer
+│   │   │   │   │   ├── model/
+│   │   │   │   │   │   ├── Channel.kt
+│   │   │   │   │   │   ├── ChannelPreferences.kt
+│   │   │   │   │   │   ├── ChannelWithMetadata.kt
+│   │   │   │   │   │   └── StreamToken.kt
+│   │   │   │   │   └── usecase/            # Use cases
+│   │   │   │   │       ├── GetChannelsUseCase.kt
+│   │   │   │   │       ├── GetChannelPreferencesUseCase.kt
+│   │   │   │   │       └── GenerateStreamUrlUseCase.kt
+│   │   │   │   ├── di/                     # Hilt DI modules
+│   │   │   │   │   ├── NetworkModule.kt    # OkHttp + Retrofit
+│   │   │   │   │   ├── DataModule.kt       # DataStore
+│   │   │   │   │   └── MediaModule.kt      # ExoPlayer
+│   │   │   │   ├── player/                 # Player utilities
+│   │   │   │   │   ├── HdHomeyMediaSource.kt
+│   │   │   │   │   └── PlayerEventListener.kt
 │   │   │   │   ├── storage/                # Local storage
-│   │   │   │   │   └── AppPreferences.kt
+│   │   │   │   │   ├── AppPreferences.kt   # DataStore-backed
+│   │   │   │   │   └── TokenDataStore.kt   # Encrypted token storage
 │   │   │   │   └── util/                   # Utilities
 │   │   │   │       ├── Constants.kt
 │   │   │   │       └── UrlValidator.kt
 │   │   │   ├── res/
-│   │   │   │   ├── layout/                  # XML layouts
+│   │   │   │   ├── layout/
+│   │   │   │   │   ├── fragment_channel_list.xml  # Channel list (Phase 2)
+│   │   │   │   │   ├── item_channel.xml            # Channel item (Phase 2)
+│   │   │   │   │   ├── activity_player.xml         # Video player (Phase 2)
+│   │   │   │   │   ├── fragment_server_list.xml    # Phase 1
+│   │   │   │   │   ├── fragment_add_server.xml     # Phase 1
+│   │   │   │   │   ├── fragment_authentication.xml # Phase 1
+│   │   │   │   │   └── fragment_success.xml        # Phase 1
 │   │   │   │   ├── values/                  # Strings, colors, themes
-│   │   │   │   ├── mipmap-*/                # App icons (all densities)
+│   │   │   │   ├── mipmap-*/                # App icons
 │   │   │   │   ├── drawable/                # Icons and images
-│   │   │   │   ├── drawable-xhdpi/          # TV banner (320x180)
 │   │   │   │   ├── animator/                # Animations
-│   │   │   │   └── navigation/              # Navigation graph
+│   │   │   │   └── navigation/              # nav_graph.xml
 │   │   │   └── AndroidManifest.xml
-│   │   └── test/                            # Unit tests (86 tests)
-│   │       ├── ServerRepositoryTest.kt
-│   │       ├── DeviceCodeServiceTest.kt
-│   │       ├── UrlValidatorTest.kt
-│   │       └── AppPreferencesTest.kt
-│   ├── build.gradle.kts                     # Module build config
+│   │   └── test/                            # Unit tests
+│   │       ├── data/repository/
+│   │       │   ├── ChannelRepositoryTest.kt
+│   │       │   ├── TokenRepositoryTest.kt
+│   │       │   └── ServerRepositoryTest.kt
+│   │       ├── domain/usecase/
+│   │       │   ├── GetChannelsUseCaseTest.kt
+│   │       │   └── GenerateStreamUrlUseCaseTest.kt
+│   │       ├── ui/channels/
+│   │       │   └── ChannelListViewModelTest.kt
+│   │       ├── ui/player/
+│   │       │   └── PlayerViewModelTest.kt
+│   │       ├── storage/
+│   │       │   └── AppPreferencesTest.kt
+│   │       └── ...
+│   ├── build.gradle.kts
 │   └── proguard-rules.pro
-├── build.gradle.kts                         # Project build config
-├── settings.gradle.kts                      # Project settings
+├── build.gradle.kts
+├── settings.gradle.kts
 ├── gradle/
-│   └── libs.versions.toml                   # Dependency versions
-├── gradle.properties                        # Gradle properties
-├── local.properties                         # Local SDK path (gitignored)
-├── README.md                                # This file
-├── SETUP.md                                 # Detailed setup instructions
-├── DEVELOPMENT.md                           # Development guide
-└── QUICKSTART.md                            # Quick start guide
+│   └── libs.versions.toml
+├── gradle.properties
+├── local.properties (gitignored)
+├── README.md
+├── SETUP.md
+├── DEVELOPMENT.md
+└── QUICKSTART.md
 ```
 
 ## Quick Start (macOS)
@@ -195,7 +272,7 @@ cd apps/android
 
 ## Technology Stack
 
-### Core Dependencies (Phase 1)
+### Core Dependencies
 
 - **Kotlin** 2.1.0 - Modern, concise Android development
 - **Android SDK** 35 (Android 15) - Target platform
@@ -209,15 +286,20 @@ cd apps/android
   - RecyclerView 1.3.2 - Efficient lists
   - CardView 1.0.0 - Card-based UI
   - Leanback 1.2.0-alpha04 - TV-optimized components
+  - DataStore 1.1.1 - Preferences and data storage
+- **Hilt** 2.51.1 - Dependency injection
 - **Navigation** 2.8.5 - Fragment navigation
-- **Coroutines** 1.10.1 - Asynchronous programming
-- **OkHttp** 4.12.0 - HTTP client
+- **Coroutines** 1.9.0 - Asynchronous programming
+- **Retrofit** 2.11.0 - HTTP client
+- **OkHttp** 4.12.0 - HTTP client with interceptors
 - **Kotlinx Serialization** 1.7.3 - JSON parsing
+- **Media3 (ExoPlayer)** 1.9.0 - HLS video playback
 - **Testing**:
   - JUnit 4.13.2 - Unit testing framework
   - Truth 1.4.4 - Fluent assertions
   - Robolectric 4.14.1 - Android unit tests
   - MockK 1.13.13 - Mocking framework
+  - Turbine 1.0.0 - Flow testing
 
 ### TV-Specific Features (Implemented)
 
@@ -227,12 +309,6 @@ cd apps/android
 - **Animations**: Shimmer loaders, ripple effects, staggered fade-ins
 - **Error Recovery**: Retry/cancel buttons, clear error messages
 - **Visual Feedback**: Loading indicators, active server highlighting
-
-### Phase 2 Dependencies (Coming Soon)
-
-- **ExoPlayer** - HLS video playback
-- **Coil** - Channel logo image loading
-- **DataStore** - Secure token storage (replacing SharedPreferences)
 
 ## Device Pairing Flow (Fully Implemented)
 
@@ -347,13 +423,15 @@ git commit -m "feat(android): implement channel browsing UI"
 - Lint clean (0 errors)
 - Build verified (20MB APK)
 
-### 🚀 Phase 2: Channel Browsing & Streaming (Next)
-- [ ] Fetch channel lineup from tuners
-- [ ] Browse channels with TV-optimized UI
-- [ ] Display channel metadata (name, number, logo)
-- [ ] HLS video playback with ExoPlayer
-- [ ] Stream URL generation with HMAC tokens
-- [ ] Player controls and error handling
+### ✅ Phase 2: Channel Browsing & Streaming (Complete)
+- [x] MVVM architecture with Hilt DI (NetworkModule, MediaModule, DataModule)
+- [x] Retrofit API layer with cookie-based Better-Auth authentication
+- [x] Domain layer with Use Cases (GetChannelsUseCase, GenerateStreamUrlUseCase)
+- [x] Channel list with RecyclerView and D-pad navigation
+- [x] Video playback with Media3 ExoPlayer and HLS stream support
+- [x] Stream URL generation with HMAC token authentication
+- [x] Favorites display and sorting (favorites first)
+- [x] Player controls with exponential backoff retry
 
 ### 🔮 Phase 3: Advanced Features (Future)
 - [ ] Channel favorites and hiding (sync with backend)
