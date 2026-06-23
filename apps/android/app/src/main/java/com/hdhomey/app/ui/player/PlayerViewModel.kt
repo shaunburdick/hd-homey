@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -60,6 +61,15 @@ class PlayerViewModel @Inject constructor(
     /** Current server URL, used for retry logic. */
     private var currentServerUrl: String = ""
 
+    /** Number of consecutive retry attempts for exponential backoff calculation. */
+    private var retryAttempt: Int = 0
+
+    /** Maximum number of retry attempts before giving up. */
+    private companion object {
+        private const val MAX_RETRY_ATTEMPTS = 3
+        private const val BASE_RETRY_DELAY_MS = 1000L
+    }
+
     /**
      * Load a stream for playback: request a token, build the HLS URL,
      * and prepare the ExoPlayer.
@@ -78,6 +88,7 @@ class PlayerViewModel @Inject constructor(
         currentChannelId = channelId
 
         _uiState.value = PlayerUiState.Loading
+        retryAttempt = 0
 
         viewModelScope.launch {
             try {
@@ -149,13 +160,29 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
-     * Retry loading after an error.
+     * Retry loading the stream with exponential backoff.
      *
-     * Re-uses the last [currentServerUrl], [currentTunerId], and [currentChannelId]
-     * recorded by [loadStream]. No-ops if [loadStream] has never been called.
+     * Maximum [MAX_RETRY_ATTEMPTS] retries with delays of
+     * 1s, 2s, and 4s (BASE_RETRY_DELAY_MS * 2^attempt).
+     * After exhausting retries, emits an error with a finality message.
      */
     fun retryLoad() {
-        if (currentTunerId > 0 && currentChannelId > 0 && currentServerUrl.isNotBlank()) {
+        if (currentTunerId <= 0 || currentChannelId <= 0 || currentServerUrl.isBlank()) return
+        if (retryAttempt >= MAX_RETRY_ATTEMPTS) {
+            _uiState.value = PlayerUiState.Error(
+                message = "Unable to load stream after $MAX_RETRY_ATTEMPTS attempts. Please try again later.",
+                isRetryable = false
+            )
+            return
+        }
+
+        retryAttempt++
+        val delayMs = BASE_RETRY_DELAY_MS * (1L shl (retryAttempt - 1))
+
+        _uiState.value = PlayerUiState.Loading
+
+        viewModelScope.launch {
+            delay(delayMs)  // Exponential backoff delay
             loadStream(currentServerUrl, currentTunerId, currentChannelId)
         }
     }
