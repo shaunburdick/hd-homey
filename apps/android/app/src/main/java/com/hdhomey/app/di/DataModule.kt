@@ -26,10 +26,17 @@ private val Context.appDataStore by preferencesDataStore(name = "hd_homey_prefs"
  * Binds the [SingletonComponent] so every injected consumer shares the same instance
  * across the entire app lifetime.
  *
- * Note: [AppPreferences] currently uses SharedPreferences internally. After T013
- * (Agent B migration) it will be refactored to use DataStore internally. Both the
- * raw [DataStore] and the [AppPreferences] singleton intentionally coexist here
- * to support that incremental migration without breaking callers.
+ * **Auto-wired repositories** (via `@Singleton @Inject constructor` — no explicit binding needed):
+ * - [com.hdhomey.app.data.repository.ChannelRepository]
+ * - [com.hdhomey.app.data.repository.PreferencesRepository]
+ * - [com.hdhomey.app.data.repository.TokenRepository]
+ * - [com.hdhomey.app.domain.usecase.GetChannelsUseCase]
+ * - [com.hdhomey.app.domain.usecase.GetChannelPreferencesUseCase]
+ * - [com.hdhomey.app.domain.usecase.GenerateStreamUrlUseCase]
+ *
+ * These are automatically resolved by Hilt from the [SingletonComponent] graph because
+ * each carries an [@Inject][dagger.hilt.android.internal.lifecycle.HiltViewModelMap] constructor
+ * with dependencies (e.g., [HdHomeyApiService]) provided by [NetworkModule].
  */
 @Module
 @InstallIn(SingletonComponent::class)
