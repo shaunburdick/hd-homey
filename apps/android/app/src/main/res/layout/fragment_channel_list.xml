@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  fragment_channel_list.xml
+  Channel list screen — shows all channels available on a tuner/device.
+
+  States (mutually exclusive; controlled by ChannelListFragment.kt):
+    - Normal:  recycler_view visible, all overlays gone
+    - Loading: loading_state visible (centered spinner), list hidden
+    - Error:   error_state visible (message + retry), list hidden
+    - Empty:   empty_state visible ("No channels found"), list hidden
+
+  Top bar contains the tuner/device name and a refresh button so the user
+  can trigger a fresh channel scan without leaving the screen.
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_dark">
+
+    <!-- ── Main content column ─────────────────────────────────────────── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- ── Top bar: tuner name + refresh button ──────────────────── -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/tv_margin_small"
+            android:layout_marginTop="@dimen/tv_margin_small"
+            android:layout_marginEnd="@dimen/tv_margin_small"
+            app:cardBackgroundColor="@color/surface_dark"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="@dimen/tv_margin_small">
+
+                <!-- Tuner / device name -->
+                <TextView
+                    android:id="@+id/tuner_name_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_size_title"
+                    android:textStyle="bold"
+                    tools:text="HDHomeRun HDHR-1234" />
+
+                <!-- Refresh button — ImageButton styled like a mini-FAB -->
+                <ImageButton
+                    android:id="@+id/refresh_button"
+                    android:layout_width="@dimen/touch_target_min"
+                    android:layout_height="@dimen/touch_target_min"
+                    android:layout_marginStart="@dimen/tv_margin_small"
+                    android:background="@drawable/bg_refresh_button"
+                    android:contentDescription="@string/channel_list_refresh_button"
+                    android:focusable="true"
+                    android:src="@android:drawable/ic_popup_sync"
+                    app:tint="@color/text_primary" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- ── Loading state: centered indeterminate spinner ─────────── -->
+        <LinearLayout
+            android:id="@+id/loading_state"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <ProgressBar
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:indeterminateTint="@color/hd_homey_blue" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tv_margin_small"
+                android:text="@string/loading"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_size_body" />
+        </LinearLayout>
+
+        <!-- ── Error state: message + retry button ───────────────────── -->
+        <LinearLayout
+            android:id="@+id/error_state"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/tv_margin_large"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <!-- Error icon -->
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginBottom="@dimen/tv_margin_small"
+                android:contentDescription="@string/channel_list_error_icon_description"
+                android:src="@android:drawable/ic_dialog_alert"
+                app:tint="@color/error_red" />
+
+            <!-- Error message (populated at runtime by ChannelListFragment) -->
+            <TextView
+                android:id="@+id/error_message_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/error_red"
+                android:textSize="@dimen/text_size_body"
+                tools:text="@string/network_error" />
+
+            <!-- Retry button -->
+            <Button
+                android:id="@+id/retry_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tv_margin_medium"
+                android:backgroundTint="@color/hd_homey_blue"
+                android:focusable="true"
+                android:minHeight="@dimen/touch_target_min"
+                android:minWidth="160dp"
+                android:text="@string/try_again"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_size_body" />
+        </LinearLayout>
+
+        <!-- ── Empty state: no channels found ───────────────────────── -->
+        <LinearLayout
+            android:id="@+id/empty_state"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/tv_margin_large"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <!-- Placeholder icon -->
+            <ImageView
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_marginBottom="@dimen/tv_margin_medium"
+                android:contentDescription="@string/channel_list_empty_title"
+                android:src="@android:drawable/ic_menu_compass"
+                app:tint="@color/text_tertiary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/channel_list_empty_title"
+                android:textAlignment="center"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_size_title"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tv_margin_small"
+                android:text="@string/channel_list_empty_message"
+                android:textAlignment="center"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_size_body" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tv_margin_medium"
+                android:text="@string/channel_list_empty_hint"
+                android:textAlignment="center"
+                android:textColor="@color/text_tertiary"
+                android:textSize="@dimen/text_size_caption" />
+        </LinearLayout>
+
+        <!-- ── Channel list ───────────────────────────────────────────── -->
+        <!--
+          layout_weight="1" ensures this fills remaining vertical space
+          once the top bar takes its natural height.  The loading/error/empty
+          states also use weight="1" but are toggled to gone/visible so only
+          one of the weight-bearing children is ever visible at a time.
+        -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/channel_list_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:descendantFocusability="afterDescendants"
+            android:padding="@dimen/tv_margin_small"
+            tools:listitem="@layout/item_channel" />
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

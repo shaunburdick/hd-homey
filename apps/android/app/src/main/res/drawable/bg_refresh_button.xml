@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  bg_refresh_button.xml
+  Background for the refresh ImageButton in the channel list top bar.
+  Circular shape matching the app's dark theme with a ripple on press.
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/hd_homey_blue">
+
+    <!-- Circular mask for the ripple -->
+    <item android:id="@android:id/mask">
+        <shape android:shape="oval">
+            <solid android:color="@android:color/white" />
+        </shape>
+    </item>
+
+    <!-- Button background: elevated surface circle -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/surface_dark_elevated" />
+        </shape>
+    </item>
+</ripple>

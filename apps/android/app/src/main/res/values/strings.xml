@@ -66,6 +66,13 @@
     <string name="hd_badge_label">HD</string>
     <string name="favorite_toggle_description">Toggle favorite</string>
 
+    <!-- Channel List -->
+    <string name="channel_list_refresh_button">Refresh channels</string>
+    <string name="channel_list_error_icon_description">Error loading channels</string>
+    <string name="channel_list_empty_title">No channels found</string>
+    <string name="channel_list_empty_message">No channels are available on this tuner</string>
+    <string name="channel_list_empty_hint">Tap the refresh button to scan again</string>
+
     <!-- Errors -->
     <string name="network_error">Network error. Please check your connection.</string>
     <string name="server_error">Server error. Please try again later.</string>
