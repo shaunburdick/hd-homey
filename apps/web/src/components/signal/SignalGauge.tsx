@@ -26,6 +26,20 @@ import { getSignalQuality } from '@/lib/hdhr/signal-parsers';
 import type { SignalQuality } from '@/lib/hdhr/signal-parsers';
 
 // =============================================================================
+// Tooltip text
+// =============================================================================
+
+/**
+ * Full names and descriptions for each signal metric, shown as hover tooltips
+ * on the abbreviated label (e.g. "SS", "SNQ", "SEQ").
+ */
+export const METRIC_TOOLTIPS: Record<string, string> = {
+    SS: 'Signal Strength (SS) — raw RF power level',
+    SNQ: 'Signal-to-Noise Quality (SNQ) — clarity of the received signal',
+    SEQ: 'Symbol Error Quality (SEQ) — stability of the data stream',
+};
+
+// =============================================================================
 // Styles
 // =============================================================================
 
@@ -58,7 +72,8 @@ export const QUALITY_STYLES: Record<SignalQuality, { label: string; icon: string
 // =============================================================================
 
 interface SignalGaugeProps {
-    /** Human-readable label for the metric, e.g. "Signal Strength" */
+    /** Short abbreviation displayed in the gauge label (e.g. "SS", "SNQ", "SEQ").
+     *  The full meaning is surfaced as a hover tooltip sourced from {@link METRIC_TOOLTIPS}. */
     label: string;
     /** Signal value 0–100, or null when idle */
     value: number | null;
@@ -91,7 +106,7 @@ export function SignalGauge({ label, value, metric, unit = '%' }: SignalGaugePro
 
     return (
         <div className="signal-gauge" data-metric={metric} data-quality={quality}>
-            <div className="signal-gauge-label">{label}</div>
+            <div className="signal-gauge-label" title={METRIC_TOOLTIPS[metric] ?? label}>{label}</div>
             <div
                 className="signal-gauge-value"
                 aria-label={ariaLabel}

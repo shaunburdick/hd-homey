@@ -784,17 +784,15 @@ describe('SignalPollingManager', () => {
         it('dispatches streaminfo via native protocol when HTTP streaminfo returns 404', async () => {
             const controller = makeController();
 
-            // Fetch order:
+            // Fetch order with native-first:
             // 1. status.json — active tuner
-            // 2. streaminfo — HTTP 404 response (response.ok = false)
-            // 3. tuner0/status — ATSC lock detection
+            // 2. tuner0/status — ATSC lock detection (native handled streaminfo; no HTTP streaminfo fetch)
             fetchMock
                 .mockResolvedValueOnce(new Response(SINGLE_TUNER_ACTIVE, { status: 200 }))
-                .mockResolvedValueOnce(new Response('Not Found', { status: 404 }))          // streaminfo 404
                 .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 }));   // tuner status
 
-            // nativeGet for streaminfo succeeds
-            nativeGetMock.mockResolvedValueOnce('481: mpeg2video v 1\n482: ac3 a 1\n');
+            // nativeGet: streaminfo succeeds first, then debug call rejects
+            nativeGetMock.mockResolvedValueOnce('481: mpeg2video v 1\n482: ac3 a 1\n');    // streaminfo native
             // nativeGet for debug may also fire (best-effort, non-blocking)
             nativeGetMock.mockRejectedValue(NATIVE_REFUSED_ERROR);
 
@@ -814,18 +812,18 @@ describe('SignalPollingManager', () => {
         it('falls back to lineup.json when native protocol streaminfo also fails', async () => {
             const controller = makeController();
 
-            // Fetch order:
+            // Fetch order with native-first:
             // 1. status.json — active tuner
-            // 2. streaminfo — HTTP error → triggers native fallback
+            // 2. streaminfo — HTTP also fails (native already failed via nativeGetMock below)
             // 3. lineup.json — lineup fallback
             // 4. tuner0/status — ATSC lock
             fetchMock
                 .mockResolvedValueOnce(new Response(SINGLE_TUNER_ACTIVE, { status: 200 }))
-                .mockRejectedValueOnce(new Error('streaminfo network error'))                // streaminfo fails
+                .mockRejectedValueOnce(new Error('streaminfo network error'))                // HTTP streaminfo fails
                 .mockResolvedValueOnce(new Response(LINEUP_JSON, { status: 200 }))         // lineup fallback
                 .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 }));   // tuner status
 
-            // All nativeGet calls fail — native is down
+            // All nativeGet calls fail — native is down (tried first for streaminfo)
             nativeGetMock.mockRejectedValue(NATIVE_REFUSED_ERROR);
 
             manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
@@ -844,12 +842,14 @@ describe('SignalPollingManager', () => {
         it('native success prevents lineup fallback from being attempted', async () => {
             const controller = makeController();
 
+            // Fetch order with native-first:
+            // 1. status.json — active tuner
+            // 2. tuner0/status — ATSC lock (native handled streaminfo; HTTP streaminfo never fetched)
             fetchMock
                 .mockResolvedValueOnce(new Response(SINGLE_TUNER_ACTIVE, { status: 200 }))
-                .mockRejectedValueOnce(new Error(ERR_404))                                  // streaminfo fails
                 .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 }));   // tuner status
 
-            // Native streaminfo succeeds, debug fails
+            // Native streaminfo succeeds first, debug fails
             nativeGetMock
                 .mockResolvedValueOnce('481: mpeg2video v 1\n')                             // streaminfo native
                 .mockRejectedValue(NATIVE_REFUSED_ERROR);
@@ -882,13 +882,18 @@ describe('SignalPollingManager', () => {
                 'flt: bps=38809216\n' +
                 'net: pps=0 err=0 stop=0\n';
 
+            // Fetch order with native-first:
+            // 1. status.json — active tuner
+            // 2. tuner0/status — ATSC lock (native handled streaminfo; no HTTP streaminfo fetch)
             fetchMock
                 .mockResolvedValueOnce(new Response(SINGLE_TUNER_ACTIVE, { status: 200 }))
-                .mockResolvedValueOnce(new Response(STREAMINFO_RESPONSE, { status: 200 }))  // streaminfo OK
                 .mockResolvedValueOnce(new Response(LOCK_STATUS_ATSC1, { status: 200 }));   // tuner status
 
-            // nativeGet returns the debug response (debug poll fires via void — let it run)
-            nativeGetMock.mockResolvedValue(DEBUG_RESPONSE);
+            // nativeGet: first call is streaminfo (succeeds with valid streaminfo data),
+            // subsequent calls return DEBUG_RESPONSE for the debug poll
+            nativeGetMock
+                .mockResolvedValueOnce(STREAMINFO_RESPONSE)  // streaminfo native (1st call)
+                .mockResolvedValue(DEBUG_RESPONSE);           // debug native (all subsequent calls)
 
             manager.subscribe({ deviceUrl: DEVICE_URL, tunerDbId: 1, resource: 'tuner0', controller });
             await vi.advanceTimersByTimeAsync(0);

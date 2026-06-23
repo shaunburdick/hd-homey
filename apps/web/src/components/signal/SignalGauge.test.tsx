@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { SignalGauge, QUALITY_STYLES } from './SignalGauge';
+import { SignalGauge, QUALITY_STYLES, METRIC_TOOLTIPS } from './SignalGauge';
 
 describe('SignalGauge', () => {
     // -------------------------------------------------------------------------
@@ -122,5 +122,41 @@ describe('SignalGauge', () => {
             expect(style.className).toBeTruthy();
             expect(style.icon).toBeTruthy();
         }
+    });
+
+    // -------------------------------------------------------------------------
+    // Tooltip / title attribute
+    // -------------------------------------------------------------------------
+
+    const LABEL_SELECTOR = '.signal-gauge-label';
+
+    it('label div has title with full tooltip text for SS', () => {
+        const { container } = render(
+            <SignalGauge label="SS" value={80} metric="SS" />,
+        );
+        const labelEl = container.querySelector(LABEL_SELECTOR);
+        expect(labelEl?.getAttribute('title')).toBe(METRIC_TOOLTIPS['SS']);
+    });
+
+    it('label div has title with full tooltip text for SNQ', () => {
+        const { container } = render(
+            <SignalGauge label="SNQ" value={70} metric="SNQ" />,
+        );
+        const labelEl = container.querySelector(LABEL_SELECTOR);
+        expect(labelEl?.getAttribute('title')).toBe(METRIC_TOOLTIPS['SNQ']);
+    });
+
+    it('label div has title with full tooltip text for SEQ', () => {
+        const { container } = render(
+            <SignalGauge label="SEQ" value={90} metric="SEQ" />,
+        );
+        const labelEl = container.querySelector(LABEL_SELECTOR);
+        expect(labelEl?.getAttribute('title')).toBe(METRIC_TOOLTIPS['SEQ']);
+    });
+
+    it('METRIC_TOOLTIPS exports tooltip text for all three metrics', () => {
+        expect(METRIC_TOOLTIPS['SS']).toContain('Signal Strength');
+        expect(METRIC_TOOLTIPS['SNQ']).toContain('Signal-to-Noise Quality');
+        expect(METRIC_TOOLTIPS['SEQ']).toContain('Symbol Error Quality');
     });
 });

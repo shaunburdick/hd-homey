@@ -110,9 +110,9 @@ async function tryNativeStreamInfo(options: NativeStreamInfoOptions): Promise<bo
         dispatchStreamInfoEvent({ entry, resource, tunerId, vctName, rawText: nativeText, encoder });
         return true;
     } catch (nativeError) {
-        Logger.warn(
+        Logger.debug(
             { deviceUrl, resource, nativeError },
-            'Native protocol streaminfo failed; trying lineup fallback',
+            'Native protocol streaminfo failed; trying HTTP fallback',
         );
         return false;
     }
@@ -167,8 +167,9 @@ async function tryLineupFallback(options: LineupFallbackOptions): Promise<void> 
 /**
  * Fetch and dispatch streaminfo for a tuner when VctNumber changes.
  *
- * Tries HTTP first, then native TCP protocol, then lineup.json — each
- * step only reached when the previous one fails.
+ * Tries native TCP protocol first (always available), then HTTP (some older
+ * models have richer data), then lineup.json — each step only reached when
+ * the previous one fails.
  *
  * @param options - All context needed to fetch and dispatch streaminfo
  */
@@ -186,20 +187,27 @@ export async function dispatchStreamInfoIfChanged(options: StreamInfoDispatchOpt
     const match = /^tuner(\d+)$/.exec(resource);
     const tunerNum = match !== null ? match[1] : '0';
 
-    try {
-        const response = await fetchWithTimeout(`${deviceUrl}/tuner${tunerNum}/streaminfo`, FETCH_TIMEOUT_MS);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: streaminfo unavailable`);
+    // 1. Try native TCP protocol first (canonical, always available)
+    const deviceHostname = extractHostname(deviceUrl);
+    let success = deviceHostname !== '' && await tryNativeStreamInfo({
+        deviceUrl, tunerNum, resource, tunerId, vctName, entry, encoder,
+    });
+
+    if (!success) {
+        // 2. Try HTTP (some older models expose richer streaminfo over HTTP)
+        try {
+            const response = await fetchWithTimeout(`${deviceUrl}/tuner${tunerNum}/streaminfo`, FETCH_TIMEOUT_MS);
+            if (response.ok) {
+                dispatchStreamInfoEvent({ entry, resource, tunerId, vctName, rawText: await response.text(), encoder });
+                success = true;
+            }
+        } catch (httpError) {
+            Logger.debug({ deviceUrl, resource, httpError }, 'HTTP streaminfo fallback failed; trying lineup.json');
         }
-        dispatchStreamInfoEvent({ entry, resource, tunerId, vctName, rawText: await response.text(), encoder });
-    } catch (error) {
-        Logger.warn({ deviceUrl, resource, error }, 'Failed to fetch streaminfo');
-        const deviceHostname = extractHostname(deviceUrl);
-        const nativeOk = deviceHostname !== '' && await tryNativeStreamInfo({
-            deviceUrl, tunerNum, resource, tunerId, vctName, entry, encoder,
-        });
-        if (!nativeOk) {
-            await tryLineupFallback({ entry, tunerId, resource, deviceUrl, currentVct, vctName, encoder });
-        }
+    }
+
+    if (!success) {
+        // 3. Lineup.json fallback — synthetic program info from the channel lineup
+        await tryLineupFallback({ entry, tunerId, resource, deviceUrl, currentVct, vctName, encoder });
     }
 }
