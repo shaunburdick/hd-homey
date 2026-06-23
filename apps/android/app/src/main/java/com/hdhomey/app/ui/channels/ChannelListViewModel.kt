@@ -67,10 +67,13 @@ class ChannelListViewModel @Inject constructor(
             try {
                 val channels = getChannelsUseCase(tunerId)
 
-                // A full implementation would fetch the tuner display name from the
-                // repository; for now we synthesise a human-readable fallback so the
-                // toolbar always has something useful to show.
-                tunerName = "Tuner $tunerId"
+                // Resolve the human-readable tuner name by finding the matching entry
+                // in the tuner list. If the tuner is not found (e.g. deleted between
+                // calls) we fall back to the synthesised "Tuner N" label so the
+                // toolbar always displays something meaningful.
+                val tuners = channelRepository.getTuners()
+                tunerName = tuners.firstOrNull { it.first == tunerId }?.second
+                    ?: "Tuner $tunerId"
 
                 // Sort: favorites first, then by channel number
                 val sortedChannels = channels.sortedWith(

@@ -73,6 +73,7 @@ class ChannelListViewModelTest {
             )
         )
         coEvery { getChannelsUseCase(1) } returns channels
+        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -94,7 +95,7 @@ class ChannelListViewModelTest {
     }
 
     @Test
-    fun `loadChannels Success contains tunerName derived from tunerId`() = runTest {
+    fun `loadChannels Success contains tunerName from backend API`() = runTest {
         val channels = listOf(
             ChannelWithMetadata(
                 channel = Channel(id = 2, tunerId = 5, number = "4.1", name = "NBC", isHd = true),
@@ -103,6 +104,7 @@ class ChannelListViewModelTest {
             )
         )
         coEvery { getChannelsUseCase(5) } returns channels
+        coEvery { channelRepository.getTuners() } returns listOf(5 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -114,7 +116,35 @@ class ChannelListViewModelTest {
             val state = awaitItem()
             assertTrue(state is ChannelListUiState.Success)
             if (state is ChannelListUiState.Success) {
-                assertEquals("Tuner 5", state.tunerName)
+                assertEquals("Living Room", state.tunerName)
+            }
+        }
+    }
+
+    @Test
+    fun `loadChannels Success falls back to Tuner N when tuner not found in list`() = runTest {
+        val channels = listOf(
+            ChannelWithMetadata(
+                channel = Channel(id = 3, tunerId = 7, number = "5.1", name = "FOX", isHd = true),
+                isFavorite = false,
+                isHidden = false
+            )
+        )
+        coEvery { getChannelsUseCase(7) } returns channels
+        // Tuner 7 is absent from the list returned by the repository.
+        coEvery { channelRepository.getTuners() } returns emptyList()
+
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+
+            viewModel.loadChannels(7)
+
+            val state = awaitItem()
+            assertTrue(state is ChannelListUiState.Success)
+            if (state is ChannelListUiState.Success) {
+                assertEquals("Tuner 7", state.tunerName)
             }
         }
     }
@@ -134,6 +164,7 @@ class ChannelListViewModelTest {
             )
         )
         coEvery { getChannelsUseCase(1) } returns channels
+        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -157,6 +188,7 @@ class ChannelListViewModelTest {
     @Test
     fun `loadChannels emits Empty when no channels returned`() = runTest {
         coEvery { getChannelsUseCase(1) } returns emptyList()
+        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -223,6 +255,7 @@ class ChannelListViewModelTest {
             )
         )
         coEvery { getChannelsUseCase(1) } returns channels
+        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -256,6 +289,7 @@ class ChannelListViewModelTest {
             )
         )
         coEvery { getChannelsUseCase(1) } throws RuntimeException("Network error") andThen channels
+        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 

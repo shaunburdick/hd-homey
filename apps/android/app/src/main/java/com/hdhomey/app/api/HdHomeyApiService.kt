@@ -45,6 +45,18 @@ interface HdHomeyApiService {
     suspend fun getTuners(): DataResponse<List<TunerDto>>
 
     /**
+     * Fetch a single tuner by its primary key.
+     *
+     * Endpoint: `GET /api/tuners/{tunerId}`
+     * Response shape: `{ "data": { "id": Int, "name": String, "is_active": Boolean, ... } }`
+     *
+     * @param tunerId Primary key of the tuner to retrieve.
+     * @return [DataResponse] wrapping the matching [TunerDto].
+     */
+    @GET("api/tuners/{tunerId}")
+    suspend fun getTuner(@Path("tunerId") tunerId: Int): DataResponse<TunerDto>
+
+    /**
      * List all channels discovered for a specific tuner.
      *
      * Endpoint: `GET /api/tuners/{tunerId}/channels`
