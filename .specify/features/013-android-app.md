@@ -4,14 +4,14 @@
 **Created**: 2025-12-07  
 **Status**: ✅ Phase 1 Complete & Merged | 🚀 Phase 2 Ready  
 **Owner**: HD Homey Core Team  
-**Version**: 1.3  
+**Version**: 1.4  
 **Dependencies**: Phase 0 (Repository Reorganization) - ✅ COMPLETE
 
 ## Overview
 
-The HD Homey Android app brings live TV streaming to Android TV devices, phones, and tablets through a universal native application. Using a hybrid WebView + native video architecture, the app reuses HD Homey's existing web interface for browsing while providing optimal video playback through AndroidX Media3. The app supports multiple authentication methods (QR code, device code, username/password), automatic server discovery, and graceful fallback from MPEG-2 to HLS transcoding based on device capabilities.
+The HD Homey Android app brings live TV streaming to Android TV devices, phones, and tablets through a universal native application. The app is built with a fully native MVVM architecture: Phase 1 delivered native fragments for server management and device pairing, and Phase 2 adds native channel browsing (RecyclerView), ViewModels for state management, and AndroidX Media3 ExoPlayer for video playback. The app supports multiple authentication methods (QR code, device code, username/password), automatic server discovery, and graceful fallback from MPEG-2 to HLS transcoding based on device capabilities.
 
-**IMPORTANT**: This feature requires **Phase 0: Repository Reorganization** to be completed first. The repository must be restructured into a monorepo before Android development begins.
+**NOTE**: Phase 0 (Repository Reorganization) is ✅ COMPLETE. The monorepo structure (`apps/web/`, `apps/android/`, `apps/docs/`) is live on `main`.
 
 ## Current Status (December 14, 2025)
 
@@ -109,169 +109,9 @@ The current HD Homey repository is structured as a single-app project with all c
 
 ---
 
-## Phase 0: Repository Reorganization (PREREQUISITE)
+## Phase 0: Repository Reorganization — ✅ COMPLETE
 
-Before Android development can begin, the repository must be restructured into a monorepo.
-
-### Current Structure (Single-App Root)
-```
-hd-homey/
-├── src/              # Next.js app source
-├── docs/             # VitePress docs
-├── migrations/       # Database migrations
-├── public/           # Static assets
-├── Dockerfile        # Docker build
-├── compose.yml       # Docker Compose
-├── package.json      # Dependencies
-└── ...
-```
-
-### Target Structure (Monorepo)
-```
-hd-homey/
-├── apps/
-│   ├── web/              # Next.js app (moved from root)
-│   │   ├── src/
-│   │   ├── public/
-│   │   ├── Dockerfile    # Per-app Docker
-│   │   └── package.json
-│   ├── android/          # Android app (NEW)
-│   │   ├── app/
-│   │   ├── gradle/
-│   │   ├── build.gradle.kts
-│   │   └── settings.gradle.kts
-│   └── docs/             # VitePress docs (moved)
-│       └── package.json
-├── migrations/           # DB migrations (accessible to web)
-├── .specify/            # Specifications
-├── specs/               # Implementation plans
-├── compose.yml          # References apps/web/Dockerfile
-└── package.json         # Root workspace (npm workspaces)
-```
-
-### Phase 0 Requirements
-
-#### Functional Requirements (Phase 0)
-- **FR-P0-001**: Repository MUST be reorganized into monorepo structure before Android development begins
-- **FR-P0-002**: Next.js web app MUST be moved to `apps/web/` with all functionality intact
-- **FR-P0-003**: VitePress docs MUST be moved to `apps/docs/`
-- **FR-P0-004**: Database migrations MUST remain accessible to `apps/web/`
-- **FR-P0-005**: Docker build MUST work from `apps/web/Dockerfile`
-- **FR-P0-006**: Docker Compose MUST reference `apps/web/` context
-- **FR-P0-007**: Root `package.json` MUST define npm workspaces for `apps/web` and `apps/docs`
-- **FR-P0-008**: CI/CD workflows MUST be updated to work with new paths
-- **FR-P0-009**: All documentation MUST be updated with new file paths
-- **FR-P0-010**: `apps/android/` directory MUST be created (empty, ready for Phase 1)
-
-#### Non-Functional Requirements (Phase 0)
-- **NFR-P0-001**: All 340 existing tests MUST pass after reorganization
-- **NFR-P0-002**: Docker build MUST complete successfully
-- **NFR-P0-003**: Development workflow (`npm run dev`) MUST work unchanged
-- **NFR-P0-004**: Production deployment MUST work without breaking changes
-- **NFR-P0-005**: GitHub Pages docs deployment MUST continue working
-- **NFR-P0-006**: Migration MUST be completed in a single PR to avoid partial state
-
-#### Workspace Scripts (Hybrid Approach)
-Root `package.json` will provide shortcuts for common tasks plus explicit workspace options:
-
-```json
-{
-  "name": "hd-homey-monorepo",
-  "version": "1.0.0-beta.5",
-  "private": true,
-  "workspaces": [
-    "apps/web",
-    "apps/docs"
-  ],
-  "scripts": {
-    "dev": "npm run dev --workspace=apps/web",
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspace=apps/web",
-    "lint": "npm run lint --workspaces",
-    "web:dev": "npm run dev --workspace=apps/web",
-    "web:build": "npm run build --workspace=apps/web",
-    "web:test": "npm run test --workspace=apps/web",
-    "docs:dev": "npm run docs:dev --workspace=apps/docs",
-    "docs:build": "npm run docs:build --workspace=apps/docs"
-  }
-}
-```
-
-**Rationale**:
-- `npm run dev` → Quick shortcut (starts web app, most common task)
-- `npm run build` → Builds all workspaces (CI/CD)
-- `npm run web:dev` / `npm run docs:dev` → Explicit when needed
-- Best of both worlds: convenience + clarity
-
-#### Docker Changes
-**Current**: Single `Dockerfile` at root with build context at root
-
-**New**: Per-app Dockerfiles with app-specific context
-
-`apps/web/Dockerfile`:
-```dockerfile
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:22-alpine AS runner
-WORKDIR /app
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-# ... (rest remains same)
-```
-
-`compose.yml`:
-```yaml
-services:
-  hd-homey:
-    build:
-      context: ./apps/web
-      dockerfile: Dockerfile
-    # ... (rest remains same)
-```
-
-**Rationale**:
-- Simpler Dockerfiles (no complex path handling)
-- Each app is self-contained
-- Standard monorepo pattern
-- Android won't use Docker (APK builds only)
-
-#### CI/CD Changes
-GitHub Actions workflows must update paths:
-
-- `.github/workflows/test.yml` → Update working directory to `apps/web`
-- `.github/workflows/docker.yml` → Update context to `apps/web`
-- `.github/workflows/docs.yml` → Update working directory to `apps/docs`
-
-#### Documentation Updates
-All documentation with file paths must be updated:
-
-- `README.md` → Update structure diagram, file references
-- `AGENTS.md` → Update directory structure section
-- `docs/` → Update all code examples with `apps/web/` paths
-- `.specify/memory/constitution.md` → Update technical decisions if needed
-
-#### Migration Acceptance Criteria
-- [ ] All files moved to new locations
-- [ ] All tests passing (`npm test`)
-- [ ] Docker build succeeds (`docker compose build`)
-- [ ] Dev server works (`npm run dev`)
-- [ ] Docs build works (`npm run docs:build`)
-- [ ] CI/CD workflows pass on GitHub
-- [ ] GitHub Pages deploys successfully
-- [ ] All documentation updated
-- [ ] Single PR contains complete migration (no partial state)
-
-### Phase 0 Out of Scope
-- ❌ No shared TypeScript packages (`packages/api-types/`) - keep it simple
-- ❌ No Android code yet - just create empty `apps/android/` directory
-- ❌ No new features - pure reorganization
-- ❌ No Turborepo or other monorepo tools - use native npm workspaces
+Phase 0 reorganized the repository into a monorepo (`apps/web/`, `apps/android/`, `apps/docs/`) and is fully complete as of December 2025. All tests pass, Docker works, and CI/CD workflows are updated. See the **Current Status** section at the top of this document and `specs/013-android-app-phase1/PHASE1-SUMMARY.md` for full details. No further action required.
 
 ---
 
@@ -415,9 +255,9 @@ All documentation with file paths must be updated:
 
 #### Core Features
 - **FR-001**: App MUST support Android TV, tablets, and phones with single codebase
-- **FR-002**: App MUST display HD Homey web interface via WebView for channel browsing
+- **FR-002**: App MUST display channel lineup in a native RecyclerView (not a WebView)
 - **FR-003**: App MUST use native AndroidX Media3 player for video playback (not HTML5 video)
-- **FR-004**: App MUST provide JavaScript bridge between WebView and native video player
+- **FR-004**: App MUST use MVVM architecture (ViewModels + Use Cases) for Phase 2 channel browsing
 - **FR-005**: App MUST detect device type (TV/tablet/phone) and adapt UI accordingly
 
 #### Authentication
@@ -444,7 +284,7 @@ All documentation with file paths must be updated:
 #### Navigation
 - **FR-021**: App MUST support D-pad navigation on Android TV (up/down/left/right/select)
 - **FR-022**: App MUST support touch navigation on phones/tablets
-- **FR-023**: App MUST inject CSS/JavaScript into WebView to optimize for D-pad focus
+- **FR-023**: App MUST support D-pad navigation natively (RecyclerView focus management, no CSS injection)
 - **FR-024**: App MUST handle back button navigation correctly across screens
 
 #### Features (from Web UI)
@@ -457,7 +297,7 @@ All documentation with file paths must be updated:
 
 #### Performance
 - **NFR-001**: Video playback MUST start within 3 seconds of channel selection
-- **NFR-002**: WebView MUST load channel list within 2 seconds (on good network)
+- **NFR-002**: Channel list MUST load within 2 seconds of screen display (on good network)
 - **NFR-003**: D-pad navigation MUST respond within 100ms (no lag)
 - **NFR-004**: App MUST use < 150MB memory during typical usage
 
@@ -470,14 +310,14 @@ All documentation with file paths must be updated:
 #### Reliability
 - **NFR-009**: App MUST NOT crash if HD Homey server is unreachable
 - **NFR-010**: App MUST gracefully handle network interruptions during video playback
-- **NFR-011**: App MUST recover from WebView crashes without losing session
-- **NFR-012**: App MUST validate all inputs from WebView JavaScript bridge
+- **NFR-011**: App MUST recover from player crashes without losing session
+- **NFR-012**: App MUST validate all API inputs (channel IDs, stream URLs)
 
 #### Security
 - **NFR-013**: App MUST store credentials in Android Keystore (not SharedPreferences)
 - **NFR-014**: App MUST use HTTPS for remote connections
 - **NFR-015**: App MUST validate SSL certificates (no self-signed cert bypass in production)
-- **NFR-016**: App MUST sanitize JavaScript bridge inputs to prevent injection
+- **NFR-016**: App MUST validate all API responses and sanitize stream URLs before use
 
 #### Usability
 - **NFR-017**: App MUST provide clear error messages for common issues (server unreachable, auth failed, etc.)
@@ -524,11 +364,11 @@ All documentation with file paths must be updated:
 
 ### Platform Requirements
 - **Minimum Android Version**: Android 9 (Pie, API level 28)
-- **Target Android Version**: Android 14 (API level 34)
+- **Target Android Version**: Android 15 (API level 35)
 - **HD Homey Version**: Requires HD Homey 1.1.0+ for device pairing API
 
 ### Development Stack
-- **Language**: Kotlin 2.2.21+ (latest stable)
+- **Language**: Kotlin 2.1.0 (matches Phase 1 implementation)
 - **Build System**: Gradle 8.0+ with Android Gradle Plugin 8.0+
 - **IDE**: Android Studio Hedgehog (2023.1.1) or newer
 
@@ -538,20 +378,23 @@ All documentation with file paths must be updated:
   - `androidx.media3:media3-ui:1.9.0`
 - **WebView**: Android System WebView (built-in)
 - **Networking**: OkHttp 4.12.0+ for HTTP client
+- **Coroutines**: Kotlinx Coroutines 1.9.0+ for async operations
 - **JSON Parsing**: Kotlinx Serialization 1.6.0+
 - **Dependency Injection**: Dagger Hilt 2.50+ (optional but recommended)
 - **QR Code Generation**: ZXing 3.5.3+ (client-side QR generation)
 - **mDNS Discovery**: Android NSD (Network Service Discovery, built-in)
 
 ### Architecture Constraints
-- **Hybrid Architecture**: WebView for UI + Native player for video
-- **JavaScript Bridge**: Communication via `addJavascriptInterface()`
+- **Native MVVM Architecture**: Phase 2 uses ViewModels, Use Cases, and Repositories (no WebView)
 - **Single Activity**: Use single Activity with Fragment navigation (modern Android pattern)
-- **No Compose UI**: WebView-based, not Jetpack Compose (simplicity)
+- **No WebView for Channel Browsing**: Channel list is a native RecyclerView, not a WebView
 - **No Shared Code**: Android and web apps share NO code (different languages - Kotlin vs TypeScript)
-- **WebView Target**: WebView loads web UI from `apps/web/` deployment (runtime HTTP, not file system)
+- **Native Video Playback**: Media3 ExoPlayer called directly from ViewModels (no JavaScript bridge)
+- **Phase 1 Pattern**: Simplified Repository Pattern (no ViewModels) — ViewModels introduced in Phase 2
 
 ### HD Homey Backend Dependencies
+
+**Authentication Note — Cookie-Based Auth Required**: HD Homey uses Better-Auth with JWT sessions stored in HTTP-only cookies (`Cookie: better-auth.session_token=<TOKEN>`). The backend does **not** support `Authorization: Bearer` headers. Android app API calls must include the session token as a cookie header via an OkHttp interceptor. See `specs/013-android-app-phase2/WHY-COOKIE-AUTH.md` for full rationale and implementation examples.
 
 The Android app requires these NEW backend features (to be implemented in HD Homey 1.1.0):
 
@@ -617,12 +460,11 @@ player.addListener(object : Player.Listener {
 })
 ```
 
-### WebView Security
-- **MUST** enable Safe Browsing API
-- **MUST** disable file access (`setAllowFileAccess(false)`)
-- **MUST** enable same-origin policy
-- **MUST** validate all JavaScript bridge inputs
-- **MUST** use Content Security Policy headers from HD Homey
+### Network Security
+- **MUST** use HTTPS for remote connections (Android Network Security Config)
+- **MUST** validate SSL certificates (no self-signed bypass in production)
+- **MUST** use OkHttp cookie interceptor for Better-Auth session tokens (see cookie auth note above)
+- **MUST** validate all stream URLs before passing to ExoPlayer
 
 ## Edge Cases & Error Handling
 
@@ -663,13 +505,13 @@ player.addListener(object : Player.Listener {
   - Exit player with error message
   - Return to channel list
 
-### WebView Crashes
-- **Scenario**: WebView crashes due to memory pressure or OS issue
+### Player Crashes
+- **Scenario**: ExoPlayer crashes due to codec issue or memory pressure
 - **Handling**: 
-  - Detect `onRenderProcessGone()` callback
-  - Reload WebView automatically
-  - Restore session if possible (JWT token still valid)
-  - Notify user: "Reloading channel list..."
+  - Catch player errors via `Player.Listener.onPlayerError()`
+  - Exit PlayerActivity gracefully and return to ChannelListFragment
+  - Restore session (session token still valid in storage)
+  - Notify user: "Playback failed. Please try again."
 
 ### Incompatible HD Homey Version
 - **Scenario**: App connects to HD Homey 1.0.0 (no device pairing API)
@@ -722,7 +564,7 @@ player.addListener(object : Player.Listener {
 
 ### Performance Validation
 - [ ] App launches in < 2 seconds (cold start)
-- [ ] WebView loads channel list in < 2 seconds
+- [ ] Channel list loads in < 2 seconds
 - [ ] Video starts playing in < 3 seconds
 - [ ] Memory usage < 150MB during video playback
 - [ ] No ANR (Application Not Responding) errors during testing
@@ -730,18 +572,15 @@ player.addListener(object : Player.Listener {
 ## Dependencies
 
 ### CRITICAL Prerequisite
-- **Phase 0: Repository Reorganization** - MUST be completed before Android development begins
-  - Reorganize repository into monorepo structure
-  - Move web app to `apps/web/`
-  - Create `apps/android/` directory
-  - Update all paths, Docker, CI/CD, documentation
-  - See "Phase 0" section above for complete requirements
+- **Phase 0: Repository Reorganization** — ✅ COMPLETE (merged to main, December 2025)
+  - Monorepo structure is live: `apps/web/`, `apps/android/`, `apps/docs/`
+  - All tests passing, Docker working, CI/CD updated
 
 ### Depends On (Backend Features)
 - **SPEC-002**: Channel Streaming (app consumes `/stream` endpoint)
 - **SPEC-003**: User Authentication (app uses JWT sessions from Better-Auth)
 - **SPEC-005**: Video Transcoding (app falls back to HLS when needed)
-- **SPEC-012**: Channel Favorites (app displays favorites in WebView)
+- **SPEC-012**: Channel Favorites (app displays favorites in native channel list)
 - **NEW**: HD Homey 1.1.0 device pairing backend (must be implemented)
   - `/api/auth/device/code` - Generate device pairing codes
   - `/api/auth/device/poll` - Poll for authorization status
@@ -804,11 +643,12 @@ hd-homey/ (monorepo root)
 **Key Relationships**:
 - Android app (`apps/android/`) is **completely independent** from web app
 - No shared code between Kotlin (Android) and TypeScript (web)
-- Android loads web UI via HTTP at runtime (WebView → deployed web app)
-- Android calls web API endpoints for auth, streaming, device pairing
+- Android calls web API endpoints for auth, channel lineup, streaming, and device pairing (no WebView)
 - Build systems are separate: Gradle (Android) vs npm (web)
 
 ### High-Level Architecture
+
+> **Note**: Phase 1 used a simplified Repository Pattern (no ViewModels). Phase 2 introduces full MVVM. There is **no WebView** in the channel browsing flow — the channel list is a native RecyclerView.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -817,25 +657,30 @@ hd-homey/ (monorepo root)
 │  ┌───────────────────────────────────────────────────┐  │
 │  │          MainActivity (Single Activity)           │  │
 │  │                                                   │  │
-│  │  Fragments:                                       │  │
-│  │  - ServerSetupFragment (first launch)            │  │
-│  │  - AuthenticationFragment (pairing/login)        │  │
-│  │  - ChannelBrowserFragment (WebView container)    │  │
-│  │  - PlayerFragment (Media3 video player)          │  │
+│  │  Phase 1 Fragments (complete):                   │  │
+│  │  - ServerListFragment (server management)        │  │
+│  │  - AddServerFragment (add/edit server)           │  │
+│  │  - AuthenticationFragment (device pairing/login) │  │
+│  │  - SuccessFragment (post-auth confirmation)      │  │
+│  │                                                   │  │
+│  │  Phase 2 Fragments (to implement):               │  │
+│  │  - ChannelListFragment (RecyclerView, ViewModel) │  │
+│  │  - PlayerActivity (full-screen Media3 player)    │  │
 │  └───────────────────────────────────────────────────┘  │
-│                      ↕                                  │
+│                      ↕ ViewModels + Use Cases           │
 │  ┌───────────────────────────────────────────────────┐  │
-│  │           WebView (HD Homey Web UI)              │  │
-│  │  - Loads: https://hd-homey.local/                │  │
-│  │  - Shows: Channel list, favorites, search        │  │
-│  │  - Injects: D-pad CSS, JavaScript bridge         │  │
+│  │         Repository Layer (Phase 2)               │  │
+│  │  - ChannelRepository (fetches channel lineup)    │  │
+│  │  - ServerRepository (manages saved servers)      │  │
+│  │  - StreamRepository (generates stream URLs)      │  │
 │  └───────────────────────────────────────────────────┘  │
-│          ↕ JavaScript Bridge (VideoPlayerBridge)        │
+│                      ↕ HTTPS/HTTP (Cookie auth)         │
 │  ┌───────────────────────────────────────────────────┐  │
-│  │       AndroidX Media3 Player (Native)            │  │
+│  │       AndroidX Media3 ExoPlayer (Native)         │  │
+│  │  - Launched via PlayerActivity (not a Fragment)  │  │
 │  │  - Plays: MPEG-2 TS or HLS                       │  │
 │  │  - Controls: Play/Pause/Seek                     │  │
-│  │  - Fullscreen video playback                     │  │
+│  │  - Called directly from ViewModel (no JS bridge) │  │
 │  └───────────────────────────────────────────────────┘  │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
@@ -845,127 +690,78 @@ hd-homey/ (monorepo root)
 │  - /api/auth/device/code (device pairing)              │
 │  - /api/auth/device/poll (pairing status)              │
 │  - /pair (pairing web page)                            │
+│  - /api/lineup.json (channel list)                     │
 │  - /tuners/[id]/channel/[channel_id]/stream (MPEG-2)   │
 │  - /api/transcode/.../playlist.m3u8 (HLS fallback)     │
-│  - / (main web UI served to WebView)                   │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Key Components
 
+#### Phase 1 Components (Complete)
+
 #### 1. MainActivity (Single Activity Pattern)
-- Hosts all fragments
-- Manages navigation between setup → auth → browsing → player
+- Hosts all fragments via Navigation Component
+- Manages navigation between setup → auth → server list → channel list → player
 - Handles device type detection (TV/tablet/phone)
-- Manages Android TV focus handling
+- Manages Android TV D-pad focus handling
 
-#### 2. ServerSetupFragment
-- Attempts mDNS discovery on first launch
-- Shows manual URL entry if discovery fails
-- Validates server connectivity
-- Stores server URL in encrypted SharedPreferences
+#### 2. ServerListFragment
+- Displays saved HD Homey servers
+- Add/edit/delete server management
+- Active server selection
+- Stores server data in encrypted SharedPreferences
 
-#### 3. AuthenticationFragment
+#### 3. AddServerFragment
+- Manual server URL entry and validation
+- Server connectivity check
+- Edit existing server configuration
+
+#### 4. AuthenticationFragment
 - Displays pairing options (QR/device code/username-password)
 - Generates QR code locally using ZXing
 - Polls backend for device code authorization
 - Handles username/password login as fallback
-- Stores JWT token in Android Keystore
+- Stores session token in Android Keystore / encrypted SharedPreferences
 
-#### 4. ChannelBrowserFragment
-- Hosts WebView loading HD Homey web UI
-- Injects CSS for D-pad focus styling
-- Registers JavaScript bridge for video playback
-- Handles WebView lifecycle (pause/resume)
+#### 5. SuccessFragment
+- Post-authentication confirmation screen
+- Transitions user to server/channel list
 
-#### 5. PlayerFragment
-- Full-screen Media3 ExoPlayer instance
-- Receives stream URL via navigation arguments
-- Tries MPEG-2 first, falls back to HLS on error
+#### Phase 2 Components (To Implement)
+
+#### 6. ChannelListFragment (Phase 2)
+- Native RecyclerView displaying channel lineup (not a WebView)
+- Bound to ChannelListViewModel for state management
+- D-pad navigable rows; touch support on phone/tablet
+- Channel metadata: name, number, logo (Coil for image loading)
+- Favorites and hidden channel filtering
+
+#### 7. ChannelListViewModel (Phase 2)
+- Fetches channel lineup via ChannelRepository
+- Exposes UI state (loading, error, channel list) as StateFlow
+- Handles channel selection → triggers player launch
+- Manages favorites state
+
+#### 8. PlayerActivity (Phase 2)
+- Separate Activity for full-screen Media3 ExoPlayer playback
+- Receives stream URL and channel metadata via Intent extras
+- Tries MPEG-2 first; falls back to HLS on decoder error
 - Provides standard video controls (play/pause/seek)
-- Returns to browser on back button
-
-#### 6. JavaScript Bridge (VideoPlayerBridge)
-```kotlin
-class VideoPlayerBridge(private val activity: MainActivity) {
-    @JavascriptInterface
-    fun playVideo(streamUrl: String, channelName: String, channelId: Int) {
-        // Validate inputs
-        if (!streamUrl.startsWith("http")) return
-        
-        // Navigate to player fragment
-        activity.runOnUiThread {
-            val args = Bundle().apply {
-                putString("streamUrl", streamUrl)
-                putString("channelName", channelName)
-                putInt("channelId", channelId)
-            }
-            activity.navigateToPlayer(args)
-        }
-    }
-    
-    @JavascriptInterface
-    fun getDeviceType(): String {
-        // Returns: "tv", "tablet", or "phone"
-        return when {
-            activity.packageManager.hasSystemFeature("android.software.leanback") -> "tv"
-            activity.resources.configuration.isLayoutSizeAtLeast(Configuration.SCREENLAYOUT_SIZE_LARGE) -> "tablet"
-            else -> "phone"
-        }
-    }
-}
-```
-
-### WebView Integration
-
-#### Injected JavaScript (for HD Homey web UI)
-```javascript
-// Detect Android app environment
-window.isAndroidApp = typeof AndroidApp !== 'undefined';
-window.deviceType = AndroidApp?.getDeviceType() || 'unknown';
-
-// Override "Watch" button behavior
-if (window.isAndroidApp) {
-    document.addEventListener('click', (e) => {
-        const watchButton = e.target.closest('[data-watch-channel]');
-        if (watchButton) {
-            e.preventDefault();
-            const channelId = watchButton.dataset.channelId;
-            const channelName = watchButton.dataset.channelName;
-            const streamUrl = watchButton.dataset.streamUrl;
-            
-            // Call native Android bridge
-            AndroidApp.playVideo(streamUrl, channelName, parseInt(channelId));
-        }
-    });
-}
-
-// Add D-pad navigation CSS
-if (window.deviceType === 'tv') {
-    const style = document.createElement('style');
-    style.textContent = `
-        *:focus {
-            outline: 3px solid #007bff;
-            outline-offset: 2px;
-        }
-        button:focus, a:focus {
-            background-color: rgba(0, 123, 255, 0.1);
-        }
-    `;
-    document.head.appendChild(style);
-}
-```
+- Returns to ChannelListFragment on back button
 
 ### Video Playback Flow
 
 ```
-User clicks "Watch" in WebView
+User selects channel in native RecyclerView
        ↓
-JavaScript Bridge receives playVideo(streamUrl, ...)
+ChannelListViewModel handles selection event
        ↓
-MainActivity navigates to PlayerFragment
+StreamRepository generates HMAC stream token via API
        ↓
-PlayerFragment creates Media3 ExoPlayer
+PlayerActivity launched with stream URL as Intent extra
+       ↓
+PlayerActivity creates Media3 ExoPlayer
        ↓
 Try primary: streamUrl = /tuners/1/channel/42/stream?token=XXX (MPEG-2)
        ↓
@@ -1030,17 +826,16 @@ fun detectDeviceType(context: Context): DeviceType {
    Server: { status: "pending" }
    Server: { status: "authorized", token: "jwt-token", user: {...} }
 
-5. App stores JWT token in Android Keystore
-   Navigates to ChannelBrowserFragment
+5. App stores session token in encrypted SharedPreferences
+   Navigates to ChannelListFragment (Phase 2) or ServerListFragment (Phase 1)
 ```
 
 ## Distribution & Release Strategy
 
-### Phase 0: Repository Reorganization (Prerequisite)
-- **Timeline**: 1-2 days (before any Android development)
-- **Deliverable**: Monorepo structure with `apps/android/` directory ready
-- **Status Gate**: All tests passing, Docker working, CI/CD updated
-- **See**: "Phase 0" section above for complete requirements
+### Phase 0: Repository Reorganization — ✅ COMPLETE
+- **Timeline**: Completed December 2025
+- **Deliverable**: Monorepo structure with `apps/android/` directory — live on `main`
+- **Status**: All tests passing, Docker working, CI/CD updated
 
 ### Phase 1: Alpha Testing (v0.1-alpha)
 - **Distribution**: GitHub Releases (APK download)
@@ -1087,25 +882,27 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ## Technical Decisions & Rationale
 
-### Why Hybrid WebView + Native Video?
-**Decision**: Use WebView for UI, native Media3 player for video
+### Why Fully Native Architecture (Not WebView)?
+**Decision**: Use native XML layouts, RecyclerView, and MVVM — no WebView for channel browsing
+
+> **v1.4 Note**: The original spec proposed a WebView-hybrid approach. Phase 1 implementation chose fully native fragments instead, and Phase 2 continues that decision with MVVM + RecyclerView. The WebView approach was abandoned before any code was written.
 
 **Alternatives Considered**:
-- Fully native UI (Jetpack Compose or XML layouts)
-- Fully web-based (PWA-style)
-- React Native
+- WebView loading HD Homey web UI (original proposal — not implemented)
+- Jetpack Compose (deferred; XML layouts are simpler for TV D-pad support)
+- React Native (rejected — unnecessary complexity)
 
 **Rationale**:
-- ✅ Reuses HD Homey's existing responsive web UI (zero duplication)
-- ✅ Native video player provides better performance and codec support
-- ✅ Simplest architecture (minimal Android-specific code)
-- ✅ UI updates automatically when HD Homey web app updates
-- ✅ Aligns with constitution's "Simplicity First" principle
+- ✅ Native RecyclerView provides significantly better D-pad navigation and focus management
+- ✅ Native UI gives precise control over TV 10-foot experience
+- ✅ No JavaScript bridge security concerns
+- ✅ Better performance without WebView overhead
+- ✅ MVVM with ViewModels is the standard Android architecture pattern
+- ✅ Aligns with constitution's "Simplicity First" and "Code Quality" principles
 
 **Tradeoffs**:
-- ❌ WebView has some performance overhead vs native UI
-- ❌ D-pad navigation requires CSS/JS injection
-- ✅ Acceptable: Most UI interactions are browsing, not real-time (video is native anyway)
+- ❌ UI does not automatically pick up web app UI changes
+- ✅ Acceptable: Android TV UX requirements differ fundamentally from web UI anyway
 
 ### Why AndroidX Media3 instead of deprecated ExoPlayer?
 **Decision**: Use Media3 1.9.0+ for video playback
@@ -1159,7 +956,7 @@ fun detectDeviceType(context: Context): DeviceType {
 
 **Rationale**:
 - ✅ One codebase = less maintenance
-- ✅ WebView UI is already responsive (works on any screen size)
+- ✅ Native layouts adapt to screen size via ConstraintLayout and resource qualifiers
 - ✅ Video player is device-agnostic
 - ✅ Single Play Store listing (better discoverability)
 - ✅ Aligns with "Simplicity First" - don't maintain two apps
@@ -1179,7 +976,7 @@ fun detectDeviceType(context: Context): DeviceType {
 - ✅ Covers ~95% of Android devices (as of 2024)
 - ✅ Media3 supports API 21+, so 28 is safe
 - ✅ Most Android TV devices from 2018+ run Android 9+
-- ✅ Avoids legacy WebView issues in Android 7-8
+- ✅ Avoids legacy Android security and API issues in Android 7-8
 - ✅ Balances compatibility with modern APIs
 
 ## Open Questions
@@ -1252,6 +1049,25 @@ fun detectDeviceType(context: Context): DeviceType {
 ---
 
 ## Specification Change Log
+
+### v1.4 - Pre-Phase 2 Spec Audit (2026-06-23)
+**Status Update**: Pre-implementation audit resolved spec/plan inconsistencies.
+
+**Changes Made**:
+- Corrected architecture description from WebView-hybrid to native MVVM
+- Updated Kotlin version from 2.2.21+ → 2.1.0 (matches actual implementation)
+- Updated Target SDK from 34 → 35 (matches actual build.gradle.kts)
+- Updated Constitution to remove "Mobile Applications" out-of-scope conflict (now "iOS Applications")
+- Condensed Phase 0 (Repository Reorganization) section — complete, replaced 160-line requirements with brief completion note
+- Noted cookie-based auth requirement (backend uses Better-Auth cookies, not Bearer tokens); references `specs/013-android-app-phase2/WHY-COOKIE-AUTH.md`
+- Added Kotlinx Coroutines 1.9.0 to Key Libraries
+- Updated FR-002, FR-004, FR-023 to remove WebView/JS bridge references
+- Updated NFR-011, NFR-012, NFR-016 to remove WebView-specific requirements
+- Replaced "WebView Security" section with "Network Security" section
+- Updated "WebView Crashes" edge case to "Player Crashes"
+- Updated Key Components section: Phase 1 native fragments (ServerList, AddServer, Authentication, Success), Phase 2 MVVM components (ChannelListFragment, ViewModel, PlayerActivity)
+- Updated Technical Decisions: replaced "Why Hybrid WebView?" with "Why Fully Native Architecture?"
+- Updated Dependencies section: Phase 0 marked complete, SPEC-012 no longer references WebView
 
 ### v1.3 - Phase 1 Merged, Phase 2 Ready (2025-12-14)
 **Status Update**: Phase 1 complete, merged to main, and Phase 2 directory structure created.
@@ -1329,6 +1145,6 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ---
 
-**Version**: 1.3 | **Created**: 2025-12-07 | **Last Updated**: 2025-12-14
+**Version**: 1.4 | **Created**: 2025-12-07 | **Last Updated**: 2026-06-23
 
-*Phase 1 merged to main! Phase 2 (channel browsing & streaming) ready to begin on branch `013-android-app-phase2`.*
+*Phase 1 merged to main! Phase 2 (channel browsing & streaming) ready to begin on branch `013-android-app-phase2`. Architecture: fully native MVVM — no WebView.*
