@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -63,6 +64,15 @@ class ChannelListFragment : Fragment() {
             viewModel.retryLoad()
         }
 
+        // Setup refresh button — reloads channels from the server
+        view.findViewById<View>(R.id.refresh_button)?.setOnClickListener {
+            if (tunerId > 0) {
+                viewModel.loadChannels(tunerId)
+            } else {
+                viewModel.loadChannels()  // auto-detect tuner
+            }
+        }
+
         // Collect UI state safely within the STARTED lifecycle
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -72,9 +82,11 @@ class ChannelListFragment : Fragment() {
             }
         }
 
-        // Kick off channel loading — no-op if tunerId is invalid
+        // Kick off channel loading — auto-detect tuner if no ID provided
         if (tunerId > 0) {
             viewModel.loadChannels(tunerId)
+        } else {
+            viewModel.loadChannels()  // auto-detect first available tuner
         }
     }
 
@@ -102,6 +114,9 @@ class ChannelListFragment : Fragment() {
                 errorState.visibility = View.GONE
                 emptyState.visibility = View.GONE
                 loadingState.visibility = View.VISIBLE
+                // Start shimmer animation on the loading state container
+                val shimmerAnim = AnimationUtils.loadAnimation(requireContext(), R.anim.shimmer)
+                loadingState.startAnimation(shimmerAnim)
             }
 
             is ChannelListUiState.Success -> {
