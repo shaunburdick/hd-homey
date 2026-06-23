@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  bg_player_controls.xml
+  Semi-transparent dark background for the player controls overlay.
+  Gradient fades from opaque dark at top/bottom to transparent in the middle
+  so the video content remains legible underneath the controls.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#B3000000" />
+    <corners android:radius="8dp" />
+</shape>

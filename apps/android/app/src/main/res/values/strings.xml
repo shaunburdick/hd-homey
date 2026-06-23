@@ -85,4 +85,14 @@
     <string name="player_error_icon_description">Playback error</string>
     <string name="player_error_message_description">Error message</string>
     <string name="player_retry_description">Retry loading stream</string>
+
+    <!-- Player controls overlay (player_controls.xml / PlayerControlsView) -->
+    <string name="player_controls_back_description">Exit player</string>
+    <string name="player_controls_play_pause_description">Play or pause</string>
+
+    <!-- Confirmation dialog when leaving during active playback -->
+    <string name="player_exit_dialog_title">Stop Watching?</string>
+    <string name="player_exit_dialog_message">Are you sure you want to stop watching?</string>
+    <string name="player_exit_dialog_yes">Yes</string>
+    <string name="player_exit_dialog_no">No</string>
 </resources>

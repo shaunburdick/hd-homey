@@ -49,12 +49,20 @@
             </intent-filter>
         </activity>
 
-        <!-- Player Activity (Phase 2) -->
+        <!-- Player Activity (Phase 2)
+             supportsPictureInPicture — enables PiP mode when user presses Home during playback
+             resizeableActivity       — required for PiP on Android 7.0+ (API 24+)
+             configChanges            — includes "smallestScreenSize|screenSize|screenLayout" so
+                                        onPictureInPictureModeChanged receives the new config
+                                        without restarting the activity
+        -->
         <activity
             android:name="com.hdhomey.app.ui.player.PlayerActivity"
             android:exported="false"
             android:screenOrientation="landscape"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
             android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

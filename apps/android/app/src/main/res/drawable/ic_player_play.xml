@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ic_player_play.xml
+  Vector icon for the play action in the player controls overlay.
+  Sized for the 10-foot UI: large enough to hit from a couch.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/text_primary"
+        android:pathData="M8,5v14l11,-7z" />
+</vector>

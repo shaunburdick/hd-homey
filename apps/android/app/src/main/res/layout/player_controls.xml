@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  player_controls.xml
+  Custom controls overlay for the full-screen video player.
+
+  Designed for a 10-foot UI (Android TV / D-pad navigation):
+  - Large touch/focus targets (≥ 64dp icons + 48dp minimum touch area)
+  - Bold typography at TV-legible sizes
+  - Semi-transparent background so the video shows through
+
+  Layout structure (FrameLayout root — one child LinearLayout centred):
+    ┌─────────────────────────────────────────────────┐
+    │  [←Back]              [Channel #]  [Channel Name]│  ← top bar
+    │                                                  │
+    │            [⏸ Play/Pause]                        │  ← centre row
+    └─────────────────────────────────────────────────┘
+
+  D-pad focus chain:
+    back_button → play_pause_button (→ wraps to back_button)
+    nextFocusDown/Up chains are set programmatically in PlayerControlsView
+    so they work regardless of parent view structure.
+
+  View IDs consumed by PlayerControlsView:
+    player_controls_back_button   — back/exit ImageView
+    player_controls_play_pause    — play/pause ImageView
+    player_controls_channel_name  — channel name TextView
+    player_controls_channel_number — channel number TextView
+-->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Semi-transparent curtain covering the full surface.
+         Using a gradient drawable that fades the edges keeps the video
+         visible in the middle panel while still providing contrast for the UI. -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000" />
+
+    <!-- Top bar: back button (left) + channel info (right) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="@dimen/tv_margin_small">
+
+        <!-- Back / Exit button — first D-pad focus target -->
+        <ImageView
+            android:id="@+id/player_controls_back_button"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:contentDescription="@string/player_controls_back_description"
+            android:focusable="true"
+            android:nextFocusRight="@id/player_controls_play_pause"
+            android:nextFocusForward="@id/player_controls_play_pause"
+            android:padding="8dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_player_exit"
+            tools:ignore="KeyboardInaccessibleWidget" />
+
+        <!-- Flexible space — pushes channel info to the right -->
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <!-- Channel number — smaller caption text, slightly dimmed -->
+        <TextView
+            android:id="@+id/player_controls_channel_number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.8"
+            android:contentDescription="@string/player_channel_number_description"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_size_caption"
+            tools:text="7.1" />
+
+        <!-- Small gap between number and name -->
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="match_parent" />
+
+        <!-- Channel name — bold, prominently sized for 10-foot viewing -->
+        <TextView
+            android:id="@+id/player_controls_channel_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/player_channel_name_description"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="PBS HD" />
+
+    </LinearLayout>
+
+    <!-- Centre play/pause button -->
+    <ImageView
+        android:id="@+id/player_controls_play_pause"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center"
+        android:contentDescription="@string/player_controls_play_pause_description"
+        android:focusable="true"
+        android:nextFocusLeft="@id/player_controls_back_button"
+        android:nextFocusRight="@id/player_controls_back_button"
+        android:nextFocusForward="@id/player_controls_back_button"
+        android:padding="8dp"
+        android:scaleType="center"
+        android:src="@drawable/ic_player_play"
+        tools:ignore="KeyboardInaccessibleWidget" />
+
+</FrameLayout>

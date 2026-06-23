@@ -10,20 +10,24 @@
   Layer order (back → front):
     1. PlayerView    — fills entire screen; owns play/pause/seek chrome.
     2. channel_info_overlay — semi-transparent OSD chip, top-left corner.
-    3. player_loading_state — centred spinner; shown while ExoPlayer buffers.
-    4. player_error_state   — centred message + retry; shown on fatal error.
+    3. player_controls — custom D-pad-friendly play/pause + exit overlay.
+    4. player_loading_state — centred spinner; shown while ExoPlayer buffers.
+    5. player_error_state   — centred message + retry; shown on fatal error.
 
   States (mutually exclusive; driven by PlayerActivity / PlayerViewModel):
     • Playing:  player_view visible, overlays gone
     • Loading:  player_loading_state visible (VISIBLE), others gone
     • Error:    player_error_state visible (VISIBLE), loading gone
   Channel info overlay can be shown/hidden independently of the other states.
+  Player controls overlay is shown transiently on user interaction and auto-hides
+  after 3 seconds of inactivity.
 
   View IDs consumed by PlayerActivity:
     player_view            — ExoPlayer PlayerView
     channel_info_overlay   — toggleable OSD wrapper
     player_channel_number  — channel number label
     player_channel_name    — channel name label
+    player_controls        — custom D-pad controls overlay
     player_loading_state   — indeterminate ProgressBar
     player_error_state     — error container
     player_error_message   — error description TextView
@@ -99,7 +103,23 @@
 
     </LinearLayout>
 
-    <!-- ── Layer 3: Loading state — centred progress indicator ───────────────
+    <!-- ── Layer 3: Player controls overlay ─────────────────────────────────
+         Custom D-pad-friendly controls rendered on top of the video surface.
+         Hidden by default; shown transiently on user interaction then auto-
+         hidden after 3 seconds via PlayerActivity's hideControlsRunnable.
+
+         Visibility is driven entirely by PlayerActivity — the view itself
+         does not hide/show itself. When GONE, touch events pass through to
+         the PlayerView below so ExoPlayer's built-in controller still works.
+    -->
+    <com.hdhomey.app.ui.player.PlayerControlsView
+        android:id="@+id/player_controls"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        tools:visibility="gone" />
+
+    <!-- ── Layer 4: Loading state — centred progress indicator ───────────────
          Shown during the initial buffer/prepare phase before playback begins.
          indeterminateTint colours the spinner in the project's accent blue so
          it visually matches the rest of the UI rather than using the system
@@ -116,7 +136,7 @@
         android:visibility="gone"
         tools:visibility="gone" />
 
-    <!-- ── Layer 4: Error state — centred message + retry ────────────────────
+    <!-- ── Layer 5: Error state — centred message + retry ────────────────────
          Shown when ExoPlayer reports a fatal playback error. The message text
          is populated at runtime by PlayerActivity. The retry button is sized
          to meet the 48dp minimum touch/D-pad target and is explicitly focusable
