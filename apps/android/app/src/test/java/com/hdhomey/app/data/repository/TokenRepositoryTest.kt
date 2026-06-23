@@ -7,11 +7,12 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 
 /**
  * Unit tests for [TokenRepository].
@@ -22,11 +23,23 @@ import kotlin.test.assertTrue
  *
  * MockK is used so that no Android runtime (DataStore / Context) is required —
  * the repository is a thin delegation layer and can be exercised on the plain JVM.
+ *
+ * [repository] is initialized in [setUp] rather than as a class-level field because
+ * [TokenRepository.token] is resolved at construction time from [tokenDataStore.token].
+ * The stub must be in place before the repository is created to avoid a [MockKException].
  */
 class TokenRepositoryTest {
 
     private val tokenDataStore: TokenDataStore = mockk()
-    private val repository = TokenRepository(tokenDataStore)
+    private lateinit var repository: TokenRepository
+
+    @Before
+    fun setUp() {
+        // Provide a default stub for the token Flow so that TokenRepository can be
+        // constructed safely — its `token` field is initialised at construction time.
+        every { tokenDataStore.token } returns flowOf(null)
+        repository = TokenRepository(tokenDataStore)
+    }
 
     // ========== token Flow ==========
 

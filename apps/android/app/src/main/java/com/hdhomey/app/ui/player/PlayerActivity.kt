@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -15,7 +16,6 @@ import com.hdhomey.app.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Full-screen video player activity for live TV stream playback.
@@ -31,8 +31,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class PlayerActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var viewModel: PlayerViewModel
+    private val viewModel: PlayerViewModel by viewModels()
 
     private lateinit var playerView: PlayerView
     private lateinit var loadingState: ProgressBar

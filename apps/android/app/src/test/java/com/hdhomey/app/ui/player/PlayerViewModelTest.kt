@@ -104,18 +104,10 @@ class PlayerViewModelTest {
 
             viewModel.loadStream(serverUrl, tunerId, channelId)
 
-            // loadStream resets state to Loading, then transitions to Buffering
-            // after ExoPlayer is prepared. Loading is the re-emitted value
-            // from _uiState.value = PlayerUiState.Loading inside loadStream.
-            val afterReset = awaitItem()
-            assertEquals(PlayerUiState.Loading, afterReset)
-
-            // After the coroutine completes the try-block successfully, the
-            // ViewModel emits Buffering (PlayerEventListener transitions to
-            // Playing when ExoPlayer fires STATE_READY — that is library
-            // behaviour and not exercised here).
-            val buffering = awaitItem()
-            assertEquals(PlayerUiState.Buffering, buffering)
+            // loadStream sets _uiState to Loading, but StateFlow conflates duplicate
+            // values — the state is already Loading so the assignment is a no-op from
+            // the collector's perspective.  The next distinct emission is Buffering.
+            assertEquals(PlayerUiState.Buffering, awaitItem())
         }
     }
 
@@ -134,8 +126,9 @@ class PlayerViewModelTest {
 
             viewModel.loadStream(serverUrl, tunerId, channelId)
 
-            awaitItem() // Loading re-emitted by loadStream before the coroutine runs
-
+            // StateFlow conflates the duplicate Loading emission — loadStream sets
+            // _uiState to Loading but it is already Loading, so it is a no-op.
+            // The next distinct emission is Error from the catch block.
             val errorState = awaitItem()
             assertTrue(errorState is PlayerUiState.Error)
             if (errorState is PlayerUiState.Error) {
@@ -156,8 +149,7 @@ class PlayerViewModelTest {
         viewModel.uiState.test {
             awaitItem() // initial Loading
             viewModel.loadStream(serverUrl, tunerId, channelId)
-            awaitItem() // Loading re-emitted
-
+            // StateFlow conflates the duplicate Loading emission.
             val errorState = awaitItem()
             assertTrue(errorState is PlayerUiState.Error)
             if (errorState is PlayerUiState.Error) {
@@ -232,7 +224,7 @@ class PlayerViewModelTest {
     // ========== retryLoad ==========
 
     @Test
-    fun `retryLoad calls loadStream again with the same parameters`() = runTest {
+    fun `retryLoad calls loadStream again with the same parameters`() = runTest(testDispatcher) {
         coEvery {
             mockUseCase.generateStreamUrl(serverUrl, tunerId, channelId)
         } returns streamUrl
@@ -241,6 +233,11 @@ class PlayerViewModelTest {
 
         viewModel.loadStream(serverUrl, tunerId, channelId)
         viewModel.retryLoad()
+
+        // retryLoad launches a coroutine with an exponential-backoff delay before calling
+        // loadStream again. Advance virtual time so that delay completes and the launched
+        // coroutine runs to completion before verifying the call count.
+        testScheduler.advanceUntilIdle()
 
         // generateStreamUrl should have been invoked twice — once for the
         // original loadStream and once for the retryLoad.
@@ -265,7 +262,7 @@ class PlayerViewModelTest {
     }
 
     @Test
-    fun `retryLoad emits Loading before retrying`() = runTest {
+    fun `retryLoad emits Loading before retrying`() = runTest(testDispatcher) {
         coEvery {
             mockUseCase.generateStreamUrl(serverUrl, tunerId, channelId)
         } throws RuntimeException("First failure") andThen streamUrl
@@ -277,13 +274,14 @@ class PlayerViewModelTest {
 
             // First attempt — fails
             viewModel.loadStream(serverUrl, tunerId, channelId)
-            awaitItem() // Loading (re-emitted by loadStream)
-            val error = awaitItem()
+            // StateFlow conflates the duplicate Loading emission from loadStream.
+            val error = awaitItem()  // Error (next distinct state after Loading)
             assertTrue(error is PlayerUiState.Error)
 
-            // Retry — should reset to Loading before attempting again
+            // Retry — retryLoad sets _uiState to Loading; this IS a distinct change
+            // (from Error → Loading) so StateFlow emits it.
             viewModel.retryLoad()
-            val retryLoading = awaitItem()
+            val retryLoading = awaitItem()  // Loading
             assertEquals(PlayerUiState.Loading, retryLoading)
 
             // Success on second attempt transitions to Buffering

@@ -3,6 +3,7 @@ package com.hdhomey.app.ui.channels
 import app.cash.turbine.test
 import com.hdhomey.app.domain.model.Channel
 import com.hdhomey.app.domain.model.ChannelWithMetadata
+import com.hdhomey.app.data.repository.ChannelRepository
 import com.hdhomey.app.domain.usecase.GetChannelsUseCase
 import com.hdhomey.app.storage.AppPreferences
 import io.mockk.coEvery
@@ -31,6 +32,7 @@ class ChannelListViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private val getChannelsUseCase: GetChannelsUseCase = mockk()
+    private val channelRepository: ChannelRepository = mockk()
     private val appPreferences: AppPreferences = mockk()
 
     @Before
@@ -47,6 +49,7 @@ class ChannelListViewModelTest {
     /** Convenience factory — keeps test bodies focused on behaviour, not construction. */
     private fun createViewModel() = ChannelListViewModel(
         getChannelsUseCase = getChannelsUseCase,
+        channelRepository = channelRepository,
         appPreferences = appPreferences
     )
 
