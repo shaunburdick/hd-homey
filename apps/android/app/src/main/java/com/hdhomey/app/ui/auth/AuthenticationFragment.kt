@@ -18,7 +18,9 @@ import com.hdhomey.app.api.DeviceCodeService
 import com.hdhomey.app.api.HdHomeyApi
 import com.hdhomey.app.api.models.DeviceCodeResponse
 import com.hdhomey.app.data.repository.ServerRepository
+import com.hdhomey.app.data.repository.TokenRepository
 import com.hdhomey.app.storage.AppPreferences
+import com.hdhomey.app.storage.TokenDataStore
 import com.hdhomey.app.util.Constants
 import com.hdhomey.app.util.ErrorHandler
 import kotlinx.coroutines.Job
@@ -51,6 +53,7 @@ class AuthenticationFragment : Fragment() {
     private lateinit var cancelButton: Button
     
     private lateinit var repository: ServerRepository
+    private lateinit var tokenRepository: TokenRepository
     private lateinit var deviceCodeService: DeviceCodeService
     
     private var serverId: String? = null
@@ -91,6 +94,8 @@ class AuthenticationFragment : Fragment() {
         // Initialize repository
         val prefs = AppPreferences.getInstance(requireContext())
         repository = ServerRepository(prefs)
+        val tokenDataStore = TokenDataStore(requireContext())
+        tokenRepository = TokenRepository(tokenDataStore)
         
         // Get serverId from arguments
         serverId = arguments?.getString("serverId")
@@ -303,6 +308,9 @@ class AuthenticationFragment : Fragment() {
             }
             
             Log.d(Constants.Tags.AUTH, "Authentication saved for ${user.username}")
+            
+            // Save token to TokenDataStore so AuthInterceptor can attach it to API requests
+            tokenRepository.saveToken(token)
             
             // Stop polling and countdown
             stopPolling()
