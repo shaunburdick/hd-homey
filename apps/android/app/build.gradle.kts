@@ -142,6 +142,9 @@ dependencies {
     // Security
     implementation(libs.androidx.security.crypto)
 
+    // QR Code generation
+    implementation(libs.zxing.core)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

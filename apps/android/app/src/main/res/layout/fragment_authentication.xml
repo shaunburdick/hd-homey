@@ -54,6 +54,30 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
+        android:id="@+id/text_qr_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tv_margin_medium"
+        android:text="@string/scan_qr_code"
+        android:textSize="@dimen/text_size_body"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/text_pairing_url"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_qr_code"
+        android:layout_width="@dimen/qr_code_size"
+        android:layout_height="@dimen/qr_code_size"
+        android:layout_marginTop="@dimen/tv_margin_small"
+        android:contentDescription="QR code for pairing URL"
+        android:scaleType="fitCenter"
+        app:layout_constraintTop_toBottomOf="@id/text_qr_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
         android:id="@+id/text_countdown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -61,7 +85,7 @@
         android:text=""
         android:textSize="@dimen/text_size_caption"
         android:textColor="@color/text_tertiary"
-        app:layout_constraintTop_toBottomOf="@id/text_pairing_url"
+        app:layout_constraintTop_toBottomOf="@id/image_qr_code"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

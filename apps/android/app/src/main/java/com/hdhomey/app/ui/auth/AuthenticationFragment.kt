@@ -1,5 +1,6 @@
 package com.hdhomey.app.ui.auth
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
@@ -7,9 +8,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.WriterException
+import com.google.zxing.qrcode.QRCodeWriter
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -44,6 +49,7 @@ class AuthenticationFragment : Fragment() {
     private lateinit var codeLabelText: TextView
     private lateinit var deviceCodeText: TextView
     private lateinit var pairingUrlText: TextView
+    private lateinit var qrCodeImage: ImageView
     private lateinit var countdownText: TextView
     private lateinit var statusText: TextView
     private lateinit var loadingIndicator: ProgressBar
@@ -79,6 +85,7 @@ class AuthenticationFragment : Fragment() {
         codeLabelText = view.findViewById(R.id.text_code_label)
         deviceCodeText = view.findViewById(R.id.text_device_code)
         pairingUrlText = view.findViewById(R.id.text_pairing_url)
+        qrCodeImage = view.findViewById(R.id.image_qr_code)
         countdownText = view.findViewById(R.id.text_countdown)
         statusText = view.findViewById(R.id.text_status)
         loadingIndicator = view.findViewById(R.id.loading_indicator)
@@ -191,6 +198,15 @@ class AuthenticationFragment : Fragment() {
             response.pairingUrl
         )
         pairingUrlText.text = pairingInstructions
+        
+        // Generate QR code from pairing URL
+        try {
+            val qrBitmap = generateQrCode(response.pairingUrl, 600) // 600px for sharp QR on TV
+            qrCodeImage.setImageBitmap(qrBitmap)
+        } catch (e: WriterException) {
+            Log.w(Constants.Tags.AUTH, "Failed to generate QR code", e)
+            // QR code silently fails — user can still use the URL
+        }
     }
     
     /**
@@ -449,6 +465,33 @@ class AuthenticationFragment : Fragment() {
     private fun stopPolling() {
         pollingJob?.cancel()
         pollingJob = null
+    }
+    
+    /**
+     * Generates a QR code bitmap from the given text content.
+     *
+     * Uses ZXing's [QRCodeWriter] to encode the content as a square QR code.
+     * The resulting bitmap has white background and black modules (high contrast
+     * for dark TV backgrounds).
+     *
+     * @param content The text to encode (the pairing URL).
+     * @param sizePx The width/height of the resulting bitmap in pixels.
+     *   Use 2× the display size for sharp rendering (e.g., 600px for a 300dp
+     *   ImageView on a ~2x density TV screen).
+     * @return A [Bitmap] containing the QR code.
+     * @throws WriterException If ZXing fails to encode the content.
+     */
+    private fun generateQrCode(content: String, sizePx: Int): Bitmap {
+        val writer = QRCodeWriter()
+        val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, sizePx, sizePx)
+        
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.RGB_565)
+        for (x in 0 until sizePx) {
+            for (y in 0 until sizePx) {
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            }
+        }
+        return bitmap
     }
     
     override fun onDestroyView() {
