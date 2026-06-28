@@ -53,6 +53,10 @@
             app:destination="@id/serverListFragment"
             app:popUpTo="@id/serverListFragment"
             app:popUpToInclusive="true" />
+        <!-- Forward navigation to channel browser (tunerId -1 = auto-detect first tuner) -->
+        <action
+            android:id="@+id/action_success_to_channelList"
+            app:destination="@id/channelListFragment" />
     </fragment>
 
     <!-- Channel List Fragment (Phase 2) -->

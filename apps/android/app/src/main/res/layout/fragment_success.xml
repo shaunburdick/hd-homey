@@ -74,6 +74,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Phase 2: Add "View Channels" button here that navigates to channel browser -->
+    <Button
+        android:id="@+id/button_view_channels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tv_margin_medium"
+        android:text="@string/view_channels"
+        android:minWidth="200dp"
+        android:alpha="0"
+        android:focusable="true"
+        android:backgroundTint="@color/hd_homey_blue"
+        app:layout_constraintTop_toBottomOf="@id/button_done"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

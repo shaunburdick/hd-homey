@@ -28,6 +28,7 @@ class SuccessFragment : Fragment() {
     private lateinit var messageText: TextView
     private lateinit var serverInfoText: TextView
     private lateinit var doneButton: Button
+    private lateinit var viewChannelsButton: Button
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,6 +47,7 @@ class SuccessFragment : Fragment() {
         messageText = view.findViewById(R.id.text_message)
         serverInfoText = view.findViewById(R.id.text_server_info)
         doneButton = view.findViewById(R.id.button_done)
+        viewChannelsButton = view.findViewById(R.id.button_view_channels)
         
         // Get arguments
         val serverName = arguments?.getString("serverName") ?: "HD Homey"
@@ -67,6 +69,12 @@ class SuccessFragment : Fragment() {
         // Done button navigates back to server list
         doneButton.setOnClickListener {
             findNavController().navigate(R.id.action_success_to_serverList)
+        }
+        
+        // View Channels button navigates forward to the channel browser.
+        // tunerId defaults to -1, which triggers auto-detection of the first available tuner.
+        viewChannelsButton.setOnClickListener {
+            findNavController().navigate(R.id.action_success_to_channelList)
         }
     }
     
@@ -116,9 +124,16 @@ class SuccessFragment : Fragment() {
             startDelay = stagger * 4
         }
         
+        // View Channels button animation: fade in after doneButton
+        val viewChannelsFade = ObjectAnimator.ofFloat(viewChannelsButton, "alpha", 0f, 1f).apply {
+            this.duration = duration
+            interpolator = DecelerateInterpolator()
+            startDelay = stagger * 5
+        }
+        
         // Play all animations together
         AnimatorSet().apply {
-            playTogether(iconScale, titleFade, messageFade, serverInfoFade, buttonFade)
+            playTogether(iconScale, titleFade, messageFade, serverInfoFade, buttonFade, viewChannelsFade)
             start()
         }
     }
