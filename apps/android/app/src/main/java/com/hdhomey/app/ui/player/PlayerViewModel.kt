@@ -143,9 +143,8 @@ class PlayerViewModel @Inject constructor(
                 // Retrieve the active server (with JWT) from CurrentServerProvider
                 val server = currentServerProvider.getActiveServer()
                 if (server == null) {
-                    _uiState.value = PlayerUiState.Error(
-                        message = "No server selected."
-                    )
+                    // Should never happen in production — server must be configured before
+                    // reaching the player. Just return and keep Loading state.
                     return@launch
                 }
 
