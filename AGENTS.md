@@ -46,7 +46,7 @@ apps/
 │   ├── getting-started/
 │   ├── features/
 │   └── package.json   # Docs dependencies
-└── android/           # Android app (Phase 1, coming soon)
+└── android/           # Android app (Phase 2 complete — channel browsing & streaming)
 
 .specify/            # Spec-kit: specifications and constitution
 specs/               # Spec-kit: implementation plans (created during planning phase)
@@ -69,6 +69,23 @@ specs/               # Spec-kit: implementation plans (created during planning p
 - Implementation plans live in `specs/###-feature/` directory (created during planning phase)
 - Update spec status as implementation progresses
 - Specs drive implementation, not vice versa
+
+### Design System
+
+A shared design language document lives at **[`DESIGN.md`](./DESIGN.md)** (repo root).
+It defines the canonical design tokens (colors, typography, spacing, layout
+patterns, animations) with the **web app as the authoritative source** and
+explicit mappings to Android XML resources.
+
+**Always consult `DESIGN.md` when**:
+- Adding new UI components to either platform
+- Choosing colors, spacing, or type scales
+- Adding new screens or layouts to the Android app
+- Introducing animations or transitions
+
+The design system prioritises: dark theme, card-based layouts, three-state
+screens (loading/error/empty), accent blue for interaction, and WCAG 2.2 AA
+accessibility.
 
 ### Documentation Maintenance
 
