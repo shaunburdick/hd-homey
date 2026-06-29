@@ -1,5 +1,6 @@
 package com.hdhomey.app.api.interceptors
 
+import android.util.Log
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -23,6 +24,7 @@ class AuthCookieInterceptor(
 ) : Interceptor {
 
     companion object {
+        private const val TAG = "AuthCookieInterceptor"
         private const val COOKIE_HEADER = "Cookie"
         private const val SESSION_COOKIE_NAME = "better-auth.session_token"
     }
@@ -38,13 +40,23 @@ class AuthCookieInterceptor(
         val originalRequest = chain.request()
 
         if (jwt.isNullOrBlank()) {
+            Log.w(TAG, "No JWT available — cookie NOT added for ${debugUrl(originalRequest.url)}")
             return chain.proceed(originalRequest)
         }
+
+        Log.d(TAG, "Adding auth cookie for ${debugUrl(originalRequest.url)} (jwt length=${jwt.length})")
 
         val authenticatedRequest = originalRequest.newBuilder()
             .header(COOKIE_HEADER, "$SESSION_COOKIE_NAME=$jwt")
             .build()
 
         return chain.proceed(authenticatedRequest)
+    }
+
+    /**
+     * Returns a sanitised URL string for logging (scheme + host + path only).
+     */
+    private fun debugUrl(url: okhttp3.HttpUrl): String {
+        return url.newBuilder().query(null).build().toString()
     }
 }
