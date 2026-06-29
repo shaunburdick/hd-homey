@@ -4,7 +4,7 @@
 **Created**: 2025-12-07  
 **Status**: Implemented (Phase 2) | 2026-06-29  
 **Owner**: HD Homey Core Team  
-**Version**: 1.4  
+**Version**: 1.5  
 **Dependencies**: Phase 0 (Repository Reorganization) - ✅ COMPLETE
 
 ## Overview
@@ -979,6 +979,123 @@ fun detectDeviceType(context: Context): DeviceType {
 - ✅ Avoids legacy Android security and API issues in Android 7-8
 - ✅ Balances compatibility with modern APIs
 
+---
+
+## Design Alignment
+
+**Context**: The project design language is canonicalized in `DESIGN.md` (see
+`./DESIGN.md`), with the web app as the authoritative source for color tokens.
+The Android app's `colors.xml` currently diverges from the web values on
+multiple tokens. This section documents the required alignment to bring Android
+in line with the canonical design system.
+
+### Aligned Color Requirements
+
+- **FR-029**: Android `hd_homey_blue` MUST change from `#007bff` to `#2563eb` to
+  match web `--color-accent`
+- **FR-030**: Android `hd_homey_blue_dark` MUST change from `#0056b3` to
+  `#1d4ed8` to match web `--color-accent-hover`
+- **FR-031**: Android `hd_homey_accent` (`#00bcd4`) MUST be removed — it has no
+  web equivalent and is a leftover from the default Material Design template
+- **FR-032**: Android `text_primary` MUST change from `#ffffff` to `#f0f0f0` to
+  match web `--color-text-primary`
+- **FR-033**: Android `text_tertiary` MUST change from `#808080` to `#909090` to
+  match web `--color-text-tertiary`
+- **FR-034**: Android `surface_dark_elevated` MUST change from `#353535` to
+  `#3a3a3a` to match web `--color-bg-tertiary`
+- **FR-035**: Android `success_green` MUST change from `#4caf50` to `#10b981` to
+  match web `--color-success`
+- **FR-036**: Android `error_red` MUST change from `#f44336` to `#ff5555` to
+  match web `--color-error`
+- **FR-037**: Android `warning_yellow` MUST change from `#ffc107` to `#f59e0b`
+  to match web `--color-warning`
+
+### New Colors to Add
+
+The following color resources are present in the web design language but missing
+from `colors.xml`. They MUST be added to enable feature-parity in UI elements
+(borders, disabled states, semantic backgrounds, info indicators):
+
+- **FR-038**: Android MUST add `color-border` (`#404040`) to match web
+  `--color-border`
+- **FR-039**: Android MUST add `color-border-hover` (`#505050`) to match web
+  `--color-border-hover`
+- **FR-040**: Android MUST add `color-text-disabled` (`#666666`) to match web
+  `--color-text-disabled`
+- **FR-041**: Android MUST add `color-success-bg` (`#064e3b`) to match web
+  success background
+- **FR-042**: Android MUST add `color-error-bg` (`#7f1d1d`) to match web error
+  background
+- **FR-043**: Android MUST add `color-warning-bg` (`#78350f`) to match web
+  warning background
+- **FR-044**: Android MUST add `color-info` (`#3b82f6`) to match web info color
+- **FR-045**: Android MUST add `color-info-bg` (`#1e3a8a`) to match web info
+  background
+
+### Notes on Specific Tokens
+
+- **`text_secondary`**: Android `#b3b3b3` vs web `#b0b0b0` — the 3-hex
+  difference is visually imperceptible on all display types. **No change
+  needed.** ✅
+- **`hd_homey_accent` (teal `#00bcd4`)**: This is a leftover from the default
+  Material Design template (`Theme.AppCompat.Light.DarkActionBar`). It has no
+  equivalent in the HD Homey design language. Must be removed from both
+  `colors.xml` and `themes.xml`.
+- **`primary_blue`**: Android `#007fbf` — this duplicates the old
+  `hd_homey_blue`. When `hd_homey_blue` is updated to `#2563eb`, `primary_blue`
+  MUST be updated in sync or removed to avoid confusion.
+
+### Affected Files
+
+The following files reference colors that will change and MUST be reviewed and
+updated as part of the alignment:
+
+| File | Colors Referenced |
+|------|-------------------|
+| `res/values/colors.xml` | All colors (source of truth for Android) |
+| `res/values/themes.xml` | `hd_homey_blue`, `hd_homey_blue_dark`, `hd_homey_accent` |
+| `res/layout/fragment_add_server.xml` | `background_dark`, `surface_dark`, `text_primary`, `text_secondary`, `hd_homey_blue` |
+| `res/layout/fragment_server_setup.xml` | `background_dark`, `surface_dark`, `hd_homey_blue` |
+| `res/layout/fragment_server_list.xml` | `background_dark`, `surface_dark`, `surface_dark_elevated`, `text_primary`, `text_secondary` |
+| `res/layout/fragment_channel_list.xml` | `background_dark`, `surface_dark`, `surface_dark_elevated`, `text_primary`, `hd_homey_blue` |
+| `res/layout/fragment_authentication.xml` | `background_dark`, `surface_dark`, `hd_homey_blue`, `text_primary`, `text_secondary` |
+| `res/layout/fragment_success.xml` | `background_dark`, `surface_dark`, `hd_homey_blue`, `success_green` |
+| `res/layout/activity_player.xml` | `background_dark`, `surface_dark`, `text_primary` |
+| `res/layout/player_controls.xml` | `surface_dark`, `text_primary`, `text_secondary` |
+| `res/layout/item_channel.xml` | `surface_dark`, `surface_dark_elevated`, `text_primary`, `text_secondary`, `hd_homey_blue` |
+| `res/layout/item_server.xml` | `surface_dark`, `surface_dark_elevated`, `text_primary`, `text_secondary`, `hd_homey_blue` |
+
+### Acceptance Criteria
+
+**Design alignment is complete when**:
+- [ ] All 9 divergent color values in `colors.xml` match the canonical web
+  values from `DESIGN.md` §1
+- [ ] All 8 missing color resources have been added to `colors.xml`
+- [ ] `hd_homey_accent` (teal `#00bcd4`) has been removed from both
+  `colors.xml` and `themes.xml`
+- [ ] `themes.xml` references to `hd_homey_accent` have been replaced with
+  `hd_homey_blue` where appropriate
+- [ ] `primary_blue` has been updated or removed to match the new
+  `hd_homey_blue` value
+- [ ] All layout files compile without resource-not-found errors
+- [ ] Visual diff shows no unintended color changes on any screen (compare
+  before/after screenshots)
+- [ ] All existing unit tests pass
+- [ ] APK builds successfully (debug and release)
+- [ ] `text_secondary` is confirmed at `#b3b3b3` (no change — verified close
+  enough to web `#b0b0b0`)
+
+### Reference
+
+- **Authoritative source**: `./DESIGN.md` §1 "Color System — Dark Theme"
+- **Web canonical values**: `apps/web/src/app/globals.css` CSS custom properties
+- **Android implementation**: `apps/android/app/src/main/res/values/colors.xml`
+- **Android theme**: `apps/android/app/src/main/res/values/themes.xml`
+- **Constitution alignment**: This section implements the "User Experience
+  Excellence" principle (§II) by ensuring cross-platform visual consistency,
+  and the "Simplicity First" principle (§I) by removing orphaned tokens
+  (`hd_homey_accent`) with no design system purpose.
+
 ## Open Questions
 
 - [x] **Q1**: Should app support multiple HD Homey servers (home + vacation house)?
@@ -1049,6 +1166,26 @@ fun detectDeviceType(context: Context): DeviceType {
 ---
 
 ## Specification Change Log
+
+### v1.5 - Design Alignment Section Added (2026-06-29)
+**Status Update**: Added Design Alignment section documenting Android-to-web color
+divergences, missing color resources, affected files, and acceptance criteria.
+
+**Context**: `DESIGN.md` was created at the repo root to canonicalize the project
+design language. The Android app's `colors.xml` had accumulated divergences from
+the web app's CSS custom properties. This version adds a requirements-driven
+alignment plan.
+
+**Changes Made**:
+- Added §"Design Alignment" section after Technical Decisions & Rationale
+- Added FR-029 through FR-045 documenting all color alignment requirements
+  (9 color value updates + 8 new colors + 1 color removal)
+- Documented all affected files (colors.xml, themes.xml, 10 layout files)
+- Added acceptance criteria checklist for design alignment completion
+- Noted `text_secondary` (`#b3b3b3` vs web `#b0b0b0`) — close enough, no change
+- Noted `hd_homey_accent` (teal `#00bcd4`) — orphaned token, must be removed
+- Linked DESIGN.md as authoritative source for all color tokens
+- Bumped version 1.4 → 1.5
 
 ### v1.4 - Pre-Phase 2 Spec Audit (2026-06-23)
 **Status Update**: Pre-implementation audit resolved spec/plan inconsistencies.
@@ -1145,6 +1282,6 @@ fun detectDeviceType(context: Context): DeviceType {
 
 ---
 
-**Version**: 1.4 | **Created**: 2025-12-07 | **Last Updated**: 2026-06-23
+**Version**: 1.5 | **Created**: 2025-12-07 | **Last Updated**: 2026-06-29
 
 *Phase 1 merged to main! Phase 2 (channel browsing & streaming) ready to begin on branch `013-android-app-phase2`. Architecture: fully native MVVM — no WebView.*
