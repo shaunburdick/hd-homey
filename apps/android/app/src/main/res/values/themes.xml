@@ -4,7 +4,7 @@
     <style name="Base.Theme.HdHomey" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">@color/hd_homey_blue</item>
         <item name="colorPrimaryDark">@color/hd_homey_blue_dark</item>
-        <item name="colorAccent">@color/hd_homey_accent</item>
+        <item name="colorAccent">@color/hd_homey_blue</item>
     </style>
 
     <style name="Theme.HdHomey" parent="Base.Theme.HdHomey" />
@@ -13,7 +13,7 @@
     <style name="Theme.HdHomey.Leanback" parent="Theme.Leanback">
         <item name="android:windowBackground">@color/background_dark</item>
         <item name="android:colorPrimary">@color/hd_homey_blue</item>
-        <item name="android:colorAccent">@color/hd_homey_accent</item>
+        <item name="android:colorAccent">@color/hd_homey_blue</item>
     </style>
 
     <!-- Text styles for 10-foot UI -->
