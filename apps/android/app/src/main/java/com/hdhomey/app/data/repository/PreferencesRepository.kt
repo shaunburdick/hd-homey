@@ -1,8 +1,9 @@
 package com.hdhomey.app.data.repository
 
 import android.util.Log
-import com.hdhomey.app.api.HdHomeyApiService
+import com.hdhomey.app.api.HdHomeyApiServiceProvider
 import com.hdhomey.app.data.mapper.toDomainPreferences
+import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.domain.model.ChannelPreferences
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,11 +16,14 @@ import javax.inject.Singleton
  * network or API error the repository falls back to [ChannelPreferences.EMPTY]
  * so that the channel list remains usable without user-visible failures.
  *
+ * All methods take a [Server] parameter to target the correct server,
+ * and use [HdHomeyApiServiceProvider] to obtain a per-server API client.
+ *
  * All methods are suspend functions for coroutine-based usage.
  */
 @Singleton
 class PreferencesRepository @Inject constructor(
-    private val apiService: HdHomeyApiService
+    private val apiServiceProvider: HdHomeyApiServiceProvider
 ) {
     // In-memory cache: maps tunerId (or -1 for all) to a cached result with timestamp
     private data class CachedPreferences(
@@ -42,12 +46,13 @@ class PreferencesRepository @Inject constructor(
      * On cache miss or API failure, falls back to [ChannelPreferences.EMPTY]
      * so the UI never blocks on a preference-load failure.
      *
+     * @param server The server to query (provides URL and JWT).
      * @param tunerId Optional tuner ID to filter preferences for a specific tuner;
-     *   pass null (the default) to retrieve preferences across all tuners
+     *   pass null (the default) to retrieve preferences across all tuners.
      * @return [ChannelPreferences] with sets of favorite and hidden channel IDs,
-     *   or [ChannelPreferences.EMPTY] on error
+     *   or [ChannelPreferences.EMPTY] on error.
      */
-    suspend fun getPreferences(tunerId: Int? = null): ChannelPreferences {
+    suspend fun getPreferences(server: Server, tunerId: Int? = null): ChannelPreferences {
         // Check cache
         val now = System.currentTimeMillis()
         val cached = cache
@@ -56,6 +61,7 @@ class PreferencesRepository @Inject constructor(
         }
 
         return try {
+            val apiService = apiServiceProvider.getService(server.url, server.jwt)
             val response = apiService.getChannelPreferences(tunerId)
             val preferences = response.data.toDomainPreferences()
             cache = CachedPreferences(preferences, now)

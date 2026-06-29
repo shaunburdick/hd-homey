@@ -1,12 +1,15 @@
 package com.hdhomey.app.data.repository
 
 import com.hdhomey.app.api.HdHomeyApiService
+import com.hdhomey.app.api.HdHomeyApiServiceProvider
 import com.hdhomey.app.api.models.ChannelDto
 import com.hdhomey.app.api.models.DataResponse
 import com.hdhomey.app.api.models.TunerDto
+import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.domain.model.ChannelPreferences
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -24,13 +27,25 @@ import retrofit2.HttpException
  * class. Tests therefore verify end-to-end behaviour (DTO → domain) rather than
  * mocking the mapper in isolation.
  *
- * [HdHomeyApiService] is mocked with MockK. All coroutine tests use [runTest]
+ * [HdHomeyApiServiceProvider] is mocked, and the underlying [HdHomeyApiService]
+ * is mocked via the provider. All coroutine tests use [runTest]
  * with [coEvery]/[coVerify] for suspend functions.
  */
 class ChannelRepositoryTest {
 
-    private val apiService: HdHomeyApiService = mockk()
-    private val repository = ChannelRepository(apiService)
+    private val apiServiceProvider: HdHomeyApiServiceProvider = mockk()
+    private val repository = ChannelRepository(apiServiceProvider)
+
+    /** Test server fixture — used by all tests that need a server reference. */
+    private val testServer = Server(
+        id = "test-server",
+        name = "Test Server",
+        url = "http://192.168.1.100:3000",
+        jwt = "test-jwt-token",
+        expiresAt = System.currentTimeMillis() + 86_400_000L,
+        userRole = "admin",
+        username = "testuser"
+    )
 
     // ========== getChannels ==========
 
@@ -41,9 +56,11 @@ class ChannelRepositoryTest {
             channelDto(id = 10, fkTuner = tunerId, guideNumber = "2.1", guideName = "CBS", hd = 1),
             channelDto(id = 20, fkTuner = tunerId, guideNumber = "4.1", guideName = "NBC", hd = 0)
         )
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(dtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannels(tunerId)
+        val result = repository.getChannels(testServer, tunerId)
 
         assertEquals(2, result.size)
 
@@ -65,9 +82,11 @@ class ChannelRepositoryTest {
     @Test
     fun `getChannels returns empty list when API returns empty data`() = runTest {
         val tunerId = 2
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(emptyList())
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannels(tunerId)
+        val result = repository.getChannels(testServer, tunerId)
 
         assertTrue(result.isEmpty())
         coVerify(exactly = 1) { apiService.getChannels(tunerId) }
@@ -76,11 +95,13 @@ class ChannelRepositoryTest {
     @Test
     fun `getChannels maps hd flag 1 to isHd true`() = runTest {
         val tunerId = 1
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(
             listOf(channelDto(hd = 1))
         )
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannels(tunerId)
+        val result = repository.getChannels(testServer, tunerId)
 
         assertTrue(result.single().isHd)
     }
@@ -88,11 +109,13 @@ class ChannelRepositoryTest {
     @Test
     fun `getChannels maps hd flag 0 to isHd false`() = runTest {
         val tunerId = 1
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(
             listOf(channelDto(hd = 0))
         )
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannels(tunerId)
+        val result = repository.getChannels(testServer, tunerId)
 
         assertFalse(result.single().isHd)
     }
@@ -100,18 +123,22 @@ class ChannelRepositoryTest {
     @Test(expected = RuntimeException::class)
     fun `getChannels propagates network exception`() = runTest {
         val tunerId = 3
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } throws RuntimeException("Network failure")
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        repository.getChannels(tunerId)
+        repository.getChannels(testServer, tunerId)
     }
 
     @Test(expected = HttpException::class)
     fun `getChannels propagates HTTP exception`() = runTest {
         val tunerId = 4
         val httpException = mockk<HttpException>(relaxed = true)
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } throws httpException
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        repository.getChannels(tunerId)
+        repository.getChannels(testServer, tunerId)
     }
 
     // ========== getChannelsWithMetadata ==========
@@ -124,9 +151,11 @@ class ChannelRepositoryTest {
             channelDto(id = 20, fkTuner = tunerId, guideNumber = "4.1", guideName = "NBC")
         )
         val preferences = ChannelPreferences(favorites = setOf(10))
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(dtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannelsWithMetadata(tunerId, preferences)
+        val result = repository.getChannelsWithMetadata(testServer, tunerId, preferences)
 
         assertEquals(2, result.size)
         // Channel 10 is a favorite and should sort first
@@ -147,9 +176,11 @@ class ChannelRepositoryTest {
             channelDto(id = 6, fkTuner = tunerId)
         )
         val preferences = ChannelPreferences(favorites = setOf(5))
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(dtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannelsWithMetadata(tunerId, preferences)
+        val result = repository.getChannelsWithMetadata(testServer, tunerId, preferences)
 
         val channel5 = result.first { it.channel.id == 5 }
         val channel6 = result.first { it.channel.id == 6 }
@@ -165,9 +196,11 @@ class ChannelRepositoryTest {
             channelDto(id = 8, fkTuner = tunerId)
         )
         val preferences = ChannelPreferences(hidden = setOf(7))
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(dtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannelsWithMetadata(tunerId, preferences)
+        val result = repository.getChannelsWithMetadata(testServer, tunerId, preferences)
 
         val channel7 = result.first { it.channel.id == 7 }
         val channel8 = result.first { it.channel.id == 8 }
@@ -179,10 +212,12 @@ class ChannelRepositoryTest {
     fun `getChannelsWithMetadata defaults to EMPTY preferences`() = runTest {
         val tunerId = 1
         val dtos = listOf(channelDto(id = 9, fkTuner = tunerId))
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(dtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
         // Call without explicit preferences — default is ChannelPreferences.EMPTY
-        val result = repository.getChannelsWithMetadata(tunerId)
+        val result = repository.getChannelsWithMetadata(testServer, tunerId)
 
         assertEquals(1, result.size)
         assertFalse(result[0].isFavorite)
@@ -199,9 +234,11 @@ class ChannelRepositoryTest {
         )
         // Mark the last channel (300) as favorite; it should appear first in the result.
         val preferences = ChannelPreferences(favorites = setOf(300))
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(dtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannelsWithMetadata(tunerId, preferences)
+        val result = repository.getChannelsWithMetadata(testServer, tunerId, preferences)
 
         assertEquals(300, result[0].channel.id)
         assertTrue(result[0].isFavorite)
@@ -219,9 +256,11 @@ class ChannelRepositoryTest {
             channelDto(id = 2, fkTuner = tunerId, guideNumber = "2.1"),
             channelDto(id = 3, fkTuner = tunerId, guideNumber = "4.1")
         )
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } returns DataResponse(dtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getChannelsWithMetadata(tunerId, ChannelPreferences.EMPTY)
+        val result = repository.getChannelsWithMetadata(testServer, tunerId, ChannelPreferences.EMPTY)
 
         assertEquals("2.1", result[0].channel.number)
         assertEquals("4.1", result[1].channel.number)
@@ -231,9 +270,11 @@ class ChannelRepositoryTest {
     @Test(expected = RuntimeException::class)
     fun `getChannelsWithMetadata propagates API exception`() = runTest {
         val tunerId = 5
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getChannels(tunerId) } throws RuntimeException("Timeout")
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        repository.getChannelsWithMetadata(tunerId)
+        repository.getChannelsWithMetadata(testServer, tunerId)
     }
 
     // ========== getTuners ==========
@@ -244,9 +285,11 @@ class ChannelRepositoryTest {
             tunerDto(id = 1, name = "Living Room"),
             tunerDto(id = 2, name = "Bedroom")
         )
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getTuners() } returns DataResponse(tunerDtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getTuners()
+        val result = repository.getTuners(testServer)
 
         assertEquals(2, result.size)
         assertEquals(1 to "Living Room", result[0])
@@ -257,9 +300,11 @@ class ChannelRepositoryTest {
 
     @Test
     fun `getTuners returns empty list when API returns empty data`() = runTest {
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getTuners() } returns DataResponse(emptyList())
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getTuners()
+        val result = repository.getTuners(testServer)
 
         assertTrue(result.isEmpty())
         coVerify(exactly = 1) { apiService.getTuners() }
@@ -268,9 +313,11 @@ class ChannelRepositoryTest {
     @Test
     fun `getTuners preserves tuner ID values in pairs`() = runTest {
         val tunerDtos = listOf(tunerDto(id = 42, name = "Garage"))
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getTuners() } returns DataResponse(tunerDtos)
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = repository.getTuners()
+        val result = repository.getTuners(testServer)
 
         assertEquals(42, result.single().first)
         assertEquals("Garage", result.single().second)
@@ -278,17 +325,21 @@ class ChannelRepositoryTest {
 
     @Test(expected = RuntimeException::class)
     fun `getTuners propagates network exception`() = runTest {
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getTuners() } throws RuntimeException("Connection refused")
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        repository.getTuners()
+        repository.getTuners(testServer)
     }
 
     @Test(expected = HttpException::class)
     fun `getTuners propagates HTTP exception`() = runTest {
         val httpException = mockk<HttpException>(relaxed = true)
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getTuners() } throws httpException
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        repository.getTuners()
+        repository.getTuners(testServer)
     }
 
     // ─── helpers ────────────────────────────────────────────────────────────────

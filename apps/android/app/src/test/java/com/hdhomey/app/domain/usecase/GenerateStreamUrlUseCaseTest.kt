@@ -1,11 +1,14 @@
 package com.hdhomey.app.domain.usecase
 
 import com.hdhomey.app.api.HdHomeyApiService
+import com.hdhomey.app.api.HdHomeyApiServiceProvider
 import com.hdhomey.app.api.models.StreamTokenRequest
 import com.hdhomey.app.api.models.StreamTokenResponse
+import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.domain.model.StreamToken
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -26,10 +29,21 @@ import java.time.Instant
  */
 class GenerateStreamUrlUseCaseTest {
 
-    private val apiService: HdHomeyApiService = mockk()
+    private val apiServiceProvider: HdHomeyApiServiceProvider = mockk()
 
     /** System under test — constructed directly (no DI framework needed in unit tests). */
-    private val useCase = GenerateStreamUrlUseCase(apiService)
+    private val useCase = GenerateStreamUrlUseCase(apiServiceProvider)
+
+    /** Test server fixture — provides URL and JWT for API calls. */
+    private val testServer = Server(
+        id = "test-server",
+        name = "Test Server",
+        url = "http://192.168.1.100:3000",
+        jwt = "test-jwt-token",
+        expiresAt = System.currentTimeMillis() + 86_400_000L,
+        userRole = "admin",
+        username = "testuser"
+    )
 
     // ─── Test fixtures ─────────────────────────────────────────────────────────
 
@@ -67,9 +81,11 @@ class GenerateStreamUrlUseCaseTest {
 
     @Test
     fun `invoke returns StreamToken mapped from API response`() = runTest {
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getStreamToken(any()) } returns testResponse
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        val result = useCase(tunerId = 1, channelId = 42)
+        val result = useCase(testServer, tunerId = 1, channelId = 42)
 
         assertEquals(testToken.token, result.token)
         assertEquals(testToken.expiresAt, result.expiresAt)
@@ -79,9 +95,11 @@ class GenerateStreamUrlUseCaseTest {
 
     @Test
     fun `invoke passes correct tunerId and channelId to apiService`() = runTest {
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getStreamToken(any()) } returns testResponse
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        useCase(tunerId = 1, channelId = 42)
+        useCase(testServer, tunerId = 1, channelId = 42)
 
         coVerify(exactly = 1) {
             apiService.getStreamToken(StreamTokenRequest(tunerId = 1, channelId = 42))
@@ -90,9 +108,11 @@ class GenerateStreamUrlUseCaseTest {
 
     @Test(expected = IOException::class)
     fun `invoke propagates exception thrown by apiService`() = runTest {
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getStreamToken(any()) } throws IOException("Network unreachable")
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
-        useCase(tunerId = 1, channelId = 42)
+        useCase(testServer, tunerId = 1, channelId = 42)
     }
 
     // ========== buildStreamUrl ==========
@@ -148,10 +168,12 @@ class GenerateStreamUrlUseCaseTest {
 
     @Test
     fun `generateStreamUrl returns correctly formed URL`() = runTest {
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getStreamToken(any()) } returns testResponse
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
         val url = useCase.generateStreamUrl(
-            serverUrl = "http://192.168.1.100:3000",
+            server = testServer,
             tunerId = 1,
             channelId = 42
         )
@@ -164,10 +186,12 @@ class GenerateStreamUrlUseCaseTest {
 
     @Test
     fun `generateStreamUrl calls apiService exactly once`() = runTest {
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getStreamToken(any()) } returns testResponse
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
         useCase.generateStreamUrl(
-            serverUrl = "http://192.168.1.100:3000",
+            server = testServer,
             tunerId = 1,
             channelId = 42
         )
@@ -177,10 +201,12 @@ class GenerateStreamUrlUseCaseTest {
 
     @Test(expected = IOException::class)
     fun `generateStreamUrl propagates exception from invoke`() = runTest {
+        val apiService: HdHomeyApiService = mockk()
         coEvery { apiService.getStreamToken(any()) } throws IOException("Timeout")
+        every { apiServiceProvider.getService(testServer.url, testServer.jwt) } returns apiService
 
         useCase.generateStreamUrl(
-            serverUrl = "http://192.168.1.100:3000",
+            server = testServer,
             tunerId = 1,
             channelId = 42
         )

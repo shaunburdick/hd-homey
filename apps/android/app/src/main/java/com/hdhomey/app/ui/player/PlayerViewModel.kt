@@ -8,6 +8,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import com.hdhomey.app.data.provider.CurrentServerProvider
 import com.hdhomey.app.domain.usecase.GenerateStreamUrlUseCase
 import com.hdhomey.app.player.PlayerEventListener
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -45,16 +46,22 @@ import javax.inject.Inject
  * during raw playback, [PlayerEventListener] fires the `onDecoderInitFailed` callback and
  * [fallbackToHls] seamlessly switches to the HLS source — the user never sees an error.
  *
- * @property exoPlayer Application-scoped ExoPlayer singleton from MediaModule
- * @property cacheDataSourceFactory Cache-wrapped data source factory from MediaModule
- * @property generateStreamUrlUseCase Use case for requesting HMAC tokens and building stream URLs
+ * The active server is obtained from [CurrentServerProvider] — the [serverUrl] passed into
+ * [loadStream] is used for URL building, while the full [Server] object (with JWT) is retrieved
+ * from the provider for API calls.
+ *
+ * @property exoPlayer Application-scoped ExoPlayer singleton from MediaModule.
+ * @property cacheDataSourceFactory Cache-wrapped data source factory from MediaModule.
+ * @property generateStreamUrlUseCase Use case for requesting HMAC tokens and building stream URLs.
+ * @property currentServerProvider In-memory holder for the currently active server.
  */
 @OptIn(UnstableApi::class)
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val exoPlayer: ExoPlayer,
     private val cacheDataSourceFactory: CacheDataSource.Factory,
-    private val generateStreamUrlUseCase: GenerateStreamUrlUseCase
+    private val generateStreamUrlUseCase: GenerateStreamUrlUseCase,
+    private val currentServerProvider: CurrentServerProvider
 ) : ViewModel() {
 
     /**
@@ -114,9 +121,9 @@ class PlayerViewModel @Inject constructor(
      * [PlayerUiState.Buffering] after the media source is set, or [PlayerUiState.Error]
      * if an exception is thrown before playback starts.
      *
-     * @param serverUrl Base URL of the HD Homey server (e.g., "http://192.168.1.100:3000")
-     * @param tunerId ID of the tuner
-     * @param channelId ID of the channel
+     * @param serverUrl Base URL of the HD Homey server (e.g., "http://192.168.1.100:3000").
+     * @param tunerId ID of the tuner.
+     * @param channelId ID of the channel.
      * @param resetRetry Whether to reset the retry counter to 0. Pass `false` when calling
      *   from [retryLoad] so the accumulated attempt count is preserved for backoff/give-up
      *   logic. Defaults to `true` for normal (non-retry) load requests.
@@ -133,8 +140,17 @@ class PlayerViewModel @Inject constructor(
                 // Remove any stale listener to avoid duplicate callbacks on retry
                 eventListener?.let { exoPlayer.removeListener(it) }
 
+                // Retrieve the active server (with JWT) from CurrentServerProvider
+                val server = currentServerProvider.getActiveServer()
+                if (server == null) {
+                    _uiState.value = PlayerUiState.Error(
+                        message = "No server selected."
+                    )
+                    return@launch
+                }
+
                 // Request ONE token reusable for both stream types — avoids two round-trips
-                val streamToken = generateStreamUrlUseCase.generateStreamToken(tunerId, channelId)
+                val streamToken = generateStreamUrlUseCase.generateStreamToken(server, tunerId, channelId)
                 val hlsUrl = generateStreamUrlUseCase.buildStreamUrl(serverUrl, tunerId, channelId, streamToken)
                 val rawUrl = generateStreamUrlUseCase.buildRawStreamUrl(serverUrl, tunerId, channelId, streamToken)
 
@@ -160,8 +176,8 @@ class PlayerViewModel @Inject constructor(
      * - The raw stream is a continuous live pipe — there are no discrete segments to cache.
      * - We want the decoder-failure signal to arrive quickly; a cache layer could delay it.
      *
-     * @param rawUrl Full raw MPEG-TS proxy URL
-     * @param hlsUrl Full HLS playlist URL (passed through to [fallbackToHls] if needed)
+     * @param rawUrl Full raw MPEG-TS proxy URL.
+     * @param hlsUrl Full HLS playlist URL (passed through to [fallbackToHls] if needed).
      */
     private fun tryRawStream(rawUrl: String, hlsUrl: String) {
         PlayerEventListener(_uiState, onDecoderInitFailed = {
@@ -190,7 +206,7 @@ class PlayerViewModel @Inject constructor(
      * HLS segments are served from disk on replay/retry, reducing re-buffering events on
      * flaky connections.
      *
-     * @param hlsUrl Full HLS playlist URL built from the same token as the raw URL
+     * @param hlsUrl Full HLS playlist URL built from the same token as the raw URL.
      */
     private fun fallbackToHls(hlsUrl: String) {
         streamMode = StreamMode.HLS
@@ -222,7 +238,7 @@ class PlayerViewModel @Inject constructor(
      * reflect the actual player state (in case a race condition means
      * [exoPlayer.isPlaying] disagrees with [play]).
      *
-     * @param play true to resume playback, false to pause
+     * @param play true to resume playback, false to pause.
      */
     fun playPause(play: Boolean) {
         if (play) {

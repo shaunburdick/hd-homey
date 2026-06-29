@@ -15,7 +15,9 @@ import javax.inject.Singleton
  * - Detects 401/403 responses and triggers re-authentication signal
  * - Provides error context for downstream error handling
  *
- * This interceptor runs after AuthInterceptor (adds token) but before
+ * This interceptor runs on the root [OkHttpClient] and applies to all
+ * per-server derived clients. It is the last interceptor in the chain,
+ * running after any per-server [AuthCookieInterceptor] but before
  * the response is delivered to the caller.
  *
  * Phase 2 behavior:

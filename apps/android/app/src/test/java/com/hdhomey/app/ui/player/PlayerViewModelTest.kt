@@ -3,6 +3,8 @@ package com.hdhomey.app.ui.player
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import app.cash.turbine.test
+import com.hdhomey.app.data.model.Server
+import com.hdhomey.app.data.provider.CurrentServerProvider
 import com.hdhomey.app.domain.model.StreamToken
 import com.hdhomey.app.domain.usecase.GenerateStreamUrlUseCase
 import io.mockk.coEvery
@@ -36,20 +38,18 @@ import java.time.Instant
  * [ExoPlayer] and [CacheDataSource.Factory] are mocked with MockK because they cannot be
  * instantiated on the JVM.
  * [GenerateStreamUrlUseCase] is mocked to control token-generation outcomes.
+ * [CurrentServerProvider] is mocked to provide a test server fixture.
  * [UnconfinedTestDispatcher] is installed as the main dispatcher so that
  * [kotlinx.coroutines.CoroutineScope.launch] blocks inside [viewModelScope] run
  * eagerly and synchronously within each [runTest] block.
  *
- * ## Mock strategy after the try-raw-first refactor
+ * ## Mock strategy after the per-server refactor
  *
  * [PlayerViewModel.loadStream] now calls:
- * 1. `generateStreamToken(tunerId, channelId)` — fetches a token (suspend, must be mocked)
- * 2. `buildStreamUrl(...)` — pure function, uses real implementation (no mock needed)
- * 3. `buildRawStreamUrl(...)` — pure function, uses real implementation (no mock needed)
- *
- * Tests mock [GenerateStreamUrlUseCase.generateStreamToken] rather than
- * the old [GenerateStreamUrlUseCase.generateStreamUrl] convenience method.
- * The convenience method is still tested separately and mocked where used.
+ * 1. `currentServerProvider.getActiveServer()` — returns a [Server] with URL and JWT.
+ * 2. `generateStreamToken(server, tunerId, channelId)` — fetches a token (suspend, must be mocked).
+ * 3. `buildStreamUrl(...)` — pure function, uses real implementation (no mock needed).
+ * 4. `buildRawStreamUrl(...)` — pure function, uses real implementation (no mock needed).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -60,12 +60,24 @@ class PlayerViewModelTest {
     private val mockExoPlayer: ExoPlayer = mockk()
     private val mockCacheDataSourceFactory: CacheDataSource.Factory = mockk()
     private val mockUseCase: GenerateStreamUrlUseCase = mockk()
+    private val mockCurrentServerProvider: CurrentServerProvider = mockk()
 
     /** Default test parameters — reused across all stream-loading tests. */
     private val serverUrl = "http://192.168.1.100:3000"
     private val tunerId = 1
     private val channelId = 42
     private val tokenValue = "abc"
+
+    /** Test server fixture returned by [mockCurrentServerProvider]. */
+    private val testServer = Server(
+        id = "test-server",
+        name = "Test Server",
+        url = serverUrl,
+        jwt = "test-jwt-token",
+        expiresAt = System.currentTimeMillis() + 86_400_000L,
+        userRole = "admin",
+        username = "testuser"
+    )
 
     /** A fake [StreamToken] with a far-future expiry so [StreamToken.isValid] returns true. */
     private val fakeToken = StreamToken(
@@ -101,6 +113,9 @@ class PlayerViewModelTest {
         every { mockExoPlayer.clearMediaItems() } just Runs
         every { mockExoPlayer.isPlaying } returns true
 
+        // Stub CurrentServerProvider to return our test server
+        every { mockCurrentServerProvider.getActiveServer() } returns testServer
+
         // Stub the pure URL-builder functions on the use-case mock.
         // These are non-suspend, side-effect-free functions whose implementation
         // is correct by construction — we stub them to return predictable, verifiable
@@ -130,7 +145,8 @@ class PlayerViewModelTest {
     private fun createViewModel() = PlayerViewModel(
         exoPlayer = mockExoPlayer,
         cacheDataSourceFactory = mockCacheDataSourceFactory,
-        generateStreamUrlUseCase = mockUseCase
+        generateStreamUrlUseCase = mockUseCase,
+        currentServerProvider = mockCurrentServerProvider
     )
 
     // ========== Initial state ==========
@@ -146,7 +162,7 @@ class PlayerViewModelTest {
     @Test
     fun `loadStream emits Buffering then Playing on success`() = runTest {
         coEvery {
-            mockUseCase.generateStreamToken(tunerId, channelId)
+            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
         } returns fakeToken
 
         val viewModel = createViewModel()
@@ -169,7 +185,7 @@ class PlayerViewModelTest {
     @Test
     fun `loadStream emits Error when use case throws`() = runTest {
         coEvery {
-            mockUseCase.generateStreamToken(tunerId, channelId)
+            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
         } throws RuntimeException("Network failure")
 
         val viewModel = createViewModel()
@@ -194,7 +210,7 @@ class PlayerViewModelTest {
     @Test
     fun `loadStream Error message falls back when exception has no message`() = runTest {
         coEvery {
-            mockUseCase.generateStreamToken(tunerId, channelId)
+            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
         } throws RuntimeException()
 
         val viewModel = createViewModel()
@@ -216,8 +232,6 @@ class PlayerViewModelTest {
     @Test
     fun `loadStream builds raw URL with correct format`() {
         // buildRawStreamUrl is a pure function — test it directly without coroutines
-        val useCase = mockk<GenerateStreamUrlUseCase>(relaxed = true)
-        // Construct a real use case just for URL-building tests by delegating to the real impl
         val realUseCase = GenerateStreamUrlUseCase(mockk())
 
         val rawUrl = realUseCase.buildRawStreamUrl(serverUrl, tunerId, channelId, fakeToken)
@@ -309,7 +323,7 @@ class PlayerViewModelTest {
     @Test
     fun `releasePlayer removes event listener from exoPlayer`() = runTest {
         coEvery {
-            mockUseCase.generateStreamToken(tunerId, channelId)
+            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
         } returns fakeToken
 
         val viewModel = createViewModel()
@@ -328,7 +342,7 @@ class PlayerViewModelTest {
     @Test
     fun `retryLoad calls loadStream again with the same parameters`() = runTest(testDispatcher) {
         coEvery {
-            mockUseCase.generateStreamToken(tunerId, channelId)
+            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
         } returns fakeToken
 
         val viewModel = createViewModel()
@@ -344,7 +358,7 @@ class PlayerViewModelTest {
         // generateStreamToken should have been invoked twice — once for the
         // original loadStream and once for the retryLoad.
         io.mockk.coVerify(exactly = 2) {
-            mockUseCase.generateStreamToken(tunerId, channelId)
+            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
         }
     }
 
@@ -366,7 +380,7 @@ class PlayerViewModelTest {
     @Test
     fun `retryLoad emits Loading before retrying`() = runTest(testDispatcher) {
         coEvery {
-            mockUseCase.generateStreamToken(tunerId, channelId)
+            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
         } throws RuntimeException("First failure") andThen fakeToken
 
         val viewModel = createViewModel()
@@ -395,7 +409,7 @@ class PlayerViewModelTest {
     @Test
     fun `retryLoad emits non-retryable Error after exhausting MAX_RETRY_ATTEMPTS`() = runTest(testDispatcher) {
         coEvery {
-            mockUseCase.generateStreamToken(tunerId, channelId)
+            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
         } throws RuntimeException("Persistent failure")
 
         val viewModel = createViewModel()

@@ -1,12 +1,14 @@
 package com.hdhomey.app.ui.channels
 
 import app.cash.turbine.test
+import com.hdhomey.app.data.model.Server
+import com.hdhomey.app.data.provider.CurrentServerProvider
 import com.hdhomey.app.domain.model.Channel
 import com.hdhomey.app.domain.model.ChannelWithMetadata
 import com.hdhomey.app.data.repository.ChannelRepository
 import com.hdhomey.app.domain.usecase.GetChannelsUseCase
-import com.hdhomey.app.storage.AppPreferences
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -33,12 +35,26 @@ class ChannelListViewModelTest {
 
     private val getChannelsUseCase: GetChannelsUseCase = mockk()
     private val channelRepository: ChannelRepository = mockk()
-    private val appPreferences: AppPreferences = mockk()
+    private val currentServerProvider: CurrentServerProvider = mockk()
+
+    /** Test server fixture returned by [currentServerProvider.getActiveServer]. */
+    private val testServer = Server(
+        id = "test-server",
+        name = "Test Server",
+        url = "http://192.168.1.100:3000",
+        jwt = "test-jwt-token",
+        expiresAt = System.currentTimeMillis() + 86_400_000L,
+        userRole = "admin",
+        username = "testuser"
+    )
 
     @Before
     fun setUp() {
         // Install test dispatcher so viewModelScope coroutines execute eagerly.
         Dispatchers.setMain(testDispatcher)
+
+        // Default: provide the test server. Individual tests can override.
+        every { currentServerProvider.getActiveServer() } returns testServer
     }
 
     @After
@@ -50,7 +66,7 @@ class ChannelListViewModelTest {
     private fun createViewModel() = ChannelListViewModel(
         getChannelsUseCase = getChannelsUseCase,
         channelRepository = channelRepository,
-        appPreferences = appPreferences
+        currentServerProvider = currentServerProvider
     )
 
     // ========== Initial state ==========
@@ -72,8 +88,8 @@ class ChannelListViewModelTest {
                 isHidden = false
             )
         )
-        coEvery { getChannelsUseCase(1) } returns channels
-        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
+        coEvery { getChannelsUseCase(testServer, 1) } returns channels
+        coEvery { channelRepository.getTuners(testServer) } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -103,8 +119,8 @@ class ChannelListViewModelTest {
                 isHidden = false
             )
         )
-        coEvery { getChannelsUseCase(5) } returns channels
-        coEvery { channelRepository.getTuners() } returns listOf(5 to "Living Room")
+        coEvery { getChannelsUseCase(testServer, 5) } returns channels
+        coEvery { channelRepository.getTuners(testServer) } returns listOf(5 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -130,9 +146,9 @@ class ChannelListViewModelTest {
                 isHidden = false
             )
         )
-        coEvery { getChannelsUseCase(7) } returns channels
+        coEvery { getChannelsUseCase(testServer, 7) } returns channels
         // Tuner 7 is absent from the list returned by the repository.
-        coEvery { channelRepository.getTuners() } returns emptyList()
+        coEvery { channelRepository.getTuners(testServer) } returns emptyList()
 
         val viewModel = createViewModel()
 
@@ -163,8 +179,8 @@ class ChannelListViewModelTest {
                 isHidden = true
             )
         )
-        coEvery { getChannelsUseCase(1) } returns channels
-        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
+        coEvery { getChannelsUseCase(testServer, 1) } returns channels
+        coEvery { channelRepository.getTuners(testServer) } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -187,8 +203,8 @@ class ChannelListViewModelTest {
 
     @Test
     fun `loadChannels emits Empty when no channels returned`() = runTest {
-        coEvery { getChannelsUseCase(1) } returns emptyList()
-        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
+        coEvery { getChannelsUseCase(testServer, 1) } returns emptyList()
+        coEvery { channelRepository.getTuners(testServer) } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -206,7 +222,7 @@ class ChannelListViewModelTest {
 
     @Test
     fun `loadChannels emits Error on exception`() = runTest {
-        coEvery { getChannelsUseCase(1) } throws RuntimeException("Network error")
+        coEvery { getChannelsUseCase(testServer, 1) } throws RuntimeException("Network error")
 
         val viewModel = createViewModel()
 
@@ -226,7 +242,7 @@ class ChannelListViewModelTest {
 
     @Test
     fun `loadChannels Error message falls back when exception has no message`() = runTest {
-        coEvery { getChannelsUseCase(1) } throws RuntimeException()
+        coEvery { getChannelsUseCase(testServer, 1) } throws RuntimeException()
 
         val viewModel = createViewModel()
 
@@ -243,6 +259,26 @@ class ChannelListViewModelTest {
         }
     }
 
+    @Test
+    fun `loadChannels emits Error when no server is active`() = runTest {
+        // Override the default: no active server
+        every { currentServerProvider.getActiveServer() } returns null
+
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            assertEquals(ChannelListUiState.Loading, awaitItem())
+
+            viewModel.loadChannels(1)
+
+            val state = awaitItem()
+            assertTrue(state is ChannelListUiState.Error)
+            if (state is ChannelListUiState.Error) {
+                assertTrue(state.message.contains("No server selected"))
+            }
+        }
+    }
+
     // ========== loadChannels — state transitions ==========
 
     @Test
@@ -254,8 +290,8 @@ class ChannelListViewModelTest {
                 isHidden = false
             )
         )
-        coEvery { getChannelsUseCase(1) } returns channels
-        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
+        coEvery { getChannelsUseCase(testServer, 1) } returns channels
+        coEvery { channelRepository.getTuners(testServer) } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 
@@ -288,8 +324,8 @@ class ChannelListViewModelTest {
                 isHidden = false
             )
         )
-        coEvery { getChannelsUseCase(1) } throws RuntimeException("Network error") andThen channels
-        coEvery { channelRepository.getTuners() } returns listOf(1 to "Living Room")
+        coEvery { getChannelsUseCase(testServer, 1) } throws RuntimeException("Network error") andThen channels
+        coEvery { channelRepository.getTuners(testServer) } returns listOf(1 to "Living Room")
 
         val viewModel = createViewModel()
 

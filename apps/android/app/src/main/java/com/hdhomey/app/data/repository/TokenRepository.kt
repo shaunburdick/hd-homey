@@ -12,8 +12,11 @@ import javax.inject.Singleton
  * session token used for API authentication. Delegates persistence to
  * TokenDataStore (encrypted DataStore).
  *
- * This is the single source of truth for the session token.
- * AuthInterceptor and other consumers should use this class.
+ * **Note:** With the introduction of per-server API clients in Phase 2, the
+ * session token is now stored in each [Server.jwt] field rather than in a
+ * global token store. This repository is retained for backward compatibility
+ * with the device-code authentication flow and may be removed in a future
+ * cleanup.
  */
 @Singleton
 class TokenRepository @Inject constructor(

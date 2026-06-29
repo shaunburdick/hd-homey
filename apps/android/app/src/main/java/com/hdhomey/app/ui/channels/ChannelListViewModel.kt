@@ -2,9 +2,9 @@ package com.hdhomey.app.ui.channels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hdhomey.app.data.provider.CurrentServerProvider
 import com.hdhomey.app.data.repository.ChannelRepository
 import com.hdhomey.app.domain.usecase.GetChannelsUseCase
-import com.hdhomey.app.storage.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,15 +20,18 @@ import javax.inject.Inject
  * and exposes the result as a [StateFlow] of [ChannelListUiState] for the
  * fragment to collect.
  *
- * @property getChannelsUseCase Use case that returns channels with preference metadata
- * @property channelRepository Repository used to resolve tuner IDs when none is specified
- * @property appPreferences Application-scoped preferences (active server, etc.)
+ * The active server is obtained from [CurrentServerProvider] rather than from
+ * [AppPreferences] directly, avoiding blocking reads on the API hot path.
+ *
+ * @property getChannelsUseCase Use case that returns channels with preference metadata.
+ * @property channelRepository Repository used to resolve tuner IDs when none is specified.
+ * @property currentServerProvider In-memory holder for the currently active server.
  */
 @HiltViewModel
 class ChannelListViewModel @Inject constructor(
     private val getChannelsUseCase: GetChannelsUseCase,
     private val channelRepository: ChannelRepository,
-    private val appPreferences: AppPreferences
+    private val currentServerProvider: CurrentServerProvider
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ChannelListUiState>(ChannelListUiState.Loading)
@@ -57,7 +60,7 @@ class ChannelListViewModel @Inject constructor(
      *
      * Called when the fragment starts or when retrying after an error.
      *
-     * @param tunerId ID of the tuner whose channels should be loaded
+     * @param tunerId ID of the tuner whose channels should be loaded.
      */
     fun loadChannels(tunerId: Int) {
         activeTunerId = tunerId
@@ -65,13 +68,21 @@ class ChannelListViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val channels = getChannelsUseCase(tunerId)
+                val server = currentServerProvider.getActiveServer()
+                if (server == null) {
+                    _uiState.value = ChannelListUiState.Error(
+                        message = "No server selected. Please select a server first."
+                    )
+                    return@launch
+                }
+
+                val channels = getChannelsUseCase(server, tunerId)
 
                 // Resolve the human-readable tuner name by finding the matching entry
                 // in the tuner list. If the tuner is not found (e.g. deleted between
                 // calls) we fall back to the synthesised "Tuner N" label so the
                 // toolbar always displays something meaningful.
-                val tuners = channelRepository.getTuners()
+                val tuners = channelRepository.getTuners(server)
                 tunerName = tuners.firstOrNull { it.first == tunerId }?.second
                     ?: "Tuner $tunerId"
 
@@ -110,7 +121,16 @@ class ChannelListViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val tuners = channelRepository.getTuners()
+                val server = currentServerProvider.getActiveServer()
+                if (server == null) {
+                    _uiState.value = ChannelListUiState.Error(
+                        message = "No server selected. Please select a server first.",
+                        isRetryable = true
+                    )
+                    return@launch
+                }
+
+                val tuners = channelRepository.getTuners(server)
                 val firstTuner = tuners.firstOrNull()
                 if (firstTuner == null) {
                     _uiState.value = ChannelListUiState.Error(
@@ -146,10 +166,9 @@ class ChannelListViewModel @Inject constructor(
      * Used by [ChannelListFragment] when navigating to [com.hdhomey.app.ui.player.PlayerActivity]
      * to provide the server URL needed for stream URL generation.
      *
-     * @return The active server's base URL, or `null` if no server is active
+     * @return The active server's base URL, or `null` if no server is active.
      */
     fun getActiveServerUrl(): String? {
-        val activeId = appPreferences.getActiveServerId() ?: return null
-        return appPreferences.loadServers().find { it.id == activeId }?.url
+        return currentServerProvider.getActiveServerUrl()
     }
 }

@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.hdhomey.app.R
 import com.hdhomey.app.data.model.Server
+import com.hdhomey.app.data.provider.CurrentServerProvider
 import com.hdhomey.app.data.repository.ServerRepository
 import com.hdhomey.app.storage.AppPreferences
 import com.hdhomey.app.util.Constants
@@ -44,6 +45,7 @@ class ServerListFragment : Fragment() {
     private lateinit var addServerFab: FloatingActionButton
     private lateinit var adapter: ServerListAdapter
     private lateinit var repository: ServerRepository
+    private lateinit var currentServerProvider: CurrentServerProvider
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreateView(
@@ -57,9 +59,10 @@ class ServerListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize repository
+        // Initialize repository and current server provider
         val prefs = AppPreferences.getInstance(requireContext())
         repository = ServerRepository(prefs)
+        currentServerProvider = CurrentServerProvider(repository)
 
         // Setup views
         recyclerView = view.findViewById(R.id.servers_recycler_view)
@@ -196,8 +199,8 @@ class ServerListFragment : Fragment() {
             }, 300)
         }
 
-        // Set as active server
-        repository.setActiveServer(server.id)
+        // Switch to this server via CurrentServerProvider (updates in-memory + persists)
+        currentServerProvider.switchToServer(server.id)
 
         when {
             server.isAuthenticated() -> {

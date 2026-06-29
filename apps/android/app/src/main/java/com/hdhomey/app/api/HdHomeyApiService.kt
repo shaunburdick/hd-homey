@@ -16,13 +16,13 @@ import retrofit2.http.Query
  * Retrofit service interface for the HD Homey backend API.
  *
  * All endpoints require authentication via cookie-based Better-Auth session.
- * The [com.hdhomey.app.api.interceptors.AuthInterceptor] registered on the
- * [okhttp3.OkHttpClient] automatically injects the
- * `Cookie: better-auth.session_token=<TOKEN>` header — callers do not need
- * to pass credentials explicitly.
+ * Callers obtain the service implementation from [HdHomeyApiServiceProvider],
+ * which creates per-server Retrofit instances with the correct base URL and
+ * a baked-in
+ * [com.hdhomey.app.api.interceptors.AuthCookieInterceptor] —
+ * callers do not need to pass credentials or server URL explicitly.
  *
- * Base URL is supplied by the Retrofit instance configured in NetworkModule and
- * must end with a trailing slash (e.g., `"http://192.168.1.100:3000/"`).
+ * Base URL must end with a trailing slash (e.g., `"http://192.168.1.100:3000/"`).
  * All endpoint paths below are relative (no leading slash) so that Retrofit
  * resolves them correctly against the base URL.
  *
