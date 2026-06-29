@@ -88,6 +88,14 @@ class PlayerActivity : AppCompatActivity() {
         channelNumberText = findViewById(R.id.player_channel_number)
         playerControls = findViewById(R.id.player_controls)
 
+        // Render the initial Loading state synchronously so the spinner is visible
+        // immediately, before the lifecycle coroutine (which starts collecting in
+        // onStart()) has had a chance to observe the UI state.
+        // Without this, if the ViewModel transitions to Error before onStart(),
+        // the collector would skip Loading entirely and the test expecting the
+        // loading spinner to be VISIBLE on launch would fail.
+        renderState(PlayerUiState.Loading)
+
         // Wire the controls callbacks
         playerControls.onPlayPauseClick = ::onPlayPauseToggle
         playerControls.onBackClick = ::handleBackNavigation
