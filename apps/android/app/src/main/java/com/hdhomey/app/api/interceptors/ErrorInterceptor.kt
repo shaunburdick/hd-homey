@@ -59,6 +59,11 @@ class ErrorInterceptor @Inject constructor() : Interceptor {
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {
+        // Reset the auth-failure flag at the start of every request so that a stale
+        // `true` from a previous request on the same thread does not falsely trigger
+        // re-authentication for unrelated API calls.
+        authFailureDetected.set(null)
+
         val request = chain.request()
 
         val response: Response

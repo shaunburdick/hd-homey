@@ -3,6 +3,10 @@ package com.hdhomey.app.ui.player
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import app.cash.turbine.test
+import com.hdhomey.app.api.HdHomeyApiService
+import com.hdhomey.app.api.HdHomeyApiServiceProvider
+import com.hdhomey.app.api.models.StreamTokenRequest
+import com.hdhomey.app.api.models.StreamTokenResponse
 import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.data.provider.CurrentServerProvider
 import com.hdhomey.app.domain.model.StreamToken
@@ -37,19 +41,29 @@ import java.time.Instant
  *
  * [ExoPlayer] and [CacheDataSource.Factory] are mocked with MockK because they cannot be
  * instantiated on the JVM.
- * [GenerateStreamUrlUseCase] is mocked to control token-generation outcomes.
  * [CurrentServerProvider] is mocked to provide a test server fixture.
+ *
+ * ## URL-building strategy
+ *
+ * [PlayerViewModel] receives a real [GenerateStreamUrlUseCase] with a mocked
+ * [HdHomeyApiServiceProvider] so that:
+ * 1. Token generation is controlled via the mock provider's API service
+ * 2. URL building (`buildStreamUrl`, `buildRawStreamUrl`) uses the **real** production code
+ * 3. No stubs duplicate the URL format logic — if the format changes, the tests will break
+ *
  * [UnconfinedTestDispatcher] is installed as the main dispatcher so that
  * [kotlinx.coroutines.CoroutineScope.launch] blocks inside [viewModelScope] run
  * eagerly and synchronously within each [runTest] block.
  *
- * ## Mock strategy after the per-server refactor
+ * ## API call flow in the ViewModel
  *
  * [PlayerViewModel.loadStream] now calls:
  * 1. `currentServerProvider.getActiveServer()` — returns a [Server] with URL and JWT.
- * 2. `generateStreamToken(server, tunerId, channelId)` — fetches a token (suspend, must be mocked).
- * 3. `buildStreamUrl(...)` — pure function, uses real implementation (no mock needed).
- * 4. `buildRawStreamUrl(...)` — pure function, uses real implementation (no mock needed).
+ * 2. `generateStreamUrlUseCase(server, tunerId, channelId)` — fetches token via real
+ *    [GenerateStreamUrlUseCase.invoke] which calls [HdHomeyApiServiceProvider.getService]
+ *    and then [HdHomeyApiService.getStreamToken] on the mocked service.
+ * 3. `useCase.buildStreamUrl(...)` — real production code.
+ * 4. `useCase.buildRawStreamUrl(...)` — real production code.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -59,8 +73,14 @@ class PlayerViewModelTest {
 
     private val mockExoPlayer: ExoPlayer = mockk()
     private val mockCacheDataSourceFactory: CacheDataSource.Factory = mockk()
-    private val mockUseCase: GenerateStreamUrlUseCase = mockk()
+    private val mockApiServiceProvider: HdHomeyApiServiceProvider = mockk()
     private val mockCurrentServerProvider: CurrentServerProvider = mockk()
+
+    /**
+     * Real use case with a mocked provider so that URL building is exercised
+     * via production code while token generation is controlled by mocks.
+     */
+    private val realUseCase = GenerateStreamUrlUseCase(mockApiServiceProvider)
 
     /** Default test parameters — reused across all stream-loading tests. */
     private val serverUrl = "http://192.168.1.100:3000"
@@ -83,6 +103,14 @@ class PlayerViewModelTest {
     private val fakeToken = StreamToken(
         token = tokenValue,
         expiresAt = Instant.now().plusSeconds(900),
+        tunerId = tunerId,
+        channelId = channelId
+    )
+
+    /** DTO returned by the mocked API service — maps to [fakeToken] via the mapper. */
+    private val testResponse = StreamTokenResponse(
+        token = tokenValue,
+        expiresAt = Instant.now().plusSeconds(900).epochSecond,
         tunerId = tunerId,
         channelId = channelId
     )
@@ -116,24 +144,8 @@ class PlayerViewModelTest {
         // Stub CurrentServerProvider to return our test server
         every { mockCurrentServerProvider.getActiveServer() } returns testServer
 
-        // Stub the pure URL-builder functions on the use-case mock.
-        // These are non-suspend, side-effect-free functions whose implementation
-        // is correct by construction — we stub them to return predictable, verifiable
-        // values rather than relying on a real instance in the ViewModel test context.
-        every { mockUseCase.buildStreamUrl(any(), any(), any(), any()) } answers {
-            val url = firstArg<String>()
-            val tId = secondArg<Int>()
-            val cId = thirdArg<Int>()
-            val tok = arg<StreamToken>(3)
-            "${url.trimEnd('/')}/api/transcode/$tId/$cId/playlist.m3u8?token=${tok.token}"
-        }
-        every { mockUseCase.buildRawStreamUrl(any(), any(), any(), any()) } answers {
-            val url = firstArg<String>()
-            val tId = secondArg<Int>()
-            val cId = thirdArg<Int>()
-            val tok = arg<StreamToken>(3)
-            "${url.trimEnd('/')}/tuners/$tId/channel/$cId/stream?token=${tok.token}"
-        }
+        // Note: URL builder methods (buildStreamUrl, buildRawStreamUrl) are NOT stubbed.
+        // They use the real production code via realUseCase.
     }
 
     @After
@@ -145,9 +157,20 @@ class PlayerViewModelTest {
     private fun createViewModel() = PlayerViewModel(
         exoPlayer = mockExoPlayer,
         cacheDataSourceFactory = mockCacheDataSourceFactory,
-        generateStreamUrlUseCase = mockUseCase,
+        generateStreamUrlUseCase = realUseCase,
         currentServerProvider = mockCurrentServerProvider
     )
+
+    /**
+     * Configures the mock API provider and service to return [testResponse] for any
+     * token request. Call this in every test that exercises [loadStream] so the real
+     * [GenerateStreamUrlUseCase.invoke] can complete successfully.
+     */
+    private fun mockTokenGeneration(response: StreamTokenResponse = testResponse) {
+        val mockApiService: HdHomeyApiService = mockk()
+        coEvery { mockApiService.getStreamToken(any()) } returns response
+        every { mockApiServiceProvider.getService(testServer.url, testServer.jwt) } returns mockApiService
+    }
 
     // ========== Initial state ==========
 
@@ -161,9 +184,7 @@ class PlayerViewModelTest {
 
     @Test
     fun `loadStream emits Buffering then Playing on success`() = runTest {
-        coEvery {
-            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
-        } returns fakeToken
+        mockTokenGeneration()
 
         val viewModel = createViewModel()
 
@@ -184,9 +205,9 @@ class PlayerViewModelTest {
 
     @Test
     fun `loadStream emits Error when use case throws`() = runTest {
-        coEvery {
-            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
-        } throws RuntimeException("Network failure")
+        val mockApiService: HdHomeyApiService = mockk()
+        coEvery { mockApiService.getStreamToken(any()) } throws RuntimeException("Network failure")
+        every { mockApiServiceProvider.getService(testServer.url, testServer.jwt) } returns mockApiService
 
         val viewModel = createViewModel()
 
@@ -209,9 +230,9 @@ class PlayerViewModelTest {
 
     @Test
     fun `loadStream Error message falls back when exception has no message`() = runTest {
-        coEvery {
-            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
-        } throws RuntimeException()
+        val mockApiService: HdHomeyApiService = mockk()
+        coEvery { mockApiService.getStreamToken(any()) } throws RuntimeException()
+        every { mockApiServiceProvider.getService(testServer.url, testServer.jwt) } returns mockApiService
 
         val viewModel = createViewModel()
 
@@ -230,29 +251,28 @@ class PlayerViewModelTest {
     // ========== loadStream — raw + HLS URL construction ==========
 
     @Test
-    fun `loadStream builds raw URL with correct format`() {
-        // buildRawStreamUrl is a pure function — test it directly without coroutines
-        val realUseCase = GenerateStreamUrlUseCase(mockk())
+    fun `buildRawStreamUrl produces correct format`() {
+        val otherUseCase = GenerateStreamUrlUseCase(mockk())
 
-        val rawUrl = realUseCase.buildRawStreamUrl(serverUrl, tunerId, channelId, fakeToken)
+        val rawUrl = otherUseCase.buildRawStreamUrl(serverUrl, tunerId, channelId, fakeToken)
 
         assertEquals(expectedRawUrl, rawUrl)
     }
 
     @Test
-    fun `loadStream builds HLS URL with correct format`() {
-        val realUseCase = GenerateStreamUrlUseCase(mockk())
+    fun `buildStreamUrl produces correct HLS format`() {
+        val otherUseCase = GenerateStreamUrlUseCase(mockk())
 
-        val hlsUrl = realUseCase.buildStreamUrl(serverUrl, tunerId, channelId, fakeToken)
+        val hlsUrl = otherUseCase.buildStreamUrl(serverUrl, tunerId, channelId, fakeToken)
 
         assertEquals(expectedHlsUrl, hlsUrl)
     }
 
     @Test
     fun `buildRawStreamUrl trims trailing slash from serverUrl`() {
-        val realUseCase = GenerateStreamUrlUseCase(mockk())
+        val otherUseCase = GenerateStreamUrlUseCase(mockk())
 
-        val rawUrl = realUseCase.buildRawStreamUrl("http://192.168.1.100:3000/", tunerId, channelId, fakeToken)
+        val rawUrl = otherUseCase.buildRawStreamUrl("http://192.168.1.100:3000/", tunerId, channelId, fakeToken)
 
         assertEquals(expectedRawUrl, rawUrl)
     }
@@ -322,9 +342,7 @@ class PlayerViewModelTest {
 
     @Test
     fun `releasePlayer removes event listener from exoPlayer`() = runTest {
-        coEvery {
-            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
-        } returns fakeToken
+        mockTokenGeneration()
 
         val viewModel = createViewModel()
 
@@ -341,9 +359,9 @@ class PlayerViewModelTest {
 
     @Test
     fun `retryLoad calls loadStream again with the same parameters`() = runTest(testDispatcher) {
-        coEvery {
-            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
-        } returns fakeToken
+        val mockApiService: HdHomeyApiService = mockk()
+        coEvery { mockApiService.getStreamToken(any()) } returns testResponse
+        every { mockApiServiceProvider.getService(testServer.url, testServer.jwt) } returns mockApiService
 
         val viewModel = createViewModel()
 
@@ -355,10 +373,10 @@ class PlayerViewModelTest {
         // coroutine runs to completion before verifying the call count.
         testScheduler.advanceUntilIdle()
 
-        // generateStreamToken should have been invoked twice — once for the
+        // getStreamToken should have been invoked twice — once for the
         // original loadStream and once for the retryLoad.
         io.mockk.coVerify(exactly = 2) {
-            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
+            mockApiService.getStreamToken(StreamTokenRequest(tunerId = tunerId, channelId = channelId))
         }
     }
 
@@ -379,9 +397,10 @@ class PlayerViewModelTest {
 
     @Test
     fun `retryLoad emits Loading before retrying`() = runTest(testDispatcher) {
-        coEvery {
-            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
-        } throws RuntimeException("First failure") andThen fakeToken
+        // First call throws; second call succeeds
+        val mockApiService: HdHomeyApiService = mockk()
+        coEvery { mockApiService.getStreamToken(any()) } throws RuntimeException("First failure") andThen testResponse
+        every { mockApiServiceProvider.getService(testServer.url, testServer.jwt) } returns mockApiService
 
         val viewModel = createViewModel()
 
@@ -408,9 +427,9 @@ class PlayerViewModelTest {
 
     @Test
     fun `retryLoad emits non-retryable Error after exhausting MAX_RETRY_ATTEMPTS`() = runTest(testDispatcher) {
-        coEvery {
-            mockUseCase.generateStreamToken(testServer, tunerId, channelId)
-        } throws RuntimeException("Persistent failure")
+        val mockApiService: HdHomeyApiService = mockk()
+        coEvery { mockApiService.getStreamToken(any()) } throws RuntimeException("Persistent failure")
+        every { mockApiServiceProvider.getService(testServer.url, testServer.jwt) } returns mockApiService
 
         val viewModel = createViewModel()
 

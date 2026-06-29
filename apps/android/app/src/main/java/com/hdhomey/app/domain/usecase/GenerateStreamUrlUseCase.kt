@@ -47,22 +47,6 @@ class GenerateStreamUrlUseCase @Inject constructor(
     }
 
     /**
-     * Request a stream token without constructing a URL.
-     *
-     * Used by the try-raw-then-HLS flow where the token is fetched once and the URL
-     * is built based on which stream mode is active. This avoids making two separate
-     * token requests (one for each stream type).
-     *
-     * @param server The server to query (provides URL and JWT).
-     * @param tunerId ID of the tuner.
-     * @param channelId ID of the channel.
-     * @return [StreamToken] domain entity ready for use with [buildRawStreamUrl] or [buildStreamUrl].
-     */
-    suspend fun generateStreamToken(server: Server, tunerId: Int, channelId: Int): StreamToken {
-        return invoke(server, tunerId, channelId)
-    }
-
-    /**
      * Build the full HLS stream URL from server URL and token.
      *
      * This is a pure function — no network access.

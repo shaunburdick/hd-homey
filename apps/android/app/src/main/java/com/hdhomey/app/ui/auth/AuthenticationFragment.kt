@@ -23,9 +23,10 @@ import com.hdhomey.app.api.DeviceCodeService
 import com.hdhomey.app.api.HdHomeyApi
 import com.hdhomey.app.api.models.DeviceCodeResponse
 import com.hdhomey.app.data.repository.ServerRepository
-import com.hdhomey.app.storage.AppPreferences
 import com.hdhomey.app.util.Constants
 import com.hdhomey.app.util.ErrorHandler
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -41,7 +42,10 @@ import kotlinx.coroutines.launch
  * 5. On success: Stores JWT and user info, navigates to success screen
  * 6. On error: Shows retry and cancel buttons for recovery
  */
+@AndroidEntryPoint
 class AuthenticationFragment : Fragment() {
+
+    @Inject lateinit var repository: ServerRepository
     
     private lateinit var titleText: TextView
     private lateinit var codeLabelText: TextView
@@ -56,7 +60,6 @@ class AuthenticationFragment : Fragment() {
     private lateinit var retryButton: Button
     private lateinit var cancelButton: Button
     
-    private lateinit var repository: ServerRepository
     private lateinit var deviceCodeService: DeviceCodeService
     
     private var serverId: String? = null
@@ -95,9 +98,7 @@ class AuthenticationFragment : Fragment() {
         retryButton.setOnClickListener { onRetryClick() }
         cancelButton.setOnClickListener { onCancelClick() }
         
-        // Initialize repository
-        val prefs = AppPreferences.getInstance(requireContext())
-        repository = ServerRepository(prefs)
+        // repository is injected via Hilt (@Inject)
         
         // Get serverId from arguments
         serverId = arguments?.getString("serverId")

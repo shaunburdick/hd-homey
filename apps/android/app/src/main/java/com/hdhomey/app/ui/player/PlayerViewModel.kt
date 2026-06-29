@@ -150,7 +150,7 @@ class PlayerViewModel @Inject constructor(
                 }
 
                 // Request ONE token reusable for both stream types — avoids two round-trips
-                val streamToken = generateStreamUrlUseCase.generateStreamToken(server, tunerId, channelId)
+                val streamToken = generateStreamUrlUseCase(server, tunerId, channelId)
                 val hlsUrl = generateStreamUrlUseCase.buildStreamUrl(serverUrl, tunerId, channelId, streamToken)
                 val rawUrl = generateStreamUrlUseCase.buildRawStreamUrl(serverUrl, tunerId, channelId, streamToken)
 

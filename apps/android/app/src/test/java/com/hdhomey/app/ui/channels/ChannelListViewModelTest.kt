@@ -11,6 +11,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -55,6 +56,11 @@ class ChannelListViewModelTest {
 
         // Default: provide the test server. Individual tests can override.
         every { currentServerProvider.getActiveServer() } returns testServer
+
+        // Stub activeServerFlow so the ViewModel's init block can collect it.
+        // Using MutableStateFlow(null) ensures the drop(1) in ViewModel's init
+        // skips the initial emission and no reload is triggered.
+        every { currentServerProvider.activeServerFlow } returns MutableStateFlow(null)
     }
 
     @After

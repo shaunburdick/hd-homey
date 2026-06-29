@@ -21,8 +21,9 @@ import com.hdhomey.app.R
 import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.data.provider.CurrentServerProvider
 import com.hdhomey.app.data.repository.ServerRepository
-import com.hdhomey.app.storage.AppPreferences
 import com.hdhomey.app.util.Constants
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Fragment displaying a list of configured HD Homey servers.
@@ -37,15 +38,17 @@ import com.hdhomey.app.util.Constants
  * - Loading state on server item click
  * - Skeleton loading animation while fetching servers
  */
+@AndroidEntryPoint
 class ServerListFragment : Fragment() {
+
+    @Inject lateinit var repository: ServerRepository
+    @Inject lateinit var currentServerProvider: CurrentServerProvider
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyState: LinearLayout
     private lateinit var skeletonLoadingState: LinearLayout
     private lateinit var addServerFab: FloatingActionButton
     private lateinit var adapter: ServerListAdapter
-    private lateinit var repository: ServerRepository
-    private lateinit var currentServerProvider: CurrentServerProvider
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreateView(
@@ -59,10 +62,7 @@ class ServerListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize repository and current server provider
-        val prefs = AppPreferences.getInstance(requireContext())
-        repository = ServerRepository(prefs)
-        currentServerProvider = CurrentServerProvider(repository)
+        // repository and currentServerProvider are injected via Hilt (@Inject)
 
         // Setup views
         recyclerView = view.findViewById(R.id.servers_recycler_view)

@@ -5,6 +5,7 @@ import com.hdhomey.app.api.HdHomeyApiServiceProvider
 import com.hdhomey.app.data.mapper.toDomainPreferences
 import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.domain.model.ChannelPreferences
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,19 +21,25 @@ import javax.inject.Singleton
  * and use [HdHomeyApiServiceProvider] to obtain a per-server API client.
  *
  * All methods are suspend functions for coroutine-based usage.
+ *
+ * ## Cache keying
+ *
+ * The cache is keyed by `"$serverUrl|$tunerId"` so that different servers (or the same
+ * server with different tuners) each maintain an independent, TTL-limited cache entry.
+ * Call [invalidateCache] to clear all entries, or [invalidateCacheForServer] to clear
+ * entries for a specific server.
  */
 @Singleton
 class PreferencesRepository @Inject constructor(
     private val apiServiceProvider: HdHomeyApiServiceProvider
 ) {
-    // In-memory cache: maps tunerId (or -1 for all) to a cached result with timestamp
+    // In-memory cache keyed by "$serverUrl|$tunerId"
     private data class CachedPreferences(
         val preferences: ChannelPreferences,
         val timestampMs: Long
     )
 
-    @Volatile
-    private var cache: CachedPreferences? = null
+    private val preferenceCache = ConcurrentHashMap<String, CachedPreferences>()
 
     companion object {
         /** Cache TTL of 5 minutes (300,000 ms). */
@@ -40,7 +47,8 @@ class PreferencesRepository @Inject constructor(
     }
 
     /**
-     * Fetch channel preferences, using a 5-minute in-memory cache.
+     * Fetch channel preferences, using a 5-minute in-memory cache keyed by
+     * `"$serverUrl|$tunerId"`.  Different servers / tuners never share cache entries.
      *
      * On cache hit (stored ≤ 5 min ago), returns cached data immediately.
      * On cache miss or API failure, falls back to [ChannelPreferences.EMPTY]
@@ -53,18 +61,21 @@ class PreferencesRepository @Inject constructor(
      *   or [ChannelPreferences.EMPTY] on error.
      */
     suspend fun getPreferences(server: Server, tunerId: Int? = null): ChannelPreferences {
-        // Check cache
+        val cacheKey = "${server.url.trimEnd('/')}|$tunerId"
         val now = System.currentTimeMillis()
-        val cached = cache
-        if (cached != null && (now - cached.timestampMs) < CACHE_TTL_MS) {
-            return cached.preferences
+
+        // Check cache for this specific (server, tunerId) pair
+        preferenceCache[cacheKey]?.let { cached ->
+            if ((now - cached.timestampMs) < CACHE_TTL_MS) {
+                return cached.preferences
+            }
         }
 
         return try {
             val apiService = apiServiceProvider.getService(server.url, server.jwt)
             val response = apiService.getChannelPreferences(tunerId)
             val preferences = response.data.toDomainPreferences()
-            cache = CachedPreferences(preferences, now)
+            preferenceCache[cacheKey] = CachedPreferences(preferences, now)
             preferences
         } catch (e: Exception) {
             Log.w("PreferencesRepository", "Failed to fetch preferences, using empty", e)
@@ -74,10 +85,21 @@ class PreferencesRepository @Inject constructor(
     }
 
     /**
-     * Clear the in-memory cache, forcing the next [getPreferences] call
+     * Clear all in-memory cache entries, forcing the next [getPreferences] call
      * to fetch fresh data from the server.
      */
     fun invalidateCache() {
-        cache = null
+        preferenceCache.clear()
+    }
+
+    /**
+     * Clear cache entries for a specific server, regardless of tuner.
+     *
+     * @param server The server whose cache entries should be evicted.
+     */
+    fun invalidateCacheForServer(server: Server) {
+        val prefix = "${server.url.trimEnd('/')}|"
+        val keysToRemove = preferenceCache.keys.filter { it.startsWith(prefix) }
+        keysToRemove.forEach { preferenceCache.remove(it) }
     }
 }

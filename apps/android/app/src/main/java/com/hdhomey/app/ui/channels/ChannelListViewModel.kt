@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -44,6 +45,22 @@ class ChannelListViewModel @Inject constructor(
      * [ChannelListUiState.Error] after [loadChannels] completes.
      */
     val uiState: StateFlow<ChannelListUiState> = _uiState.asStateFlow()
+
+    init {
+        // Reactively reload channels when the active server changes.
+        // The first emission is skipped because [loadChannels] handles the
+        // initial server selection — we only want to react to *subsequent* swaps.
+        viewModelScope.launch {
+            currentServerProvider.activeServerFlow
+                .drop(1) // Skip initial emission (handled by loadChannels)
+                .collect { server ->
+                    if (server != null && _uiState.value is ChannelListUiState.Success) {
+                        // Server changed — reload channels, tuner selection resets
+                        loadChannels()
+                    }
+                }
+        }
+    }
 
     /** Tuner ID used by the most recent [loadChannels] call; used to support [retryLoad]. */
     private var activeTunerId: Int = -1

@@ -43,15 +43,24 @@ class HdHomeyApiServiceProvider @Inject constructor(
     /** Content type for JSON serialisation. */
     private val contentType = "application/json".toMediaType()
 
-    /** Per-server-base-URL cache of [HdHomeyApiService] instances. */
-    private val cache = ConcurrentHashMap<String, HdHomeyApiService>()
+    /**
+     * Cache key that combines the server URL and JWT so that a different JWT
+     * produces a different [HdHomeyApiService] instance.
+     */
+    private data class CacheKey(
+        val url: String,
+        val jwt: String?
+    )
+
+    /** Per-server (URL + JWT) cache of [HdHomeyApiService] instances. */
+    private val cache = ConcurrentHashMap<CacheKey, HdHomeyApiService>()
 
     /**
      * Returns a [HdHomeyApiService] for the given server URL and JWT.
      *
-     * The instance is cached by [serverUrl] (normalised, with trailing slash removed).
-     * If the cache already holds an instance for this URL, it is returned directly.
-     * Otherwise a new Retrofit instance is created with:
+     * The instance is cached by [serverUrl] (normalised, with trailing slash removed)
+     * **and** [jwt]. If a cached instance exists for the exact (URL, JWT) pair it is
+     * returned directly. Otherwise a new Retrofit instance is created with:
      * 1. The [okHttpClient] base (shared pool, error interceptor).
      * 2. An [AuthCookieInterceptor] with [jwt] baked in.
      * 3. A [Json] converter factory.
@@ -62,7 +71,8 @@ class HdHomeyApiServiceProvider @Inject constructor(
      */
     fun getService(serverUrl: String, jwt: String?): HdHomeyApiService {
         val normalizedUrl = serverUrl.trimEnd('/')
-        return cache.getOrPut(normalizedUrl) {
+        val key = CacheKey(normalizedUrl, jwt)
+        return cache.getOrPut(key) {
             val client = okHttpClient.newBuilder()
                 .addInterceptor(AuthCookieInterceptor(jwt))
                 .build()
@@ -77,15 +87,16 @@ class HdHomeyApiServiceProvider @Inject constructor(
     }
 
     /**
-     * Invalidates the cached [HdHomeyApiService] for the given server URL.
+     * Invalidates ALL cached [HdHomeyApiService] instances for the given server URL,
+     * regardless of JWT. Call this after re-authentication so that [getService] creates
+     * a fresh instance with the new auth cookie.
      *
-     * Call this after re-authentication for a server (new JWT) so that
-     * [getService] creates a fresh instance with the updated auth cookie.
-     *
-     * @param serverUrl The server URL whose cached service should be evicted.
+     * @param serverUrl The server URL whose cached services should be evicted.
      */
     fun invalidate(serverUrl: String) {
-        cache.remove(serverUrl.trimEnd('/'))
+        val normalizedUrl = serverUrl.trimEnd('/')
+        val keysToRemove = cache.keys.filter { it.url == normalizedUrl }
+        keysToRemove.forEach { cache.remove(it) }
     }
 
     /**
