@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -270,6 +271,7 @@ fun AddServerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged { isNameFocused = it.isFocused }
+                    .testTag("server_name_field")
             )
 
             Spacer(modifier = Modifier.height(adaptive.cardSpacing))
@@ -298,6 +300,7 @@ fun AddServerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged { isUrlFocused = it.isFocused }
+                    .testTag("server_url_field")
             )
 
             // ── Connection error ───────────────────────────────────────────────
