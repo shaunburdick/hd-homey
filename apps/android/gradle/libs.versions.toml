@@ -57,6 +57,10 @@ turbine = "1.0.0"
 # QR Code
 zxing = "3.5.3"
 
+# Compose
+compose-bom = "2026.06.00"
+coil3 = "3.5.0"
+
 [libraries]
 # Kotlin
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -70,6 +74,9 @@ androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-view
 androidx-lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle" }
 androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
+
+# Compose — Activity
+compose-activity = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
 androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
 androidx-coordinatorlayout = { module = "androidx.coordinatorlayout:coordinatorlayout", version.ref = "coordinatorlayout" }
@@ -78,6 +85,9 @@ google-material = { module = "com.google.android.material:material", version.ref
 # Navigation
 androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation" }
 androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation" }
+
+# Compose — Navigation
+compose-navigation = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 
 # Android TV
 androidx-leanback = { module = "androidx.leanback:leanback", version.ref = "leanback" }
@@ -95,6 +105,29 @@ datastore-core = { module = "androidx.datastore:datastore-core", version.ref = "
 
 # Image loading
 coil = { module = "io.coil-kt:coil", version.ref = "coil" }
+
+# Compose — Image loading (Coil 3)
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil3" }
+
+# Compose BOM (version orchestrator)
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+
+# Compose UI (versions managed by BOM)
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+
+# Material 3 (versions managed by BOM)
+compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material-icons = { module = "androidx.compose.material:material-icons-core" }
+compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+compose-window-size-classes = { module = "androidx.compose.material3:material3-window-size-class" }
+
+# Hilt Navigation — Compose
+compose-hilt-navigation = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
 
 # Media3 / ExoPlayer
 media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
@@ -130,3 +163,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
