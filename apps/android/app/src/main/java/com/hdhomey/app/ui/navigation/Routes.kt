@@ -32,6 +32,10 @@ data class ChannelList(val serverId: String? = null)
 @Serializable
 data class Player(val channelId: String, val channelName: String)
 
-/** Success screen shown after authentication completes. */
+/**
+ * Success screen shown after authentication completes.
+ * @property serverId The server ID used to navigate to [ChannelList].
+ * @property serverName Display name of the successfully connected server.
+ */
 @Serializable
-object Success
+data class Success(val serverId: String, val serverName: String)

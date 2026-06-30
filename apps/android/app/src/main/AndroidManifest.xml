@@ -23,7 +23,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.HdHomey"
+        android:theme="@android:style/Theme.Material.NoActionBar"
         android:banner="@drawable/banner"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
@@ -49,24 +49,8 @@
             </intent-filter>
         </activity>
 
-        <!-- Player Activity (Phase 2)
-             supportsPictureInPicture — enables PiP mode when user presses Home during playback
-             resizeableActivity       — required for PiP on Android 7.0+ (API 24+)
-             configChanges            — includes "smallestScreenSize|screenSize|screenLayout" so
-                                        onPictureInPictureModeChanged receives the new config
-                                        without restarting the activity
-        -->
-        <activity
-            android:name="com.hdhomey.app.ui.player.PlayerActivity"
-            android:exported="false"
-            android:screenOrientation="landscape"
-            android:supportsPictureInPicture="true"
-            android:resizeableActivity="true"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
-            android:parentActivityName=".MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity" />
-        </activity>
+        <!-- Player screen is now a Compose screen in the NavGraph (handled in T-023).
+             The full-screen player composable (PlayerScreen) lives in ui/player/ and is
+             rendered via AppNavHost, so no separate Activity declaration is needed. -->
     </application>
 </manifest>

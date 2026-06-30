@@ -1,39 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- HD Homey brand colors -->
-    <color name="hd_homey_blue">#2563eb</color>
-    <color name="hd_homey_blue_dark">#1d4ed8</color>
-
-    <!-- UI colors -->
-    <color name="background_dark">#1a1a1a</color>
-    <color name="surface_dark">#2a2a2a</color>
-    <color name="surface_dark_elevated">#3a3a3a</color>
-    <color name="text_primary">#f0f0f0</color>
-    <color name="text_secondary">#b3b3b3</color>
-    <color name="text_tertiary">#909090</color>
-
-    <!-- Borders -->
-    <color name="color_border">#404040</color>
-    <color name="color_border_hover">#505050</color>
-
-    <!-- Text states -->
-    <color name="color_text_disabled">#666666</color>
-
-    <!-- Status colors -->
-    <color name="success_green">#10b981</color>
-    <color name="error_red">#ff5555</color>
-    <color name="warning_yellow">#f59e0b</color>
-
-    <!-- Semantic backgrounds -->
-    <color name="color_success_bg">#064e3b</color>
-    <color name="color_error_bg">#7f1d1d</color>
-    <color name="color_warning_bg">#78350f</color>
-
-    <!-- Info colors -->
-    <color name="color_info">#3b82f6</color>
-    <color name="color_info_bg">#1e3a8a</color>
-
-    <!-- Shimmer colors -->
-    <color name="shimmer_placeholder">#3a3a3a</color>
-    <color name="shimmer_highlight">#4a4a4a</color>
+    <!-- HD Homey brand blue — used by adaptive launcher icons -->
+    <color name="hd_homey_blue">#FF2563EB</color>
 </resources>
