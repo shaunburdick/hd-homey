@@ -39,6 +39,7 @@
     <string name="auth_title_for_server">Pair with %1$s</string>
     <string name="go_to">Go to:</string>
     <string name="enter_code">Enter code:</string>
+    <string name="scan_qr_code">Or scan this QR code:</string>
     <string name="pairing_instructions">Visit %1$s on another device and enter this code</string>
     <string name="code_expires_in">Code expires in %1$d:%2$02d</string>
     <string name="auth_failed">Authentication failed</string>
@@ -62,7 +63,39 @@
     <string name="back_to_servers">Back to Servers</string>
     <string name="view_channels">View Channels</string>
     
+    <!-- Channel List -->
+    <string name="hd_badge_label">HD</string>
+    <string name="favorite_toggle_description">Toggle favorite</string>
+    <string name="channel_logo_description">Channel logo</string>
+
+    <!-- Channel List -->
+    <string name="channel_list_refresh_button">Refresh channels</string>
+    <string name="channel_list_error_icon_description">Error loading channels</string>
+    <string name="channel_list_empty_title">No channels found</string>
+    <string name="channel_list_empty_message">No channels are available on this tuner</string>
+    <string name="channel_list_empty_hint">Tap the refresh button to scan again</string>
+
     <!-- Errors -->
     <string name="network_error">Network error. Please check your connection.</string>
     <string name="server_error">Server error. Please try again later.</string>
+
+    <!-- Player (activity_player.xml) -->
+    <string name="player_channel_number_description">Channel number</string>
+    <string name="player_channel_name_description">Channel name</string>
+    <string name="player_loading_description">Loading stream</string>
+    <string name="player_error_icon_description">Playback error</string>
+    <string name="player_error_message_description">Error message</string>
+    <string name="player_retry_description">Retry loading stream</string>
+
+    <!-- Player controls overlay (player_controls.xml / PlayerControlsView) -->
+    <string name="player_controls_back_description">Exit player</string>
+    <string name="player_controls_play_pause_description">Play or pause</string>
+    <string name="player_controls_play_description">Play stream</string>
+    <string name="player_controls_pause_description">Pause stream</string>
+
+    <!-- Confirmation dialog when leaving during active playback -->
+    <string name="player_exit_dialog_title">Stop Watching?</string>
+    <string name="player_exit_dialog_message">Are you sure you want to stop watching?</string>
+    <string name="player_exit_dialog_yes">Yes</string>
+    <string name="player_exit_dialog_no">No</string>
 </resources>

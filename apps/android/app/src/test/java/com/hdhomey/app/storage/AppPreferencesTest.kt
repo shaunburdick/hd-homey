@@ -13,7 +13,9 @@ import org.robolectric.annotation.Config
 /**
  * Unit tests for AppPreferences.
  *
- * Uses Robolectric for Android SharedPreferences testing.
+ * Uses Robolectric to provide an Android context for DataStore testing.
+ * All public API methods are synchronous (backed by [kotlinx.coroutines.runBlocking] internally),
+ * so tests can call them directly without coroutine test scaffolding.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28]) // API 28 (Android 9.0) - minSdk

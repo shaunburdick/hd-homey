@@ -20,7 +20,7 @@ paths:
       summary: Generate stream token for HLS playback
       description: |
         Generates a short-lived HMAC-SHA256 signed token for streaming a specific channel.
-        Requires valid JWT session authentication (Authorization header).
+        Requires valid JWT session authentication (Cookie header via Better-Auth).
         
         Token is valid for 15 minutes and grants access to:
         - HLS playlist: /api/transcode/{tunerId}/{channelId}/playlist.m3u8?token={token}
@@ -32,7 +32,7 @@ paths:
       tags:
         - Streaming
       security:
-        - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -182,13 +182,13 @@ components:
             message: "Failed to generate stream token"
 
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
       description: |
-        JWT token obtained from device pairing flow.
-        Include in Authorization header: `Authorization: Bearer <token>`
+        JWT session token obtained from device pairing flow.
+        Include in Cookie header: `Cookie: better-auth.session_token=<token>`
         
         Token expiry: 7 days
         Refresh: Re-authenticate via device pairing flow when expired
