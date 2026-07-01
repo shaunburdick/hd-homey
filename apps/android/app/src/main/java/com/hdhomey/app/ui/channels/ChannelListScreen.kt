@@ -1,11 +1,14 @@
 package com.hdhomey.app.ui.channels
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -218,15 +221,21 @@ private fun ChannelListLoadingContent(adaptive: AdaptiveValues) {
         end = Offset(x = translateAnim, y = translateAnim)
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = adaptive.screenPadding)
-            .padding(top = adaptive.cardSpacing),
-        verticalArrangement = Arrangement.spacedBy(adaptive.cardSpacing)
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(animationSpec = tween(150)),
+        exit = fadeOut(animationSpec = tween(150))
     ) {
-        repeat(5) {
-            ChannelShimmerSkeletonCard(brush, adaptive)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = adaptive.screenPadding)
+                .padding(top = adaptive.cardSpacing),
+            verticalArrangement = Arrangement.spacedBy(adaptive.cardSpacing)
+        ) {
+            repeat(5) {
+                ChannelShimmerSkeletonCard(brush, adaptive)
+            }
         }
     }
 }

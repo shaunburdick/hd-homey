@@ -73,7 +73,6 @@ android {
 
     buildFeatures {
         buildConfig = true
-        viewBinding = true
         compose = true
     }
 
@@ -81,6 +80,12 @@ android {
         resources {
             merges += "META-INF/LICENSE.md"
             merges += "META-INF/LICENSE-notice.md"
+        }
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -105,25 +110,9 @@ dependencies {
 
     // AndroidX Core
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.ktx)
-    implementation(libs.androidx.fragment.ktx)
-    implementation(libs.androidx.recyclerview)
-    implementation(libs.androidx.cardview)
-    implementation(libs.androidx.coordinatorlayout)
-    
-    // Material Design
-    implementation(libs.google.material)
-
-    // Navigation
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
-
-    // Android TV
-    implementation(libs.androidx.leanback)
 
     // Networking
     implementation(libs.okhttp)
@@ -136,9 +125,6 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.datastore.core)
 
-    // Image loading
-    implementation(libs.coil)
-
     // Media3 / ExoPlayer
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.exoplayer.hls)
@@ -148,7 +134,6 @@ dependencies {
     // Dependency Injection (Hilt)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.hilt.navigation.fragment)
 
     // Security
     implementation(libs.androidx.security.crypto)
@@ -163,6 +148,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.turbine)
+    testImplementation(libs.compose.ui.test.junit4)
 
     // Force kotlin-metadata-jvm version to match Kotlin compiler
     // Required by Hilt's annotation processor for Kotlin 2.1.0 metadata support
@@ -184,9 +170,9 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.compose.ui.test.manifest)
     debugImplementation(libs.compose.ui.test.manifest)
 
     androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.mockk.android)
 }

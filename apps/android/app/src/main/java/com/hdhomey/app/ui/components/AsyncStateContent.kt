@@ -1,5 +1,10 @@
 package com.hdhomey.app.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -42,38 +47,46 @@ fun <T> AsyncStateContent(
     emptyContent: @Composable () -> Unit,
     content: @Composable (T) -> Unit
 ) {
-    when (state) {
-        is AsyncState.Loading -> loadingContent()
-        is AsyncState.Error -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(48.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = state.message,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.error
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = onRetry,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = HdHomeyBlue
-                    )
+    AnimatedContent(
+        targetState = state,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(150)) togetherWith fadeOut(animationSpec = tween(150))
+        },
+        label = "async_state_transition"
+    ) { currentState ->
+        when (currentState) {
+            is AsyncState.Loading -> loadingContent()
+            is AsyncState.Error -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Try Again")
+                    Text(
+                        text = currentState.message,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onRetry,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = HdHomeyBlue
+                        )
+                    ) {
+                        Text("Try Again")
+                    }
                 }
             }
-        }
-        is AsyncState.Success -> {
-            val data = state.data
-            if (emptyCheck(data)) {
-                emptyContent()
-            } else {
-                content(data)
+            is AsyncState.Success -> {
+                val data = currentState.data
+                if (emptyCheck(data)) {
+                    emptyContent()
+                } else {
+                    content(data)
+                }
             }
         }
     }

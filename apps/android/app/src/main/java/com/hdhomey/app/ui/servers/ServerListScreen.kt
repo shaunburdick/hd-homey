@@ -1,11 +1,14 @@
 package com.hdhomey.app.ui.servers
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -210,16 +213,22 @@ private fun ServerListLoadingContent(adaptive: AdaptiveValues) {
         end = Offset(x = translateAnim, y = translateAnim)
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = adaptive.screenPadding)
-            .padding(top = adaptive.cardSpacing)
-            .testTag("server_list_loading"),
-        verticalArrangement = Arrangement.spacedBy(adaptive.cardSpacing)
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(animationSpec = tween(150)),
+        exit = fadeOut(animationSpec = tween(150))
     ) {
-        repeat(5) {
-            ShimmerSkeletonCard(brush)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = adaptive.screenPadding)
+                .padding(top = adaptive.cardSpacing)
+                .testTag("server_list_loading"),
+            verticalArrangement = Arrangement.spacedBy(adaptive.cardSpacing)
+        ) {
+            repeat(5) {
+                ShimmerSkeletonCard(brush)
+            }
         }
     }
 }

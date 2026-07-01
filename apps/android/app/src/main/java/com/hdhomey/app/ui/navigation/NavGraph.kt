@@ -1,5 +1,8 @@
 package com.hdhomey.app.ui.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -61,6 +64,8 @@ fun AppNavHost(
     NavHost(
         navController = navController,
         startDestination = ServerList,
+        enterTransition = { fadeIn(animationSpec = tween(150)) },
+        exitTransition = { fadeOut(animationSpec = tween(150)) },
         modifier = Modifier.fillMaxSize()
     ) {
         // ── Server List ────────────────────────────────────────────────────

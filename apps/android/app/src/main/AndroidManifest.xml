@@ -6,11 +6,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Leanback support for Android TV -->
-    <uses-feature
-        android:name="android.software.leanback"
-        android:required="false" />
-
     <!-- Touchscreen not required (works on TV and mobile) -->
     <uses-feature
         android:name="android.hardware.touchscreen"
@@ -32,7 +27,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="landscape"
+            android:screenOrientation="fullSensor"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout"
             android:launchMode="singleTask">
             
@@ -49,8 +44,5 @@
             </intent-filter>
         </activity>
 
-        <!-- Player screen is now a Compose screen in the NavGraph (handled in T-023).
-             The full-screen player composable (PlayerScreen) lives in ui/player/ and is
-             rendered via AppNavHost, so no separate Activity declaration is needed. -->
     </application>
 </manifest>
