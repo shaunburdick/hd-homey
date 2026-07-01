@@ -3,7 +3,7 @@ package com.hdhomey.app.ui.channels
 import com.hdhomey.app.domain.model.ChannelWithMetadata
 
 /**
- * UI state for ChannelListFragment.
+ * UI state for the channel list screen.
  *
  * Represents all possible states of the channel list screen as a sealed
  * interface so the UI layer can exhaustively handle every state without

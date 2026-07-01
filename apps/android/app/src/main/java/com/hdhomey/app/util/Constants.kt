@@ -48,9 +48,9 @@ object Constants {
      */
     object Tags {
         const val SERVER_REPOSITORY = "ServerRepository"
-        const val SERVER_LIST = "ServerListFragment"
-        const val ADD_SERVER = "AddServerFragment"
-        const val AUTH = "AuthenticationFragment"
+        const val SERVER_LIST = "ServerList"
+        const val ADD_SERVER = "AddServer"
+        const val AUTH = "Authentication"
         const val MAIN = "MainActivity"
         const val API = "ApiClient"
     }

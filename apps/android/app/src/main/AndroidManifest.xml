@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Leanback support for Android TV (keep required=false for phone support) -->
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+
     <!-- Touchscreen not required (works on TV and mobile) -->
     <uses-feature
         android:name="android.hardware.touchscreen"

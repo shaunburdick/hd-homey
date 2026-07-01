@@ -180,8 +180,8 @@ class ChannelListViewModel @Inject constructor(
     /**
      * Get the URL of the currently active server.
      *
-     * Used by [ChannelListFragment] when navigating to [com.hdhomey.app.ui.player.PlayerActivity]
-     * to provide the server URL needed for stream URL generation.
+     * Used when navigating to the player screen to provide the server URL
+     * needed for stream URL generation.
      *
      * @return The active server's base URL, or `null` if no server is active.
      */
