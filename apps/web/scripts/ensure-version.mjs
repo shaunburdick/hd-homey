@@ -10,14 +10,9 @@
  */
 
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
-import process from 'node:process';
 
-const scriptDir = dirname(fileURLToPath(import.meta.url));
-const versionPath = join(scriptDir, '..', 'version.json');
+const versionPath = new URL('../version.json', import.meta.url);
 
 if (existsSync(versionPath) === false) {
-    execFileSync(process.execPath, [join(scriptDir, 'generate-version.mjs')], { stdio: 'inherit' });
+    await import('./generate-version.mjs');
 }
