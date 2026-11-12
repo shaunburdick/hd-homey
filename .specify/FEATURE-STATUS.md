@@ -363,4 +363,4 @@ HD Homey v1.0.0-beta.3 is **production ready** with:
 
 ---
 
-**For detailed feature specifications, see individual spec files in `.specs/features/`**
+**For detailed feature specifications, see individual spec files in `.specify/features/`**

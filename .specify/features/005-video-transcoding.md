@@ -465,7 +465,7 @@ ffmpeg -i <source_url> \
 - FFmpeg HLS Streaming Guide: https://trac.ffmpeg.org/wiki/StreamingGuide
 - Apple HLS Specification: https://datatracker.ietf.org/doc/html/rfc8216
 - HD HomeRun HTTP API: https://www.silicondust.com/hdhomerun/developers/
-- Related spec: `.specs/features/002-channel-streaming/spec.md`
+- Related spec: `.specify/features/002-channel-streaming.md`
 
 ---
 

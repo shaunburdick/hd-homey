@@ -87,7 +87,7 @@ Contributions are welcome! See the **[Contributing Guide](https://shaunburdick.g
 **For Developers**:
 - Review [AGENTS.md](AGENTS.md) for development guidelines
 - Check [CHANGELOG.md](CHANGELOG.md) for recent changes
-- Follow the spec-driven development process (see `.specs/`)
+- Follow the spec-driven development process (see [CONTRIBUTING.md](CONTRIBUTING.md))
 - Ensure tests pass: `npm test`
 
 ## License

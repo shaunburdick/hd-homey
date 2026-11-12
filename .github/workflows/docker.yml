@@ -7,7 +7,6 @@ on:
             - "v*.*.*"
         paths-ignore:
             - "**.md"
-            - ".specs/**"
             - ".specify/**"
             - "LICENSE"
             - ".vscode/**"
@@ -21,7 +20,6 @@ on:
         branches: [main]
         paths-ignore:
             - "**.md"
-            - ".specs/**"
             - ".specify/**"
             - "LICENSE"
             - ".vscode/**"

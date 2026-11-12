@@ -95,7 +95,7 @@ The migration will be a **full switch‑over** (no dual‑auth period) because t
 - Add Better‑Auth dependency (`npm i @better-auth/next@latest`).
 - Create a new module `src/lib/better-auth.ts` with a minimal config mirroring the current credential flow.
 - Add a thin wrapper `src/lib/auth.ts` that re‑exports `requireRole`/`requireAdmin` using the new session shape.
-- Update `.specs/features/008-auth-migration/spec.md` (this file).
+- Update `.specify/features/008-auth-migration.md` (this file).
 
 ### Phase 1 – Core Migration (2 days)
 1. Replace **all** `import { auth } from '@/auth'` with `import { getSession } from '@/lib/better-auth'`.
@@ -133,7 +133,7 @@ The migration will be a **full switch‑over** (no dual‑auth period) because t
 - ✅ **Role checks** work: admin can access protected routes, viewer receives `Unauthorized`.
 - ✅ **Public routes** remain accessible without a session.
 - ✅ **Username plugin implemented** properly (using Better-Auth native username plugin).
-- ✅ **Documentation** updated with migration details in `.specs/features/008-auth-migration/`.
+- ✅ **Documentation** updated with migration details in `.specify/features/008-auth-migration.md`.
 - ✅ **Schema consolidated** into single file (`src/lib/database/schema.ts`).
 - ✅ **Migrations consolidated** into single file (`migrations/0000_large_microchip.sql`).
 
