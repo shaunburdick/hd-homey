@@ -78,7 +78,7 @@ jobs:
 
             - name: Run TypeScript compiler
               working-directory: apps/web
-              run: npx tsc --noEmit
+              run: npm run typecheck
 
     # Test job with coverage
     test:
