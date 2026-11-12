@@ -325,7 +325,7 @@ BETTER_AUTH_URL=http://localhost:3000                # Auth base URL (auto-detec
 ### Running Locally
 ```bash
 npm install              # Install all workspace dependencies
-cp apps/web/.env-example apps/web/.env  # Configure environment
+cp .env-example .env     # Configure environment
 npm run dev              # Start web app dev server on 0.0.0.0:3000
 npm run docs:dev         # Start docs site (optional)
 ```
