@@ -46,7 +46,7 @@ apps/
 │   ├── getting-started/
 │   ├── features/
 │   └── package.json   # Docs dependencies
-└── android/           # Android app (Phase 1, coming soon)
+└── android/           # Android app (Phase 2 complete — channel browsing & streaming)
 
 .specify/            # Spec-kit: specifications and constitution
 specs/               # Spec-kit: implementation plans (created during planning phase)
@@ -69,6 +69,23 @@ specs/               # Spec-kit: implementation plans (created during planning p
 - Implementation plans live in `specs/###-feature/` directory (created during planning phase)
 - Update spec status as implementation progresses
 - Specs drive implementation, not vice versa
+
+### Design System
+
+A shared design language document lives at **[`DESIGN.md`](./DESIGN.md)** (repo root).
+It defines the canonical design tokens (colors, typography, spacing, layout
+patterns, animations) with the **web app as the authoritative source** and
+explicit mappings to Android XML resources.
+
+**Always consult `DESIGN.md` when**:
+- Adding new UI components to either platform
+- Choosing colors, spacing, or type scales
+- Adding new screens or layouts to the Android app
+- Introducing animations or transitions
+
+The design system prioritises: dark theme, card-based layouts, three-state
+screens (loading/error/empty), accent blue for interaction, and WCAG 2.2 AA
+accessibility.
 
 ### Documentation Maintenance
 
@@ -336,6 +353,15 @@ npm test                 # Lint + unit tests (web app)
 npm run test:coverage    # With coverage report (web app)
 ```
 
+**Android tests** — run from `apps/android/`:
+```bash
+# Unit tests (no emulator needed)
+./gradlew testDebug
+
+# Instrumentation tests (requires emulator — see Testing section below)
+./gradlew connectedDebugAndroidTest
+```
+
 ### Database Operations
 ```bash
 npm run db:studio        # Open Drizzle Studio (web app)
@@ -378,10 +404,47 @@ npm run docs:build       # Build docs site
 
 ## Testing
 
+### Web App (Vitest)
 - Unit tests use Vitest + React Testing Library
 - Test files: `*.test.ts` or `*.test.tsx`
 - Mock Next.js modules when needed
 - Focus on business logic, not implementation details
+
+### Android
+
+**Unit tests** (no emulator needed):
+```bash
+cd apps/android && ./gradlew testDebug
+```
+
+**Instrumentation tests** (require a running emulator).
+
+#### Local Emulator Setup
+
+The environment has a pre-configured Android SDK at `/opt/android-sdk` and an AVD named `test_avd` (API 35, google_apis x86_64). To run instrumentation tests:
+
+1. **Start the emulator** (headless, ~40s boot):
+   ```bash
+   export ANDROID_HOME=/opt/android-sdk
+   export PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+   emulator -avd test_avd -no-window -no-audio -no-snapshot -memory 2048 -gpu swiftshader_indirect &
+   adb wait-for-device
+   adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+   ```
+
+2. **Run the tests**:
+   ```bash
+   cd apps/android && ./gradlew connectedDebugAndroidTest --no-daemon
+   ```
+
+3. **Stop the emulator** when done:
+   ```bash
+   adb emu kill
+   ```
+
+#### Pre-PR Requirement
+
+**Always run both Android unit tests and instrumentation tests before opening or updating a PR that touches Android code.** CI runs them anyway, but catching failures locally is much faster than waiting for a CI round-trip (1-2 min locally vs 5+ min on CI).
 
 ## Contributing
 
@@ -389,9 +452,10 @@ npm run docs:build       # Build docs site
 2. Implement feature following spec
 3. Update spec status as you progress
 4. Add/update tests
-5. Ensure linting passes: `npm run lint`
-6. Update CHANGELOG.md
-7. Commit with descriptive messages
+5. Run Android tests (unit + instrumentation) if Android code changed
+6. Ensure linting passes: `npm run lint`
+7. Update CHANGELOG.md
+8. Commit with descriptive messages
 
 ## Releases
 

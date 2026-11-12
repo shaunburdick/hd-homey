@@ -3,7 +3,7 @@
 **Project**: HD Homey - HD HomeRun Proxy Application  
 **Version**: 1.1.0  
 **Ratified**: 2025-11-15  
-**Last Amended**: 2026-06-19
+**Last Amended**: 2026-06-23
 
 ## Project Purpose
 
@@ -196,7 +196,7 @@ These features are intentionally not part of HD Homey's mission:
 ❌ **DVR/Recording Functionality** - Not a DVR system  
 ❌ **EPG/Program Guide Integration** - No TV guide  
 ❌ **Advanced Stream Management** - Beyond shared transcoding  
-❌ **Mobile Applications** - Web-first, mobile-responsive  
+❌ **iOS Applications** - Android-first, web-responsive (iOS app is not planned)  
 ❌ **Adaptive Bitrate Streaming** - Single quality transcoding only  
 ❌ **Closed Captioning Support** - Future enhancement  
 ~~❌ **Video Quality Analytics** - Future enhancement~~ *(now in-scope via Signal Monitoring feature)*  
@@ -275,6 +275,6 @@ These features are intentionally not part of HD Homey's mission:
 
 ---
 
-**Version**: 1.1.0 | **Ratified**: 2025-11-15 | **Last Amended**: 2026-06-19
+**Version**: 1.1.0 | **Ratified**: 2025-11-15 | **Last Amended**: 2026-06-23
 
 *This constitution guides all development decisions. When in doubt, refer to these principles. Simplicity, security, and user experience are our north stars.*

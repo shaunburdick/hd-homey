@@ -2,6 +2,8 @@ package com.hdhomey.app.data.repository
 
 import com.hdhomey.app.data.model.Server
 import com.hdhomey.app.storage.AppPreferences
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Repository for managing HD Homey server configurations.
@@ -11,7 +13,10 @@ import com.hdhomey.app.storage.AppPreferences
  *
  * For production apps with many servers or complex queries, consider migrating to Room.
  */
-class ServerRepository(private val prefs: AppPreferences) {
+@Singleton
+class ServerRepository @Inject constructor(
+    private val prefs: AppPreferences
+) {
 
     /**
      * Adds a new server to the configuration.

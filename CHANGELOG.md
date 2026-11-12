@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Android Compose Migration** (SPEC-016): Full migration from XML/Fragments/ViewBinding to Jetpack Compose + Material 3
+  - Compose theme system: `HdHomeyTheme` with `darkColorScheme`, `ExtendedColors`, M3 typography and shapes aligned to DESIGN.md
+  - Reusable components: `AsyncStateContent`, `ShimmerEffect`, `ChannelCard`, adaptive layout via `WindowSizeClass`
+  - Navigation Compose with type-safe `@Serializable` routes
+  - `ServerListScreen`: LazyColumn with shimmer loading, empty state with welcome message, error state with retry
+  - `AddServerScreen`: Form with URL validation, connection testing, inline errors (no dialog)
+  - `AuthenticationScreen`: Device code display, QR code (ZXing), polling loop, expiry timer, retry
+  - `SuccessScreen`: Checkmark confirmation, user/server info, View Channels / Back to Servers buttons
+  - `ChannelListScreen`: LazyColumn with channel cards (logo, name, number, HD badge, favorite star), pull-to-refresh
+  - `PlayerScreen`: ExoPlayer via AndroidView interop, composable controls overlay with auto-hide, exit confirmation dialog
+  - 11 Compose UI tests covering all screens and states (loading/error/empty/success)
+  - NavigationTest for route transitions
+  - Legacy delete: 12 XML layouts, 5 Fragments, 2 Adapters, 6 XML drawables, nav_graph.xml, themes.xml, colors.xml, dimens.xml, PlayerActivity, PlayerControlsView, RecyclerView items
+  - Dependency cleanup: removed appcompat, constraintlayout, recyclerview, cardview, coordinatorlayout, leanback, material, navigation-fragment-ktx, hilt-navigation-fragment, coil (plain)
+  - Added: compose-bom 2026.06.00, material3, navigation-compose, hilt-navigation-compose, coil-compose, activity-compose, material3-window-size-class, kotlin-compose plugin
+
+### Fixed
+
+- AndroidManifest: Added `leanback` uses-feature with `required="false"` for Android TV support (lint fix)
+- AndroidManifest: Changed `screenOrientation` to use Compose-based orientation management
+
 ## [1.0.0-beta.6] - 2026-06-20
 
 ### Changed
