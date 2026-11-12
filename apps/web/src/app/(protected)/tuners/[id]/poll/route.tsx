@@ -17,7 +17,7 @@ export async function POST(
         const session = await auth.api.getSession({
             headers: await headers()
         });
-        if (session?.user === null) {
+        if (session?.user === null || session?.user === undefined) {
             Logger.warn('Unauthorized poll request attempt');
             return NextResponse.json(
                 { error: 'Unauthorized' },
