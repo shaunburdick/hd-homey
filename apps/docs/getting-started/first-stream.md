@@ -98,7 +98,7 @@ HD Homey automatically transcodes MPEG-2 streams from your HDHomeRun into H.264/
 
 ### External Player (Advanced)
 
-For use with VLC, Plex, or other media applications:
+For use with VLC, mpv, or other players that accept an HTTP stream:
 
 1. **Navigate to a channel's details page**
    - Click any channel from Home or Channels
@@ -110,7 +110,7 @@ For use with VLC, Plex, or other media applications:
 
 3. **Open in your media player**
    - **VLC**: Media → Open Network Stream → Paste URL
-   - **Plex**: Settings → Live TV & DVR → Setup → (not recommended - use lineup API instead)
+   - **Plex / Jellyfin**: not supported yet — these need a tuner device that HD Homey does not emulate. Track [issue #40](https://github.com/shaunburdick/hd-homey/issues/40).
    - **Other**: Paste URL into any player that supports HTTP streams
 
 ::: tip Token Expiration

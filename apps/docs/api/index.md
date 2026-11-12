@@ -1,274 +1,165 @@
 # API Reference
 
-::: warning Documentation In Progress
-Detailed API endpoint documentation is being written. For now, refer to the source code in `src/app/api/` for implementation details.
+HD Homey exposes JSON endpoints for its web interface, the Android app, and external players. Everything documented here exists in `apps/web/src/app/api/` — if a route is not listed, it is not implemented.
+
+::: warning HDHomeRun emulation is not implemented
+HD Homey does not serve `/discover.json`, `/lineup.json`, `/lineup_status.json`, or `/device.xml`, so it cannot be added to Plex or Jellyfin as a tuner device. Track that work in [issue #40](https://github.com/shaunburdick/hd-homey/issues/40).
 :::
 
-HD Homey provides APIs for programmatic access to channel lineups and stream authentication. These APIs enable integration with external applications and media players.
+## Authentication
 
-## Overview
+Three schemes are in use:
 
-HD Homey implements HDHomeRun-compatible APIs plus custom endpoints for stream security:
+| Scheme | Applies to | How it travels |
+|--------|-----------|----------------|
+| Session cookie | Every route except the public and token routes | Better-Auth session cookie, set by signing in at `/users/signin` |
+| Stream token | Channel streams, HLS playlists and segments | `?token=` query parameter, HMAC-SHA256, bound to one tuner and channel |
+| None | `/api/health`, `/api/auth/*`, `/pair` | — |
 
-- **Lineup API**: HDHomeRun-compatible channel discovery
-- **Stream Authentication API**: Custom token-based stream access
-- **REST APIs**: Standard CRUD operations for resources
+Stream tokens are generated with `POST /api/stream-token` while holding a session. They expire after `HD_HOMEY_STREAM_TOKEN_EXPIRY` seconds (default 12 hours) and are only valid for the tuner and channel they were issued for. There is no long-lived API key: anything acting on a user's behalf needs a session, which is why external players take a copied URL rather than a credential.
 
-## Available APIs
+## Endpoints
 
-### Health Check API
-Simple health check endpoint for monitoring and infrastructure tooling.
+### System
 
-**Use cases:**
-- Docker health checks
-- Monitoring systems (Prometheus, Datadog, etc.)
-- Load balancer health probes
-- CI/CD pipeline verification
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/api/health` | None | Liveness and build metadata |
 
-**Endpoint**: `GET /api/health`
+`GET /api/health` returns:
 
-**Authentication**: None required (public endpoint)
-
-**Response Format**: JSON
 ```json
 {
   "status": "ok",
-  "timestamp": "2025-12-06T13:00:00.000Z",
+  "timestamp": "2026-06-20T13:00:00.000Z",
   "version": "1.0.0-beta.6",
-  "commit": "a1b2c3d",
+  "commit": "b8590cf",
   "branch": "main",
-  "buildDate": "2025-12-06T12:55:53.650Z",
+  "buildDate": "2026-06-20T12:55:53.650Z",
   "environment": "production"
 }
 ```
 
-**Fields:**
-- `status`: Always "ok" if server is responding
-- `timestamp`: Current server time (ISO 8601)
-- `version`: Semantic version (e.g., "1.0.0-beta.6")
-- `commit`: Git commit SHA (7 characters, may include `-dirty` suffix in development)
-- `branch`: Git branch name (null for detached HEAD)
-- `buildDate`: Build timestamp (ISO 8601)
-- `environment`: "production" or "development"
+`commit` may carry a `-dirty` suffix in development. `branch` is `null` on a detached HEAD.
 
-### HDHomeRun Lineup API
-HDHomeRun-compatible endpoint for channel discovery and device integration.
+### Tuners and channels
 
-**Use cases:**
-- Plex DVR integration
-- Channels DVR setup
-- Custom client applications
-- Third-party media servers
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/api/tuners` | Session | All active tuners |
+| `GET` | `/api/tuners/{id}` | Session | One tuner: `id`, `name`, `is_active` |
+| `POST` | `/api/tuners/{id}` | Admin | Update a tuner from form data |
+| `GET` | `/api/tuners/{id}/channels` | Session | Stored channels for a tuner |
+| `GET` | `/api/tuners/{id}/poll` | Session | Re-read the device lineup and store changes |
+| `GET` | `/api/preferences/channels?tunerId={id}` | Session | The signed-in user's favourites and hidden channels |
 
-**Endpoint**: `GET /api/lineup.json` or `GET /api/lineup`
-
-**Response Format**: XML (HDHomeRun-compatible)
-
-### Stream Authentication API
-Custom API for generating secure stream access tokens.
-
-**Use cases:**
-- External player authentication
-- Custom client development
-- Secure URL generation
-
-**Authentication**: Session-based (cookies)
-
-**Use cases:**
-- External player authentication
-- Custom client development
-- Secure URL generation
-- Token management
-
-**Endpoints**:
-- `POST /api/streams/token` - Generate stream token
-- `GET /api/streams/validate` - Validate token
-
-### Device Pairing API
-OAuth 2.0 Device Authorization Grant (RFC 8628) for authenticating devices without keyboard input.
-
-**Use cases:**
-- Android TV authentication
-- Smart TV applications
-- Set-top boxes and streaming devices
-- Mobile device pairing
-- Any device with limited input capabilities
-
-**How it works:**
-1. Device generates a short code (e.g., "A8F2K9")
-2. User visits pairing URL on their phone/computer
-3. User enters code and authorizes the device
-4. Device receives JWT token for authenticated API access
-
-**Authentication**: Mixed (public code generation, session-based authorization)
-
-**Endpoints**:
-- `POST /api/auth/device/code` - Generate device code
-- `GET /api/auth/device/poll` - Poll authorization status
-- `GET /api/auth/device/validate` - Validate code
-- `POST /api/auth/device/authorize` - Authorize device (requires login)
-
-**Built-in UI**: `/pair` - Web interface for entering and authorizing codes
-
-See [Device Pairing API](/api/device-pairing) for detailed documentation and integration guide.
-
-## Authentication
-
-### Session-Based Authentication
-Web interface and most API endpoints use cookie-based sessions:
-
-```bash
-# Login first
-curl -X POST https://tv.example.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "password"}' \
-  -c cookies.txt
-
-# Use session cookie for subsequent requests
-curl https://tv.example.com/api/lineup \
-  -b cookies.txt
-```
-
-### Token-Based Authentication
-Stream endpoints use HMAC-SHA256 tokens in URLs:
-
-```bash
-# Streams include tokens in URL
-https://tv.example.com/api/channels/12.1/stream?token=abcdef123456
-
-# Tokens are time-limited and device-specific
-# Generate via Stream Authentication API
-```
-
-## Response Formats
-
-### Lineup API (XML)
-HDHomeRun-compatible XML format:
-
-```xml
-<Lineup>
-  <Program>
-    <GuideNumber>2.1</GuideNumber>
-    <GuideName>PBS</GuideName>
-    <URL>http://tv.example.com/api/channels/2.1/stream?token=...</URL>
-  </Program>
-</Lineup>
-```
-
-### REST APIs (JSON)
-Standard JSON responses:
+Responses wrap their payload in `data`:
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "123",
-    "name": "Resource Name"
-  }
+  "data": [
+    {
+      "id": 1,
+      "name": "Garage",
+      "path": "192.168.1.50",
+      "is_active": true
+    }
+  ]
 }
 ```
 
-### Error Responses
-Consistent error format:
+`/api/tuners/{id}/poll` talks to the device, so it takes as long as the tuner's lineup request and is rate-limited only by the client.
+
+### Streaming
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/api/stream-token` | Session | Mint a stream token |
+| `GET` | `/tuners/{id}/channel/{channelId}/stream?token={token}` | Stream token | Raw MPEG-TS passthrough |
+| `GET` | `/api/transcode/{tunerId}/{channelId}/playlist.m3u8?token={token}` | Stream token | HLS playlist |
+| `GET` | `/api/transcode/{tunerId}/{channelId}/{segment}?token={token}` | Stream token | HLS segment |
+
+Mint a token:
+
+```bash
+curl -X POST http://localhost:3000/api/stream-token \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"tunerId": 1, "channelId": 5}'
+```
 
 ```json
-{
-  "success": false,
-  "errors": {
-    "field": ["Error message"]
-  }
-}
+{ "token": "MToxOjE3...", "expiresAt": 1750428800, "tunerId": 1, "channelId": 5 }
 ```
 
-## Rate Limiting
+Then use it in the URL:
 
-Currently, HD Homey does not implement rate limiting. For production deployments, consider implementing rate limiting at the reverse proxy level (nginx, Caddy, etc.).
-
-## CORS Policy
-
-HD Homey restricts cross-origin requests for security:
-- Same-origin requests allowed
-- CORS headers set for specific trusted origins
-- Credentials required for session-based auth
-
-## API Versioning
-
-Current API version: **v1**
-
-APIs use URL-based versioning when needed:
-- `/api/v1/resource` - Versioned endpoint
-- `/api/resource` - Unversioned (current version)
-
-Breaking changes will increment the version number.
-
-## Code Examples
-
-### Python
-```python
-import requests
-
-# Login
-session = requests.Session()
-session.post('https://tv.example.com/api/auth/login', json={
-    'username': 'admin',
-    'password': 'password'
-})
-
-# Get lineup
-lineup = session.get('https://tv.example.com/api/lineup')
-print(lineup.text)
-```
-
-### JavaScript/Node.js
-```javascript
-// Login
-const response = await fetch('https://tv.example.com/api/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ username: 'admin', password: 'password' }),
-  credentials: 'include'
-});
-
-// Get lineup
-const lineup = await fetch('https://tv.example.com/api/lineup', {
-  credentials: 'include'
-});
-const data = await lineup.text();
-console.log(data);
-```
-
-### cURL
 ```bash
-# Login and save cookies
-curl -X POST https://tv.example.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"password"}' \
-  -c cookies.txt
+# Raw MPEG-TS — works in VLC and other players that accept a transport stream
+curl -o channel.ts "http://localhost:3000/tuners/1/channel/5/stream?token=$TOKEN"
 
-# Get lineup with session
-curl https://tv.example.com/api/lineup \
-  -b cookies.txt
+# HLS — what the in-browser player uses
+curl "http://localhost:3000/api/transcode/1/5/playlist.m3u8?token=$TOKEN"
 ```
 
-## SDK & Libraries
+Transcoding must be enabled in settings for the HLS routes to work; when it is off, the playlist route returns `503 Transcoding not enabled` and `/tuners/{id}/channel/{channelId}/watch` tells the user playback is unavailable. Segment and playlist responses also accept `Access-Control-Allow-Origin: *`, which is what lets a player on another origin fetch them.
 
-Currently, HD Homey does not provide official SDKs. The APIs are REST/HTTP-based and work with any HTTP client library.
+### Transcoding sessions
 
-Community contributions welcome for:
-- Python SDK
-- JavaScript/TypeScript SDK
-- Go library
-- Other language bindings
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/api/transcode/status` | Admin | Active sessions and viewer counts |
+| `DELETE` | `/api/transcode/status?sessionId={id}` | Admin | Stop one session |
 
-## API Reference Pages
+### Signal and tuning
 
-Detailed documentation for each API:
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/api/signal/{tunerId}/stream` | Session | Server-Sent Events stream of signal readings |
+| `POST` | `/api/signal/{tunerId}/tune` | Admin | Tune a physical slot to a channel |
+| `POST` | `/api/signal/{tunerId}/clear` | Admin | Release a physical slot |
 
-- [Lineup Endpoint](/api/) - HDHomeRun compatibility
-- [Stream Authentication](/api/) - Token generation and validation
+Tune and clear take a channel guide number and the physical slot resource:
 
-## Need Help?
+```bash
+curl -X POST http://localhost:3000/api/signal/1/tune \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"guideNumber": "5.1", "resource": "tuner0", "force": false}'
+```
 
-- [Troubleshooting](/troubleshooting/) - Common API issues
-- [GitHub Issues](https://github.com/shaunburdick/hd-homey/issues) - Report bugs or request features
-- [Contributing](/contributing/) - Help improve HD Homey
+A `409` means viewers are streaming from that tuner; pass `"force": true` to interrupt them. A `502` means the device did not answer the native control protocol on port 65001.
+
+### Device pairing
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/api/auth/device/code` | None | Start pairing; returns a six-character code |
+| `GET` | `/api/auth/device/validate?code={code}` | None | Check a code is still pending |
+| `POST` | `/api/auth/device/authorize` | Session | Approve a code |
+
+::: warning Token exchange is incomplete
+Approving a code marks it `authorized` in the database, but no endpoint issues a token to the waiting device yet. The Android app expects `GET /api/auth/device/poll`, which does not exist. Do not build against the pairing flow until that lands.
+:::
+
+See [Device Pairing API](/api/device-pairing) for the full flow.
+
+## Error format
+
+Handlers return one of two shapes. Newer routes use the structured form:
+
+```json
+{ "error": "Not Found", "message": "Tuner 7 not found" }
+```
+
+Older ones return a bare string body with the status code, for example `Unauthorized`. Check the status code first and treat the body as a hint.
+
+## Rate limiting and CORS
+
+HD Homey does not implement rate limiting. If you expose it to the internet, do it at the reverse proxy.
+
+CORS is wide open only on the stream and HLS routes; every other endpoint is same-origin. Browsers must send credentials for session routes, so cross-origin clients need a stream token instead.
+
+## Versioning
+
+Routes are unversioned. Breaking changes are called out in [CHANGELOG.md](https://github.com/shaunburdick/hd-homey/blob/main/CHANGELOG.md) and, where they affect the Android app, accompany an app release.

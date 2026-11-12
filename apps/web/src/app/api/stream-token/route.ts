@@ -103,7 +103,7 @@ async function buildStreamTokenResponse(validated: ValidatedRequest): Promise<Ne
  * }
  *
  * Token format: base64url(tunerId:channelId:expiresAt:signature)
- * Token expiry: 15 minutes (900 seconds)
+ * Token expiry: HD_HOMEY_STREAM_TOKEN_EXPIRY seconds (default 43200 = 12 hours)
  * Signature: HMAC-SHA256(tunerId:channelId:expiresAt, streamSecret).slice(0, 32)
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {

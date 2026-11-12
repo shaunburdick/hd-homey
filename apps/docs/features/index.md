@@ -136,19 +136,24 @@ Comprehensive version tracking and build metadata for debugging and monitoring:
 
 ## Feature Status
 
-All core features are complete and tested:
+What is implemented today:
 
-| Feature | Status | Test Coverage |
-|---------|--------|---------------|
-| Tuner Management | ✅ Complete | ✅ 100% |
-| Channel Streaming | ✅ Complete | ✅ 100% |
-| Channel Favorites | ✅ Complete | ✅ 100% |
-| Video Transcoding | ✅ Complete | ✅ 100% |
-| User Management | ✅ Complete | ✅ 100% |
-| User Invitations | ✅ Complete | ✅ 100% |
-| Stream Security | ✅ Complete | ✅ 100% |
-| Authentication | ✅ Complete | ✅ 100% |
-| Signal Monitoring | ✅ Complete | ✅ 97%+ |
+| Feature | Status |
+|---------|--------|
+| Tuner Management | ✅ Complete |
+| Channel Streaming | ✅ Complete |
+| Channel Favorites | ✅ Complete |
+| Video Transcoding | ✅ Complete |
+| User Management | ✅ Complete |
+| User Invitations | ✅ Complete |
+| Stream Security | ✅ Complete |
+| Authentication | ✅ Complete |
+| Signal Monitoring | ✅ Complete |
+| Device Pairing | ⚠️ Partial — approval works, token exchange does not |
+| HDHomeRun Emulation | ❌ Not started — [issue #40](https://github.com/shaunburdick/hd-homey/issues/40) |
+| M3U Playlist | ❌ Not started — [issue #40](https://github.com/shaunburdick/hd-homey/issues/40) |
+
+Coverage is measured per run, not per feature: `npm run test:coverage` writes a report to `apps/web/coverage/`.
 
 **Current Version**: v1.0.0-beta.6
 
@@ -160,7 +165,7 @@ Future features under consideration:
 - EPG (Electronic Program Guide) integration
 - Recording/DVR functionality
 - Multi-language support
-- Mobile apps (iOS/Android)
+- iOS app
 
 ## Performance Characteristics
 
