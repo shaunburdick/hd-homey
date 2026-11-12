@@ -22,7 +22,7 @@ Create a comprehensive, user-friendly documentation website for HD Homey hosted 
 
 Currently, HD Homey documentation exists in scattered locations:
 - **README.md**: Installation, quick start, configuration (technical)
-- **.specs/**: Feature specifications (developer-focused)
+- **.specify/**: Feature specifications (developer-focused)
 - **AGENTS.md**: Development guide (AI agent-focused)
 
 **Issues**:

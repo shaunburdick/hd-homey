@@ -151,6 +151,9 @@ To create a production build from source:
 # Build the application
 npm run build
 
+# Apply database migrations (npm start does not run them)
+npm run db:migrate
+
 # Start production server
 npm start
 ```

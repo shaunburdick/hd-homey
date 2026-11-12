@@ -23,7 +23,7 @@ permissions:
     contents: read
 
 env:
-    NODE_VERSION: "20"
+    NODE_VERSION: "22"
     JAVA_VERSION: "17"
     SKIP_INSTRUMENTATION: true
 
@@ -78,7 +78,7 @@ jobs:
 
             - name: Run TypeScript compiler
               working-directory: apps/web
-              run: npx tsc --noEmit
+              run: npm run typecheck
 
     # Test job with coverage
     test:

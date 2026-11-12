@@ -1,4 +1,5 @@
-import { resolve } from 'node:path';
+import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import Database from 'better-sqlite3';
@@ -9,6 +10,9 @@ async function runMigrations() {
     Logger.info('Starting database migrations...');
 
     try {
+        // A fresh checkout has no data directory; better-sqlite3 will not create it
+        mkdirSync(dirname(Config.DB_PATH), { recursive: true });
+
         const sqlite = new Database(Config.DB_PATH);
         const db = drizzle(sqlite);
 

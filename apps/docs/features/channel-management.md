@@ -81,7 +81,7 @@ Works on all modern browsers without plugins.
 
 ### External Players
 
-For VLC, Plex, or other media applications:
+For VLC, mpv, or other players that accept an HTTP stream:
 
 1. Navigate to channel details page
 2. Copy the stream URL

@@ -54,6 +54,8 @@ export default defineConfig({
                         { text: 'Overview', link: '/features/' },
                         { text: 'Tuner Management', link: '/features/tuner-management' },
                         { text: 'Channel Management', link: '/features/channel-management' },
+                        { text: 'Channel Favorites', link: '/features/channel-favorites' },
+                        { text: 'Signal Monitoring', link: '/features/signal-monitoring' },
                         { text: 'User Management', link: '/features/user-management' },
                         { text: 'User Invitations', link: '/features/user-invitations' },
                         { text: 'Stream Security', link: '/features/stream-security' },
@@ -102,7 +104,7 @@ export default defineConfig({
         ],
 
         editLink: {
-            pattern: 'https://github.com/shaunburdick/hd-homey/edit/main/docs/:path',
+            pattern: 'https://github.com/shaunburdick/hd-homey/edit/main/apps/docs/:path',
             text: 'Edit this page on GitHub'
         },
 

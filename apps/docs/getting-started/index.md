@@ -12,7 +12,7 @@ Before getting started, make sure you have:
 
 - **HDHomeRun Device**: A network-connected HDHomeRun tuner on your local network
 - **Docker** (recommended): For the easiest deployment method
-- **Or Node.js 20+**: If you prefer running from source
+- **Or Node.js 22+**: If you prefer running from source
 - **Network Access**: Ability to expose port 3000 or configure reverse proxy
 
 ## Installation Paths
