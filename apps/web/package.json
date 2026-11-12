@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
+    "predev": "npm run db:migrate",
     "prebuild": "if [ \"$SKIP_PREBUILD\" != \"true\" ]; then npm run lint; fi",
     "build": "next build",
     "start": "next start",
